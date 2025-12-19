@@ -1,0 +1,120 @@
+/* 
+APPLY THIS ONCE, USE EVERYWHERE
+This gives you a reusable “no-overflow card/panel” system + fixes the Tools section.
+
+1) Paste the CSS chunk into: client/src/index.css (or your global Tailwind CSS file)
+2) Update the Tools section TSX to use the classes shown below (same file where the tabs + right panel live)
+
+------------------------------------------------------------
+1) client/src/index.css
+------------------------------------------------------------
+*/
+@layer components {
+  /* Card shell: never clips content, never forces a hard height */
+  .cv-card {
+    @apply rounded-2xl border-2 border-white/70 bg-[#0f3b2e];
+  }
+
+  /* Two-column grid that can shrink properly */
+  .cv-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6 items-stretch;
+  }
+
+  /* Panel: key part — flex column + min-h-0 prevents flex children from overflowing */
+  .cv-panel {
+    @apply rounded-xl border-2 border-white/70 p-6 md:p-8 flex flex-col min-h-0;
+  }
+
+  /* Content area: wraps text and scrolls only if the viewport is short */
+  .cv-panel-body {
+    @apply min-h-0 break-words leading-relaxed overflow-auto;
+  }
+
+  /* Headings & paragraphs: safe wrapping */
+  .cv-h {
+    @apply font-bold leading-tight break-words;
+  }
+
+  .cv-p {
+    @apply break-words leading-relaxed;
+  }
+}
+
+/*
+------------------------------------------------------------
+2) Update your Tools section component (tabs + right panel)
+Find the section that renders the left tab list and the right content panel.
+Replace that section’s wrapper + columns with this structure.
+------------------------------------------------------------
+*/
+
+export function ToolsSection({
+  tabs,
+  activeTab,
+  onSelectTab,
+}: {
+  tabs: Array<{ id: string; label: string; title: string; body: string }>;
+  activeTab: string;
+  onSelectTab: (id: string) => void;
+}) {
+  const tab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
+
+  return (
+    <section className="cv-card p-6 md:p-8">
+      <div className="cv-grid-2">
+        {/* Left tabs list (keep your existing tab buttons; just ensure no fixed height) */}
+        <div className="rounded-xl border-2 border-white/70 overflow-hidden min-h-0">
+          <div className="flex flex-col">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => onSelectTab(t.id)}
+                className={[
+                  "w-full text-left px-6 py-6 border-b-2 border-white/70",
+                  "font-bold text-3xl md:text-4xl leading-tight break-words",
+                  t.id === activeTab ? "bg-white/10" : "bg-transparent",
+                ].join(" ")}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right content panel (THIS is what stops the overflow) */}
+        <div className="cv-panel">
+          <div className="cv-panel-body pr-1">
+            <div className="mb-6">
+              <div className="mb-6 flex items-center gap-3">
+                {/* keep your icon here if you have one */}
+              </div>
+
+              <h3 className="cv-h text-4xl md:text-6xl text-white">
+                {tab.title}
+              </h3>
+
+              <p className="cv-p mt-4 text-base md:text-lg text-white/90">
+                {tab.body}
+              </p>
+            </div>
+          </div>
+
+          {/* Buttons never leave the panel; they wrap if needed */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {/* keep your existing buttons here */}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/*
+RULE FOR CONTINUITY (implemented by the CSS classes above):
+Use cv-card + cv-panel + cv-panel-body for ANY bordered box with text.
+That guarantees:
+- No hard heights
+- Flex children can shrink (min-h-0)
+- Text wraps safely (break-words)
+- If the viewport gets short, text scrolls inside the panel instead of spilling out
+*/
