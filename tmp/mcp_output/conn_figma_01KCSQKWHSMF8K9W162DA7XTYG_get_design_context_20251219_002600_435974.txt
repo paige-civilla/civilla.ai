@@ -1,0 +1,900 @@
+<mcp_external_output>
+
+### Content Block 1 (Text)
+const imgAlternateFalse = "https://www.figma.com/api/mcp/asset/90387460-524a-4d07-8e42-012473c47e31";
+const imgHeader114 = "https://www.figma.com/api/mcp/asset/2e68c092-9c3a-4d8a-bf5f-6f1e8c994687";
+const imgAvatarImage = "https://www.figma.com/api/mcp/asset/351c9496-6288-42ef-a13e-bc995647ee31";
+const imgAvatarImage1 = "https://www.figma.com/api/mcp/asset/b27ba4bc-b175-4225-a73f-3818bbc05369";
+const imgAvatarImage2 = "https://www.figma.com/api/mcp/asset/ea9e4c9a-24e2-4db4-986c-432a98509afe";
+const img = "https://www.figma.com/api/mcp/asset/4014cba2-c83f-49c9-be0a-2674e4964689";
+const img1 = "https://www.figma.com/api/mcp/asset/52095606-83fa-4b43-988c-27443b389424";
+const img2 = "https://www.figma.com/api/mcp/asset/ca3e6f6f-ac64-463b-824c-2e9d3d6123b3";
+const img3 = "https://www.figma.com/api/mcp/asset/44d7b16b-3bee-4cba-a3f1-2ca8a90e1ca5";
+const img4 = "https://www.figma.com/api/mcp/asset/2a7f940c-a74e-4176-9275-7c3e99c09a97";
+const img5 = "https://www.figma.com/api/mcp/asset/b9aae652-28e5-45f0-9f00-192accc876ad";
+const img6 = "https://www.figma.com/api/mcp/asset/7c88bcd1-5908-450a-ad09-9913b76e89e4";
+const img7 = "https://www.figma.com/api/mcp/asset/26a70f52-3ea7-4a3d-930d-a34834e09daf";
+const imgStars = "https://www.figma.com/api/mcp/asset/278c0ef7-95eb-4704-86ee-19e7ac63ba69";
+const img8 = "https://www.figma.com/api/mcp/asset/9ea88539-30d9-409d-bf16-2a06be00e104";
+const imgDivider = "https://www.figma.com/api/mcp/asset/9c3dc15e-2a2b-425a-a0b1-8a30ec30b09f";
+const img9 = "https://www.figma.com/api/mcp/asset/3d397d58-cc81-4449-b017-b064c66d38c1";
+const img10 = "https://www.figma.com/api/mcp/asset/db9a8077-4f7e-4be8-90d0-d7a8604f6406";
+const img11 = "https://www.figma.com/api/mcp/asset/af722cfe-9c98-4484-b22a-3903b20be8d9";
+const img12 = "https://www.figma.com/api/mcp/asset/182f10ab-2269-4a59-b754-330ca9e908a3";
+const img13 = "https://www.figma.com/api/mcp/asset/88ebb5f7-46b0-4626-aa5a-3db814dbc74a";
+type CompanyLogoProps = {
+  className?: string;
+  alternate?: "False";
+};
+
+function CompanyLogo({ className, alternate = "False" }: CompanyLogoProps) {
+  return (
+    <div data-node-id="4179:8846" className={className}>
+      <img className="absolute inset-0 max-w-none object-50%-50% object-contain pointer-events-none size-full" alt="" src={imgAlternateFalse} />
+    </div>
+  );
+}
+
+export default function HomeMobile() {
+  return (
+    <div className="content-stretch flex flex-col items-start relative size-full" data-name="Home • Mobile" data-node-id="10202:82853">
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-start overflow-clip relative shrink-0 w-full" data-name="Navbar / 4 /" data-node-id="10202:84261">
+        <div className="content-stretch flex gap-[32px] h-[64px] items-center justify-center overflow-clip pl-[var(--page-padding\/padding-global,20px)] pr-[12px] py-0 relative shrink-0 w-full" data-name="Header" data-node-id="10202:84262">
+          <div className="content-stretch flex flex-[1_0_0] items-start min-h-px min-w-px relative shrink-0" data-name="Content" data-node-id="10202:84263">
+            <CompanyLogo className="h-[44px] relative shrink-0 w-[84px]" />
+          </div>
+          <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative shrink-0" data-name="Actions" data-node-id="10202:84265">
+            <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[20px] py-[4px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0" data-name="Button" data-node-id="10202:84266">
+              <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:84266;4179:8883">
+                Button
+              </p>
+              <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+            </div>
+            <div className="content-stretch flex items-start p-[12px] relative shrink-0" data-name="Icon" data-node-id="10202:84267">
+              <div className="overflow-clip relative shrink-0 size-[24px]" data-name="menu" data-node-id="10202:84268">
+                <div className="absolute bottom-1/4 left-[16.67%] right-[16.67%] top-1/4" data-name="Vector" data-node-id="I10202:84268;4179:10846">
+                  <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                    <img alt="" className="block max-w-none size-full" src={img} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="content-stretch flex h-[812px] items-start justify-center px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="Header / 114 /" data-node-id="10202:84856">
+        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgHeader114} />
+        <div className="content-stretch flex flex-[1_0_0] flex-col h-full items-start max-w-[1280px] min-h-px min-w-px relative shrink-0" data-name="Container" data-node-id="10202:84857">
+          <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative shrink-0 w-full" data-name="Component" data-node-id="10202:84858">
+            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-start min-h-px min-w-px relative shrink-0 w-full" data-name="Column one" data-node-id="10202:84859">
+              <div className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.1] min-w-full relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/heading-1,48px)] tracking-[0.48px] w-[min-content] whitespace-pre-wrap" data-node-id="10202:84860">
+                <p className="mb-0">Family law,</p>
+                <p>translated.</p>
+              </div>
+              <div className="content-stretch flex gap-[16px] items-start relative shrink-0" data-name="Actions" data-node-id="10202:84861">
+                <div className="bg-[var(--color\/neutral-lightest,#f2f2f2)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0" data-name="Button" data-node-id="10202:84862">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:84862;4179:8943">
+                    Learn
+                  </p>
+                  <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+                </div>
+                <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/white,white)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:84863">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:84863;4179:8963">
+                    Explore
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="Layout / 134 /" data-node-id="10202:86466">
+        <div className="content-stretch flex flex-col items-center max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:86467">
+          <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[768px] relative shrink-0 w-full" data-name="Content" data-node-id="10202:86468">
+            <div className="content-stretch flex flex-col gap-[12px] items-center max-w-[768px] relative shrink-0 w-full" data-name="Section Title" data-node-id="10202:86469">
+              <div className="content-stretch flex items-center relative shrink-0" data-name="Tagline Wrapper" data-node-id="10202:86470">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.5] relative shrink-0 text-[16px] text-[color:var(--color-scheme-5\/text,#070503)] text-center" data-node-id="10202:86471">
+                  Clarity
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:86472">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,44px)] tracking-[0.44px] w-full" data-node-id="10202:86473">
+                  civilla.ai is not a law firm
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:86474">
+                  civilla.ai does not provide legal advice, represent you in court, or replace an attorney. We are an educational platform designed to help you understand family law and organize your case.
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex items-center relative shrink-0" data-name="Actions" data-node-id="10202:86475">
+              <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:86477">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:86477;4179:8938">
+                  Read details
+                </p>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="chevron_right" data-node-id="I10202:86477;4179:8939">
+                  <div className="absolute inset-[25.72%_36.66%_25.88%_35.46%]" data-name="Vector" data-node-id="I10202:86477;4179:8939;7044:9665">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img1} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-1\/background,#0c2f24)] content-stretch flex flex-col items-center justify-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="Layout / 505 /" data-node-id="10202:88315">
+        <div className="content-stretch flex flex-col gap-[48px] items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:88316">
+          <div className="content-stretch flex flex-col gap-[12px] items-center max-w-[768px] relative shrink-0 w-full" data-name="Content" data-node-id="10202:88317">
+            <div className="content-stretch flex items-center relative shrink-0" data-name="Tagline Wrapper" data-node-id="10202:88318">
+              <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.5] relative shrink-0 text-[16px] text-[color:var(--color-scheme-1\/text,white)] text-center" data-node-id="10202:88319">
+                Tools
+              </p>
+            </div>
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] text-center w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:88320">
+              <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,44px)] tracking-[0.44px] w-full" data-node-id="10202:88321">
+                What civilla.ai does
+              </p>
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:88322">
+                Each tool is built to help you move through your case with less confusion and more confidence. You choose what you need, when you need it.
+              </p>
+            </div>
+          </div>
+          <div className="bg-[var(--color-scheme-1\/foreground,#0c2f24)] border-[var(--color-scheme-1\/border,white)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col items-start overflow-clip relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Card" data-node-id="10202:88323">
+            <div className="border-[var(--color-scheme-1\/border,white)] border-b-[var(--stroke\/border-width,2px)] border-l-0 border-r-0 border-solid border-t-0 content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Tabs Menu" data-node-id="10202:88324">
+              <div className="border-[var(--color-scheme-1\/border,white)] border-b-[var(--stroke\/border-width,2px)] border-l-0 border-r-0 border-solid border-t-0 content-stretch flex flex-col items-start justify-center p-[24px] relative shrink-0 w-full" data-name="Tab link" data-node-id="10202:88325">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full whitespace-pre-wrap" data-node-id="10202:88326">
+                  Case journey
+                </p>
+              </div>
+              <div className="border-[var(--color-scheme-1\/border,white)] border-b-[var(--stroke\/border-width,2px)] border-l-0 border-r-0 border-solid border-t-0 content-stretch flex flex-col items-start justify-center p-[24px] relative shrink-0 w-full" data-name="Tab link" data-node-id="10202:88327">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full whitespace-pre-wrap" data-node-id="10202:88328">
+                  Evidence timeline
+                </p>
+              </div>
+              <div className="border-[var(--color-scheme-1\/border,white)] border-b-[var(--stroke\/border-width,2px)] border-l-0 border-r-0 border-solid border-t-0 content-stretch flex flex-col items-start justify-center p-[24px] relative shrink-0 w-full" data-name="Tab link" data-node-id="10202:88329">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full whitespace-pre-wrap" data-node-id="10202:88330">
+                  Pattern analysis
+                </p>
+              </div>
+              <div className="border-[var(--color-scheme-1\/border,white)] border-b-[var(--stroke\/border-width,2px)] border-l-0 border-r-0 border-solid border-t-0 content-stretch flex flex-col items-start justify-center p-[24px] relative shrink-0 w-full" data-name="Tab link" data-node-id="10202:88331">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full whitespace-pre-wrap" data-node-id="10202:88332">
+                  Research assistant
+                </p>
+              </div>
+              <div className="border-0 border-[var(--color-scheme-1\/border,white)] border-solid content-stretch flex flex-col items-start justify-center p-[24px] relative shrink-0 w-full" data-name="Tab link" data-node-id="10202:88333">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full whitespace-pre-wrap" data-node-id="10202:88334">
+                  Document builder
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Tabs Content" data-node-id="10202:88335">
+              <div className="content-stretch flex flex-col gap-[24px] items-start p-[24px] relative shrink-0 w-full" data-name="Tab Pane 1" data-node-id="10202:88336">
+                <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full" data-name="Content Top" data-node-id="10202:88337">
+                  <div className="overflow-clip relative shrink-0 size-[48px]" data-name="Relume" data-node-id="10202:88338">
+                    <div className="absolute inset-[8.33%_12.5%]" data-name="Vector" data-node-id="I10202:88338;4179:9442">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(255, 255, 255, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 text-[color:var(--color-scheme-1\/text,white)] w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:88339">
+                    <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-3,32px)] tracking-[0.32px] w-full" data-node-id="10202:88340">
+                      Track what matters to your case
+                    </p>
+                    <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:88341">
+                      Family law cases follow predictable stages. civilla.ai shows you what happens at each one, from filing through trial, so you know what to expect.
+                    </p>
+                  </div>
+                </div>
+                <div className="content-stretch flex gap-[24px] items-center relative shrink-0 w-full" data-name="Actions" data-node-id="10202:88342">
+                  <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/white,white)] border-solid content-stretch flex items-center justify-center overflow-clip px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:88343">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:88343;4179:8963">
+                      Explore
+                    </p>
+                  </div>
+                  <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:88344">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:88344;4179:9008">
+                      Learn more
+                    </p>
+                    <div className="overflow-clip relative shrink-0 size-[24px]" data-name="chevron_right" data-node-id="I10202:88344;4179:9009">
+                      <div className="absolute inset-[25.72%_36.66%_25.88%_35.46%]" data-name="Vector" data-node-id="I10202:88344;4179:9009;7044:9665">
+                        <div className="absolute inset-0" style={{ "--fill-0": "rgba(255, 255, 255, 1)", "--stroke-0": "rgba(255, 255, 255, 1)" } as React.CSSProperties}>
+                          <img alt="" className="block max-w-none size-full" src={img3} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="Layout / 232 /" data-node-id="10202:93584">
+        <div className="content-stretch flex flex-col items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:93585">
+          <div className="content-stretch flex flex-col gap-[48px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:93586">
+            <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 w-full" data-name="Column" data-node-id="10202:95799">
+              <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:95800">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full" data-node-id="10202:95801">
+                  Step one
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95802">
+                  Select your state and tell us about your case so civilla.ai can show you the rules and processes that apply to your situation.
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Action" data-node-id="10202:95803">
+                <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:95804">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:95804;4179:8938">
+                    Begin
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="chevron_right" data-node-id="I10202:95804;4179:8939">
+                    <div className="absolute inset-[25.72%_36.66%_25.88%_35.46%]" data-name="Vector" data-node-id="I10202:95804;4179:8939;7044:9665">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img1} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 w-full" data-name="Column" data-node-id="10202:95808">
+              <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:95809">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full" data-node-id="10202:95810">
+                  Step two
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95811">
+                  Upload your documents, messages, and evidence. civilla.ai organizes everything into a timeline so you can see the full picture of your case.
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Action" data-node-id="10202:95812">
+                <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:95813">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:95813;4179:8938">
+                    Organize
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="chevron_right" data-node-id="I10202:95813;4179:8939">
+                    <div className="absolute inset-[25.72%_36.66%_25.88%_35.46%]" data-name="Vector" data-node-id="I10202:95813;4179:8939;7044:9665">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img1} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 w-full" data-name="Column" data-node-id="10202:95817">
+              <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:95818">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-5,20px)] tracking-[0.2px] w-full" data-node-id="10202:95819">
+                  Step three
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95820">
+                  Learn what happens next, understand your options, and prepare with confidence. You stay in control of every decision.
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Action" data-node-id="10202:95821">
+                <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:95822">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:95822;4179:8938">
+                    Prepare
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="chevron_right" data-node-id="I10202:95822;4179:8939">
+                    <div className="absolute inset-[25.72%_36.66%_25.88%_35.46%]" data-name="Vector" data-node-id="I10202:95822;4179:8939;7044:9665">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img1} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-7\/background,#f2f2f2)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="CTA / 57 /" data-node-id="10202:93660">
+        <div className="content-stretch flex flex-col items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:93661">
+          <div className="content-stretch flex flex-col gap-[24px] h-[308px] items-center max-w-[768px] relative shrink-0 w-full" data-name="Column" data-node-id="10202:93662">
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:93663">
+              <div className="content-stretch flex flex-col font-['Figtree:Bold',sans-serif] font-bold items-center leading-[1.1] relative shrink-0 text-[length:var(--text-sizes\/heading-1,48px)] tracking-[0.48px] w-full" data-name="Heading" data-node-id="10202:93664">
+                <p className="relative shrink-0 w-full" data-node-id="10202:93665">
+                  Ready to begin
+                </p>
+                <p className="relative shrink-0 w-full" data-node-id="10202:93666">
+                  Take the first step
+                </p>
+              </div>
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:93667">{`You don't have to figure this out alone. Start learning about your case today.`}</p>
+            </div>
+            <div className="content-stretch flex gap-[16px] items-start relative shrink-0" data-name="Actions" data-node-id="10202:93668">
+              <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0" data-name="Button" data-node-id="10202:93669">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:93669;4179:8873">
+                  Start now
+                </p>
+                <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+              </div>
+              <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:93670">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:93670;4179:8893">
+                  Learn more
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-6\/background,#cfd7d5)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="Contact / 23 /" data-node-id="10202:93794">
+        <div className="content-stretch flex flex-col gap-[48px] items-center max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:93795">
+          <div className="content-stretch flex flex-col gap-[12px] items-center max-w-[768px] relative shrink-0 w-full" data-name="Section Title" data-node-id="10202:93796">
+            <div className="content-stretch flex items-center relative shrink-0" data-name="Tagline Wrapper" data-node-id="10202:93797">
+              <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.5] relative shrink-0 text-[16px] text-[color:var(--color-scheme-6\/text,#070503)] text-center" data-node-id="10202:93798">
+                Safety
+              </p>
+            </div>
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:93799">
+              <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,44px)] tracking-[0.44px] w-full" data-node-id="10202:93800">
+                In crisis
+              </p>
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:93801">{`If you're in immediate danger, call 911. civilla.ai also offers a quick exit button and resources for domestic violence support.`}</p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-col gap-[48px] items-center relative shrink-0 w-full" data-name="Row" data-node-id="10202:93802">
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95889">
+              <div className="overflow-clip relative shrink-0 size-[48px]" data-name="mail" data-node-id="10202:95890">
+                <div className="absolute inset-[16.02%_7.69%_16.04%_7.71%]" data-name="Vector" data-node-id="I10202:95890;7044:7583">
+                  <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                    <img alt="" className="block max-w-none size-full" src={img4} />
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-center w-full whitespace-pre-wrap" data-name="Contact Info" data-node-id="10202:95891">
+                <div className="content-stretch flex flex-col gap-[12px] items-center relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full" data-name="Content" data-node-id="10202:95892">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-4,24px)] tracking-[0.24px] w-full" data-node-id="10202:95893">
+                    Resources
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95894">
+                    Learn about safety planning
+                  </p>
+                </div>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[#070503] text-[18px] underline w-full" data-node-id="10202:95895">{`Safety & Support`}</p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95897">
+              <div className="overflow-clip relative shrink-0 size-[48px]" data-name="tooltip" data-node-id="10202:95898">
+                <div className="absolute inset-[7.69%_7.69%_10.51%_7.71%]" data-name="Vector" data-node-id="I10202:95898;7044:7417">
+                  <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                    <img alt="" className="block max-w-none size-full" src={img5} />
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Contact Info" data-node-id="10202:95899">
+                <div className="content-stretch flex flex-col gap-[12px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95900">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-4,24px)] tracking-[0.24px] w-full" data-node-id="10202:95901">
+                    Support
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95902">
+                    Reach out anytime
+                  </p>
+                </div>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] underline w-full" data-node-id="10202:95903">
+                  support@civilla.ai
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95905">
+              <div className="overflow-clip relative shrink-0 size-[48px]" data-name="call" data-node-id="10202:95906">
+                <div className="absolute inset-[11.85%_11.85%_11.88%_11.88%]" data-name="Vector" data-node-id="I10202:95906;7044:9333">
+                  <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                    <img alt="" className="block max-w-none size-full" src={img6} />
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Contact Info" data-node-id="10202:95907">
+                <div className="content-stretch flex flex-col gap-[12px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95908">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-4,24px)] tracking-[0.24px] w-full" data-node-id="10202:95909">
+                    Help
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95910">
+                    Visit our Help Center for answers
+                  </p>
+                </div>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] underline w-full" data-node-id="10202:95911">
+                  1-800-799-7233
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95913">
+              <div className="overflow-clip relative shrink-0 size-[48px]" data-name="location_on" data-node-id="10202:95914">
+                <div className="absolute inset-[7.69%_16.02%_9.89%_16.04%]" data-name="Vector" data-node-id="I10202:95914;7044:8011">
+                  <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                    <img alt="" className="block max-w-none size-full" src={img7} />
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[20px] items-center relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Contact Info" data-node-id="10202:95915">
+                <div className="content-stretch flex flex-col gap-[12px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="10202:95916">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-4,24px)] tracking-[0.24px] w-full" data-node-id="10202:95917">
+                    Hotline
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:95918">
+                    National Domestic Violence Hotline available 24/7
+                  </p>
+                </div>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] underline w-full" data-node-id="10202:95919">
+                  Visit our Help Center for answers
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="Testimonial / 17 /" data-node-id="10202:93983">
+        <div className="content-stretch flex flex-col gap-[48px] items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:93984">
+          <div className="content-stretch flex flex-col gap-[20px] items-center max-w-[768px] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Section Title" data-node-id="10202:93985">
+            <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,44px)] tracking-[0.44px] w-full" data-node-id="10202:93986">
+              Real voices
+            </p>
+            <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:93987">
+              What users say
+            </p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:93988">
+            <div className="bg-[var(--color-scheme-5\/foreground,#fcfbf9)] border-[var(--color-scheme-5\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col gap-[20px] items-start overflow-clip p-[24px] relative rounded-[var(--radius\/medium,16px)] shrink-0 w-full" data-name="Column" data-node-id="10202:96008">
+              <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0" data-name="Content" data-node-id="10202:96009">
+                <div className="h-[18.889px] relative shrink-0 w-[116px]" data-name="Stars" data-node-id="10202:96010">
+                  <img alt="" className="block max-w-none size-full" src={imgStars} />
+                </div>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-[287px] whitespace-pre-wrap" data-node-id="10202:96016">{`"I finally understood what was happening in my case instead of just feeling lost and afraid."`}</p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start justify-center relative shrink-0 w-full" data-name="Avatar" data-node-id="10202:96017">
+                <div className="relative shrink-0 size-[48px]" data-name="Avatar Image" data-node-id="10202:96018">
+                  <img alt="" className="block max-w-none size-full" height="48" src={imgAvatarImage} width="48" />
+                </div>
+                <div className="content-stretch flex flex-col items-start leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-full whitespace-pre-wrap" data-name="Avatar Content" data-node-id="10202:96019">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold relative shrink-0 w-full" data-node-id="10202:96020">
+                    Sarah M.
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal relative shrink-0 w-full" data-node-id="10202:96021">
+                    Self-represented parent
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-[var(--color-scheme-5\/foreground,#fcfbf9)] border-[var(--color-scheme-5\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col gap-[20px] items-start overflow-clip p-[24px] relative rounded-[var(--radius\/medium,16px)] shrink-0 w-full" data-name="Column" data-node-id="10202:96022">
+              <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0" data-name="Content" data-node-id="10202:96023">
+                <div className="h-[18.889px] relative shrink-0 w-[116px]" data-name="Stars" data-node-id="10202:96024">
+                  <img alt="" className="block max-w-none size-full" src={imgStars} />
+                </div>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-[287px] whitespace-pre-wrap" data-node-id="10202:96030">{`"Having my evidence organized made me feel prepared for the first time since this started."`}</p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start justify-center relative shrink-0 w-full" data-name="Avatar" data-node-id="10202:96031">
+                <div className="relative shrink-0 size-[48px]" data-name="Avatar Image" data-node-id="10202:96032">
+                  <img alt="" className="block max-w-none size-full" height="48" src={imgAvatarImage1} width="48" />
+                </div>
+                <div className="content-stretch flex flex-col items-start leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-full whitespace-pre-wrap" data-name="Avatar Content" data-node-id="10202:96033">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold relative shrink-0 w-full" data-node-id="10202:96034">
+                    James T.
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal relative shrink-0 w-full" data-node-id="10202:96035">
+                    Self-represented parent
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-[var(--color-scheme-5\/foreground,#fcfbf9)] border-[var(--color-scheme-5\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col gap-[20px] items-start overflow-clip p-[24px] relative rounded-[var(--radius\/medium,16px)] shrink-0 w-full" data-name="Column" data-node-id="10202:96036">
+              <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0" data-name="Content" data-node-id="10202:96037">
+                <div className="h-[18.889px] relative shrink-0 w-[116px]" data-name="Stars" data-node-id="10202:96038">
+                  <img alt="" className="block max-w-none size-full" src={imgStars} />
+                </div>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-[287px] whitespace-pre-wrap" data-node-id="10202:96044">{`"The plain language explanations took away so much of the panic I was carrying."`}</p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start justify-center relative shrink-0 w-full" data-name="Avatar" data-node-id="10202:96045">
+                <div className="relative shrink-0 size-[48px]" data-name="Avatar Image" data-node-id="10202:96046">
+                  <img alt="" className="block max-w-none size-full" height="48" src={imgAvatarImage2} width="48" />
+                </div>
+                <div className="content-stretch flex flex-col items-start leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-full whitespace-pre-wrap" data-name="Avatar Content" data-node-id="10202:96047">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold relative shrink-0 w-full" data-node-id="10202:96048">
+                    Maria L.
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal relative shrink-0 w-full" data-node-id="10202:96049">
+                    Self-represented parent
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-7\/background,#f2f2f2)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-large,64px)] relative shrink-0 w-full" data-name="FAQ / 1 /" data-node-id="10202:94169">
+        <div className="content-stretch flex flex-col gap-[48px] items-center max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:94170">
+          <div className="content-stretch flex flex-col gap-[20px] items-center max-w-[768px] relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Section Title" data-node-id="10202:94171">
+            <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,44px)] tracking-[0.44px] w-full" data-node-id="10202:94172">
+              Questions
+            </p>
+            <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:94173">
+              Find answers about how civilla.ai works and what it can do for you.
+            </p>
+          </div>
+          <div className="border-[var(--color-scheme-7\/border,#070503)] border-b-[var(--stroke\/divider-width,2px)] border-l-0 border-r-0 border-solid border-t-0 content-stretch flex flex-col items-center max-w-[768px] relative shrink-0 w-full" data-name="Accordion List" data-node-id="10202:94174">
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Accordion Item" data-node-id="10202:96085">
+              <div className="border-[var(--color-scheme-7\/border,#070503)] border-b-0 border-l-0 border-r-0 border-solid border-t-[var(--stroke\/divider-width,2px)] content-stretch flex gap-[24px] items-center overflow-clip px-0 py-[16px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:96086">
+                <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96087">
+                  Is civilla.ai a law firm?
+                </p>
+                <div className="overflow-clip relative shrink-0 size-[32px]" data-name="keyboard_arrow_up" data-node-id="10202:96088">
+                  <div className="absolute inset-[34.18%_25.83%_38.06%_25.93%]" data-name="Vector" data-node-id="I10202:96088;7044:24129">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img8} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex items-start pb-[20px] pt-0 px-0 relative shrink-0 w-full" data-name="Answer" data-node-id="10202:96089">
+                <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96090">{`No. civilla.ai is an educational platform, not a law firm. We don't provide legal advice, represent you in court, or replace an attorney. We help you understand family law and organize your case.`}</p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Accordion Item" data-node-id="10202:96092">
+              <div className="border-[var(--color-scheme-7\/border,#070503)] border-b-0 border-l-0 border-r-0 border-solid border-t-[var(--stroke\/divider-width,2px)] content-stretch flex gap-[24px] items-center overflow-clip px-0 py-[16px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:96093">
+                <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96094">
+                  Can I use civilla.ai with an attorney?
+                </p>
+                <div className="overflow-clip relative shrink-0 size-[32px]" data-name="keyboard_arrow_up" data-node-id="10202:96095">
+                  <div className="absolute inset-[34.18%_25.83%_38.06%_25.93%]" data-name="Vector" data-node-id="I10202:96095;7044:24129">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img8} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex items-start pb-[20px] pt-0 px-0 relative shrink-0 w-full" data-name="Answer" data-node-id="10202:96096">
+                <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96097">{`Yes. Many users work with attorneys and use civilla.ai to organize their evidence and understand their case better. It's a tool to support your preparation, not replace legal counsel.`}</p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Accordion Item" data-node-id="10202:96099">
+              <div className="border-[var(--color-scheme-7\/border,#070503)] border-b-0 border-l-0 border-r-0 border-solid border-t-[var(--stroke\/divider-width,2px)] content-stretch flex gap-[24px] items-center overflow-clip px-0 py-[16px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:96100">
+                <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96101">
+                  What states does civilla.ai cover?
+                </p>
+                <div className="overflow-clip relative shrink-0 size-[32px]" data-name="keyboard_arrow_up" data-node-id="10202:96102">
+                  <div className="absolute inset-[34.18%_25.83%_38.06%_25.93%]" data-name="Vector" data-node-id="I10202:96102;7044:24129">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img8} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex items-start pb-[20px] pt-0 px-0 relative shrink-0 w-full" data-name="Answer" data-node-id="10202:96103">
+                <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96104">
+                  civilla.ai is designed for U.S. family law and allows you to select your state. Each state has different rules, and civilla.ai customizes information based on your selection.
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Accordion Item" data-node-id="10202:96106">
+              <div className="border-[var(--color-scheme-7\/border,#070503)] border-b-0 border-l-0 border-r-0 border-solid border-t-[var(--stroke\/divider-width,2px)] content-stretch flex gap-[24px] items-center overflow-clip px-0 py-[16px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:96107">
+                <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96108">
+                  Will civilla.ai tell me what to file?
+                </p>
+                <div className="overflow-clip relative shrink-0 size-[32px]" data-name="keyboard_arrow_up" data-node-id="10202:96109">
+                  <div className="absolute inset-[34.18%_25.83%_38.06%_25.93%]" data-name="Vector" data-node-id="I10202:96109;7044:24129">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img8} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex items-start pb-[20px] pt-0 px-0 relative shrink-0 w-full" data-name="Answer" data-node-id="10202:96110">
+                <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96111">{`No. civilla.ai explains what documents exist and how they're typically used, but it doesn't tell you what to file or when. Those decisions are yours, ideally with an attorney's guidance.`}</p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Accordion Item" data-node-id="10202:96113">
+              <div className="border-[var(--color-scheme-7\/border,#070503)] border-b-0 border-l-0 border-r-0 border-solid border-t-[var(--stroke\/divider-width,2px)] content-stretch flex gap-[24px] items-center overflow-clip px-0 py-[16px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:96114">
+                <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96115">
+                  How is my information kept safe?
+                </p>
+                <div className="overflow-clip relative shrink-0 size-[32px]" data-name="keyboard_arrow_up" data-node-id="10202:96116">
+                  <div className="absolute inset-[34.18%_25.83%_38.06%_25.93%]" data-name="Vector" data-node-id="I10202:96116;7044:24129">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img8} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex items-start pb-[20px] pt-0 px-0 relative shrink-0 w-full" data-name="Answer" data-node-id="10202:96117">
+                <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="10202:96118">
+                  Your privacy and security matter. civilla.ai uses encryption and follows strict data protection standards. Read our Privacy Policy for full details about how we handle your information.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[560px] relative shrink-0 w-full" data-name="Content" data-node-id="10202:94205">
+            <div className="content-stretch flex flex-col gap-[12px] items-center relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:94206">
+              <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-4,24px)] tracking-[0.24px] w-full" data-node-id="10202:94207">
+                Common questions answered
+              </p>
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:94208">
+                Everything you need to know about civilla.ai
+              </p>
+            </div>
+            <div className="content-stretch flex items-center relative shrink-0" data-name="Actions" data-node-id="10202:94209">
+              <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:94210">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:94210;4179:8893">
+                  Contact us
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,20px)] py-[var(--section-padding\/padding-section-medium,48px)] relative shrink-0 w-full" data-name="Footer / 2 /" data-node-id="10202:94444">
+        <div className="content-stretch flex flex-col gap-[48px] items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:94445">
+          <div className="content-stretch flex flex-col gap-[48px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:94446">
+            <div className="content-stretch flex flex-col gap-[40px] items-start relative shrink-0 w-full" data-name="Links" data-node-id="10202:94447">
+              <div className="content-stretch flex flex-col items-start overflow-clip relative shrink-0 w-full" data-name="Column" data-node-id="10202:94448">
+                <CompanyLogo className="h-[44px] relative shrink-0 w-[84px]" />
+              </div>
+              <div className="content-stretch flex flex-col gap-[12px] items-start overflow-clip relative shrink-0 w-full" data-name="Column" data-node-id="10202:94450">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-full whitespace-pre-wrap" data-node-id="10202:94451">
+                  Product
+                </p>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Footer Links" data-node-id="10202:94452">
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94453">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94454">
+                      How it works
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94455">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94456">
+                      About us
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94457">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94458">
+                      Plans
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94459">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94460">
+                      Support
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94461">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94462">
+                      Resources
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[12px] items-start overflow-clip relative shrink-0 w-full" data-name="Column" data-node-id="10202:94463">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-full whitespace-pre-wrap" data-node-id="10202:94464">
+                  Learn
+                </p>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Footer Links" data-node-id="10202:94465">
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94466">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94467">
+                      Legal
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94468">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94469">
+                      Safety
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94470">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94471">
+                      FAQ
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94472">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94473">
+                      Contact
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94474">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94475">
+                      Accessibility
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[12px] items-start overflow-clip relative shrink-0 w-full" data-name="Column" data-node-id="10202:94476">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,14px)] w-full whitespace-pre-wrap" data-node-id="10202:94477">
+                  Help
+                </p>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Footer Links" data-node-id="10202:94478">
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94479">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94480">
+                      Privacy
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94481">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94482">
+                      Terms
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94483">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94484">
+                      Compliance
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94485">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94486">
+                      Updates
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:94487">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)] whitespace-pre-wrap" data-node-id="10202:94488">
+                      Feedback
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full" data-name="Newslatter" data-node-id="10202:94489">
+              <div className="content-stretch flex flex-col gap-[12px] items-start leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] w-full whitespace-pre-wrap" data-node-id="10202:94490">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold relative shrink-0 text-[length:var(--text-sizes\/text-regular,14px)] w-full" data-node-id="10202:94491">
+                  Updates
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal relative shrink-0 text-[length:var(--text-sizes\/text-small,12px)] w-full" data-node-id="10202:94492">
+                  Get updates about new features, resources, and support tools designed for self-represented parents.
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:94493">
+                <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full" data-name="Form" data-node-id="10202:94494">
+                  <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center px-[12px] py-[8px] relative rounded-[12px] shrink-0 w-full" data-name="Text input" data-node-id="10202:94495">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--opacity\/neutral-darkest-60,rgba(7,5,3,0.6))] text-[length:var(--text-sizes\/text-regular,14px)] whitespace-pre-wrap" data-node-id="I10202:94495;4179:9018">
+                      Your email
+                    </p>
+                  </div>
+                  <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shrink-0 w-full" data-name="Button" data-node-id="10202:94496">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,14px)]" data-node-id="I10202:94496;4179:8893">
+                      Join
+                    </p>
+                  </div>
+                </div>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-tiny,10px)] w-full whitespace-pre-wrap" data-node-id="10202:94497">
+                  By subscribing you agree to our Privacy Policy and consent to receive updates from civilla.ai.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 w-full" data-name="Credits" data-node-id="10202:94498">
+            <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:94499">
+              <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                <img alt="" className="block max-w-none size-full" src={imgDivider} />
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[32px] items-start pb-[16px] pt-0 px-0 relative shrink-0 w-full" data-name="Row" data-node-id="10202:94500">
+              <div className="content-stretch flex gap-[12px] items-start relative shrink-0" data-name="Social Links" data-node-id="10202:94501">
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="Facebook" data-node-id="10202:94502">
+                  <div className="absolute inset-[9.34%_8.33%_7.32%_8.33%]" data-name="Vector" data-node-id="I10202:94502;4179:9446">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img9} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="Instagram" data-node-id="10202:94503">
+                  <div className="absolute inset-[13.51%_12.5%_11.49%_12.5%]" data-name="Vector" data-node-id="I10202:94503;4179:9450">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img10} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="X" data-node-id="10202:94504">
+                  <div className="absolute inset-[17.68%_12.5%_15.66%_12.5%]" data-name="Vector" data-node-id="I10202:94504;4179:9454">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img11} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="LinkedIn" data-node-id="10202:94505">
+                  <div className="absolute inset-[13.51%_12.5%_11.49%_12.5%]" data-name="Vector" data-node-id="I10202:94505;4179:9452">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img12} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="Youtube" data-node-id="10202:94506">
+                  <div className="absolute inset-[20.83%_8.33%_20.78%_8.27%]" data-name="Vector" data-node-id="I10202:94506;4179:9456">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img13} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col font-['Arimo:Regular',sans-serif] font-normal gap-[32px] items-start leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,12px)]" data-name="Credits" data-node-id="10202:94507">
+                <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 underline" data-name="Footer Links" data-node-id="10202:94508">
+                  <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid relative shrink-0" data-node-id="10202:94509">
+                    Privacy Policy
+                  </p>
+                  <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid relative shrink-0" data-node-id="10202:94510">
+                    Terms of Service
+                  </p>
+                  <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid relative shrink-0" data-node-id="10202:94511">
+                    Cookies Settings
+                  </p>
+                </div>
+                <p className="relative shrink-0" data-node-id="10202:94512">
+                  © 2024 civilla.ai. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+### Content Block 2 (Text)
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+### Content Block 3 (Text)
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+### Content Block 4 (Text)
+These styles are contained in the design: Text/Regular/Medium: Font(family: "Arimo", style: Bold, size: Text Sizes/Text Regular, weight: 700, lineHeight: 1.600000023841858, letterSpacing: 0), Heading/H1: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 1, weight: 700, lineHeight: 1.100000023841858, letterSpacing: 1), Heading/Tagline: Font(family: "Arimo", style: Bold, size: 16, weight: 700, lineHeight: 1.5, letterSpacing: 0), Heading/H2: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 2, weight: 700, lineHeight: 1.2000000476837158, letterSpacing: 1), Text/Regular/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Regular, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Heading/H5: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 5, weight: 700, lineHeight: 1.2000000476837158, letterSpacing: 1), Heading/H3: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 3, weight: 700, lineHeight: 1.2000000476837158, letterSpacing: 1), Heading/H4: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 4, weight: 700, lineHeight: 1.2000000476837158, letterSpacing: 1), Text/Regular/Link: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Regular, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Regular/Semi Bold: Font(family: "Arimo", style: Bold, size: Text Sizes/Text Regular, weight: 700, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Regular/Bold: Font(family: "Arimo", style: Bold, size: Text Sizes/Text Regular, weight: 700, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Small/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Small, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Tiny/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Tiny, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Small/Link: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Small, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0).
+
+### Content Block 5 (Text)
+Component descriptions: The following components have usage descriptions defined in Figma that explain how they should be used. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Facebook
+**Node ID:** 4179:9445
+
+1.  Facebook
+2.  Social media
+3.  Logo
+4.  Brands
+5.  Digital communication
+6.  Online friends
+
+## Instagram
+**Node ID:** 4179:9449
+
+1.  Social media
+2.  Logo
+3.  Brands
+
+## X
+**Node ID:** 4179:9453
+
+1.  Twitter
+2.  Tweet
+3.  Logo
+4.  Social media
+5.  Brands
+
+## LinkedIn
+**Node ID:** 4179:9451
+
+1.  Logo
+2.  Brands
+3.  Social media
+4.  Networking
+5.  Career development
+6.  Online resume
+7.  Networking community
+8.  B2B networking
+9.  Business connections
+
+## Youtube
+**Node ID:** 4179:9455
+
+1.  Videos
+2.  Logo
+3.  Social media
+4.  Brands
+5.  Video platform
+6.  Online video
+7.  Streaming video
+8.  Play button
+9.  Video content
+
+### Content Block 6 (Text)
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.
+
+### Content Block 7 (Text)
+IMPORTANT: After you call this tool, you MUST call get_screenshot to get a screenshot of the node for context.
+
+</mcp_external_output>
