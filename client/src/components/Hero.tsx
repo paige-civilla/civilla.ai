@@ -31,7 +31,7 @@ export default function Hero() {
                 className="bg-neutral-lightest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
                 data-testid="button-hero-signup"
               >
-                Sign up
+                Sign Up
               </button>
             </div>
           </div>
