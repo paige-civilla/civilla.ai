@@ -77,9 +77,9 @@ function HeaderSection() {
             </button>
             <button 
               className="bg-bush text-white font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
-              data-testid="button-learn"
+              data-testid="button-signup"
             >
-              Learn
+              Sign Up
             </button>
           </div>
         </div>
