@@ -199,33 +199,43 @@ function PricingCardsSection() {
       buttonText: "start trial",
       features: [
         "Case journey overview",
-        "Document organization tools",
-        "Educational research resources",
+        "Basic document storage",
+        "Educational resources"
+      ]
+    },
+    {
+      name: "civilla core",
+      subtitle: "No credit card required",
+      price: "$19",
+      period: "/mo",
+      priceNote: "Per month",
+      buttonText: "start core",
+      features: [
+        "Everything free, plus",
         "Timeline building",
-        "Basic deadline tracking"
+        "Deadline tracking"
       ]
     },
     {
       name: "civilla pro",
-      subtitle: "Full access, monthly billing",
-      price: "$29.99",
+      subtitle: "Cancel anytime, no",
+      price: "$29",
       period: "/mo",
-      priceNote: "Billed monthly",
+      priceNote: "per month",
       buttonText: "start pro",
       features: [
-        "Case journey overview",
-        "Document organization tools",
-        "Educational research resources",
-        "Timeline building",
-        "Basic deadline tracking"
+        "Pattern analysis tools",
+        "Lexi research assistant",
+        "Document drafting",
+        "Start now"
       ]
     },
     {
-      name: "organizations",
-      subtitle: "Dedicated onboarding",
-      price: "Custom",
-      period: "",
-      priceNote: "Contact for pricing",
+      name: "civilla premium",
+      subtitle: "Transparent pricing,",
+      price: "$49",
+      period: "/mo",
+      priceNote: "Dedicated onboarding",
       buttonText: "start premium",
       features: [
         "Shelter and nonprofit rates",
