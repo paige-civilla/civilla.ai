@@ -1,6 +1,13 @@
-import { Menu, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Menu, X, ChevronRight } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
+
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/how-civilla-works", label: "How Civilla Works" },
+];
 
 const logoDarkUrl = "https://www.figma.com/api/mcp/asset/4389936b-52f2-402c-bdc3-7e8926ee5f89";
 const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
@@ -17,20 +24,30 @@ const imgExploreIcon = "https://www.figma.com/api/mcp/asset/b7406a41-4908-40e6-b
 const imgStars = "https://www.figma.com/api/mcp/asset/9a8784d4-e265-4a60-8093-549fabd13b41";
 
 function NavbarCream() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [location] = useLocation();
+
   return (
     <nav className="bg-cream w-full" data-testid="navbar-cream">
       <div className="h-9 md:h-9 flex items-center justify-center px-3 md:px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
-            <a href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
+            <Link href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
               <img 
                 src={logoDark} 
                 alt="civilla.ai" 
                 className="h-full w-auto object-contain"
               />
-            </a>
+            </Link>
           </div>
           <div className="flex items-center justify-center gap-2">
+            <Link 
+              href="/"
+              className="hidden md:block text-neutral-darkest font-bold text-xs leading-[1.6] px-3 py-0.5 hover-elevate active-elevate-2 rounded"
+              data-testid="link-home"
+            >
+              Home
+            </Link>
             <button 
               className="hidden md:block bg-transparent border border-neutral-darkest text-neutral-darkest font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
               data-testid="button-login"
@@ -40,12 +57,43 @@ function NavbarCream() {
             <button 
               className="p-1"
               data-testid="button-menu"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <Menu className="w-4 h-4 text-neutral-darkest" />
+              {isMenuOpen ? (
+                <X className="w-4 h-4 text-neutral-darkest" />
+              ) : (
+                <Menu className="w-4 h-4 text-neutral-darkest" />
+              )}
             </button>
           </div>
         </div>
       </div>
+
+      {isMenuOpen && (
+        <div className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-4" data-testid="mobile-menu">
+          <div className="flex flex-col gap-3 max-w-container mx-auto">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-neutral-darkest font-bold text-sm leading-[1.6] py-2 px-3 rounded ${
+                  location === link.href ? "bg-neutral-darkest/10" : "hover-elevate active-elevate-2"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+                data-testid={`mobile-link-${link.href.replace("/", "") || "home"}`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <button 
+              className="text-left text-neutral-darkest font-bold text-sm leading-[1.6] py-2 px-3 rounded hover-elevate active-elevate-2"
+              data-testid="mobile-button-login"
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
