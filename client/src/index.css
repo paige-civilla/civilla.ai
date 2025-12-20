@@ -2,6 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================
+   GLOBAL TEXT CONTAINMENT & RESPONSIVE RULES
+   Prevents text from escaping containers on ALL pages
+   ========================================= */
+
+/* Ensure all elements calculate width correctly */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow at the page level */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Core text wrapping rules */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+li,
+a,
+div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* Ensure containers never allow overflow */
+section,
+article,
+main,
+aside,
+header,
+footer,
+div {
+  max-width: 100%;
+}
+
+/* Card / box safety (applies to all content boxes) */
+.cv-card,
+.card,
+[class*="card"],
+[class*="box"],
+[class*="container"] {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Text inside cards must wrap */
+.cv-card *,
+.card *,
+[class*="card"] *,
+[class*="box"] * {
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* Flex & grid children must allow shrinking */
+.flex > *,
+.grid > * {
+  min-width: 0;
+}
+
+/* Images and media never exceed containers */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
