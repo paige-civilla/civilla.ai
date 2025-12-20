@@ -168,8 +168,9 @@ function MostPopularSection() {
                 civilla pro
               </span>
               <div className="flex flex-col gap-1 items-center">
-                <span className="font-heading font-bold text-[84px] tracking-[0.84px] leading-[1.1]">
+                <span className="pricing-display font-heading font-bold tracking-[0.84px] leading-[1.1]" style={{ fontSize: 'clamp(48px, 6vw, 84px)' }}>
                   {billingPeriod === "monthly" ? "$29.99" : "$299"}
+                  <span className="price-period">{billingPeriod === "monthly" ? "/mo" : "/yr"}</span>
                 </span>
                 <span className="font-sans text-[18px] leading-[1.6]">
                   {billingPeriod === "monthly" ? "per month" : "$24.91/month billed annually"}
@@ -348,11 +349,11 @@ function PricingCardsSection() {
 
               <div className="flex flex-col gap-8">
                 <div className="flex flex-col gap-2 text-neutral-darkest">
-                  <div className="font-heading font-bold leading-[1.2]">
-                    <span className="text-[60px] tracking-[0.6px]">
+                  <div className="pricing-display font-heading font-bold leading-[1.2]">
+                    <span className="price-value tracking-[0.6px]">
                       {billingPeriod === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
                     </span>
-                    {plan.period && <span className="text-[32px] tracking-[0.32px]">{plan.period}</span>}
+                    {plan.period && <span className="price-period tracking-[0.32px]">{plan.period}</span>}
                   </div>
                   <p className="font-sans text-[18px] leading-[1.6]">
                     {billingPeriod === "monthly" ? plan.monthlyNote : plan.yearlyNote}

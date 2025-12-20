@@ -140,6 +140,30 @@ p,
   text-wrap: balance;
 }
 
+/* Pricing display - keep price and period together */
+.pricing-display {
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+}
+
+/* Responsive pricing text that scales with container */
+.price-value {
+  font-size: clamp(32px, 4vw, 60px);
+  white-space: nowrap;
+}
+
+.price-period {
+  font-size: clamp(18px, 2vw, 32px);
+  white-space: nowrap;
+}
+
+/* Ensure pricing cards keep content together */
+[data-testid^="pricing-card"] .font-heading {
+  white-space: nowrap;
+}
+
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
