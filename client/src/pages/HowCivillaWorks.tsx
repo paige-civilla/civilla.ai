@@ -59,10 +59,10 @@ function HeaderSection() {
               Process
             </span>
             <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-              <h1 className="font-heading font-bold text-[84px] leading-[1.1] tracking-[0.84px] w-full">
+              <h1 className="cv-h font-heading text-[84px] tracking-[0.84px] w-full">
                 How Civilla works
               </h1>
-              <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+              <p className="cv-p font-sans text-[20px] w-full">
                 A calm, step-by-step guide to understanding your case and taking control
               </p>
             </div>
@@ -96,10 +96,10 @@ function JourneySection() {
             Journey
           </span>
           <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-            <h2 className="font-heading font-bold text-[60px] leading-[1.2] tracking-[0.6px] w-full">
+            <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
               Your case, step by step
             </h2>
-            <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+            <p className="cv-p font-sans text-[20px] w-full">
               See how family law cases typically move through the courts
             </p>
           </div>
@@ -228,54 +228,54 @@ function ClaritySection() {
             Clarity
           </span>
           <div className="flex flex-col gap-6 items-center text-white text-center w-full">
-            <h2 className="font-heading font-bold text-[60px] leading-[1.2] tracking-[0.6px] w-full">
+            <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
               What changes when you understand the process
             </h2>
-            <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+            <p className="cv-p font-sans text-[20px] w-full">
               Overwhelm fades when you see the path ahead. Knowledge replaces fear, and you move from feeling lost to feeling grounded in what comes next.
             </p>
           </div>
         </div>
 
         <div className="flex flex-col items-start w-full">
-          <div className="flex gap-12 h-[276px] items-start w-full">
-            <div className="flex flex-1 flex-col gap-6 items-center">
-              <div className="w-12 h-12 relative">
+          <div className="flex gap-12 items-start w-full">
+            <div className="flex flex-1 flex-col gap-6 items-center min-h-0">
+              <div className="w-12 h-12 relative flex-shrink-0">
                 <img src={imgVector2} alt="" className="w-full h-full" />
               </div>
               <div className="flex flex-col gap-6 items-center text-white text-center w-full">
-                <h3 className="font-heading font-bold text-[40px] leading-[1.2] tracking-[0.4px] w-full">
+                <h3 className="cv-h font-heading text-[40px] tracking-[0.4px] w-full">
                   The stress of not knowing what comes next
                 </h3>
-                <p className="font-sans font-normal text-body-regular leading-[1.6] w-full">
+                <p className="cv-p font-sans text-body-regular w-full">
                   You move from confusion to clarity. From isolated to supported. From powerless to informed.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-6 items-center">
-              <div className="w-12 h-12 relative">
+            <div className="flex flex-1 flex-col gap-6 items-center min-h-0">
+              <div className="w-12 h-12 relative flex-shrink-0">
                 <img src={imgVector1} alt="" className="w-full h-full" />
               </div>
               <div className="flex flex-col gap-6 items-center text-white text-center w-full">
-                <h3 className="font-heading font-bold text-[40px] leading-[1.2] tracking-[0.4px] w-full">
+                <h3 className="cv-h font-heading text-[40px] tracking-[0.4px] w-full">
                   What your options actually are
                 </h3>
-                <p className="font-sans font-normal text-body-regular leading-[1.6] w-full">
+                <p className="cv-p font-sans text-body-regular w-full">
                   When you understand the process, fear loses its grip. You see the path ahead.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-6 items-center">
-              <div className="w-12 h-12 relative">
+            <div className="flex flex-1 flex-col gap-6 items-center min-h-0">
+              <div className="w-12 h-12 relative flex-shrink-0">
                 <img src={imgVector} alt="" className="w-full h-full" />
               </div>
               <div className="flex flex-col gap-6 items-center text-white text-center w-full">
-                <h3 className="font-heading font-bold text-[40px] leading-[1.2] tracking-[0.4px] w-full">
+                <h3 className="cv-h font-heading text-[40px] tracking-[0.4px] w-full">
                   Your sense of agency in your own case
                 </h3>
-                <p className="font-sans font-normal text-body-regular leading-[1.6] w-full">
+                <p className="cv-p font-sans text-body-regular w-full">
                   Education is power. We explain how family law works so you can make decisions that fit your situation.
                 </p>
               </div>
@@ -320,10 +320,10 @@ function ToolsSection() {
             Tools
           </span>
           <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-            <h2 className="font-heading font-bold text-[60px] leading-[1.2] tracking-[0.6px] w-full">
+            <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
               What you get inside
             </h2>
-            <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+            <p className="cv-p font-sans text-[20px] w-full">
               Each tool is built to help you understand your case and stay organized. Nothing is hidden or complicated.
             </p>
           </div>
@@ -347,16 +347,16 @@ function ToolsSection() {
 
           <div className="flex items-start w-full border-t-2 border-neutral-darkest">
             <div className="flex flex-1 gap-20 items-center p-12">
-              <div className="flex flex-1 flex-col gap-8 items-start justify-center">
+              <div className="cv-panel-body flex flex-1 flex-col gap-8 items-start justify-center">
                 <div className="flex flex-col gap-4 items-start w-full">
                   <span className="font-sans font-bold text-[16px] text-neutral-darkest leading-[1.5]">
                     Learn
                   </span>
                   <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
-                    <h3 className="font-heading font-bold text-[48px] leading-[1.2] tracking-[0.48px] w-full">
+                    <h3 className="cv-h font-heading text-[48px] tracking-[0.48px] w-full">
                       See how your case typically moves through court
                     </h3>
-                    <p className="font-sans font-normal text-body-regular leading-[1.6] w-full">
+                    <p className="cv-p font-sans text-body-regular w-full">
                       Family law cases follow a pattern. We show you each stage so you know what to expect and when.
                     </p>
                   </div>
@@ -391,13 +391,13 @@ function CTASection() {
   return (
     <section className="bg-bush-dark w-full flex flex-col items-center px-16 py-28 h-[576px]" data-testid="section-cta">
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="bg-bush-dark border-2 border-white rounded-2xl flex flex-col h-[352px] items-center justify-center p-16 w-full">
+        <div className="cv-panel bg-bush-dark border-2 border-white rounded-2xl flex flex-col h-[352px] items-center justify-center p-16 w-full">
           <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
             <div className="flex flex-col gap-6 items-center text-white text-center w-full">
-              <h2 className="font-heading font-bold text-[60px] leading-[1.2] tracking-[0.6px] w-full">
+              <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
                 Ready to begin
               </h2>
-              <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+              <p className="cv-p font-sans text-[20px] w-full">
                 Explore Civilla for your case at your own pace
               </p>
             </div>
@@ -448,37 +448,37 @@ function TestimonialsSection() {
     <section className="bg-cream w-full flex flex-col items-center px-16 py-28" data-testid="section-testimonials">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-6 items-center max-w-[768px] text-neutral-darkest text-center w-full">
-          <h2 className="font-heading font-bold text-[60px] leading-[1.2] tracking-[0.6px] w-full">
+          <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
             Real voices
           </h2>
-          <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+          <p className="cv-p font-sans text-[20px] w-full">
             What parents are saying
           </p>
         </div>
 
         <div className="flex flex-col items-start w-full">
-          <div className="flex gap-8 items-start w-full">
+          <div className="flex gap-8 items-stretch w-full">
             {testimonials.map((testimonial) => (
               <div
                 key={testimonial.id}
-                className="flex-1 flex flex-col gap-6 items-start p-8 bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden"
+                className="flex-1 flex flex-col justify-between p-8 bg-cream border-2 border-neutral-darkest rounded-2xl min-h-0"
                 data-testid={`testimonial-${testimonial.id}`}
               >
-                <div className="flex flex-col gap-6 items-start">
+                <div className="cv-panel-body flex flex-col gap-6 items-start">
                   <img src={imgStars} alt="5 stars" className="h-[19px] w-[116px]" />
-                  <p className="font-sans font-normal text-[20px] leading-[1.6] text-neutral-darkest w-[352px]">
+                  <p className="cv-p font-sans text-[20px] text-neutral-darkest">
                     {testimonial.quote}
                   </p>
                 </div>
-                <div className="flex gap-4 items-center w-full">
+                <div className="flex gap-4 items-center w-full mt-6">
                   <img 
                     src={imgAvatarImage} 
                     alt={testimonial.name} 
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                   />
-                  <div className="flex flex-1 flex-col items-start text-neutral-darkest text-body-regular leading-[1.6]">
-                    <span className="font-sans font-bold w-full">{testimonial.name}</span>
-                    <span className="font-sans font-normal w-full">{testimonial.role}</span>
+                  <div className="flex flex-col items-start text-neutral-darkest text-body-regular leading-[1.6] min-w-0">
+                    <span className="font-sans font-bold break-words">{testimonial.name}</span>
+                    <span className="font-sans font-normal break-words">{testimonial.role}</span>
                   </div>
                 </div>
               </div>
