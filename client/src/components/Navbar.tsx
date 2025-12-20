@@ -6,6 +6,7 @@ import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/how-civilla-works", label: "How Civilla Works" },
+  { href: "/about-civilla", label: "About Civilla" },
 ];
 
 export default function Navbar() {

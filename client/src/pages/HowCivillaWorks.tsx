@@ -7,6 +7,7 @@ import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/how-civilla-works", label: "How Civilla Works" },
+  { href: "/about-civilla", label: "About Civilla" },
 ];
 
 const logoDarkUrl = "https://www.figma.com/api/mcp/asset/4389936b-52f2-402c-bdc3-7e8926ee5f89";
