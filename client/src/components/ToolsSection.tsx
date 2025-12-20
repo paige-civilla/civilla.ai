@@ -6,38 +6,39 @@ const iconUrl = "https://www.figma.com/api/mcp/asset/778b2423-f093-4b22-9574-dd4
 const tabs = [
   {
     id: "case-journey",
-    title: "Case journey",
-    heading: "Track what matters to your case",
-    description: "Family law cases follow predictable stages. civilla.ai shows you what happens at each one, from filing through trial, so you know what to expect."
+    label: "Case journey",
+    title: "Track what matters to your case",
+    body: "Family law cases follow predictable stages. civilla.ai shows you what happens at each one, from filing through trial, so you know what to expect."
   },
   {
     id: "evidence-timeline",
-    title: "Evidence timeline",
-    heading: "Organize your evidence clearly",
-    description: "Upload documents, messages, and evidence. civilla.ai organizes everything into a timeline so you can see the full picture of your case."
+    label: "Evidence timeline",
+    title: "Organize your evidence clearly",
+    body: "Upload documents, messages, and evidence. civilla.ai organizes everything into a timeline so you can see the full picture of your case."
   },
   {
     id: "pattern-analysis",
-    title: "Pattern analysis",
-    heading: "See patterns others might miss",
-    description: "civilla.ai analyzes your evidence to identify patterns of behavior that may be relevant to your case."
+    label: "Pattern analysis",
+    title: "See patterns others might miss",
+    body: "civilla.ai analyzes your evidence to identify patterns of behavior that may be relevant to your case."
   },
   {
     id: "research-assistant",
-    title: "Research assistant",
-    heading: "Research your specific situation",
-    description: "Get plain-language explanations of family law concepts tailored to your state and case type."
+    label: "Research assistant",
+    title: "Research your specific situation",
+    body: "Get plain-language explanations of family law concepts tailored to your state and case type."
   },
   {
     id: "document-builder",
-    title: "Document builder",
-    heading: "Build documents with guidance",
-    description: "Create court documents with step-by-step guidance. civilla.ai helps you understand what each section requires."
+    label: "Document builder",
+    title: "Build documents with guidance",
+    body: "Create court documents with step-by-step guidance. civilla.ai helps you understand what each section requires."
   }
 ];
 
 export default function ToolsSection() {
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("case-journey");
+  const tab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
   return (
     <section 
@@ -59,40 +60,47 @@ export default function ToolsSection() {
           </div>
         </div>
 
-        <div className="bg-bush-dark border-2 border-white rounded-lg w-full flex flex-col md:flex-row">
-          <div className="flex flex-col md:border-r-2 md:border-white md:max-w-[480px] w-full">
-            {tabs.map((tab, index) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(index)}
-                className={`flex flex-col items-start justify-center p-6 md:px-8 md:py-6 w-full text-left border-b-2 border-white last:border-b-0 md:last:border-b-0 ${
-                  activeTab === index ? "bg-white/10" : ""
-                }`}
-                data-testid={`button-tab-${tab.id}`}
-              >
-                <span className="font-heading font-bold text-heading-5-mobile md:text-heading-5 text-white tracking-[0.2px] md:tracking-[0.32px] w-full">
-                  {tab.title}
-                </span>
-              </button>
-            ))}
-          </div>
+        <section className="cv-card p-6 md:p-8 w-full">
+          <div className="cv-grid-2">
+            <div className="rounded-xl border-2 border-white/70 overflow-hidden min-h-0">
+              <div className="flex flex-col">
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id)}
+                    className={[
+                      "w-full text-left px-6 py-6 border-b-2 border-white/70 last:border-b-0",
+                      "font-heading font-bold text-heading-5-mobile md:text-heading-5 text-white tracking-[0.2px] md:tracking-[0.32px] break-words",
+                      t.id === activeTab ? "bg-white/10" : "bg-transparent",
+                    ].join(" ")}
+                    data-testid={`button-tab-${t.id}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div className="flex flex-col h-auto md:h-[448px] w-full">
-            <div className="flex flex-col gap-6 md:gap-8 items-start justify-center p-6 md:p-16 w-full">
-              <div className="flex flex-col gap-5 md:gap-6 items-start w-full">
-                <div className="w-12 h-12 relative">
-                  <img src={iconUrl} alt="" className="w-full h-full" />
-                </div>
-                <div className="flex flex-col gap-5 md:gap-6 items-start text-white w-full">
-                  <h3 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 tracking-[0.32px] md:tracking-[0.48px] w-full">
-                    {tabs[activeTab].heading}
+            <div className="cv-panel border-0 md:border-2">
+              <div className="cv-panel-body pr-1">
+                <div className="mb-6">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="w-12 h-12 relative">
+                      <img src={iconUrl} alt="" className="w-full h-full" />
+                    </div>
+                  </div>
+
+                  <h3 className="cv-h text-heading-3-mobile md:text-heading-3 text-white tracking-[0.32px] md:tracking-[0.48px]">
+                    {tab.title}
                   </h3>
-                  <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                    {tabs[activeTab].description}
+
+                  <p className="cv-p mt-4 text-sm md:text-body-regular text-white/90">
+                    {tab.body}
                   </p>
                 </div>
               </div>
-              <div className="flex gap-6 items-center w-full">
+
+              <div className="mt-6 flex flex-wrap gap-3">
                 <button 
                   className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
                   data-testid="button-tools-explore"
@@ -111,7 +119,7 @@ export default function ToolsSection() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </section>
   );

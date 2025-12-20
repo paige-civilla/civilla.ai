@@ -147,6 +147,32 @@
   }
 }
 
+@layer components {
+  .cv-card {
+    @apply rounded-2xl border-2 border-white/70 bg-[#0f3b2e];
+  }
+
+  .cv-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6 items-stretch;
+  }
+
+  .cv-panel {
+    @apply rounded-xl border-2 border-white/70 p-6 md:p-8 flex flex-col min-h-0;
+  }
+
+  .cv-panel-body {
+    @apply min-h-0 break-words leading-relaxed overflow-auto;
+  }
+
+  .cv-h {
+    @apply font-bold leading-tight break-words;
+  }
+
+  .cv-p {
+    @apply break-words leading-relaxed;
+  }
+}
+
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
