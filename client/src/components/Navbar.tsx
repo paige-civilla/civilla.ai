@@ -20,7 +20,7 @@ export default function Navbar() {
               className="hidden md:block bg-transparent border border-white text-white font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
               data-testid="button-login"
             >
-              Log in
+              Login
             </button>
             <button 
               className="p-1"
