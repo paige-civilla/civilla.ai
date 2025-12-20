@@ -7,7 +7,7 @@ export default function Navbar() {
       <div className="h-9 md:h-9 flex items-center justify-center px-3 md:px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
-            <a href="/" className="relative h-5 w-auto" data-testid="link-logo">
+            <a href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
               <img 
                 src={logoWhite} 
                 alt="civilla.ai" 
