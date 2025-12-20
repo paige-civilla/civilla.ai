@@ -7,6 +7,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/how-civilla-works", label: "How Civilla Works" },
   { href: "/about-civilla", label: "About Civilla" },
+  { href: "/plans", label: "Plans" },
 ];
 
 export default function Navbar() {

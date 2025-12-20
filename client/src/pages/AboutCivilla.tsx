@@ -8,6 +8,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/how-civilla-works", label: "How Civilla Works" },
   { href: "/about-civilla", label: "About Civilla" },
+  { href: "/plans", label: "Plans" },
 ];
 
 const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/26166652-168b-426b-9744-1082df316ceb";

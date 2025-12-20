@@ -1,0 +1,988 @@
+<mcp_external_output>
+
+### Content Block 1 (Text)
+const imgAlternateFalse = "https://www.figma.com/api/mcp/asset/51b30623-e800-4d83-a110-5a6ee07b76b4";
+const img = "https://www.figma.com/api/mcp/asset/6cd2c1a9-3adb-457f-ae97-f285ad783991";
+const img1 = "https://www.figma.com/api/mcp/asset/2c1b1ee7-233c-4214-a880-829144d259e6";
+const imgDivider = "https://www.figma.com/api/mcp/asset/efda6545-e434-45a5-b448-2995da896bb6";
+const img2 = "https://www.figma.com/api/mcp/asset/17e471b3-855d-4d06-93e5-bfcb1b2ccd4a";
+const img3 = "https://www.figma.com/api/mcp/asset/03ee57ba-2e75-4aff-bdd7-c984798d9fd5";
+const img4 = "https://www.figma.com/api/mcp/asset/cb1afec4-930c-4b31-a420-c81632e828d8";
+const img5 = "https://www.figma.com/api/mcp/asset/952cd937-e316-4ea8-ba1d-8d62c391ac2d";
+const imgDivider1 = "https://www.figma.com/api/mcp/asset/80b6c9e4-ac1e-4a63-8960-5d3ca7bf72d8";
+const img6 = "https://www.figma.com/api/mcp/asset/987200f5-759d-4cda-b36b-961909e90f18";
+const img7 = "https://www.figma.com/api/mcp/asset/d62768fe-dc83-4abc-ba9f-862c5d6d1fb5";
+const img8 = "https://www.figma.com/api/mcp/asset/7ff8bbf4-783a-478e-8999-288014a7ec89";
+const img9 = "https://www.figma.com/api/mcp/asset/dc1ffa1c-b338-4383-a254-c598e0e72af1";
+const img10 = "https://www.figma.com/api/mcp/asset/690115e7-dffb-4b7a-b7d3-037ba2d80148";
+type CompanyLogoProps = {
+  className?: string;
+  alternate?: "False";
+};
+
+function CompanyLogo({ className, alternate = "False" }: CompanyLogoProps) {
+  return (
+    <div data-node-id="4179:8846" className={className}>
+      <img className="absolute inset-0 max-w-none object-50%-50% object-contain pointer-events-none size-full" alt="" src={imgAlternateFalse} />
+    </div>
+  );
+}
+
+export default function PlansPricingDesktop() {
+  return (
+    <div className="content-stretch flex flex-col items-start relative size-full" data-name="Plans & Pricing • Desktop" data-node-id="10202:82848">
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-start overflow-clip relative shrink-0 w-full" data-name="Navbar / 4 /" data-node-id="10202:83757">
+        <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col h-[72px] items-center justify-center px-[var(--page-padding\/padding-global,64px)] py-0 relative shrink-0 w-[1440px]" data-name="Header" data-node-id="10202:83758">
+          <div className="content-stretch flex gap-[32px] items-center justify-center relative shrink-0 w-full" data-name="Container" data-node-id="10202:83759">
+            <div className="content-stretch flex flex-[1_0_0] items-start min-h-px min-w-px relative shrink-0" data-name="Content" data-node-id="10202:83760">
+              <CompanyLogo className="h-[27px] relative shrink-0 w-[63px]" />
+            </div>
+            <div className="content-stretch flex gap-[24px] items-center justify-center overflow-clip relative shrink-0" data-name="Actions" data-node-id="10202:83762">
+              <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[20px] py-[8px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0" data-name="Button" data-node-id="10202:83763">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:83763;4179:8883">
+                  Button
+                </p>
+                <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+              </div>
+              <div className="content-stretch flex items-start p-[12px] relative shrink-0" data-name="Icon" data-node-id="10202:83764">
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="menu" data-node-id="10202:83765">
+                  <div className="absolute bottom-1/4 left-[16.67%] right-[16.67%] top-1/4" data-name="Vector" data-node-id="I10202:83765;4179:10846">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-8\/background,#e7ebea)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,64px)] py-[var(--section-padding\/padding-section-large,112px)] relative shrink-0 w-full" data-name="Header / 49 /" data-node-id="10202:84694">
+        <div className="content-stretch flex flex-col items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:84695">
+          <div className="content-stretch flex gap-[80px] items-start relative shrink-0 w-full" data-name="Component" data-node-id="10202:84696">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative shrink-0" data-name="Column" data-node-id="10202:84697">
+              <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.1] relative shrink-0 text-[color:var(--color-scheme-8\/text,#070503)] text-[length:var(--text-sizes\/heading-1,84px)] tracking-[0.84px] w-full whitespace-pre-wrap" data-node-id="10202:84698">
+                Plans for everyone
+              </p>
+            </div>
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative shrink-0" data-name="Column" data-node-id="10202:84699">
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-8\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] w-full whitespace-pre-wrap" data-node-id="10202:84700">
+                Transparent, simple plans for self-represented parents and organizations. No hidden fees.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,64px)] py-[var(--section-padding\/padding-section-large,112px)] relative shrink-0 w-full" data-name="Pricing / 6 /" data-node-id="10202:85654">
+        <div className="content-stretch flex flex-col gap-[80px] items-center max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:85655">
+          <div className="content-stretch flex flex-col gap-[16px] items-center max-w-[768px] relative shrink-0 w-full" data-name="Section Title" data-node-id="10202:85656">
+            <div className="content-stretch flex items-center relative shrink-0" data-name="Tagline Wrapper" data-node-id="10202:85657">
+              <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.5] relative shrink-0 text-[16px] text-[color:var(--color-scheme-5\/text,#070503)] text-center" data-node-id="10202:85658">
+                Plans
+              </p>
+            </div>
+            <div className="content-stretch flex flex-col gap-[24px] items-center relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-center w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:85659">
+              <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,60px)] tracking-[0.6px] w-full" data-node-id="10202:85660">
+                Most Popular
+              </p>
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-medium,20px)] w-full" data-node-id="10202:85661">
+                Choose what works for your situation
+              </p>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-col gap-[48px] items-center max-w-[560px] relative shrink-0 w-full" data-name="Content" data-node-id="10202:85662">
+            <div className="bg-[var(--color-scheme-5\/foreground,#fcfbf9)] border-2 border-[var(--color-scheme-5\/border,#070503)] border-solid content-stretch flex items-start p-[4px] relative rounded-[10px] shrink-0" data-name="Tabs" data-node-id="10202:85663">
+              <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color-scheme-5\/border,#070503)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[8px] shrink-0" data-name="Button" data-node-id="I10202:85663;6219:57797">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:85663;6219:57798">
+                  Monthly
+                </p>
+              </div>
+              <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border border-[var(--opacity\/transparent,rgba(255,255,255,0))] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[8px] shrink-0" data-name="Button" data-node-id="I10202:85663;6219:57799">
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:85663;6219:57800">
+                  Yearly
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[48px] items-start relative shrink-0 w-full" data-name="Tabs Content" data-node-id="10202:85664">
+              <div className="bg-[var(--color-scheme-5\/foreground,#fcfbf9)] border-[var(--color-scheme-5\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col gap-[32px] items-center p-[32px] relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Tab Pane 1" data-node-id="10202:85665">
+                <div className="content-stretch flex flex-col font-['Figtree:Bold',sans-serif] font-bold gap-[8px] items-center relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-center w-[496px] whitespace-pre-wrap" data-name="Price" data-node-id="10202:85666">
+                  <p className="leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-6,26px)] tracking-[0.26px] w-full" data-node-id="10202:85667">
+                    civilla pro
+                  </p>
+                  <p className="leading-[1.1] relative shrink-0 text-[length:var(--text-sizes\/heading-1,84px)] tracking-[0.84px] w-full" data-node-id="10202:85668">
+                    29.99
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-col gap-[16px] items-start px-0 py-[8px] relative shrink-0 w-full" data-name="List" data-node-id="10202:85669">
+                  <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:92549">
+                    <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:92550">
+                      <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:92550;7044:29687">
+                        <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                          <img alt="" className="block max-w-none size-full" src={img1} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:92551">
+                      Case journey overview
+                    </p>
+                  </div>
+                  <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:92553">
+                    <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:92554">
+                      <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:92554;7044:29687">
+                        <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                          <img alt="" className="block max-w-none size-full" src={img1} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:92555">
+                      Document organization tools
+                    </p>
+                  </div>
+                  <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:92557">
+                    <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:92558">
+                      <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:92558;7044:29687">
+                        <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                          <img alt="" className="block max-w-none size-full" src={img1} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:92559">
+                      Educational research resources
+                    </p>
+                  </div>
+                  <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:92561">
+                    <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:92562">
+                      <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:92562;7044:29687">
+                        <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                          <img alt="" className="block max-w-none size-full" src={img1} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:92563">
+                      Timeline building
+                    </p>
+                  </div>
+                  <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:92565">
+                    <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:92566">
+                      <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:92566;7044:29687">
+                        <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                          <img alt="" className="block max-w-none size-full" src={img1} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:92567">
+                      Basic deadline tracking
+                    </p>
+                  </div>
+                </div>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:85685">
+                  <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0 w-full" data-name="Button" data-node-id="10202:85686">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:85686;4179:8873">
+                      Start now
+                    </p>
+                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-6\/background,#cfd7d5)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,64px)] py-[var(--section-padding\/padding-section-large,112px)] relative shrink-0 w-full" data-name="Pricing / 46 /" data-node-id="10202:87420">
+        <div className="content-stretch flex flex-col gap-[80px] items-center max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:87421">
+          <div className="content-stretch flex items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:87422">
+            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[16px] items-start max-w-[768px] min-h-px min-w-px relative shrink-0" data-name="Section Title" data-node-id="10202:87423">
+              <div className="content-stretch flex items-center relative shrink-0" data-name="Tagline Wrapper" data-node-id="10202:87424">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.5] relative shrink-0 text-[16px] text-[color:var(--color-scheme-6\/text,#070503)] text-center" data-node-id="10202:87425">
+                  Plans
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:87426">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,60px)] tracking-[0.6px] w-full" data-node-id="10202:87427">
+                  What you get
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-medium,20px)] w-full" data-node-id="10202:87428">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="content-stretch flex gap-[24px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:87429">
+            <div className="bg-[var(--color-scheme-6\/foreground,#cfd7d5)] border-[var(--color-scheme-6\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-center min-h-px min-w-px p-[24px] relative rounded-[var(--radius\/medium,16px)] self-stretch shrink-0" data-name="Column" data-node-id="10202:87430">
+              <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price Title" data-node-id="10202:87431">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-6,26px)] tracking-[0.26px] w-full" data-node-id="10202:87432">
+                  three day trial
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87433">
+                  Start free, upgrade when
+                </p>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87434">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:87435">
+                <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price" data-node-id="10202:87436">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[#070503] text-[0px] tracking-[0.84px] w-full" data-node-id="10202:87437">
+                    <span className="text-[60px] tracking-[0.6px]">$0</span>
+                    <span className="text-[32px] tracking-[0.32px]">/mo</span>
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87438">
+                    three day trial
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:87439">
+                  <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0 w-full" data-name="Button" data-node-id="10202:87440">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:87440;4179:8873">
+                      start trial
+                    </p>
+                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+                  </div>
+                </div>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87441">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start px-0 py-[8px] relative shrink-0 w-full" data-name="List" data-node-id="10202:87442">
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87443">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87444">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87444;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87445">
+                    Case journey overview
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87446">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87447">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87447;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87448">
+                    Basic document storage
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87449">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87450">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87450;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87451">
+                    Educational resources
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-[var(--color-scheme-6\/foreground,#cfd7d5)] border-[var(--color-scheme-6\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-center min-h-px min-w-px p-[24px] relative rounded-[var(--radius\/medium,16px)] self-stretch shrink-0" data-name="Column" data-node-id="10202:87452">
+              <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price Title" data-node-id="10202:87453">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-6,26px)] tracking-[0.26px] w-full" data-node-id="10202:87454">
+                  civilla core
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87455">
+                  No credit card required
+                </p>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87456">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:87457">
+                <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price" data-node-id="10202:87458">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[#070503] text-[0px] tracking-[0.84px] w-full" data-node-id="10202:87459">
+                    <span className="text-[60px] tracking-[0.6px]">$19</span>
+                    <span className="text-[32px] tracking-[0.32px]">/mo</span>
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87460">
+                    Per month
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:87461">
+                  <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0 w-full" data-name="Button" data-node-id="10202:87462">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:87462;4179:8873">
+                      start core
+                    </p>
+                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+                  </div>
+                </div>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87463">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start px-0 py-[8px] relative shrink-0 w-full" data-name="List" data-node-id="10202:87464">
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87465">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87466">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87466;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87467">
+                    Everything free, plus
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87468">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87469">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87469;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87470">
+                    Timeline building
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87471">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87472">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87472;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87473">
+                    Deadline tracking
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-[var(--color-scheme-6\/foreground,#cfd7d5)] border-[var(--color-scheme-6\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-center min-h-px min-w-px p-[24px] relative rounded-[var(--radius\/medium,16px)] self-stretch shrink-0" data-name="Column" data-node-id="10202:87474">
+              <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price Title" data-node-id="10202:87475">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-6,26px)] tracking-[0.26px] w-full" data-node-id="10202:87476">
+                  civilla pro
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87477">
+                  Cancel anytime, no
+                </p>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87478">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:87479">
+                <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price" data-node-id="10202:87480">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[#070503] text-[0px] tracking-[0.84px] w-full" data-node-id="10202:87481">
+                    <span className="text-[60px] tracking-[0.6px]">$29</span>
+                    <span className="text-[32px] tracking-[0.32px]">/mo</span>
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87482">
+                    per month
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:87483">
+                  <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0 w-full" data-name="Button" data-node-id="10202:87484">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:87484;4179:8873">
+                      start pro
+                    </p>
+                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+                  </div>
+                </div>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87485">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start px-0 py-[8px] relative shrink-0 w-full" data-name="List" data-node-id="10202:87486">
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87487">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87488">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87488;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87489">
+                    Pattern analysis tools
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87490">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87491">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87491;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87492">
+                    Lexi research assistant
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87493">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87494">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87494;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87495">
+                    Document drafting
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87496">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87497">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87497;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87498">
+                    Start now
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-[var(--color-scheme-6\/foreground,#cfd7d5)] border-[var(--color-scheme-6\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-center min-h-px min-w-px p-[24px] relative rounded-[var(--radius\/medium,16px)] self-stretch shrink-0" data-name="Column" data-node-id="10202:87499">
+              <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price Title" data-node-id="10202:87500">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-6,26px)] tracking-[0.26px] w-full" data-node-id="10202:87501">
+                  civilla premium
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87502">
+                  Transparent pricing,
+                </p>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87503">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:87504">
+                <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] w-full whitespace-pre-wrap" data-name="Price" data-node-id="10202:87505">
+                  <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[#070503] text-[0px] tracking-[0.84px] w-full" data-node-id="10202:87506">
+                    <span className="text-[60px] tracking-[0.6px]">$49</span>
+                    <span className="text-[32px] tracking-[0.32px]">/mo</span>
+                  </p>
+                  <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-regular,18px)] w-full" data-node-id="10202:87507">
+                    Dedicated onboarding
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:87508">
+                  <div className="bg-[var(--color\/bush,#0f3b2e)] content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--opacity\/neutral-darkest-5,rgba(7,5,3,0.05))] shrink-0 w-full" data-name="Button" data-node-id="10202:87509">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/white,white)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:87509;4179:8873">
+                      start premium
+                    </p>
+                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_var(--opacity\/neutral-darkest-15,rgba(7,5,3,0.15)),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)]" />
+                  </div>
+                </div>
+              </div>
+              <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:87510">
+                <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                  <img alt="" className="block max-w-none size-full" src={imgDivider} />
+                </div>
+              </div>
+              <div className="content-stretch flex flex-col gap-[16px] items-start px-0 py-[8px] relative shrink-0 w-full" data-name="List" data-node-id="10202:87511">
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87512">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87513">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87513;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87514">
+                    Shelter and nonprofit rates
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87515">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87516">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87516;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87517">
+                    Team training included
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87518">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87519">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87519;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87520">
+                    Contact us
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87521">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87522">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87522;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87523">
+                    Learn more
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="List Item" data-node-id="10202:87524">
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="check" data-node-id="10202:87525">
+                    <div className="absolute inset-[26.24%_16.97%_26.48%_16.93%]" data-name="Vector" data-node-id="I10202:87525;7044:29687">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img2} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-6\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:87526">
+                    Priority support
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,64px)] py-[var(--section-padding\/padding-section-large,112px)] relative shrink-0 w-full" data-name="Layout / 77 /" data-node-id="10202:92889">
+        <div className="content-stretch flex flex-col items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:92890">
+          <div className="content-stretch flex gap-[80px] items-start relative shrink-0 w-full" data-name="Component" data-node-id="10202:92891">
+            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-start min-h-px min-w-px overflow-clip relative shrink-0" data-name="Column" data-node-id="10202:92892">
+              <div className="relative shrink-0 size-[48px]" data-name="family_home" data-node-id="10202:95662">
+                <div className="absolute inset-[13.49%_4.8%_12.23%_4.8%]" data-name="Vector" data-node-id="I10202:95662;7044:2901">
+                  <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                    <img alt="" className="block max-w-none size-full" src={img3} />
+                  </div>
+                </div>
+              </div>
+              <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] min-w-full relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/heading-2,60px)] tracking-[0.6px] w-[min-content] whitespace-pre-wrap" data-node-id="10202:92894">
+                Custom pricing for organizations
+              </p>
+            </div>
+            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-start min-h-px min-w-px relative shrink-0" data-name="Column" data-node-id="10202:92895">
+              <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-w-full relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] w-[min-content] whitespace-pre-wrap" data-node-id="10202:92896">
+                Domestic violence shelters, legal aid nonprofits, and family service organizations can access Civilla at custom rates. We work with you to make education and case support available to those who need it most. Your team gets dedicated onboarding and bulk access for the families you serve.
+              </p>
+              <div className="content-stretch flex gap-[24px] items-center relative shrink-0" data-name="Actions" data-node-id="10202:92897">
+                <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center justify-center overflow-clip px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:92898">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:92898;4179:8893">
+                    Contact us
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[8px] items-center justify-center overflow-clip relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:92899">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:92899;4179:8938">
+                    Learn more
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="chevron_right" data-node-id="I10202:92899;4179:8939">
+                    <div className="absolute inset-[25.72%_36.66%_25.88%_35.46%]" data-name="Vector" data-node-id="I10202:92899;4179:8939;7044:9665">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img4} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-7\/background,#f2f2f2)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,64px)] py-[var(--section-padding\/padding-section-large,112px)] relative shrink-0 w-full" data-name="FAQ / 6 /" data-node-id="10202:92983">
+        <div className="content-stretch flex flex-col items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:92984">
+          <div className="content-stretch flex gap-[80px] items-start relative shrink-0 w-full" data-name="Component" data-node-id="10202:92985">
+            <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-[500px]" data-name="Section Title" data-node-id="10202:92986">
+              <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] w-full whitespace-pre-wrap" data-name="Content" data-node-id="10202:92987">
+                <p className="font-['Figtree:Bold',sans-serif] font-bold leading-[1.2] relative shrink-0 text-[length:var(--text-sizes\/heading-2,60px)] tracking-[0.6px] w-full" data-node-id="10202:92988">
+                  Questions
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[length:var(--text-sizes\/text-medium,20px)] w-full" data-node-id="10202:92989">{`Find answers about how Civilla works, what you'll get, and how to get started.`}</p>
+              </div>
+              <div className="content-stretch flex items-center relative shrink-0" data-name="Actions" data-node-id="10202:92990">
+                <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:92991">
+                  <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:92991;4179:8893">
+                    Contact
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[16px] items-start min-h-px min-w-px relative shrink-0" data-name="Accordion List" data-node-id="10202:92992">
+              <div className="bg-[var(--color-scheme-7\/foreground,#f2f2f2)] border-[var(--color-scheme-7\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col items-start relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Accordion" data-node-id="10202:95670">
+                <div className="content-stretch flex gap-[24px] items-center overflow-clip px-[24px] py-[20px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:95671">
+                  <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] whitespace-pre-wrap" data-node-id="10202:95672">
+                    Can I cancel anytime?
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="close" data-node-id="10202:95673">
+                    <div className="absolute inset-[22.6%]" data-name="Vector" data-node-id="I10202:95673;7003:60984">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="content-stretch flex items-start pb-[24px] pt-0 px-[24px] relative shrink-0 w-full" data-name="Answer" data-node-id="10202:95674">
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:95675">{`Yes. There's no contract or commitment. You can pause or cancel your subscription at any time from your account settings. We want you to use Civilla only when it serves you.`}</p>
+                </div>
+              </div>
+              <div className="bg-[var(--color-scheme-7\/foreground,#f2f2f2)] border-[var(--color-scheme-7\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col items-start relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Accordion" data-node-id="10202:95677">
+                <div className="content-stretch flex gap-[24px] items-center overflow-clip px-[24px] py-[20px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:95678">
+                  <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] whitespace-pre-wrap" data-node-id="10202:95679">
+                    Is my information secure?
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="close" data-node-id="10202:95680">
+                    <div className="absolute inset-[22.6%]" data-name="Vector" data-node-id="I10202:95680;7003:60984">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="content-stretch flex items-start pb-[24px] pt-0 px-[24px] relative shrink-0 w-full" data-name="Answer" data-node-id="10202:95681">
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:95682">
+                    Your documents and personal information are encrypted and stored securely. We follow industry standards for data protection and never share your case details with third parties.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-[var(--color-scheme-7\/foreground,#f2f2f2)] border-[var(--color-scheme-7\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col items-start relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Accordion" data-node-id="10202:95684">
+                <div className="content-stretch flex gap-[24px] items-center overflow-clip px-[24px] py-[20px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:95685">
+                  <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] whitespace-pre-wrap" data-node-id="10202:95686">
+                    Do you offer a free trial?
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="close" data-node-id="10202:95687">
+                    <div className="absolute inset-[22.6%]" data-name="Vector" data-node-id="I10202:95687;7003:60984">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="content-stretch flex items-start pb-[24px] pt-0 px-[24px] relative shrink-0 w-full" data-name="Answer" data-node-id="10202:95688">
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:95689">
+                    We offer limited free access to explore the platform and understand how Civilla works. Paid plans unlock full features like document organization, timeline building, and research tools.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-[var(--color-scheme-7\/foreground,#f2f2f2)] border-[var(--color-scheme-7\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col items-start relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Accordion" data-node-id="10202:95691">
+                <div className="content-stretch flex gap-[24px] items-center overflow-clip px-[24px] py-[20px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:95692">
+                  <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] whitespace-pre-wrap" data-node-id="10202:95693">
+                    What about organizations?
+                  </p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="close" data-node-id="10202:95694">
+                    <div className="absolute inset-[22.6%]" data-name="Vector" data-node-id="I10202:95694;7003:60984">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="content-stretch flex items-start pb-[24px] pt-0 px-[24px] relative shrink-0 w-full" data-name="Answer" data-node-id="10202:95695">
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:95696">
+                    Domestic violence shelters, legal aid nonprofits, and family service organizations can reach out for custom pricing and bulk access. We work with you to make Civilla available to those who need it most.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-[var(--color-scheme-7\/foreground,#f2f2f2)] border-[var(--color-scheme-7\/border,#070503)] border-[var(--stroke\/border-width,2px)] border-solid content-stretch flex flex-col items-start relative rounded-[var(--radius\/large,16px)] shrink-0 w-full" data-name="Accordion" data-node-id="10202:95698">
+                <div className="content-stretch flex gap-[24px] items-center overflow-clip px-[24px] py-[20px] relative shrink-0 w-full" data-name="Question" data-node-id="10202:95699">
+                  <p className="flex-[1_0_0] font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-medium,20px)] whitespace-pre-wrap" data-node-id="10202:95700">{`Why isn't this free?`}</p>
+                  <div className="overflow-clip relative shrink-0 size-[24px]" data-name="close" data-node-id="10202:95701">
+                    <div className="absolute inset-[22.6%]" data-name="Vector" data-node-id="I10202:95701;7003:60984">
+                      <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)", "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                        <img alt="" className="block max-w-none size-full" src={img5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="content-stretch flex items-start pb-[24px] pt-0 px-[24px] relative shrink-0 w-full" data-name="Answer" data-node-id="10202:95702">
+                  <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-7\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="10202:95703">
+                    Building a trauma-informed, secure platform takes real resources. Our pricing reflects the cost of maintaining your data safely, updating legal information by state, and supporting users. We keep costs low and transparent.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-[var(--color-scheme-5\/background,#fcfbf9)] content-stretch flex flex-col items-center overflow-clip px-[var(--page-padding\/padding-global,64px)] py-[var(--section-padding\/padding-section-medium,80px)] relative shrink-0 w-full" data-name="Footer / 2 /" data-node-id="10202:93197">
+        <div className="content-stretch flex flex-col gap-[80px] items-start max-w-[1280px] relative shrink-0 w-full" data-name="Container" data-node-id="10202:93198">
+          <div className="content-stretch flex gap-[128px] h-[248px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="10202:93199">
+            <div className="content-stretch flex flex-[1_0_0] gap-[40px] items-start min-h-px min-w-px relative shrink-0" data-name="Links" data-node-id="10202:93200">
+              <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px overflow-clip relative shrink-0" data-name="Column" data-node-id="10202:93201">
+                <CompanyLogo className="h-[44px] relative shrink-0 w-[84px]" />
+              </div>
+              <div className="content-stretch flex flex-[1_0_0] flex-col gap-[16px] items-start min-h-px min-w-px overflow-clip relative shrink-0" data-name="Column" data-node-id="10202:93203">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] w-full whitespace-pre-wrap" data-node-id="10202:93204">
+                  Product
+                </p>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Footer Links" data-node-id="10202:93205">
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96568">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96569">
+                      How it works
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96570">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96571">
+                      About us
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96572">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96573">
+                      Plans
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96574">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96575">
+                      Support
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96576">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96577">
+                      Resources
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-[1_0_0] flex-col gap-[16px] items-start min-h-px min-w-px overflow-clip relative shrink-0" data-name="Column" data-node-id="10202:93216">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] w-full whitespace-pre-wrap" data-node-id="10202:93217">
+                  Learn
+                </p>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Footer Links" data-node-id="10202:93218">
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96578">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96579">
+                      Legal
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96580">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96581">
+                      Safety
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96582">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96583">
+                      FAQ
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96584">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96585">
+                      Contact
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96586">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96587">
+                      Accessibility
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="content-stretch flex flex-[1_0_0] flex-col gap-[16px] items-start min-h-px min-w-px overflow-clip relative shrink-0" data-name="Column" data-node-id="10202:93229">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] w-full whitespace-pre-wrap" data-node-id="10202:93230">
+                  Help
+                </p>
+                <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="Footer Links" data-node-id="10202:93231">
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96588">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96589">
+                      Privacy
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96590">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96591">
+                      Terms
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96592">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96593">
+                      Compliance
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96594">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96595">
+                      Updates
+                    </p>
+                  </div>
+                  <div className="content-stretch flex items-start px-0 py-[8px] relative shrink-0 w-full" data-name="Link" data-node-id="10202:96596">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)] whitespace-pre-wrap" data-node-id="10202:96597">
+                      Feedback
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 w-[400px]" data-name="Newslatter" data-node-id="10202:93242">
+              <div className="content-stretch flex flex-col gap-[16px] items-start leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-regular,18px)] w-full whitespace-pre-wrap" data-node-id="10202:93243">
+                <p className="font-['Arimo:Bold',sans-serif] font-bold relative shrink-0 w-full" data-node-id="10202:93244">
+                  Updates
+                </p>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal relative shrink-0 w-full" data-node-id="10202:93245">
+                  Get updates about new features, resources, and support tools designed for self-represented parents.
+                </p>
+              </div>
+              <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full" data-name="Actions" data-node-id="10202:93246">
+                <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full" data-name="Form" data-node-id="10202:93247">
+                  <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex flex-[1_0_0] items-center min-h-px min-w-px px-[12px] py-[8px] relative rounded-[12px] shrink-0" data-name="Text input" data-node-id="10202:93248">
+                    <p className="flex-[1_0_0] font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] min-h-px min-w-px relative shrink-0 text-[color:var(--opacity\/neutral-darkest-60,rgba(7,5,3,0.6))] text-[length:var(--text-sizes\/text-regular,18px)] whitespace-pre-wrap" data-node-id="I10202:93248;4179:9018">
+                      Your email
+                    </p>
+                  </div>
+                  <div className="bg-[var(--opacity\/transparent,rgba(255,255,255,0))] border-2 border-[var(--color\/neutral-darkest,#070503)] border-solid content-stretch flex items-center justify-center px-[24px] py-[10px] relative rounded-[12px] shrink-0" data-name="Button" data-node-id="10202:93249">
+                    <p className="font-['Arimo:Bold',sans-serif] font-bold leading-[1.6] relative shrink-0 text-[color:var(--color\/neutral-darkest,#070503)] text-[length:var(--text-sizes\/text-regular,18px)]" data-node-id="I10202:93249;4179:8893">
+                      Join
+                    </p>
+                  </div>
+                </div>
+                <p className="font-['Arimo:Regular',sans-serif] font-normal leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-tiny,12px)] w-full whitespace-pre-wrap" data-node-id="10202:93250">
+                  By subscribing you agree to our Privacy Policy and consent to receive updates from civilla.ai.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="content-stretch flex flex-col gap-[32px] items-start relative shrink-0 w-full" data-name="Credits" data-node-id="10202:93251">
+            <div className="h-0 relative shrink-0 w-full" data-name="Divider" data-node-id="10202:93252">
+              <div className="absolute inset-[-2px_0_0_0]" style={{ "--stroke-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                <img alt="" className="block max-w-none size-full" src={imgDivider1} />
+              </div>
+            </div>
+            <div className="content-stretch flex items-start justify-between relative shrink-0 w-full" data-name="Row" data-node-id="10202:93253">
+              <div className="content-stretch flex font-['Arimo:Regular',sans-serif] font-normal gap-[24px] items-center leading-[1.6] relative shrink-0 text-[color:var(--color-scheme-5\/text,#070503)] text-[length:var(--text-sizes\/text-small,16px)]" data-name="Credits" data-node-id="10202:93254">
+                <p className="relative shrink-0" data-node-id="10202:95740">
+                  © 2024 civilla.ai. All rights reserved.
+                </p>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid relative shrink-0 underline" data-node-id="10202:95741">
+                  Privacy Policy
+                </p>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid relative shrink-0 underline" data-node-id="10202:95742">
+                  Terms of Service
+                </p>
+                <p className="[text-decoration-skip-ink:none] [text-underline-position:from-font] decoration-solid relative shrink-0 underline" data-node-id="10202:95743">
+                  Cookies Settings
+                </p>
+              </div>
+              <div className="content-stretch flex gap-[12px] items-start relative shrink-0" data-name="Social Links" data-node-id="10202:93260">
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="Facebook" data-node-id="10202:93261">
+                  <div className="absolute inset-[9.34%_8.33%_7.32%_8.33%]" data-name="Vector" data-node-id="I10202:93261;4179:9446">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img6} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="Instagram" data-node-id="10202:93262">
+                  <div className="absolute inset-[13.51%_12.5%_11.49%_12.5%]" data-name="Vector" data-node-id="I10202:93262;4179:9450">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img7} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="X" data-node-id="10202:93263">
+                  <div className="absolute inset-[17.68%_12.5%_15.66%_12.5%]" data-name="Vector" data-node-id="I10202:93263;4179:9454">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img8} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="LinkedIn" data-node-id="10202:93264">
+                  <div className="absolute inset-[13.51%_12.5%_11.49%_12.5%]" data-name="Vector" data-node-id="I10202:93264;4179:9452">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img9} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-clip relative shrink-0 size-[24px]" data-name="Youtube" data-node-id="10202:93265">
+                  <div className="absolute inset-[20.83%_8.33%_20.78%_8.27%]" data-name="Vector" data-node-id="I10202:93265;4179:9456">
+                    <div className="absolute inset-0" style={{ "--fill-0": "rgba(7, 5, 3, 1)" } as React.CSSProperties}>
+                      <img alt="" className="block max-w-none size-full" src={img10} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+### Content Block 2 (Text)
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+### Content Block 3 (Text)
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+### Content Block 4 (Text)
+These styles are contained in the design: Text/Regular/Medium: Font(family: "Arimo", style: Bold, size: Text Sizes/Text Regular, weight: 700, lineHeight: 1.600000023841858, letterSpacing: 0), Heading/H1: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 1, weight: 700, lineHeight: 1.100000023841858, letterSpacing: 1), Text/Medium/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Medium, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Heading/Tagline: Font(family: "Arimo", style: Bold, size: 16, weight: 700, lineHeight: 1.5, letterSpacing: 0), Heading/H2: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 2, weight: 700, lineHeight: 1.2000000476837158, letterSpacing: 1), Text/Regular/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Regular, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Heading/H6: Font(family: "Figtree", style: Bold, size: Text Sizes/Heading 6, weight: 700, lineHeight: 1.2000000476837158, letterSpacing: 1), Text/Medium/Bold: Font(family: "Arimo", style: Bold, size: Text Sizes/Text Medium, weight: 700, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Regular/Semi Bold: Font(family: "Arimo", style: Bold, size: Text Sizes/Text Regular, weight: 700, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Small/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Small, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Tiny/Normal: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Tiny, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0), Text/Small/Link: Font(family: "Arimo", style: Regular, size: Text Sizes/Text Small, weight: 400, lineHeight: 1.600000023841858, letterSpacing: 0).
+
+### Content Block 5 (Text)
+Component descriptions: The following components have usage descriptions defined in Figma that explain how they should be used. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Facebook
+**Node ID:** 4179:9445
+
+1.  Facebook
+2.  Social media
+3.  Logo
+4.  Brands
+5.  Digital communication
+6.  Online friends
+
+## Instagram
+**Node ID:** 4179:9449
+
+1.  Social media
+2.  Logo
+3.  Brands
+
+## X
+**Node ID:** 4179:9453
+
+1.  Twitter
+2.  Tweet
+3.  Logo
+4.  Social media
+5.  Brands
+
+## LinkedIn
+**Node ID:** 4179:9451
+
+1.  Logo
+2.  Brands
+3.  Social media
+4.  Networking
+5.  Career development
+6.  Online resume
+7.  Networking community
+8.  B2B networking
+9.  Business connections
+
+## Youtube
+**Node ID:** 4179:9455
+
+1.  Videos
+2.  Logo
+3.  Social media
+4.  Brands
+5.  Video platform
+6.  Online video
+7.  Streaming video
+8.  Play button
+9.  Video content
+
+### Content Block 6 (Text)
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.
+
+### Content Block 7 (Text)
+IMPORTANT: After you call this tool, you MUST call get_screenshot to get a screenshot of the node for context.
+
+</mcp_external_output>
