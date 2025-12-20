@@ -84,6 +84,62 @@ canvas {
   display: block;
 }
 
+/* =========================================
+   RESPONSIVE TEXT SIZING & WRAPPING
+   Prevents awkward word breaks across all pages
+   ========================================= */
+
+/* Headings: balanced text distribution for cleaner line breaks */
+h1, h2, h3, h4, h5, h6,
+.cv-h {
+  text-wrap: balance;
+  hyphens: none;
+}
+
+/* Paragraphs: prevent orphans and widows */
+p,
+.cv-p,
+.cv-panel-body {
+  text-wrap: pretty;
+  hyphens: auto;
+}
+
+/* Responsive font sizing using clamp() - scales between min and max based on viewport */
+/* Large headings (84px designs) */
+.text-\[84px\] {
+  font-size: clamp(48px, 6vw, 84px) !important;
+}
+
+/* Medium-large headings (60px designs) */
+.text-\[60px\] {
+  font-size: clamp(36px, 4.5vw, 60px) !important;
+}
+
+/* Medium headings (32px designs) */
+.text-\[32px\] {
+  font-size: clamp(24px, 2.5vw, 32px) !important;
+}
+
+/* Subheadings (26px designs) */
+.text-\[26px\] {
+  font-size: clamp(20px, 2vw, 26px) !important;
+}
+
+/* Body text (20px designs) */
+.text-\[20px\] {
+  font-size: clamp(16px, 1.5vw, 20px) !important;
+}
+
+/* Standard text (18px designs) */
+.text-\[18px\] {
+  font-size: clamp(15px, 1.4vw, 18px) !important;
+}
+
+/* Prevent single letters from wrapping to new line */
+.no-orphan {
+  text-wrap: balance;
+}
+
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
