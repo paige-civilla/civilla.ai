@@ -41,13 +41,6 @@ function NavbarCream() {
             </Link>
           </div>
           <div className="flex items-center justify-center gap-2">
-            <Link 
-              href="/"
-              className="hidden md:block text-neutral-darkest font-bold text-xs leading-[1.6] px-3 py-0.5 hover-elevate active-elevate-2 rounded"
-              data-testid="link-home"
-            >
-              Home
-            </Link>
             <button 
               className="hidden md:block bg-transparent border border-neutral-darkest text-neutral-darkest font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
               data-testid="button-login"

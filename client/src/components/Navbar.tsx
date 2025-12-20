@@ -26,13 +26,6 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="flex items-center justify-center gap-2">
-            <Link 
-              href="/how-civilla-works"
-              className="hidden md:block text-white font-bold text-xs leading-[1.6] px-3 py-0.5 hover-elevate active-elevate-2 rounded"
-              data-testid="link-how-it-works"
-            >
-              How It Works
-            </Link>
             <button 
               className="hidden md:block bg-transparent border border-white text-white font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
               data-testid="button-login"
