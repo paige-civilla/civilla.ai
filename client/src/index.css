@@ -143,25 +143,39 @@ p,
 /* Pricing display - keep price and period together */
 .pricing-display {
   white-space: nowrap;
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
   flex-wrap: nowrap;
 }
 
-/* Responsive pricing text that scales with container */
+/* Responsive pricing text that scales with container - sized for 4-column card layout */
 .price-value {
-  font-size: clamp(32px, 4vw, 60px);
+  font-size: clamp(28px, 3vw, 48px);
   white-space: nowrap;
+  line-height: 1.1;
 }
 
 .price-period {
-  font-size: clamp(18px, 2vw, 32px);
+  font-size: clamp(14px, 1.5vw, 24px);
   white-space: nowrap;
 }
 
-/* Ensure pricing cards keep content together */
-[data-testid^="pricing-card"] .font-heading {
-  white-space: nowrap;
+/* Pricing card layout - ensure buttons align */
+.pricing-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-card-header {
+  flex: 0 0 auto;
+}
+
+.pricing-card-price {
+  flex: 0 0 auto;
+}
+
+.pricing-card-features {
+  flex: 1 1 auto;
 }
 
 :root {

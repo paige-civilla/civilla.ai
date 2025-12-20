@@ -329,52 +329,52 @@ function PricingCardsSection() {
           </div>
         </div>
 
-        <div className="flex gap-6 items-start w-full">
+        <div className="flex gap-4 items-stretch w-full">
           {plans.map((plan, index) => (
             <div 
               key={index}
-              className="flex-1 bg-[#cfd7d5] border-2 border-neutral-darkest rounded-2xl p-6 flex flex-col gap-8 self-stretch"
+              className="flex-1 min-w-0 bg-[#cfd7d5] border-2 border-neutral-darkest rounded-2xl p-5 flex flex-col"
               data-testid={`pricing-card-${index}`}
             >
-              <div className="flex flex-col gap-1 text-neutral-darkest">
-                <h3 className="cv-h font-heading font-bold text-[26px] tracking-[0.26px] leading-[1.2]">
+              <div className="flex flex-col gap-1 text-neutral-darkest pricing-card-header">
+                <h3 className="cv-h font-heading font-bold text-[20px] tracking-[0.2px] leading-[1.2]">
                   {plan.name}
                 </h3>
-                <p className="cv-panel-body font-sans text-[18px] leading-[1.6]">
+                <p className="cv-panel-body font-sans text-[14px] leading-[1.5]">
                   {plan.subtitle}
                 </p>
               </div>
 
-              <div className="w-full h-[2px] bg-neutral-darkest" />
+              <div className="w-full h-[2px] bg-neutral-darkest my-4" />
 
-              <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-2 text-neutral-darkest">
-                  <div className="pricing-display font-heading font-bold leading-[1.2]">
-                    <span className="price-value tracking-[0.6px]">
+              <div className="flex flex-col gap-4 pricing-card-price">
+                <div className="flex flex-col gap-1 text-neutral-darkest">
+                  <div className="pricing-display font-heading font-bold">
+                    <span className="price-value">
                       {billingPeriod === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
                     </span>
-                    {plan.period && <span className="price-period tracking-[0.32px]">{plan.period}</span>}
+                    {plan.period && <span className="price-period">{plan.period}</span>}
                   </div>
-                  <p className="font-sans text-[18px] leading-[1.6]">
+                  <p className="font-sans text-[13px] leading-[1.5] min-h-[40px]">
                     {billingPeriod === "monthly" ? plan.monthlyNote : plan.yearlyNote}
                   </p>
                 </div>
 
                 <button 
-                  className="w-full bg-bush text-white font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
+                  className="w-full bg-bush text-white font-bold text-[14px] leading-[1.5] px-4 py-2 rounded-md button-inset-shadow relative"
                   data-testid={`button-${plan.buttonText.replace(" ", "-")}`}
                 >
                   {plan.buttonText}
                 </button>
               </div>
 
-              <div className="w-full h-[2px] bg-neutral-darkest" />
+              <div className="w-full h-[2px] bg-neutral-darkest my-4" />
 
-              <div className="flex flex-col gap-4 py-2">
+              <div className="flex flex-col gap-3 pricing-card-features">
                 {plan.features.map((feature, featureIndex) => (
-                  <div key={featureIndex} className="flex gap-4 items-start">
-                    <Check className="w-6 h-6 text-neutral-darkest flex-shrink-0" />
-                    <span className="cv-panel-body font-sans text-[18px] leading-[1.6] text-neutral-darkest">
+                  <div key={featureIndex} className="flex gap-2 items-start">
+                    <Check className="w-5 h-5 text-neutral-darkest flex-shrink-0" />
+                    <span className="cv-panel-body font-sans text-[14px] leading-[1.5] text-neutral-darkest">
                       {feature}
                     </span>
                   </div>
