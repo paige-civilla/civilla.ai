@@ -23,12 +23,6 @@ export default function Navbar() {
               Log in
             </button>
             <button 
-              className="bg-transparent border border-white text-white font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
-              data-testid="button-signup"
-            >
-              Sign up
-            </button>
-            <button 
               className="p-1"
               data-testid="button-menu"
             >

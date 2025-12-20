@@ -22,16 +22,16 @@ export default function Hero() {
             </h1>
             <div className="flex gap-4 items-start">
               <button 
-                className="bg-neutral-lightest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
-                data-testid="button-hero-learn"
-              >
-                Learn
-              </button>
-              <button 
                 className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
                 data-testid="button-hero-explore"
               >
                 Explore
+              </button>
+              <button 
+                className="bg-neutral-lightest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
+                data-testid="button-hero-signup"
+              >
+                Sign up
               </button>
             </div>
           </div>
