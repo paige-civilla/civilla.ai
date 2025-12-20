@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Check, ChevronRight, Home } from "lucide-react";
+import { Menu, X, Check, ChevronRight, ChevronUp, ChevronDown, Home } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 
@@ -441,77 +441,100 @@ function OrganizationsSection() {
 }
 
 function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number>(0);
+  const [openItems, setOpenItems] = useState<number[]>([0]);
 
   const faqs = [
     {
+      id: 0,
       question: "Can I cancel anytime?",
       answer: "Yes. There's no contract or commitment. You can pause or cancel your subscription at any time from your account settings. We want you to use Civilla only when it serves you."
     },
     {
+      id: 1,
       question: "Is my information secure?",
       answer: "Your documents and personal information are encrypted and stored securely. We follow industry standards for data protection and never share your case details with third parties."
     },
     {
+      id: 2,
       question: "Do you offer a free trial?",
       answer: "We offer limited free access to explore the platform and understand how Civilla works. Paid plans unlock full features like document organization, timeline building, and research tools."
     },
     {
+      id: 3,
       question: "What about organizations?",
       answer: "Domestic violence shelters, legal aid nonprofits, and family service organizations can reach out for custom pricing and bulk access. We work with you to make Civilla available to those who need it most."
     },
     {
+      id: 4,
       question: "Why isn't this free?",
       answer: "Building a trauma-informed, secure platform takes real resources. Our pricing reflects the cost of maintaining your data safely, updating legal information by state, and supporting users. We keep costs low and transparent."
     }
   ];
 
+  const toggleItem = (id: number) => {
+    setOpenItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
-    <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-16 py-28" data-testid="section-faq">
-      <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex gap-20 items-start w-full">
-          <div className="flex flex-col gap-8 items-start w-[500px]">
-            <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
-              <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
-                Questions
-              </h2>
-              <p className="cv-p font-sans text-[20px] w-full">
-                Find answers about how Civilla works, what you'll get, and how to get started.
-              </p>
+    <section className="bg-neutral-lightest w-full flex flex-col items-center px-16 py-28" data-testid="section-faq">
+      <div className="flex flex-col gap-20 items-center max-w-container w-full">
+        <div className="flex flex-col gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
+          <h2 className="font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
+            Questions
+          </h2>
+          <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+            Find answers about how Civilla works, what you'll get, and how to get started.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-start max-w-content-large w-full border-b-2 border-neutral-darkest">
+          {faqs.map((faq) => (
+            <div key={faq.id} className="flex flex-col items-start w-full">
+              <button
+                onClick={() => toggleItem(faq.id)}
+                className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
+                data-testid={`button-faq-${faq.id}`}
+              >
+                <span className="flex-1 font-sans font-bold text-[20px] leading-[1.6] text-neutral-darkest">
+                  {faq.question}
+                </span>
+                {openItems.includes(faq.id) ? (
+                  <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />
+                ) : (
+                  <ChevronDown className="w-8 h-8 text-neutral-darkest shrink-0" />
+                )}
+              </button>
+              {openItems.includes(faq.id) && (
+                <div className="flex items-start pb-6 w-full">
+                  <p className="flex-1 font-sans font-normal text-[18px] leading-[1.6] text-neutral-darkest">
+                    {faq.answer}
+                  </p>
+                </div>
+              )}
             </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-6 items-center max-w-content-medium w-full">
+          <div className="flex flex-col gap-4 items-center text-neutral-darkest text-center w-full">
+            <h3 className="font-heading font-bold text-[40px] tracking-[0.4px] leading-[1.2] w-full">
+              Common questions answered
+            </h3>
+            <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
+              Everything you need to know about Civilla
+            </p>
+          </div>
+          <div className="flex items-center">
             <button 
               className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-md"
               data-testid="button-contact"
             >
-              Contact
+              Contact us
             </button>
-          </div>
-
-          <div className="flex-1 flex flex-col gap-4">
-            {faqs.map((faq, index) => (
-              <div 
-                key={index}
-                className="bg-[#f2f2f2] border-2 border-neutral-darkest rounded-2xl overflow-hidden"
-                data-testid={`faq-item-${index}`}
-              >
-                <button
-                  className="w-full flex gap-6 items-center px-6 py-5"
-                  onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
-                >
-                  <span className="flex-1 text-left font-sans font-bold text-[20px] leading-[1.6] text-neutral-darkest">
-                    {faq.question}
-                  </span>
-                  <X className={`w-6 h-6 text-neutral-darkest transition-transform ${openIndex === index ? "" : "rotate-45"}`} />
-                </button>
-                {openIndex === index && (
-                  <div className="px-6 pb-6">
-                    <p className="cv-panel-body font-sans text-[18px] leading-[1.6] text-neutral-darkest">
-                      {faq.answer}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
       </div>
