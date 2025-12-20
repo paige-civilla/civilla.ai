@@ -129,7 +129,11 @@ function MostPopularSection() {
         </div>
 
         <div className="flex flex-col gap-12 items-center max-w-[560px] w-full">
-          <div className="bg-cream border-2 border-neutral-darkest rounded-[10px] p-1 flex">
+          <div 
+            className="bg-cream border-2 border-neutral-darkest rounded-[10px] p-1 flex"
+            role="group"
+            aria-label="Billing period selection"
+          >
             <button
               className={`px-6 py-2.5 rounded-lg font-bold text-[18px] leading-[1.6] transition-colors ${
                 billingPeriod === "monthly" 
@@ -137,6 +141,8 @@ function MostPopularSection() {
                   : "border border-transparent text-neutral-darkest"
               }`}
               onClick={() => setBillingPeriod("monthly")}
+              aria-pressed={billingPeriod === "monthly"}
+              aria-label="Select monthly billing"
               data-testid="button-monthly"
             >
               Monthly
@@ -148,9 +154,11 @@ function MostPopularSection() {
                   : "border border-transparent font-normal text-neutral-darkest"
               }`}
               onClick={() => setBillingPeriod("yearly")}
+              aria-pressed={billingPeriod === "yearly"}
+              aria-label="Select yearly billing with 17% savings"
               data-testid="button-yearly"
             >
-              Yearly
+              Yearly (Save ~17%)
             </button>
           </div>
 
@@ -159,9 +167,14 @@ function MostPopularSection() {
               <span className="font-heading font-bold text-[26px] tracking-[0.26px] leading-[1.2]">
                 civilla pro
               </span>
-              <span className="font-heading font-bold text-[84px] tracking-[0.84px] leading-[1.1]">
-                {billingPeriod === "monthly" ? "29.99" : "249.99"}
-              </span>
+              <div className="flex flex-col gap-1 items-center">
+                <span className="font-heading font-bold text-[84px] tracking-[0.84px] leading-[1.1]">
+                  {billingPeriod === "monthly" ? "$29.99" : "$299"}
+                </span>
+                <span className="font-sans text-[18px] leading-[1.6]">
+                  {billingPeriod === "monthly" ? "per month" : "$24.91/month billed annually"}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-col gap-4 py-2 w-full">
