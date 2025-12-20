@@ -189,14 +189,19 @@ function MostPopularSection() {
 }
 
 function PricingCardsSection() {
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+
   const plans = [
     {
       name: "three day trial",
       subtitle: "Start free, upgrade when",
-      price: "$0",
+      monthlyPrice: "$0",
+      yearlyPrice: "$0",
       period: "/mo",
-      priceNote: "three day trial",
+      monthlyNote: "three day trial",
+      yearlyNote: "three day trial",
       buttonText: "start trial",
+      stripePriceId: { monthly: null, yearly: null },
       features: [
         "Case journey overview",
         "Basic document storage",
@@ -206,10 +211,13 @@ function PricingCardsSection() {
     {
       name: "civilla core",
       subtitle: "No credit card required",
-      price: "$19",
-      period: "/mo",
-      priceNote: "Per month",
+      monthlyPrice: "$19.99",
+      yearlyPrice: "$199",
+      period: billingPeriod === "monthly" ? "/mo" : "/yr",
+      monthlyNote: "Per month",
+      yearlyNote: "$16.58/month billed annually",
       buttonText: "start core",
+      stripePriceId: { monthly: "price_core_monthly", yearly: "price_core_yearly" },
       features: [
         "Everything free, plus",
         "Timeline building",
@@ -219,10 +227,13 @@ function PricingCardsSection() {
     {
       name: "civilla pro",
       subtitle: "Cancel anytime, no",
-      price: "$29",
-      period: "/mo",
-      priceNote: "per month",
+      monthlyPrice: "$29.99",
+      yearlyPrice: "$299",
+      period: billingPeriod === "monthly" ? "/mo" : "/yr",
+      monthlyNote: "per month",
+      yearlyNote: "$24.91/month billed annually",
       buttonText: "start pro",
+      stripePriceId: { monthly: "price_pro_monthly", yearly: "price_pro_yearly" },
       features: [
         "Pattern analysis tools",
         "Lexi research assistant",
@@ -233,10 +244,13 @@ function PricingCardsSection() {
     {
       name: "civilla premium",
       subtitle: "Transparent pricing,",
-      price: "$49",
-      period: "/mo",
-      priceNote: "Dedicated onboarding",
+      monthlyPrice: "$49.99",
+      yearlyPrice: "$499",
+      period: billingPeriod === "monthly" ? "/mo" : "/yr",
+      monthlyNote: "Dedicated onboarding",
+      yearlyNote: "$41.58/month billed annually",
       buttonText: "start premium",
+      stripePriceId: { monthly: "price_premium_monthly", yearly: "price_premium_yearly" },
       features: [
         "Shelter and nonprofit rates",
         "Team training included",
@@ -250,7 +264,7 @@ function PricingCardsSection() {
   return (
     <section className="bg-[#cfd7d5] w-full flex flex-col items-center px-16 py-28" data-testid="section-pricing-cards">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
-        <div className="flex items-start w-full">
+        <div className="flex flex-col gap-8 items-start w-full">
           <div className="flex-1 flex flex-col gap-4 items-start max-w-[768px]">
             <span className="font-sans font-bold text-[16px] text-neutral-darkest leading-[1.5]">
               Plans
@@ -262,6 +276,41 @@ function PricingCardsSection() {
               <p className="cv-p font-sans text-[20px] w-full">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.
               </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 items-start">
+            <div 
+              className="bg-[#cfd7d5] border-2 border-neutral-darkest rounded-[10px] p-1 flex"
+              role="group"
+              aria-label="Billing period selection"
+            >
+              <button
+                className={`px-6 py-2.5 rounded-lg font-bold text-[18px] leading-[1.6] transition-colors ${
+                  billingPeriod === "monthly" 
+                    ? "border-2 border-neutral-darkest text-neutral-darkest" 
+                    : "border border-transparent text-neutral-darkest"
+                }`}
+                onClick={() => setBillingPeriod("monthly")}
+                aria-pressed={billingPeriod === "monthly"}
+                aria-label="Select monthly billing"
+                data-testid="button-cards-monthly"
+              >
+                Monthly
+              </button>
+              <button
+                className={`px-6 py-2.5 rounded-lg text-[18px] leading-[1.6] transition-colors ${
+                  billingPeriod === "yearly" 
+                    ? "border-2 border-neutral-darkest font-bold text-neutral-darkest" 
+                    : "border border-transparent font-normal text-neutral-darkest"
+                }`}
+                onClick={() => setBillingPeriod("yearly")}
+                aria-pressed={billingPeriod === "yearly"}
+                aria-label="Select yearly billing with 17% savings"
+                data-testid="button-cards-yearly"
+              >
+                Yearly (Save ~17%)
+              </button>
             </div>
           </div>
         </div>
@@ -287,11 +336,13 @@ function PricingCardsSection() {
               <div className="flex flex-col gap-8">
                 <div className="flex flex-col gap-2 text-neutral-darkest">
                   <div className="font-heading font-bold leading-[1.2]">
-                    <span className="text-[60px] tracking-[0.6px]">{plan.price}</span>
+                    <span className="text-[60px] tracking-[0.6px]">
+                      {billingPeriod === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
+                    </span>
                     {plan.period && <span className="text-[32px] tracking-[0.32px]">{plan.period}</span>}
                   </div>
                   <p className="font-sans text-[18px] leading-[1.6]">
-                    {plan.priceNote}
+                    {billingPeriod === "monthly" ? plan.monthlyNote : plan.yearlyNote}
                   </p>
                 </div>
 
@@ -317,6 +368,21 @@ function PricingCardsSection() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-6 text-center text-sm text-neutral-darkest/70 max-w-xl mx-auto">
+          <p>
+            Subscriptions are non-refundable.
+            Refunds may be issued only for billing errors, service unavailability,
+            or where required by law.
+          </p>
+          <a
+            href="/terms"
+            className="underline underline-offset-4 hover:text-neutral-darkest transition-colors"
+            data-testid="link-refund-policy"
+          >
+            View refund policy
+          </a>
         </div>
       </div>
     </section>
