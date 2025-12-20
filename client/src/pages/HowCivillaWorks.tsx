@@ -1,5 +1,6 @@
 import { Menu, ChevronRight } from "lucide-react";
 import Footer from "@/components/Footer";
+import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 
 const logoDarkUrl = "https://www.figma.com/api/mcp/asset/4389936b-52f2-402c-bdc3-7e8926ee5f89";
 const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
@@ -18,29 +19,29 @@ const imgStars = "https://www.figma.com/api/mcp/asset/9a8784d4-e265-4a60-8093-54
 function NavbarCream() {
   return (
     <nav className="bg-cream w-full" data-testid="navbar-cream">
-      <div className="h-[72px] flex items-center justify-center px-16 py-0">
-        <div className="flex items-center justify-between gap-8 w-full max-w-container">
-          <div className="flex items-start flex-1">
-            <a href="/" className="relative h-[27px] w-[63px]" data-testid="link-logo">
+      <div className="h-9 md:h-9 flex items-center justify-center px-3 md:px-6 py-0">
+        <div className="flex items-center justify-between gap-4 w-full max-w-container">
+          <div className="flex items-center">
+            <a href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
               <img 
-                src={logoDarkUrl} 
+                src={logoDark} 
                 alt="civilla.ai" 
-                className="absolute inset-0 w-full h-full object-contain"
+                className="h-full w-auto object-contain"
               />
             </a>
           </div>
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-2">
             <button 
-              className="bg-bush text-white font-bold text-body-regular leading-[1.6] px-5 py-2 rounded-xl button-inset-shadow relative"
-              data-testid="button-cta-nav"
+              className="hidden md:block bg-transparent border border-neutral-darkest text-neutral-darkest font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
+              data-testid="button-login"
             >
-              Button
+              Login
             </button>
             <button 
-              className="p-3"
+              className="p-1"
               data-testid="button-menu"
             >
-              <Menu className="w-6 h-6 text-neutral-darkest" />
+              <Menu className="w-4 h-4 text-neutral-darkest" />
             </button>
           </div>
         </div>
