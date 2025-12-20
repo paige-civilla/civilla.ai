@@ -5,10 +5,10 @@ const logoLightUrl = "https://www.figma.com/api/mcp/asset/a24a48c1-9ca1-4e0e-95d
 export default function Navbar() {
   return (
     <nav className="bg-bush w-full" data-testid="navbar">
-      <div className="h-[72px] md:h-[72px] flex items-center justify-center px-5 md:px-16 py-0">
-        <div className="flex items-center justify-between gap-8 w-full max-w-container">
-          <div className="flex items-start flex-1">
-            <a href="/" className="relative h-[27px] w-[63px] md:h-[27px] md:w-[63px]" data-testid="link-logo">
+      <div className="h-9 md:h-9 flex items-center justify-center px-5 md:px-16 py-0">
+        <div className="flex items-center justify-between gap-4 w-full max-w-container">
+          <div className="flex items-center">
+            <a href="/" className="relative h-5 w-[47px]" data-testid="link-logo">
               <img 
                 src={logoLightUrl} 
                 alt="civilla.ai" 
@@ -16,24 +16,24 @@ export default function Navbar() {
               />
             </a>
           </div>
-          <div className="flex items-center justify-center gap-2 md:gap-4">
+          <div className="flex items-center justify-center gap-2">
             <button 
-              className="hidden md:block bg-transparent border-2 border-white text-white font-bold text-body-regular leading-[1.6] px-5 py-2 rounded-md"
+              className="hidden md:block bg-transparent border border-white text-white font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
               data-testid="button-login"
             >
               Log in
             </button>
             <button 
-              className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-5 py-1 md:py-2 rounded-md"
+              className="bg-transparent border border-white text-white font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
               data-testid="button-signup"
             >
               Sign up
             </button>
             <button 
-              className="p-3"
+              className="p-1"
               data-testid="button-menu"
             >
-              <Menu className="w-6 h-6 text-white" />
+              <Menu className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>
