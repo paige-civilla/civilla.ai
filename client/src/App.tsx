@@ -27,7 +27,7 @@ function Router() {
       <Route path="/safety-support" component={SafetySupport} />
       <Route path="/accessibility" component={Accessibility} />
       <Route path="/contact" component={Contact} />
-      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/terms" component={TermsOfService} />
       <Route component={NotFound} />
     </Switch>
   );

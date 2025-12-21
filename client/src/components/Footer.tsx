@@ -12,7 +12,7 @@ const footerLinks = {
   ],
   help: [
     { label: "Privacy", href: "/privacy-policy" },
-    { label: "Terms", href: "/terms-of-service" },
+    { label: "Terms", href: "/terms" },
     { label: "Legal & Compliance", href: "/legal-compliance" },
   ]
 };
@@ -90,7 +90,7 @@ export default function Footer() {
             <a href="/privacy-policy" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-privacy">
               Privacy Policy
             </a>
-            <a href="/terms-of-service" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-terms">
+            <a href="/terms" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-terms">
               Terms of Service
             </a>
             <a href="/legal-compliance" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-legal">
