@@ -15,7 +15,7 @@ const faqs = [
   {
     id: 3,
     question: "What states does civilla.ai cover?",
-    answer: "Civilla is built for U.S. family law. You can choose your state to view educational information and typical court processes. Because rules and forms vary by county and case, always confirm details with official court sources or an attorney."
+    answer: "Civilla is built for U.S. family law. You can choose your state to view educational information and typical court processes. Because rules and forms can vary by county, always confirm details with official court sources or an attorney."
   },
   {
     id: 4,
@@ -25,7 +25,7 @@ const faqs = [
   {
     id: 5,
     question: "How is my information kept safe?",
-    answer: "Your privacy matters to us. We explain how we handle data in our Privacy Policy. If you ever need to leave quickly, use Quick Exit."
+    answer: "Your privacy matters to us. We explain how we handle data in our Privacy Policy. If you ever need to leave quickly, use Quick Exit in the top-right corner."
   }
 ];
 
@@ -48,7 +48,7 @@ export default function FAQSection() {
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-            FAQ's
+            FAQs
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
             Quick answers about what Civilla does — and what it doesn't.
