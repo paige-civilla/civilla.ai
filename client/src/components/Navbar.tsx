@@ -179,7 +179,7 @@ export default function Navbar() {
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {menuSections.map((section) => (
                 <div key={section.header} className="flex flex-col">
-                  <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-neutral-700">
+                  <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-700">
                     <section.icon className="h-4 w-4" />
                     {section.header}
                   </div>
@@ -208,7 +208,7 @@ export default function Navbar() {
                             aria-disabled="true"
                           >
                             <span>{item.label}</span>
-                            <span className="text-[11px] opacity-60">Soon</span>
+                            <span className="text-[11px] opacity-60">Coming Soon</span>
                           </span>
                         ))}
                       </div>
