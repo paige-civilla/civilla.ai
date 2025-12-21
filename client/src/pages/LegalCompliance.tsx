@@ -86,7 +86,7 @@ function EducationSection() {
         <div className="flex gap-20 items-center w-full">
           <div className="flex-1 aspect-[600/640] rounded-2xl overflow-hidden">
             <img 
-              src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&h=640&fit=crop"
+              src="https://www.figma.com/api/mcp/asset/45617208-0482-4b11-9665-f57d418aec3c"
               alt="Open book representing education"
               className="w-full h-full object-cover"
             />
