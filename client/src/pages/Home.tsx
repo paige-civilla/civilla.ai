@@ -1,6 +1,8 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ToolsSection from "@/components/ToolsSection";
+import CTASection from "@/components/CTASection";
+import SafetySection from "@/components/SafetySection";
 import StepsSection from "@/components/StepsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import FAQSection from "@/components/FAQSection";
@@ -12,6 +14,8 @@ export default function Home() {
       <Navbar />
       <Hero />
       <ToolsSection />
+      <CTASection />
+      <SafetySection />
       <StepsSection />
       <TestimonialsSection />
       <FAQSection />
