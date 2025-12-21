@@ -87,7 +87,7 @@ function NavbarCream() {
             <button 
               onClick={handleQuickExit}
               className="ml-2 p-1.5 rounded-md"
-              style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #7B9B8E 50%, #D4A574 100%)" }}
+              style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #3D7A5A 50%, #4A8A6A 100%)" }}
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
