@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, ChevronRight, User, Moon, Sun, LogOut, Mail, Phone, MapPin } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
+import reportImage from "@assets/alex-moliski-vc4e3PPR2ls-unsplash_1766288432291.jpg";
 
 const menuLinks = {
   product: [
@@ -372,7 +373,7 @@ export default function Accessibility() {
             </div>
             <div className="flex-1">
               <img 
-                src={imgPlaceholderImage2} 
+                src={reportImage} 
                 alt="Found a problem" 
                 className="w-full h-[734px] object-cover rounded-2xl"
               />
