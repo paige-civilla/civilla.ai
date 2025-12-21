@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, ChevronRight, Info, Check, Ban, BarChart3 } from "lucide-react";
+import { Menu, X, ChevronRight, Check, Ban, BarChart3 } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 
@@ -76,49 +76,6 @@ function NavbarCream() {
   );
 }
 
-function HeroSection() {
-  return (
-    <section 
-      className="bg-[#e7ebea] w-full flex flex-col items-center px-16 py-28"
-      data-testid="section-hero"
-    >
-      <div className="flex flex-col items-center max-w-container w-full">
-        <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
-          <div className="flex flex-col gap-4 items-center w-full">
-            <div className="flex items-center w-full justify-center">
-              <span className="font-sans font-bold text-[16px] leading-[1.5] text-neutral-darkest text-center">
-                Transparency
-              </span>
-            </div>
-            <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-              <h1 className="cv-h font-heading font-bold tracking-[0.84px] leading-[1.1] w-full" style={{ fontSize: 'clamp(48px, 6vw, 84px)' }}>
-                How civilla.ai works
-              </h1>
-              <p className="cv-p font-sans font-normal text-[20px] leading-[1.6] w-full">
-                Education, not legal advice. Clear boundaries. Your control.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-start">
-            <button 
-              className="bg-bush text-white font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-xl button-inset-shadow relative"
-              data-testid="button-learn"
-            >
-              Learn
-            </button>
-            <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-xl"
-              data-testid="button-contact"
-            >
-              Contact
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function EducationSection() {
   return (
     <section 
@@ -136,9 +93,11 @@ function EducationSection() {
           </div>
           <div className="flex-1 flex flex-col gap-8 items-start">
             <div className="flex flex-col gap-6 items-start w-full">
-              <Info className="w-20 h-20 text-neutral-darkest" />
+              <div className="w-20 h-20 rounded-full border-2 border-neutral-darkest flex items-center justify-center">
+                <span className="font-serif text-[40px] text-neutral-darkest">i</span>
+              </div>
               <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
-                <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
+                <h2 className="cv-h font-heading font-bold tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
                   Education only, never legal advice
                 </h2>
                 <p className="cv-p font-sans font-normal text-[20px] leading-[1.6] w-full">
@@ -337,7 +296,6 @@ export default function LegalCompliance() {
     <div className="min-h-screen flex flex-col">
       <NavbarCream />
       <main className="flex-1">
-        <HeroSection />
         <EducationSection />
         <BoundariesSection />
         <FAQSection />
