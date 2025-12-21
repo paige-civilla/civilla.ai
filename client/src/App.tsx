@@ -10,6 +10,7 @@ import Plans from "@/pages/Plans";
 import LegalCompliance from "@/pages/LegalCompliance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import SafetySupport from "@/pages/SafetySupport";
+import Accessibility from "@/pages/Accessibility";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/legal-compliance" component={LegalCompliance} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/safety-support" component={SafetySupport} />
+      <Route path="/accessibility" component={Accessibility} />
       <Route component={NotFound} />
     </Switch>
   );
