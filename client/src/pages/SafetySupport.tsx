@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, ChevronRight, User, Moon, Sun, LogOut, Phone, AlertTriangle, UserX, Bell, Shield } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
-import safeImage from "@assets/stock_images/person_wrapped_in_bl_38e32f42.jpg";
 
 const menuLinks = {
   product: [
@@ -26,6 +25,7 @@ const menuLinks = {
   ]
 };
 
+const imgQuickExit = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
 const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/70cd2b88-b5c3-4123-83da-b783c1fed0c1";
 const imgPlaceholderImage2 = "https://www.figma.com/api/mcp/asset/1fa3a533-6771-4f19-9a86-f841e6fce0c2";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
@@ -296,7 +296,7 @@ export default function SafetySupport() {
               </div>
               <div className="flex-1 h-64 md:h-full">
                 <img 
-                  src={safeImage} 
+                  src={imgQuickExit} 
                   alt="Safe and comfortable space" 
                   className="w-full h-full object-cover"
                 />
