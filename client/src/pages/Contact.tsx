@@ -14,11 +14,11 @@ const timelineItems = [
   },
   {
     title: "Feedback and ideas",
-    description: "Questions about how Civilla works or need help navigating the platform"
+    description: "Questions about how civilla works or need help navigating the platform"
   },
   {
     title: "Organizations and nonprofits",
-    description: "Accessibility concerns, feature requests, or suggestions to make Civilla better"
+    description: "Accessibility concerns, feature requests, or suggestions to make civilla better"
   }
 ];
 
@@ -41,7 +41,7 @@ export default function Contact() {
                   We're here to help
                 </h1>
                 <p className="font-arimo font-normal text-sm md:text-xl leading-[1.6] w-full" style={{ textWrap: "pretty" }}>
-                  Civilla is committed to supporting you with compassion, privacy, and respect. Reach out anytime.
+                  <span className="italic font-semibold">civilla</span> is committed to supporting you with compassion, privacy, and respect. Reach out anytime.
                 </p>
               </div>
             </div>

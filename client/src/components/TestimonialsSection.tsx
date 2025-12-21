@@ -25,7 +25,7 @@ export default function TestimonialsSection() {
   const handleSubmit = () => {
     if (!message.trim()) return;
     
-    const subject = encodeURIComponent("Civilla Early Access Feedback");
+    const subject = encodeURIComponent("civilla Early Access Feedback");
     const body = encodeURIComponent(
       `Name: ${name || "Not provided"}\nEmail: ${email || "Not provided"}\n\nMessage:\n${message}`
     );
@@ -76,7 +76,7 @@ export default function TestimonialsSection() {
               Share Your Thoughts
             </h3>
             <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest/80">
-              Your feedback helps us improve Civilla. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
+              Your feedback helps us improve <span className="italic font-semibold">civilla</span>. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
             </p>
           </div>
 

@@ -82,7 +82,7 @@ function TimelineSection() {
             </span>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
               <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-                How Civilla came to be
+                How <span className="italic font-semibold">civilla</span> came to be
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 We built a rough version and put it in the hands of real parents. Their feedback was honest and shaped everything that came next. They told us what actually helped.
@@ -195,13 +195,13 @@ function TeamSection1() {
             </h2>
             <div className="flex flex-col gap-4">
               <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                Sarah founded Civilla after years of watching parents navigate family court alone, overwhelmed and unsupported. She believed then, as she does now, that complexity shouldn't mean isolation. Sarah brings a background in education and a deep commitment to making legal processes accessible to everyone.
+                Sarah founded <span className="italic font-semibold">civilla</span> after years of watching parents navigate family court alone, overwhelmed and unsupported. She believed then, as she does now, that complexity shouldn't mean isolation. Sarah brings a background in education and a deep commitment to making legal processes accessible to everyone.
               </p>
               <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                Marcus joined early because he saw his own family in the stories parents were telling. His work in community support and crisis intervention shaped how Civilla thinks about trauma, safety, and meeting people where they are. He ensures every feature we build asks first: will this help someone feel less alone?
+                Marcus joined early because he saw his own family in the stories parents were telling. His work in community support and crisis intervention shaped how <span className="italic font-semibold">civilla</span> thinks about trauma, safety, and meeting people where they are. He ensures every feature we build asks first: will this help someone feel less alone?
               </p>
               <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                Jen comes from a background in user research and design. She listens to how parents actually use Civilla, what confuses them, what helps them breathe easier. Her work keeps us honest about whether we're truly making things simpler or just moving the confusion around.
+                Jen comes from a background in user research and design. She listens to how parents actually use <span className="italic font-semibold">civilla</span>, what confuses them, what helps them breathe easier. Her work keeps us honest about whether we're truly making things simpler or just moving the confusion around.
               </p>
             </div>
           </div>

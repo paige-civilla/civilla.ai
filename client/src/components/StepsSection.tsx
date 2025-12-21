@@ -3,13 +3,13 @@ const steps = [
     id: "step-one",
     number: "1",
     title: "Step One",
-    description: "Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category."
+    description: "Choose your state and case type. civilla surfaces educational information and typical court steps for that jurisdiction and case category."
   },
   {
     id: "step-two",
     number: "2",
     title: "Step Two",
-    description: "Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context."
+    description: "Add your documents, messages, and key events. civilla organizes what you provide into a clear timeline so you can review everything in context."
   },
   {
     id: "step-three",

@@ -15,7 +15,7 @@ export default function Login() {
                 Login
               </h1>
               <p className="font-sans text-sm md:text-[20px] text-neutral-darkest/80 w-full">
-                Login is coming soon. For now, you can explore Civilla and view Plans & Pricing.
+                Login is coming soon. For now, you can explore <span className="italic font-semibold">civilla</span> and view Plans & Pricing.
               </p>
             </div>
             <div className="flex gap-4 items-start flex-wrap justify-center">
@@ -32,7 +32,7 @@ export default function Login() {
                   className="inline-block bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-[22px] py-2 rounded-md cursor-pointer"
                   data-testid="link-how-civilla-works"
                 >
-                  How Civilla Works
+                  How <span className="italic font-semibold">civilla</span> Works
                 </span>
               </Link>
             </div>

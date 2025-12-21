@@ -4,7 +4,7 @@ const footerLinks = {
   explore: [
     { label: "Home", href: "/" },
     { label: "Plans & Pricing", href: "/plans" },
-    { label: "How Civilla Works", href: "/how-civilla-works" },
+    { label: "How civilla Works", href: "/how-civilla-works" },
     { label: "About Us", href: "/about" },
   ],
   trustSafety: [

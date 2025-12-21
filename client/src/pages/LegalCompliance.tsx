@@ -25,7 +25,7 @@ function EducationSection() {
                   Education only, never legal advice
                 </h2>
                 <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-                  Everything on Civilla is designed to inform and explain. We do not provide legal advice, and nothing here replaces an attorney.
+                  Everything on <span className="italic font-semibold">civilla</span> is designed to inform and explain. We do not provide legal advice, and nothing here replaces an attorney.
                 </p>
               </div>
             </div>
@@ -85,7 +85,7 @@ function BoundariesSection() {
                     What we can and cannot do for you. Understanding these limits keeps you safe and informed.
                   </h2>
                   <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-                    Civilla answers educational questions. We explain legal terms, show how courts work, and help you organize evidence. We do not answer case-specific questions or tell you what decisions to make.
+                    <span className="italic font-semibold">civilla</span> answers educational questions. We explain legal terms, show how courts work, and help you organize evidence. We do not answer case-specific questions or tell you what decisions to make.
                   </p>
                 </div>
               </div>
@@ -135,28 +135,28 @@ function FAQSection() {
   const faqs = [
     {
       id: 0,
-      question: "Can Civilla give me legal advice?",
-      answer: "No. Civilla is built for education only. We explain how family law works, help you organize your case, and show you what options exist. We never tell you what to file, when to file it, or how to argue your case. That requires a lawyer."
+      question: "Can civilla give me legal advice?",
+      answer: "No. civilla is built for education only. We explain how family law works, help you organize your case, and show you what options exist. We never tell you what to file, when to file it, or how to argue your case. That requires a lawyer."
     },
     {
       id: 1,
       question: "Is my information private?",
-      answer: "Yes. Your documents, messages, and case details stay on Civilla's secure servers. We do not share your information with courts, opposing parties, or third parties. See our Privacy Policy for full details."
+      answer: "Yes. Your documents, messages, and case details stay on civilla's secure servers. We do not share your information with courts, opposing parties, or third parties. See our Privacy Policy for full details."
     },
     {
       id: 2,
       question: "What if I need a real lawyer?",
-      answer: "Civilla helps you prepare and understand your case, but it does not replace legal representation. If you can afford an attorney, we recommend consulting one. We can help you organize your materials to share with a lawyer."
+      answer: "civilla helps you prepare and understand your case, but it does not replace legal representation. If you can afford an attorney, we recommend consulting one. We can help you organize your materials to share with a lawyer."
     },
     {
       id: 3,
-      question: "Can I use Civilla's documents in court?",
-      answer: "Civilla's documents come with clear disclaimers that they are educational drafts, not legal documents. You are responsible for ensuring any document you file meets your court's rules and requirements. Always verify with your local court."
+      question: "Can I use civilla's documents in court?",
+      answer: "civilla's documents come with clear disclaimers that they are educational drafts, not legal documents. You are responsible for ensuring any document you file meets your court's rules and requirements. Always verify with your local court."
     },
     {
       id: 4,
       question: "Who decides what I do with my case?",
-      answer: "You do. Civilla gives you information and options. You make all decisions about your case. We support your choices by helping you understand the law and organize your evidence."
+      answer: "You do. civilla gives you information and options. You make all decisions about your case. We support your choices by helping you understand the law and organize your evidence."
     }
   ];
 
@@ -179,7 +179,7 @@ function FAQSection() {
             Questions
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Find answers about how Civilla works and what it cannot do.
+            Find answers about how <span className="italic font-semibold">civilla</span> works and what it cannot do.
           </p>
         </div>
 
@@ -217,7 +217,7 @@ function FAQSection() {
               Common questions answered
             </h3>
             <p className="font-sans font-normal text-body-medium leading-[1.6] w-full">
-              Everything you need to know about Civilla
+              Everything you need to know about <span className="italic font-semibold">civilla</span>
             </p>
           </div>
           <div className="flex items-center">
