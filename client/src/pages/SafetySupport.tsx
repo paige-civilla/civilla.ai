@@ -25,7 +25,7 @@ const menuLinks = {
   ]
 };
 
-const imgQuickExit = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
+const imgQuickExit = "https://www.figma.com/api/mcp/asset/c4115cfe-8611-4c8d-bb5f-5b41cb30f9fd";
 const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/70cd2b88-b5c3-4123-83da-b783c1fed0c1";
 const imgPrivateBrowser = "https://www.figma.com/api/mcp/asset/a44db474-56ed-4b20-a4be-61f3fa8be1ed";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
