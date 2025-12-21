@@ -34,18 +34,13 @@ export default function TestimonialsSection() {
       data-testid="section-testimonials"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-3 md:gap-4 items-center max-w-content-large w-full">
-          <span className="font-sans font-bold text-tagline text-neutral-darkest text-center">
-            Voices
-          </span>
-          <div className="flex flex-col gap-5 md:gap-6 items-center text-neutral-darkest text-center w-full">
-            <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-              What people are saying
-            </h2>
-            <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-              civilla.ai was built for people going through one of the hardest moments of their lives. Here's what they have to say.
-            </p>
-          </div>
+        <div className="flex flex-col gap-5 md:gap-6 items-center text-neutral-darkest text-center max-w-content-large w-full">
+          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
+            What people are saying
+          </h2>
+          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
+            civilla.ai was built for people going through one of the hardest moments of their lives. Here's what they have to say.
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8 w-full">

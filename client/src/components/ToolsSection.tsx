@@ -46,18 +46,13 @@ export default function ToolsSection() {
       data-testid="section-tools"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-3 md:gap-4 items-center max-w-content-large w-full">
-          <span className="font-sans font-bold text-tagline text-white text-center">
-            Tools
-          </span>
-          <div className="flex flex-col gap-5 md:gap-6 items-center text-white text-center w-full">
-            <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-              What civilla.ai does
-            </h2>
-            <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-              Each tool is built to help you move through your case with less confusion and more confidence. You choose what you need, when you need it.
-            </p>
-          </div>
+        <div className="flex flex-col gap-5 md:gap-6 items-center text-white text-center max-w-content-large w-full">
+          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
+            What civilla.ai does
+          </h2>
+          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
+            Each tool is built to help you move through your case with less confusion and more confidence. You choose what you need, when you need it.
+          </p>
         </div>
 
         <section className="cv-card p-6 md:p-8 w-full">
