@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, ChevronRight, Check, Ban, BarChart3 } from "lucide-react";
+import { Menu, X, ChevronRight, ChevronUp, ChevronDown, Check, Ban, BarChart3 } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 
@@ -206,81 +206,103 @@ function BoundariesSection() {
 }
 
 function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number>(0);
+  const [openItems, setOpenItems] = useState<number[]>([0]);
 
   const faqs = [
     {
+      id: 0,
       question: "Can Civilla give me legal advice?",
       answer: "No. Civilla is built for education only. We explain how family law works, help you organize your case, and show you what options exist. We never tell you what to file, when to file it, or how to argue your case. That requires a lawyer."
     },
     {
+      id: 1,
       question: "Is my information private?",
       answer: "Yes. Your documents, messages, and case details stay on Civilla's secure servers. We do not share your information with courts, opposing parties, or third parties. See our Privacy Policy for full details."
     },
     {
+      id: 2,
       question: "What if I need a real lawyer?",
       answer: "Civilla helps you prepare and understand your case, but it does not replace legal representation. If you can afford an attorney, we recommend consulting one. We can help you organize your materials to share with a lawyer."
     },
     {
+      id: 3,
       question: "Can I use Civilla's documents in court?",
       answer: "Civilla's documents come with clear disclaimers that they are educational drafts, not legal documents. You are responsible for ensuring any document you file meets your court's rules and requirements. Always verify with your local court."
     },
     {
+      id: 4,
       question: "Who decides what I do with my case?",
       answer: "You do. Civilla gives you information and options. You make all decisions about your case. We support your choices by helping you understand the law and organize your evidence."
     }
   ];
 
+  const toggleItem = (id: number) => {
+    setOpenItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
     <section 
-      className="bg-[#f2f2f2] w-full flex flex-col items-center px-16 py-28"
+      className="bg-neutral-lightest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-faq"
     >
-      <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex gap-20 items-start w-full">
-          <div className="flex flex-col gap-8 items-start w-[500px]">
-            <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
-              <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
-                Questions
-              </h2>
-              <p className="cv-p font-sans text-[20px] leading-[1.6] w-full">
-                Find answers about how Civilla works and what it cannot do.
-              </p>
+      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
+        <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
+          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
+            Questions
+          </h2>
+          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
+            Find answers about how Civilla works and what it cannot do.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-start max-w-content-large w-full border-b-2 border-neutral-darkest">
+          {faqs.map((faq) => (
+            <div key={faq.id} className="flex flex-col items-start w-full">
+              <button
+                onClick={() => toggleItem(faq.id)}
+                className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
+                data-testid={`button-faq-${faq.id}`}
+              >
+                <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest">
+                  {faq.question}
+                </span>
+                {openItems.includes(faq.id) ? (
+                  <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />
+                ) : (
+                  <ChevronDown className="w-8 h-8 text-neutral-darkest shrink-0" />
+                )}
+              </button>
+              {openItems.includes(faq.id) && (
+                <div className="flex items-start pb-6 w-full">
+                  <p className="flex-1 font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest">
+                    {faq.answer}
+                  </p>
+                </div>
+              )}
             </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-6 items-center max-w-content-medium w-full">
+          <div className="flex flex-col gap-4 items-center text-neutral-darkest text-center w-full">
+            <h3 className="font-heading font-bold text-heading-4 tracking-[0.4px] w-full">
+              Common questions answered
+            </h3>
+            <p className="font-sans font-normal text-body-medium leading-[1.6] w-full">
+              Everything you need to know about Civilla
+            </p>
+          </div>
+          <div className="flex items-center">
             <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-xl"
+              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
               data-testid="button-contact-faq"
             >
-              Contact
+              Contact us
             </button>
-          </div>
-
-          <div className="flex-1 flex flex-col gap-4">
-            {faqs.map((faq, index) => (
-              <div 
-                key={index}
-                className="bg-[#f2f2f2] border-2 border-neutral-darkest rounded-2xl overflow-hidden"
-                data-testid={`faq-item-${index}`}
-              >
-                <button
-                  className="w-full flex gap-6 items-center px-6 py-5"
-                  onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
-                  data-testid={`button-faq-${index}`}
-                >
-                  <span className="flex-1 text-left font-sans font-bold text-[20px] leading-[1.6] text-neutral-darkest">
-                    {faq.question}
-                  </span>
-                  <X className={`w-6 h-6 text-neutral-darkest transition-transform flex-shrink-0 ${openIndex === index ? "" : "rotate-45"}`} />
-                </button>
-                {openIndex === index && (
-                  <div className="px-6 pb-6">
-                    <p className="cv-p font-sans text-[18px] leading-[1.6] text-neutral-darkest">
-                      {faq.answer}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
       </div>
