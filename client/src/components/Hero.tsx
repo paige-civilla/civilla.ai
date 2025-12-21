@@ -25,7 +25,7 @@ export default function Hero() {
               }}
               data-testid="link-scroll-learn-more"
             >
-              Scroll to Learn More ↓
+              Scroll to Learn More <span className="text-lg">↓</span>
             </span>
           </div>
         </div>
