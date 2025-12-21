@@ -15,8 +15,8 @@ export default function Hero() {
         <div className="flex flex-1 items-start w-full">
           <div className="flex flex-1 flex-col gap-6 md:gap-8 h-full items-start justify-center">
             <h1 className="font-heading font-bold text-white text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] whitespace-pre-wrap">
-              <span className="block">Family law,</span>
-              <span className="block">translated.</span>
+              <span className="block">Family Law,</span>
+              <span className="block">Translated.</span>
             </h1>
             <span 
               className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm text-white underline underline-offset-4 opacity-80 hover:opacity-100"
