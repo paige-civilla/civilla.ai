@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const FEATURES = [
   {
@@ -62,7 +63,11 @@ export default function ToolsSection() {
                       data-testid={`button-accordion-${item.title.toLowerCase().replace(/\s/g, "-")}`}
                     >
                       <span>{item.title}</span>
-                      <span className="text-white/70 text-base">{isOpen ? "–" : "+"}</span>
+                      {isOpen ? (
+                        <ChevronUp className="w-5 h-5 text-white/70" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-white/70" />
+                      )}
                     </button>
 
                     <div
