@@ -2,21 +2,21 @@ const logoUrl = "https://www.figma.com/api/mcp/asset/a24a48c1-9ca1-4e0e-95d3-668
 
 const footerLinks = {
   product: [
-    { label: "How it works", href: "#" },
-    { label: "About us", href: "#" },
-    { label: "Plans", href: "#" },
+    { label: "How it works", href: "/how-civilla-works" },
+    { label: "About us", href: "/about-civilla" },
+    { label: "Plans", href: "/plans" },
     { label: "Support", href: "#" },
     { label: "Resources", href: "#" }
   ],
   learn: [
-    { label: "Legal", href: "#" },
+    { label: "Legal", href: "/legal-compliance" },
     { label: "Safety", href: "#" },
     { label: "FAQ", href: "#" },
     { label: "Contact", href: "#" },
     { label: "Accessibility", href: "#" }
   ],
   help: [
-    { label: "Privacy", href: "#" },
+    { label: "Privacy", href: "/privacy-policy" },
     { label: "Terms", href: "#" },
     { label: "Legal & Compliance", href: "/legal-compliance" },
     { label: "Status", href: "#" },
@@ -104,7 +104,7 @@ export default function Footer() {
             2025 civilla.ai. All rights reserved.
           </p>
           <div className="flex gap-6 items-center">
-            <a href="#" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-privacy">
+            <a href="/privacy-policy" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-privacy">
               Privacy Policy
             </a>
             <a href="#" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-terms">

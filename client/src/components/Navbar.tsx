@@ -8,6 +8,8 @@ const navLinks = [
   { href: "/how-civilla-works", label: "How Civilla Works" },
   { href: "/about-civilla", label: "About Civilla" },
   { href: "/plans", label: "Plans" },
+  { href: "/legal-compliance", label: "Legal & Compliance" },
+  { href: "/privacy-policy", label: "Privacy Policy" },
 ];
 
 export default function Navbar() {
