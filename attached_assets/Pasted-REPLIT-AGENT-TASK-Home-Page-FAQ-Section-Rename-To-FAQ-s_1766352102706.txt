@@ -1,0 +1,68 @@
+REPLIT AGENT TASK: Home Page FAQ Section — Rename To “FAQ’s” + Remove Contact Button (No CTA)
+
+GOAL
+Update the Home page questions/accordion section above the footer so it:
+- Uses the heading “FAQ’s”
+- Has NO contact/support button or CTA in this section
+- Keeps UPL-safe, US-only answers
+
+STEP 1 — FIND THE FILE
+Search:
+rg -n "Common questions answered|Questions\\b|FAQ|Contact us|Contact Support|Is civilla\\.ai a law firm\\?" client/src
+
+Open the component that renders this section on the Home page.
+
+STEP 2 — UPDATE SECTION HEADER
+Replace the section heading + subhead with:
+
+HEADING:
+“FAQ’s”
+
+SUBHEAD:
+“Quick answers about what Civilla does — and what it doesn’t.”
+
+(Ensure there is ONLY one heading in this section.)
+
+STEP 3 — REMOVE THE CONTACT BUTTON / CTA
+In this FAQ section component:
+- Remove the “Contact us” button (and any wrapper container around it if it’s only used for that CTA).
+- Remove any helper text that exists solely to introduce the button.
+- Do NOT remove the accordion.
+
+STEP 4 — SET / VERIFY THE 5 FAQ ACCORDION ITEMS (UPL-SAFE, US-ONLY)
+Ensure the accordion contains exactly these items:
+
+Q1: “Is civilla.ai a law firm?”
+A1:
+“No. Civilla is an educational, research, and organizational platform. We don’t provide legal advice, represent you in court, or replace an attorney.”
+
+Q2: “Can I use civilla.ai with an attorney?”
+A2:
+“Yes. Many people use Civilla to stay organized and share timelines, notes, and documents with their attorney. Civilla supports your preparation — your attorney remains your legal advisor.”
+
+Q3: “What states does civilla.ai cover?”
+A3:
+“Civilla is built for U.S. family law. You can choose your state to view educational information and typical court processes. Because rules and forms vary by county and case, always confirm details with official court sources or an attorney.”
+
+Q4: “Will civilla.ai tell me what to file?”
+A4:
+“No. Civilla can explain what documents exist and how they’re typically used, but it doesn’t tell you what to file or when. Those decisions are yours — ideally with an attorney’s guidance.”
+
+Q5: “How is my information kept safe?”
+A5:
+“Your privacy matters to us. We explain how we handle data in our Privacy Policy. If you ever need to leave quickly, use Quick Exit.”
+
+IMPORTANT:
+- Do NOT claim “encryption” or specific security standards unless already confirmed accurate in your Privacy Policy.
+- Keep the accordion styling/layout unchanged.
+
+VERIFY
+- Heading shows “FAQ’s”
+- No button/CTA appears in this section
+- Accordion renders correctly on mobile
+- No lint/type errors
+
+REPORT BACK
+- File edited + exact line ranges changed
+- Confirm the contact button was removed
+- Confirm final heading/subhead

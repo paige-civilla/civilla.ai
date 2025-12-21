@@ -5,27 +5,27 @@ const faqs = [
   {
     id: 1,
     question: "Is civilla.ai a law firm?",
-    answer: "No. civilla.ai is an educational platform, not a law firm. We don't provide legal advice, represent you in court, or replace an attorney. We help you understand family law and organize your case."
+    answer: "No. Civilla is an educational, research, and organizational platform. We don't provide legal advice, represent you in court, or replace an attorney."
   },
   {
     id: 2,
     question: "Can I use civilla.ai with an attorney?",
-    answer: "Yes. Many users work with attorneys and use civilla.ai to organize their evidence and understand their case better. It's a tool to support your preparation, not replace legal counsel."
+    answer: "Yes. Many people use Civilla to stay organized and share timelines, notes, and documents with their attorney. Civilla supports your preparation — your attorney remains your legal advisor."
   },
   {
     id: 3,
     question: "What states does civilla.ai cover?",
-    answer: "civilla.ai is designed for U.S. family law and allows you to select your state. Each state has different rules, and civilla.ai customizes information based on your selection."
+    answer: "Civilla is built for U.S. family law. You can choose your state to view educational information and typical court processes. Because rules and forms vary by county and case, always confirm details with official court sources or an attorney."
   },
   {
     id: 4,
     question: "Will civilla.ai tell me what to file?",
-    answer: "No. civilla.ai explains what documents exist and how they're typically used, but it doesn't tell you what to file or when. Those decisions are yours, ideally with an attorney's guidance."
+    answer: "No. Civilla can explain what documents exist and how they're typically used, but it doesn't tell you what to file or when. Those decisions are yours — ideally with an attorney's guidance."
   },
   {
     id: 5,
     question: "How is my information kept safe?",
-    answer: "Your privacy and security matter. civilla.ai uses encryption and follows strict data protection standards. Read our Privacy Policy for full details about how we handle your information."
+    answer: "Your privacy matters to us. We explain how we handle data in our Privacy Policy. If you ever need to leave quickly, use Quick Exit."
   }
 ];
 
@@ -48,10 +48,10 @@ export default function FAQSection() {
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-            Questions
+            FAQ's
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Find answers about how civilla.ai works and what it can do for you.
+            Quick answers about what Civilla does — and what it doesn't.
           </p>
         </div>
 
@@ -81,25 +81,6 @@ export default function FAQSection() {
               )}
             </div>
           ))}
-        </div>
-
-        <div className="flex flex-col gap-6 items-center max-w-content-medium w-full">
-          <div className="flex flex-col gap-4 items-center text-neutral-darkest text-center w-full">
-            <h3 className="font-heading font-bold text-heading-4 tracking-[0.4px] w-full">
-              Common questions answered
-            </h3>
-            <p className="font-sans font-normal text-body-medium leading-[1.6] w-full">
-              Everything you need to know about civilla.ai
-            </p>
-          </div>
-          <div className="flex items-center">
-            <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
-              data-testid="button-contact"
-            >
-              Contact us
-            </button>
-          </div>
         </div>
       </div>
     </section>
