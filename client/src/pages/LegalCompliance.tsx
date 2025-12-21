@@ -93,9 +93,6 @@ function EducationSection() {
           </div>
           <div className="flex-1 flex flex-col gap-8 items-start">
             <div className="flex flex-col gap-6 items-start w-full">
-              <div className="w-20 h-20 rounded-full border-2 border-neutral-darkest flex items-center justify-center">
-                <span className="font-serif text-[40px] text-neutral-darkest">i</span>
-              </div>
               <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
                 <h2 className="cv-h font-heading font-bold tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
                   Education only, never legal advice
@@ -197,7 +194,7 @@ function BoundariesSection() {
           </div>
           <div className="flex-1 aspect-[600/640] rounded-2xl overflow-hidden">
             <img 
-              src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&h=640&fit=crop"
+              src="https://www.figma.com/api/mcp/asset/a8e88eac-3797-4930-8f68-b462609e9e2a"
               alt="Door representing boundaries"
               className="w-full h-full object-cover"
             />
