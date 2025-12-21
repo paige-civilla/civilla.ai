@@ -47,7 +47,7 @@ export default function ToolsSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 w-full">
-          <div className="rounded-2xl border border-white/30 bg-white/5 p-4">
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-4 text-center">
             <div className="flex flex-col">
               {FEATURES.map((item, idx) => {
                 const isOpen = openIndex === idx;
@@ -90,8 +90,8 @@ export default function ToolsSection() {
               Family court can feel chaotic. Civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.
             </p>
 
-            <p className="mt-6 text-sm text-white/70">
-              Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
+            <p className="mt-6 text-sm text-white/70 font-bold italic">
+              *Educational, Research, And Organizational Support — Not Legal Advice Or Representation.*
             </p>
           </div>
         </div>
