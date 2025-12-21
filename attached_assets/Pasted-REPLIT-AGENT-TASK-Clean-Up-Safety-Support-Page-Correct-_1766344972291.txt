@@ -1,0 +1,75 @@
+REPLIT AGENT TASK: Clean Up Safety & Support Page (Correct Resources, Remove Placeholder Help Number, Add Clear Non-Emergency Support)
+
+GOAL
+Update the Safety & Support page so it:
+- Clearly states Civilla is not an emergency service
+- Uses general, reliable resources (no state-by-state list)
+- Removes any fake/placeholder “Help Center” phone section
+- Keeps support@civilla.ai as non-emergency contact
+
+STEP 1 — FIND THE FILE
+Search:
+rg -n "Safety\\b|In crisis|support@civilla\\.ai|Help Center|Hotline|1-800-799|911" client/src
+
+Open the page component that renders the Safety & Support screen (likely a file named SafetySupport.tsx or similar under client/src/pages).
+
+STEP 2 — REPLACE THE TOP HERO COPY
+Replace the current hero area text with:
+
+PAGE EYEBROW (small/top label, if present):
+“Safety”
+
+MAIN HEADING:
+“In Crisis”
+
+BODY PARAGRAPH (replace the current paragraph):
+“If you’re in immediate danger, call 911 (or your local emergency number). Civilla is not an emergency service. Use Quick Exit if you need to leave this site quickly.”
+
+(Keep Quick Exit wording simple and direct.)
+
+STEP 3 — FIX / REPLACE THE CARDS (Resources / Support / Hotline)
+A) RESOURCES CARD
+Title: “Resources”
+Body: “Learn about safety planning and find support options in your area.”
+Link text (internal): “Safety & Support”
+(If this links to the same page you’re on, remove the link and keep it as plain text.)
+
+B) SUPPORT CARD (CIVILLA SUPPORT — NON-EMERGENCY)
+Title: “Civilla Support”
+Body: “For account or site issues (non-emergency), email us anytime.”
+Link: “support@civilla.ai” as a mailto link:
+href="mailto:support@civilla.ai"
+
+C) CRISIS SUPPORT (US) CARD
+Title: “Crisis Support (U.S.)”
+Body: “Call or text 988 for free, confidential support 24/7.”
+
+D) DOMESTIC VIOLENCE SUPPORT (US) CARD
+Title: “Domestic Violence Support (U.S.)”
+Body (use exactly):
+“National Domestic Violence Hotline: 1-800-799-7233. Text ‘START’ to 88788. Chat available at TheHotline.org.”
+
+OPTIONAL (if you have room as a second line under that card):
+“You can also search their directory of local providers for help in your area.”
+
+STEP 4 — REMOVE THE PLACEHOLDER HELP CENTER SECTION
+Remove any section that:
+- says “Help Center”
+- shows a phone number you don’t own
+- repeats “Visit our Help Center for answers”
+
+Do NOT leave broken links.
+
+STEP 5 — FINAL SAFETY LINE (BOTTOM OF PAGE)
+Add a small, muted line at the bottom:
+“Civilla provides educational, research, and organizational support — not legal advice or representation.”
+
+VERIFY
+- Page reads cleanly on mobile (no duplicated headings/links)
+- No placeholder phone numbers remain
+- support@civilla.ai opens email composer
+- No lint/type errors
+
+REPORT BACK
+- File edited + exact line ranges changed
+- Confirm which sections were removed
