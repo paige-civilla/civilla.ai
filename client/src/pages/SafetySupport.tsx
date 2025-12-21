@@ -44,9 +44,6 @@ export default function SafetySupport() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-20 items-center">
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
-              <p className="font-arimo font-bold text-base text-neutral-darkest">
-                Safety
-              </p>
               <div className="flex flex-col gap-6 items-center w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   Leave in a click
@@ -61,9 +58,6 @@ export default function SafetySupport() {
             <div className="w-full border-2 border-neutral-darkest rounded-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[640px]">
               <div className="flex-1 flex flex-col justify-center p-12 gap-8">
                 <div className="flex flex-col gap-2">
-                  <p className="font-arimo font-bold text-base text-neutral-darkest">
-                    Quick exit
-                  </p>
                   <div className="flex flex-col gap-6">
                     <h3 className="font-figtree font-bold text-[clamp(32px,4vw,48px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
                       How quick exit works
@@ -109,9 +103,6 @@ export default function SafetySupport() {
             <div className="flex-1 flex flex-col gap-8">
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4">
-                  <p className="font-arimo font-bold text-base text-white">
-                    Design
-                  </p>
                   <div className="flex flex-col gap-6">
                     <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
                       Designed for discretion
@@ -152,9 +143,6 @@ export default function SafetySupport() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-20 items-center">
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
-              <p className="font-arimo font-bold text-base text-white">
-                Support
-              </p>
               <div className="flex flex-col gap-6 items-center w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
                   Additional safety tools
@@ -215,9 +203,6 @@ export default function SafetySupport() {
                 </div>
                 <div className="p-8 flex flex-col gap-4 flex-1 items-center text-center">
                   <div className="flex flex-col gap-4 items-center">
-                    <p className="font-arimo font-bold text-base text-white">
-                      Privacy
-                    </p>
                     <div className="flex flex-col gap-2 items-center">
                       <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-white">
                         Private browser mode
@@ -243,9 +228,6 @@ export default function SafetySupport() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-20 items-center">
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
-              <p className="font-arimo font-bold text-base text-neutral-darkest">
-                Support
-              </p>
               <div className="flex flex-col gap-6 items-center w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   Your emotional safety matters

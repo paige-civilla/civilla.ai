@@ -73,9 +73,6 @@ export default function Contact() {
             {/* Left Column */}
             <div className="flex-1 flex flex-col gap-8">
               <div className="flex flex-col gap-4">
-                <p className="font-arimo font-bold text-base leading-[1.5] text-neutral-darkest">
-                  Support
-                </p>
                 <h2 className="font-figtree font-bold text-[60px] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   How we can help you
                 </h2>
@@ -135,9 +132,6 @@ export default function Contact() {
             {/* Left Column - Contact Info */}
             <div className="flex-1 flex flex-col gap-8">
               <div className="flex flex-col gap-4">
-                <p className="font-arimo font-bold text-base leading-[1.5] text-neutral-darkest">
-                  Message
-                </p>
                 <div className="flex flex-col gap-6 text-neutral-darkest">
                   <h2 className="font-figtree font-bold text-[60px] leading-[1.2] tracking-[0.01em]" style={{ textWrap: "balance" }}>
                     Send us a message

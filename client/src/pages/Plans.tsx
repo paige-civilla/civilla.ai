@@ -39,9 +39,6 @@ function MostPopularSection() {
     <section className="bg-cream w-full flex flex-col items-center px-16 py-28" data-testid="section-most-popular">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
-            Plans
-          </span>
           <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
               Most Popular
@@ -204,9 +201,6 @@ function PricingCardsSection() {
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-8 items-start w-full">
           <div className="flex-1 flex flex-col gap-4 items-start max-w-[768px]">
-            <span className="font-sans font-bold text-[16px] text-neutral-darkest leading-[1.5]">
-              Plans
-            </span>
             <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
               <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
                 What you get
@@ -407,9 +401,6 @@ function FAQSection() {
     <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-16 py-28" data-testid="section-faq">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
-            FAQ
-          </span>
           <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
               Common questions

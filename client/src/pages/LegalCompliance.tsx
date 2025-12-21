@@ -80,9 +80,6 @@ function BoundariesSection() {
           <div className="flex-1 flex flex-col gap-8 items-start">
             <div className="flex flex-col gap-8 items-start w-full">
               <div className="flex flex-col gap-4 items-start w-full">
-                <span className="font-sans font-bold text-[16px] leading-[1.5] text-white">
-                  Boundaries
-                </span>
                 <div className="flex flex-col gap-6 items-start text-white w-full">
                   <h2 className="cv-h font-heading font-bold tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
                     What we can and cannot do for you. Understanding these limits keeps you safe and informed.

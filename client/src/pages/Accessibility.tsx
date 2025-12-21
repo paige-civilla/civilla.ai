@@ -45,9 +45,6 @@ export default function Accessibility() {
             <div className="flex-1 flex flex-col gap-8">
               <div className="flex flex-col gap-8">
                 <div className="flex flex-col gap-4">
-                  <p className="font-arimo font-bold text-base text-neutral-darkest">
-                    Commitment
-                  </p>
                   <div className="flex flex-col gap-6">
                     <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                       Accessibility is not optional for us
@@ -123,9 +120,6 @@ export default function Accessibility() {
           <div className="flex flex-col md:flex-row gap-20 items-start">
             <div className="flex-1 flex flex-col gap-8">
               <div className="flex flex-col gap-4">
-                <p className="font-arimo font-bold text-base text-neutral-darkest">
-                  Report
-                </p>
                 <div className="flex flex-col gap-6">
                   <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                     Found a problem
@@ -193,9 +187,6 @@ export default function Accessibility() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-20">
             <div className="flex flex-col gap-4 max-w-[768px]">
-              <p className="font-arimo font-bold text-base text-neutral-darkest">
-                Support
-              </p>
               <div className="flex flex-col gap-6">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   We're here

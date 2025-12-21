@@ -52,9 +52,6 @@ function JourneySection() {
     <section className="bg-cream w-full flex flex-col items-center px-16 py-28" data-testid="section-journey">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
-            Journey
-          </span>
           <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
               Your case, step by step
@@ -184,9 +181,6 @@ function ClaritySection() {
     <section className="bg-bush-dark w-full flex flex-col items-center px-16 py-28" data-testid="section-clarity">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <span className="font-sans font-bold text-[16px] text-white text-center leading-[1.5]">
-            Clarity
-          </span>
           <div className="flex flex-col gap-6 items-center text-white text-center w-full">
             <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
               What changes when you understand the process
@@ -276,9 +270,6 @@ function ToolsSection() {
     <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-16 py-28" data-testid="section-tools">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
-            Tools
-          </span>
           <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] w-full">
               What you get inside
