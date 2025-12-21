@@ -25,9 +25,7 @@ function HeaderSection() {
   );
 }
 
-function MostPopularSection() {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
-
+function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod: "monthly" | "yearly"; setBillingPeriod: (v: "monthly" | "yearly") => void }) {
   const features = [
     "Case journey overview",
     "Document organization tools",
@@ -124,16 +122,14 @@ function MostPopularSection() {
   );
 }
 
-function PricingCardsSection() {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
-
+function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPeriod: "monthly" | "yearly"; setBillingPeriod: (v: "monthly" | "yearly") => void }) {
   const plans = [
     {
       name: "three day trial",
       subtitle: "Start free, upgrade when",
       monthlyPrice: "$0",
       yearlyPrice: "$0",
-      period: "/mo",
+      period: billingPeriod === "monthly" ? "/mo" : "/yr",
       monthlyNote: "three day trial",
       yearlyNote: "three day trial",
       buttonText: "start trial",
@@ -464,13 +460,15 @@ function FAQSection() {
 }
 
 export default function Plans() {
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+
   return (
     <div className="min-h-screen flex flex-col">
       <NavbarCream />
       <main className="flex-1">
         <HeaderSection />
-        <MostPopularSection />
-        <PricingCardsSection />
+        <MostPopularSection billingPeriod={billingPeriod} setBillingPeriod={setBillingPeriod} />
+        <PricingCardsSection billingPeriod={billingPeriod} setBillingPeriod={setBillingPeriod} />
         <OrganizationsSection />
         <FAQSection />
       </main>
