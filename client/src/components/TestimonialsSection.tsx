@@ -62,7 +62,7 @@ export default function TestimonialsSection() {
                   alt={testimonial.name} 
                   className="w-12 h-12 rounded-full object-cover"
                 />
-                <div className="flex flex-1 flex-col items-start text-neutral-darkest text-body-regular leading-[1.6]">
+                <div className="flex flex-1 flex-col items-start text-neutral-darkest text-body-regular leading-[1.6] min-w-0">
                   <span className="font-sans font-bold w-full">{testimonial.name}</span>
                   <span className="font-sans font-normal w-full">{testimonial.role}</span>
                 </div>

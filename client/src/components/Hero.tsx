@@ -20,7 +20,7 @@ export default function Hero() {
               <span className="block">Family law,</span>
               <span className="block">translated.</span>
             </h1>
-            <div className="flex gap-4 items-start">
+            <div className="flex flex-wrap gap-4 items-start">
               <button 
                 className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-[22px] py-2 rounded-md"
                 data-testid="button-hero-explore"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Check, ChevronRight, ChevronUp, ChevronDown, Home } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
@@ -308,13 +309,13 @@ function PricingCardsSection() {
             Refunds may be issued only for billing errors, service unavailability,
             or where required by law.
           </p>
-          <a
+          <Link
             href="/terms"
             className="underline underline-offset-4 hover:text-neutral-darkest transition-colors"
             data-testid="link-refund-policy"
           >
             View refund policy
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -336,7 +337,7 @@ function OrganizationsSection() {
             <p className="cv-panel-body font-sans text-sm md:text-[20px] leading-[1.6] text-neutral-darkest">
               Domestic violence shelters, legal aid nonprofits, and family service organizations can access Civilla at custom rates. We work with you to make education and case support available to those who need it most. Your team gets dedicated onboarding and bulk access for the families you serve.
             </p>
-            <div className="flex gap-6 items-center">
+            <div className="flex flex-wrap gap-4 md:gap-6 items-center">
               <button 
                 className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6] px-6 py-2.5 rounded-md"
                 data-testid="button-contact-us"
