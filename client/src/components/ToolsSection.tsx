@@ -2,27 +2,27 @@ import { useState } from "react";
 
 const FEATURES = [
   {
-    title: "Case journey",
+    title: "Your Case Journey",
     desc:
-      "Family court cases often follow predictable stages. Civilla shows a plain-language overview of what typically happens at each step so you can understand what to expect.",
+      "Family court cases often follow predictable stages. Civilla gives you a plain-language overview of what typically happens at each step, so you can understand what to expect.",
   },
   {
-    title: "Evidence timeline",
+    title: "Your Evidence Timeline",
     desc:
-      "Build a dated timeline using your notes, uploads, and events. Keep everything organized in one place and export it for your own records.",
+      "Build a dated timeline from the information you enter — notes, events, and uploads — so your case materials stay organized and easy to review.",
   },
   {
-    title: "Pattern analysis",
+    title: "Your Pattern Analysis",
     desc:
-      "See patterns in the information you enter (themes, frequency, dates, categories) to help you stay organized and spot what you may want to document.",
+      "Civilla highlights patterns in the information you log (themes, frequency, dates, categories) to help you stay organized and notice what you may want to document.",
   },
   {
-    title: "Research assistant",
+    title: "Your Research Assistant",
     desc:
-      "Ask Lexi questions and explore educational, plain-language explanations. Lexi helps you research and understand information — but it doesn't give legal advice.",
+      "Ask Lexi questions and explore educational, plain-language explanations. Lexi supports research and understanding — it does not provide legal advice.",
   },
   {
-    title: "Document builder",
+    title: "Your Document Builder",
     desc:
       "Create educational drafts from your inputs and templates. You stay in control: review, edit, and decide what (if anything) you use.",
   },
@@ -84,15 +84,14 @@ export default function ToolsSection() {
           <div className="rounded-2xl border border-white/30 bg-white/5 p-6">
             <div className="mb-4 text-white/80 text-2xl">◻︎</div>
             <h3 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
-              Track what matters in your case
+              Track What Matters In Your Case
             </h3>
             <p className="mt-4 text-white/85 leading-relaxed text-sm md:text-base">
-              Family court can feel chaotic. Civilla helps you organize your timeline, documents, and notes —
-              and understand the typical process — so you can prepare with clarity.
+              Family court can feel chaotic. Civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.
             </p>
 
             <p className="mt-6 text-sm text-white/70">
-              Educational, research, and organizational support — not legal advice or representation.
+              Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
             </p>
           </div>
         </div>

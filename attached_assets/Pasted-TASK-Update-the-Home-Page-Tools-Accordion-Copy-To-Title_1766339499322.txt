@@ -1,0 +1,58 @@
+TASK: Update the Home Page “Tools” Accordion Copy To Title Case + “Your …” Labels, Add Lexi Research Language, And Remove The Explore/Learn More Buttons.
+
+FILE TO EDIT: client/src/components/ToolsSection.tsx
+
+STEP 1 — Update The Left Accordion Titles + Descriptions
+
+In client/src/components/ToolsSection.tsx, locate the FEATURES array near the top (you previously noted titles around lines 5–25). Replace ONLY the title and desc strings for the 5 items with the following:
+	1.	Title: Your Case Journey
+Desc: Family court cases often follow predictable stages. Civilla gives you a plain-language overview of what typically happens at each step, so you can understand what to expect.
+	2.	Title: Your Evidence Timeline
+Desc: Build a dated timeline from the information you enter — notes, events, and uploads — so your case materials stay organized and easy to review.
+	3.	Title: Your Pattern Analysis
+Desc: Civilla highlights patterns in the information you log (themes, frequency, dates, categories) to help you stay organized and notice what you may want to document.
+	4.	Title: Your Research Assistant
+Desc: Ask Lexi questions and explore educational, plain-language explanations. Lexi supports research and understanding — it does not provide legal advice.
+	5.	Title: Your Document Builder
+Desc: Create educational drafts from your inputs and templates. You stay in control: review, edit, and decide what (if anything) you use.
+
+DO NOT CHANGE any accordion logic, state, mapping, or component structure — copy-only changes.
+
+⸻
+
+STEP 2 — Update The Right Panel Headline + Body
+
+In the same file, locate the right-side panel headline currently reading (you noted around line 87):
+Track what matters in your case
+
+Replace it with:
+
+Headline: Track What Matters In Your Case
+
+Replace the body paragraph under it with:
+
+Body Paragraph:
+Family court can feel chaotic. Civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.
+
+Add this line beneath the paragraph (small text style if possible, but any text placement is fine):
+
+Small Disclaimer Line:
+Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
+
+⸻
+
+STEP 3 — Remove Buttons In This Section
+
+If the right panel includes buttons/links labeled “Explore” and/or “Learn more”, remove them entirely from this section (delete those button/link elements). Do not replace them with anything.
+
+⸻
+
+STEP 4 — Verify
+
+After changes:
+	•	Accordion labels show Title Case and start with “Your …”
+	•	Clicking each label expands the new descriptions
+	•	Right panel headline is Title Case
+	•	No Explore/Learn More buttons remain in this section
+
+Return a short summary of what was changed and the exact lines edited.
