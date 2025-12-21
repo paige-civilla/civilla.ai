@@ -11,10 +11,10 @@ export default function CTASection() {
         <div className="flex flex-col gap-8 items-center max-w-content-large w-full">
           <div className="flex flex-col gap-5 md:gap-6 items-center text-center w-full">
             <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest">
-              Start With Clarity
+              Clarity Starts Here
             </h2>
             <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-              You don't have to figure this out alone. Learn in plain language, research with Lexi, and stay organized — at your pace.
+              Education, research, and organization tools built around your inputs.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 items-center justify-center">
@@ -23,7 +23,7 @@ export default function CTASection() {
                 className="bg-bush text-white rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular button-inset-shadow"
                 data-testid="button-cta-start"
               >
-                Get Started
+                Plans & Pricing
               </Button>
             </Link>
             <Link href="/how-civilla-works">
