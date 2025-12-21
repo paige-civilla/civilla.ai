@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import HowCivillaWorks from "@/pages/HowCivillaWorks";
 import AboutCivilla from "@/pages/AboutCivilla";
 import Plans from "@/pages/Plans";
+import LegalCompliance from "@/pages/LegalCompliance";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/how-civilla-works" component={HowCivillaWorks} />
       <Route path="/about-civilla" component={AboutCivilla} />
       <Route path="/plans" component={Plans} />
+      <Route path="/legal-compliance" component={LegalCompliance} />
       <Route component={NotFound} />
     </Switch>
   );

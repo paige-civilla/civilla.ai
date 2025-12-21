@@ -18,7 +18,7 @@ const footerLinks = {
   help: [
     { label: "Privacy", href: "#" },
     { label: "Terms", href: "#" },
-    { label: "Cookies", href: "#" },
+    { label: "Legal & Compliance", href: "/legal-compliance" },
     { label: "Status", href: "#" },
     { label: "Updates", href: "#" }
   ]
