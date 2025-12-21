@@ -1,0 +1,73 @@
+REPLIT AGENT TASK: Home Page “Steps” Section Copy + Layout Polish (No Buttons, Title Case, Spelled-Out Numbers, One Continuous Underline)
+
+GOAL
+Update the 3-column “Step One / Step Two / Step Three” section on the HOME page so it:
+- Uses Title Case step labels with numbers spelled out: “Step One”, “Step Two”, “Step Three”
+- Has ONE continuous horizontal line under the step labels (spanning all 3 columns)
+- Removes the three buttons/links (“Begin”, “Organize”, “Understand”) entirely
+- Replaces the placeholder copy with UPL-safe, educational/research/organizational wording (no legal advice, no representation, no outcome promises)
+
+FILES
+1) MUST EDIT: client/src/components/StepsSection.tsx
+2) DO NOT EDIT (for this task): HowCivillaWorks.tsx (it has separate “Step one/two/three” content)
+
+INSTRUCTIONS — EXACT CHANGES
+
+A) EDIT: client/src/components/StepsSection.tsx
+
+1) FIND the existing strings and update the step labels:
+- Replace “Step one” with “Step One”
+- Replace “Step two” with “Step Two”
+- Replace “Step three” with “Step Three”
+
+2) REMOVE ALL THREE BUTTONS/LINKS from this section:
+- Delete the element(s) that render the “Begin” CTA
+- Delete the element(s) that render the “Organize” CTA
+- Delete the element(s) that render the “Understand” CTA
+(These may be <button>, <a>, or <Link>. Remove the whole clickable elements, not just the text.)
+
+3) REPLACE THE THREE PARAGRAPHS with the following final copy (exact text):
+
+STEP ONE PARAGRAPH (replace the current paragraph under Step One):
+“Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category.”
+
+STEP TWO PARAGRAPH (replace the current paragraph under Step Two):
+“Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context.”
+
+STEP THREE PARAGRAPH (replace the current paragraph under Step Three):
+“Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises.”
+
+4) IMPLEMENT ONE CONTINUOUS UNDERLINE UNDER THE STEP LABELS
+Restructure ONLY the inner layout of the 3 columns so the step labels appear in a single row, then a full-width line, then the three paragraphs in the next row.
+
+Use this layout pattern (adapt classNames to match the existing styling, but keep the structure):
+
+- Keep the existing outer <section> / container wrappers intact.
+- Inside the section, render a grid like:
+
+Row 1 (3 columns): Step One | Step Two | Step Three
+Row 2 (full width): a single divider line spanning all columns
+Row 3 (3 columns): Paragraph 1 | Paragraph 2 | Paragraph 3
+
+Add a divider element like:
+<div className="col-span-1 md:col-span-3 w-full border-b border-black/20" />
+(If the section is on dark background, use border-white/20 instead.)
+
+IMPORTANT: The divider should sit directly under the step labels, not under the paragraphs.
+
+5) OPTIONAL (Recommended) — Add a Small Safety Net Line Under The 3 Paragraphs
+If the design has room (or there’s already a small text slot), add this as a single small line beneath the three paragraphs (full width):
+“Educational, Research, And Organizational Support — Not Legal Advice Or Representation.”
+If adding this line disrupts spacing, skip it (do not force it).
+
+VERIFY
+- Home page: the section shows “Step One / Step Two / Step Three” (Title Case, spelled-out numbers)
+- One continuous underline sits under the step labels across all 3 columns
+- No “Begin / Organize / Understand” buttons or links exist in this section
+- Copy matches exactly the paragraphs above
+- No console errors
+
+REPORT BACK
+- Confirm file edited: client/src/components/StepsSection.tsx
+- Provide the exact line ranges changed
+- Confirm the three buttons were removed and the underline row is full width

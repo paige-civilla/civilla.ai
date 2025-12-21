@@ -1,23 +1,18 @@
-import { ChevronRight } from "lucide-react";
-
 const steps = [
   {
     id: "step-one",
-    title: "Step one",
-    description: "Select your state and tell us about your case so civilla.ai can show you the rules and processes that apply to your situation.",
-    action: "Begin"
+    title: "Step One",
+    description: "Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category."
   },
   {
     id: "step-two",
-    title: "Step two",
-    description: "Upload your documents, messages, and evidence. civilla.ai organizes everything into a timeline so you can see the full picture of your case.",
-    action: "Organize"
+    title: "Step Two",
+    description: "Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context."
   },
   {
     id: "step-three",
-    title: "Step three",
-    description: "Get plain-language explanations of what's happening, what's coming next, and what you can do. civilla.ai is with you from start to finish.",
-    action: "Understand"
+    title: "Step Three",
+    description: "Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises."
   }
 ];
 
@@ -28,31 +23,31 @@ export default function StepsSection() {
       data-testid="section-steps"
     >
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex flex-col md:flex-row gap-12 md:gap-12 items-start w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 w-full">
           {steps.map((step) => (
-            <div key={step.id} className="flex flex-1 flex-col gap-6 md:gap-8 items-start">
-              <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
-                <h3 className="font-heading font-bold text-heading-5-mobile md:text-heading-5 tracking-[0.2px] md:tracking-[0.32px] w-full">
-                  {step.title}
-                </h3>
-                <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                  {step.description}
-                </p>
-              </div>
-              <div className="flex flex-col items-start w-full">
-                <button 
-                  className="flex gap-2 items-center justify-center rounded-md"
-                  data-testid={`button-${step.id}`}
-                >
-                  <span className="font-sans font-bold text-sm md:text-body-regular text-neutral-darkest leading-[1.6]">
-                    {step.action}
-                  </span>
-                  <ChevronRight className="w-6 h-6 text-neutral-darkest" />
-                </button>
-              </div>
-            </div>
+            <h3 
+              key={step.id} 
+              className="font-heading font-bold text-heading-5-mobile md:text-heading-5 tracking-[0.2px] md:tracking-[0.32px] text-neutral-darkest pb-4"
+            >
+              {step.title}
+            </h3>
+          ))}
+
+          <div className="col-span-1 md:col-span-3 w-full border-b border-black/20 mb-6" />
+
+          {steps.map((step) => (
+            <p 
+              key={`${step.id}-desc`}
+              className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest mb-8 md:mb-0"
+            >
+              {step.description}
+            </p>
           ))}
         </div>
+
+        <p className="font-sans font-bold italic text-sm text-neutral-darkest/70 text-center w-full mt-8">
+          Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
+        </p>
       </div>
     </section>
   );
