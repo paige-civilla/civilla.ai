@@ -1,5 +1,3 @@
-import { ChevronRight } from "lucide-react";
-
 export default function ClaritySection() {
   return (
     <section 
@@ -15,17 +13,6 @@ export default function ClaritySection() {
             <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
               civilla.ai does not provide legal advice, represent you in court, or replace an attorney. We are an educational platform designed to help you understand family law and organize your case.
             </p>
-          </div>
-          <div className="flex items-center">
-            <button 
-              className="flex gap-2 items-center justify-center rounded-md"
-              data-testid="button-read-details"
-            >
-              <span className="font-sans font-bold text-sm md:text-body-regular text-neutral-darkest leading-[1.6]">
-                Read details
-              </span>
-              <ChevronRight className="w-6 h-6 text-neutral-darkest" />
-            </button>
           </div>
         </div>
       </div>
