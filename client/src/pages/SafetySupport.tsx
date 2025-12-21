@@ -1,221 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "wouter";
-import { Menu, X, ChevronRight, User, Moon, Sun, LogOut, Phone, AlertTriangle, UserX, Bell, Shield } from "lucide-react";
+import { ChevronRight, Phone, AlertTriangle, UserX, Bell } from "lucide-react";
+import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
 
-const menuLinks = {
-  product: [
-    { label: "Home", href: "/" },
-    { label: "How it works", href: "/how-civilla-works" },
-    { label: "About us", href: "/about-civilla" },
-    { label: "Plans & Pricing", href: "/plans" },
-  ],
-  learn: [
-    { label: "Legal & Compliance", href: "/legal-compliance" },
-    { label: "Safety & Support", href: "/safety-support" },
-    { label: "FAQ", href: "#" },
-    { label: "Resources", href: "#" },
-  ],
-  help: [
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Accessibility", href: "#" },
-  ]
-};
-
 const imgQuickExit = "https://www.figma.com/api/mcp/asset/c4115cfe-8611-4c8d-bb5f-5b41cb30f9fd";
-const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/70cd2b88-b5c3-4123-83da-b783c1fed0c1";
 const imgPrivateBrowser = "https://www.figma.com/api/mcp/asset/a44db474-56ed-4b20-a4be-61f3fa8be1ed";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
 const imgPlaceholderImage3 = "https://www.figma.com/api/mcp/asset/86d7b009-7a1d-4335-8b7c-21b12690b64e";
-
-function NavbarCream() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [location] = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isMenuOpen &&
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        menuButtonRef.current &&
-        !menuButtonRef.current.contains(event.target as Node)
-      ) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isMenuOpen]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  };
-
-  const handleQuickExit = () => {
-    window.location.replace("https://www.google.com");
-  };
-
-  return (
-    <nav className="bg-cream w-full" data-testid="navbar-cream">
-      <div className="h-9 md:h-9 flex items-center justify-center px-3 md:px-6 py-0">
-        <div className="flex items-center justify-between gap-4 w-full max-w-container">
-          <div className="flex items-center">
-            <Link href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
-              <img 
-                src={logoDark} 
-                alt="civilla.ai" 
-                className="h-full w-auto object-contain"
-              />
-            </Link>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <button 
-              onClick={toggleDarkMode}
-              className="p-1.5"
-              aria-label="Toggle dark mode"
-              data-testid="button-theme-toggle"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 text-neutral-darkest" />
-              ) : (
-                <Moon className="w-4 h-4 text-neutral-darkest" />
-              )}
-            </button>
-            <button 
-              className="p-1.5"
-              aria-label="User login"
-              data-testid="button-user-login"
-            >
-              <User className="w-4 h-4 text-neutral-darkest" />
-            </button>
-            <button 
-              ref={menuButtonRef}
-              className="p-1"
-              data-testid="button-menu"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="w-4 h-4 text-neutral-darkest" />
-              ) : (
-                <Menu className="w-4 h-4 text-neutral-darkest" />
-              )}
-            </button>
-            <button 
-              onClick={handleQuickExit}
-              className="ml-2 p-1.5 rounded-md"
-              style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #3D7A5A 50%, #4A8A6A 100%)" }}
-              aria-label="Quick exit"
-              data-testid="button-quick-exit"
-            >
-              <LogOut className="w-4 h-4 text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {isMenuOpen && (
-        <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-6" data-testid="mobile-menu">
-          <div className="flex flex-wrap gap-10 max-w-container mx-auto">
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Product
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.product.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Learn
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.learn.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Help
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.help.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <button 
-                  className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full text-left"
-                  data-testid="menu-button-login"
-                >
-                  Login
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-}
 
 export default function SafetySupport() {
   return (
@@ -523,34 +314,28 @@ export default function SafetySupport() {
                       Civilla is not an emergency service
                     </h2>
                     <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                      Civilla is an educational platform designed to help you understand family law and organize your case. We cannot respond to crises or provide emergency support.
+                      If you are in immediate danger, please contact emergency services.
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-4 py-2">
                   <div className="flex gap-4 items-center">
-                    <AlertTriangle className="w-4 h-4 text-white" />
-                    <p className="font-arimo text-lg leading-[1.6] text-white">
-                      If you are in danger
-                    </p>
+                    <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
+                    <span className="font-arimo text-lg leading-[1.6] text-white">
+                      Call 911 for emergencies
+                    </span>
                   </div>
                   <div className="flex gap-4 items-center">
-                    <Phone className="w-4 h-4 text-white" />
-                    <p className="font-arimo text-lg leading-[1.6] text-white">
-                      Call 911 immediately
-                    </p>
-                  </div>
-                  <div className="flex gap-4 items-center">
-                    <User className="w-4 h-4 text-white" />
-                    <p className="font-arimo text-lg leading-[1.6] text-white">
-                      Reach out to trusted professionals
-                    </p>
+                    <Phone className="w-6 h-6 text-white flex-shrink-0" />
+                    <span className="font-arimo text-lg leading-[1.6] text-white">
+                      National DV Hotline: 1-800-799-7233
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="flex gap-6 items-center">
-                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-emergency">
-                  Learn
+                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-resources-emergency">
+                  Resources
                 </button>
                 <button className="flex items-center gap-2 text-white font-arimo font-bold text-lg" data-testid="button-help-emergency">
                   Help
@@ -561,94 +346,9 @@ export default function SafetySupport() {
             <div className="flex-1">
               <img 
                 src={imgPlaceholderImage3} 
-                alt="Rotary phone" 
+                alt="Emergency services" 
                 className="w-full aspect-[600/640] object-cover rounded-2xl"
               />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Crisis Support Section */}
-      <section className="bg-cream py-28 px-4 md:px-16" data-testid="section-crisis-support">
-        <div className="max-w-container mx-auto">
-          <div className="flex flex-col gap-20 items-center">
-            <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
-              <p className="font-arimo font-bold text-base text-neutral-darkest">
-                Resources
-              </p>
-              <div className="flex flex-col gap-6 items-center w-full">
-                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
-                  Crisis support
-                </h2>
-                <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  If you need immediate help, these resources are available.
-                </p>
-              </div>
-            </div>
-
-            <div className="w-full flex flex-col md:flex-row gap-8">
-              {/* Emergency Card */}
-              <div className="flex-1 border-2 border-neutral-darkest rounded-2xl p-6 flex flex-col gap-6">
-                <div className="flex flex-col gap-4">
-                  <AlertTriangle className="w-12 h-12 text-neutral-darkest" />
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                      Emergency
-                    </h3>
-                    <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
-                      Call 911 if you or someone you know is in immediate danger
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <button className="bg-bush text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-call-911">
-                    Call
-                  </button>
-                  <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-help-call">
-                    Help
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-
-              {/* National Domestic Violence Hotline Card */}
-              <div className="flex-1 border-2 border-neutral-darkest rounded-2xl p-6 flex flex-col gap-6">
-                <div className="flex flex-col gap-4">
-                  <Phone className="w-12 h-12 text-neutral-darkest" />
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                      National Domestic Violence Hotline
-                    </h3>
-                    <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
-                      1-800-799-7233 or text START to 88788
-                    </p>
-                  </div>
-                </div>
-                <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-help-hotline">
-                  Help
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Legal Aid Card */}
-              <div className="flex-1 border-2 border-neutral-darkest rounded-2xl p-6 flex flex-col gap-6">
-                <div className="flex flex-col gap-4">
-                  <Shield className="w-12 h-12 text-neutral-darkest" />
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                      Legal aid and family law support
-                    </h3>
-                    <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
-                      Find local legal aid organizations in your state
-                    </p>
-                  </div>
-                </div>
-                <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-help-legal">
-                  Help
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
             </div>
           </div>
         </div>

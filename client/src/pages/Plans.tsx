@@ -1,214 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "wouter";
-import { Menu, X, Check, ChevronRight, ChevronUp, ChevronDown, Home, User, Moon, Sun, LogOut } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronRight, ChevronUp, ChevronDown, Home } from "lucide-react";
+import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
-
-const menuLinks = {
-  product: [
-    { label: "Home", href: "/" },
-    { label: "How it works", href: "/how-civilla-works" },
-    { label: "About us", href: "/about-civilla" },
-    { label: "Plans & Pricing", href: "/plans" },
-  ],
-  learn: [
-    { label: "Legal & Compliance", href: "/legal-compliance" },
-    { label: "Safety & Support", href: "/safety-support" },
-    { label: "FAQ", href: "#" },
-    { label: "Resources", href: "#" },
-  ],
-  help: [
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Accessibility", href: "#" },
-  ]
-};
-
-function NavbarCream() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [location] = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isMenuOpen &&
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node) &&
-        menuButtonRef.current &&
-        !menuButtonRef.current.contains(event.target as Node)
-      ) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isMenuOpen]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  };
-
-  const handleQuickExit = () => {
-    window.location.replace("https://www.google.com");
-  };
-
-  return (
-    <nav className="bg-cream w-full" data-testid="navbar-cream">
-      <div className="h-9 md:h-9 flex items-center justify-center px-3 md:px-6 py-0">
-        <div className="flex items-center justify-between gap-4 w-full max-w-container">
-          <div className="flex items-center">
-            <Link href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
-              <img 
-                src={logoDark} 
-                alt="civilla.ai" 
-                className="h-full w-auto object-contain"
-              />
-            </Link>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <button 
-              onClick={toggleDarkMode}
-              className="p-1.5"
-              aria-label="Toggle dark mode"
-              data-testid="button-theme-toggle"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 text-neutral-darkest" />
-              ) : (
-                <Moon className="w-4 h-4 text-neutral-darkest" />
-              )}
-            </button>
-            <button 
-              className="p-1.5"
-              aria-label="User login"
-              data-testid="button-user-login"
-            >
-              <User className="w-4 h-4 text-neutral-darkest" />
-            </button>
-            <button 
-              ref={menuButtonRef}
-              className="p-1"
-              data-testid="button-menu"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="w-4 h-4 text-neutral-darkest" />
-              ) : (
-                <Menu className="w-4 h-4 text-neutral-darkest" />
-              )}
-            </button>
-            <button 
-              onClick={handleQuickExit}
-              className="ml-2 p-1.5 rounded-md"
-              style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #3D7A5A 50%, #4A8A6A 100%)" }}
-              aria-label="Quick exit"
-              data-testid="button-quick-exit"
-            >
-              <LogOut className="w-4 h-4 text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {isMenuOpen && (
-        <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-6" data-testid="mobile-menu">
-          <div className="flex flex-wrap gap-10 max-w-container mx-auto">
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Product
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.product.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Learn
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.learn.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Help
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.help.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <button 
-                  className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full text-left"
-                  data-testid="menu-button-login"
-                >
-                  Login
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-}
 
 function HeaderSection() {
   return (
@@ -578,27 +371,27 @@ function FAQSection() {
     {
       id: 0,
       question: "Can I cancel anytime?",
-      answer: "Yes. There's no contract or commitment. You can pause or cancel your subscription at any time from your account settings. We want you to use Civilla only when it serves you."
+      answer: "Yes. You can cancel your subscription at any time through your account settings. Your access continues until the end of your current billing period."
     },
     {
       id: 1,
-      question: "Is my information secure?",
-      answer: "Your documents and personal information are encrypted and stored securely. We follow industry standards for data protection and never share your case details with third parties."
+      question: "What payment methods do you accept?",
+      answer: "We accept all major credit cards (Visa, Mastercard, American Express) and debit cards. All payments are processed securely through Stripe."
     },
     {
       id: 2,
-      question: "Do you offer a free trial?",
-      answer: "We offer limited free access to explore the platform and understand how Civilla works. Paid plans unlock full features like document organization, timeline building, and research tools."
+      question: "Is there a free trial?",
+      answer: "Yes, we offer a 3-day free trial so you can explore Civilla before committing. No credit card required to start your trial."
     },
     {
       id: 3,
-      question: "What about organizations?",
-      answer: "Domestic violence shelters, legal aid nonprofits, and family service organizations can reach out for custom pricing and bulk access. We work with you to make Civilla available to those who need it most."
+      question: "Can I switch plans?",
+      answer: "Absolutely. You can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle."
     },
     {
       id: 4,
-      question: "Why isn't this free?",
-      answer: "Building a trauma-informed, secure platform takes real resources. Our pricing reflects the cost of maintaining your data safely, updating legal information by state, and supporting users. We keep costs low and transparent."
+      question: "Do you offer refunds?",
+      answer: "We offer refunds on a case-by-case basis. If you're not satisfied with Civilla, contact our support team within 14 days of your purchase."
     }
   ];
 
@@ -611,18 +404,23 @@ function FAQSection() {
   };
 
   return (
-    <section className="bg-neutral-lightest w-full flex flex-col items-center px-16 py-28" data-testid="section-faq">
+    <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-16 py-28" data-testid="section-faq">
       <div className="flex flex-col gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
-          <h2 className="font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
-            Questions
-          </h2>
-          <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
-            Find answers about how Civilla works, what you'll get, and how to get started.
-          </p>
+        <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
+          <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
+            FAQ
+          </span>
+          <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
+            <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
+              Common questions
+            </h2>
+            <p className="cv-p font-sans text-[20px] w-full">
+              Everything you need to know about our plans
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-col items-start max-w-content-large w-full border-b-2 border-neutral-darkest">
+        <div className="flex flex-col items-start max-w-[768px] w-full border-b-2 border-neutral-darkest">
           {faqs.map((faq) => (
             <div key={faq.id} className="flex flex-col items-start w-full">
               <button
@@ -630,7 +428,7 @@ function FAQSection() {
                 className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
                 data-testid={`button-faq-${faq.id}`}
               >
-                <span className="flex-1 font-sans font-bold text-[20px] leading-[1.6] text-neutral-darkest">
+                <span className="flex-1 font-sans font-bold text-[18px] leading-[1.6] text-neutral-darkest">
                   {faq.question}
                 </span>
                 {openItems.includes(faq.id) ? (
@@ -650,19 +448,19 @@ function FAQSection() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-6 items-center max-w-content-medium w-full">
+        <div className="flex flex-col gap-6 items-center max-w-[560px] w-full">
           <div className="flex flex-col gap-4 items-center text-neutral-darkest text-center w-full">
             <h3 className="font-heading font-bold text-[40px] tracking-[0.4px] leading-[1.2] w-full">
-              Common questions answered
+              Still have questions?
             </h3>
             <p className="font-sans font-normal text-[20px] leading-[1.6] w-full">
-              Everything you need to know about Civilla
+              Our team is here to help
             </p>
           </div>
           <div className="flex items-center">
             <button 
               className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-md"
-              data-testid="button-contact"
+              data-testid="button-contact-faq"
             >
               Contact us
             </button>
