@@ -1,44 +1,35 @@
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 
-const iconUrl = "https://www.figma.com/api/mcp/asset/778b2423-f093-4b22-9574-dd43479ff3f0";
-
-const tabs = [
+const FEATURES = [
   {
-    id: "case-journey",
-    label: "Case journey",
-    title: "Track what matters to your case",
-    body: "Family law cases follow predictable stages. civilla.ai shows you what happens at each one, from filing through trial, so you know what to expect."
+    title: "Case journey",
+    desc:
+      "Family court cases often follow predictable stages. Civilla shows a plain-language overview of what typically happens at each step so you can understand what to expect.",
   },
   {
-    id: "evidence-timeline",
-    label: "Evidence timeline",
-    title: "Organize your evidence clearly",
-    body: "Upload documents, messages, and evidence. civilla.ai organizes everything into a timeline so you can see the full picture of your case."
+    title: "Evidence timeline",
+    desc:
+      "Build a dated timeline using your notes, uploads, and events. Keep everything organized in one place and export it for your own records.",
   },
   {
-    id: "pattern-analysis",
-    label: "Pattern analysis",
-    title: "See patterns others might miss",
-    body: "civilla.ai analyzes your evidence to identify patterns of behavior that may be relevant to your case."
+    title: "Pattern analysis",
+    desc:
+      "See patterns in the information you enter (themes, frequency, dates, categories) to help you stay organized and spot what you may want to document.",
   },
   {
-    id: "research-assistant",
-    label: "Research assistant",
-    title: "Research your specific situation",
-    body: "Get plain-language explanations of family law concepts tailored to your state and case type."
+    title: "Research assistant",
+    desc:
+      "Ask Lexi questions and explore educational, plain-language explanations. Lexi helps you research and understand information — but it doesn't give legal advice.",
   },
   {
-    id: "document-builder",
-    label: "Document builder",
-    title: "Build documents with guidance",
-    body: "Create court documents with step-by-step guidance. civilla.ai helps you understand what each section requires."
-  }
+    title: "Document builder",
+    desc:
+      "Create educational drafts from your inputs and templates. You stay in control: review, edit, and decide what (if anything) you use.",
+  },
 ];
 
 export default function ToolsSection() {
-  const [activeTab, setActiveTab] = useState("case-journey");
-  const tab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
     <section 
@@ -55,66 +46,56 @@ export default function ToolsSection() {
           </p>
         </div>
 
-        <section className="cv-card p-6 md:p-8 w-full">
-          <div className="cv-grid-2">
-            <div className="rounded-xl border-2 border-white/70 overflow-hidden min-h-0">
-              <div className="flex flex-col">
-                {tabs.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveTab(t.id)}
-                    className={[
-                      "w-full text-left px-6 py-6 border-b-2 border-white/70 last:border-b-0",
-                      "font-heading font-bold text-heading-5-mobile md:text-heading-5 text-white tracking-[0.2px] md:tracking-[0.32px] break-words",
-                      t.id === activeTab ? "bg-white/10" : "bg-transparent",
-                    ].join(" ")}
-                    data-testid={`button-tab-${t.id}`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="grid gap-6 md:grid-cols-2 w-full">
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-4">
+            <div className="flex flex-col">
+              {FEATURES.map((item, idx) => {
+                const isOpen = openIndex === idx;
+                return (
+                  <div key={item.title} className="border-b border-white/20 last:border-b-0">
+                    <button
+                      type="button"
+                      className="w-full py-5 text-left text-xl md:text-2xl font-semibold tracking-tight text-white flex items-center justify-between gap-4"
+                      aria-expanded={isOpen}
+                      aria-controls={`feature-panel-${idx}`}
+                      onClick={() => setOpenIndex(isOpen ? null : idx)}
+                      data-testid={`button-accordion-${item.title.toLowerCase().replace(/\s/g, "-")}`}
+                    >
+                      <span>{item.title}</span>
+                      <span className="text-white/70 text-xl">{isOpen ? "–" : "+"}</span>
+                    </button>
 
-            <div className="cv-panel border-0 md:border-2">
-              <div className="cv-panel-body pr-1">
-                <div className="mb-6">
-                  <div className="mb-6 flex items-center gap-3">
-                    <div className="w-12 h-12 relative">
-                      <img src={iconUrl} alt="" className="w-full h-full" />
+                    <div
+                      id={`feature-panel-${idx}`}
+                      className={`${isOpen ? "pb-5" : "h-0 overflow-hidden"} transition-all`}
+                    >
+                      {isOpen && (
+                        <p className="text-white/85 leading-relaxed text-sm md:text-base">
+                          {item.desc}
+                        </p>
+                      )}
                     </div>
                   </div>
-
-                  <h3 className="cv-h text-heading-3-mobile md:text-heading-3 text-white tracking-[0.32px] md:tracking-[0.48px]">
-                    {tab.title}
-                  </h3>
-
-                  <p className="cv-p mt-4 text-sm md:text-body-regular text-white/90">
-                    {tab.body}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button 
-                  className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
-                  data-testid="button-tools-explore"
-                >
-                  Explore
-                </button>
-                <button 
-                  className="flex gap-2 items-center justify-center rounded-md"
-                  data-testid="button-tools-learn"
-                >
-                  <span className="font-sans font-bold text-sm md:text-body-regular text-white leading-[1.6]">
-                    Learn more
-                  </span>
-                  <ChevronRight className="w-6 h-6 text-white" />
-                </button>
-              </div>
+                );
+              })}
             </div>
           </div>
-        </section>
+
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-6">
+            <div className="mb-4 text-white/80 text-2xl">◻︎</div>
+            <h3 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
+              Track what matters in your case
+            </h3>
+            <p className="mt-4 text-white/85 leading-relaxed text-sm md:text-base">
+              Family court can feel chaotic. Civilla helps you organize your timeline, documents, and notes —
+              and understand the typical process — so you can prepare with clarity.
+            </p>
+
+            <p className="mt-6 text-sm text-white/70">
+              Educational, research, and organizational support — not legal advice or representation.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );
