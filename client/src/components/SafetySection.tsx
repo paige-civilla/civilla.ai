@@ -47,18 +47,13 @@ export default function SafetySection() {
       data-testid="section-safety"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-4 items-center max-w-content-large w-full text-center">
-          <span className="font-sans font-bold text-base text-neutral-darkest">
-            Safety
-          </span>
-          <div className="flex flex-col gap-5 md:gap-6 items-center w-full">
-            <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest">
-              In Crisis
-            </h2>
-            <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-              If you're in immediate danger, call 911 (or your local emergency number). Civilla is not an emergency service. Use Quick Exit if you need to leave this site quickly.
-            </p>
-          </div>
+        <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large w-full text-center">
+          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest">
+            In Crisis?
+          </h2>
+          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
+            If you're in immediate danger, call 911 (or your local emergency number). Civilla is not an emergency service. Use Quick Exit if you need to leave this site quickly, always located at the top right corner of every page.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
