@@ -82,7 +82,6 @@ export default function ToolsSection() {
           </div>
 
           <div className="rounded-2xl border border-white/30 bg-white/5 p-6">
-            <div className="mb-4 text-white/80 text-2xl">◻︎</div>
             <h3 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
               Track What Matters In Your Case
             </h3>
