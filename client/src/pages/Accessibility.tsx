@@ -398,7 +398,7 @@ export default function Accessibility() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-20">
+            <div className="flex flex-col md:flex-row gap-20 items-center">
               <div className="flex-1 flex flex-col gap-10 max-w-[400px]">
                 <div className="flex flex-col gap-4">
                   <Mail className="w-8 h-8 text-neutral-darkest" />
