@@ -446,11 +446,11 @@ export default function Accessibility() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 flex items-center justify-center">
                 <img 
                   src={imgPlaceholderImage3} 
                   alt="Contact us" 
-                  className="w-full h-[516px] object-cover rounded-2xl"
+                  className="w-2/3 h-[344px] object-cover object-center rounded-2xl"
                 />
               </div>
             </div>
