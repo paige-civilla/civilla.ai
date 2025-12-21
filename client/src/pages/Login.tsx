@@ -41,7 +41,7 @@ export default function Login() {
       </section>
 
       <main className="flex-1 flex items-center justify-center px-5 py-12">
-        <p className="font-sans text-sm text-neutral-darkest/60 text-center italic">
+        <p className="font-sans text-[10px] text-neutral-darkest/60 text-center italic">
           *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
         </p>
       </main>

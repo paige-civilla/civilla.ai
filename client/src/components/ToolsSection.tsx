@@ -96,7 +96,7 @@ export default function ToolsSection() {
                 Family court can feel chaotic. Civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.
               </p>
 
-              <p className="mt-6 text-sm text-white/70 font-bold italic">
+              <p className="mt-6 text-[10px] text-white/70 font-bold italic">
                 *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
               </p>
             </div>

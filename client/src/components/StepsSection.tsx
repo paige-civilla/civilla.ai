@@ -75,7 +75,7 @@ export default function StepsSection() {
           </div>
         </div>
 
-        <p className="font-sans font-bold italic text-sm text-neutral-darkest/70 text-center w-full mt-8">
+        <p className="font-sans font-bold italic text-[10px] text-neutral-darkest/70 text-center w-full mt-8">
           *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
         </p>
       </div>
