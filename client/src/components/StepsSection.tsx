@@ -27,7 +27,7 @@ export default function StepsSection() {
           {steps.map((step) => (
             <h3 
               key={step.id} 
-              className="font-heading font-bold text-heading-5-mobile md:text-heading-5 tracking-[0.2px] md:tracking-[0.32px] text-neutral-darkest pb-4"
+              className="font-heading font-bold text-heading-5-mobile md:text-heading-5 tracking-[0.2px] md:tracking-[0.32px] text-neutral-darkest pb-4 text-center"
             >
               {step.title}
             </h3>
@@ -38,7 +38,7 @@ export default function StepsSection() {
           {steps.map((step) => (
             <p 
               key={`${step.id}-desc`}
-              className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest mb-8 md:mb-0"
+              className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest mb-8 md:mb-0 text-center"
             >
               {step.description}
             </p>
