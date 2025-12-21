@@ -19,13 +19,13 @@ export default function Hero() {
               <span className="block">Translated.</span>
             </h1>
             <span 
-              className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm text-white underline underline-offset-4 opacity-80 hover:opacity-100"
+              className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm text-white underline underline-offset-4 opacity-80 hover:opacity-100 whitespace-nowrap"
               onClick={() => {
                 document.getElementById("home-learn-more")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               data-testid="link-scroll-learn-more"
             >
-              Scroll to Learn More <span className="text-lg">↓</span>
+              Scroll to Learn More ↓
             </span>
           </div>
         </div>
