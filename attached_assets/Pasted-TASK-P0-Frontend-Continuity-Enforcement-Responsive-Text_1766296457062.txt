@@ -1,0 +1,75 @@
+TASK (P0): Frontend Continuity Enforcement + Responsive Text Containment
+
+AUTONOMY: LOW
+
+CONSTRAINTS
+- Do NOT redesign.
+- Do NOT change copy.
+- Do NOT add new pages/features.
+- Do NOT change routes.
+- Only fix routing continuity + responsive containment.
+
+GOALS
+A) Enforce routing continuity across the entire frontend:
+   1) Internal navigation must NEVER use href:"#"
+   2) Internal navigation must NEVER use window.location.href or window.location.replace
+   3) All internal links must use wouter <Link href="..."> (or the project’s router-native Link)
+   4) External links remain <a>
+
+B) Enforce “text stays inside boxes” continuity rule everywhere:
+   1) No text should overflow its card/section at any viewport width
+   2) Long words/URLs must wrap
+   3) Flex/grid children must be allowed to shrink (min-w-0)
+   4) Prevent horizontal scrolling caused by layout overflow
+
+DELIVERABLES
+1) ROUTING AUDIT + FIX
+   - Search the entire client/src for:
+     - href:"#"
+     - window.location.href
+     - window.location.replace
+     - <a href="/  (internal routes)
+   - Replace internal anchors with <Link> equivalents.
+   - Replace window.location.* internal navigations with router navigation (setLocation or Link).
+   - Keep logo click routing to "/".
+   - Do NOT change any link labels/copy.
+
+2) RESPONSIVE CONTAINMENT FIX (apply globally + targeted)
+   - Update ONLY styles/utilities (no layout redesign).
+   - Add global CSS safety in client/src/index.css:
+     - Ensure all elements respect container width
+     - Enable safe wrapping for long text
+   - Add a small reusable utility class approach (Tailwind classes or CSS) and apply to:
+     - Cards
+     - Section containers
+     - Any flex row that contains text
+
+IMPLEMENTATION DETAILS
+A) Global CSS additions (index.css)
+Add rules that prevent overflow and enforce wrapping, e.g.:
+- html, body { overflow-x: hidden; }
+- * { box-sizing: border-box; }
+- p, h1..h6, li, a { overflow-wrap:anywhere; word-break:break-word; }
+- Ensure media elements are responsive (img, video max-width:100%)
+
+B) Tailwind continuity rules to apply where needed (do not blanket-rewrite everything):
+- For flex parents with text children: add "min-w-0" to the child that contains text
+- For text blocks: add "break-words" (and/or "break-all" only if necessary)
+- For cards/containers: ensure "overflow-hidden" where appropriate (only if Figma visually clips)
+
+VALIDATION CHECKLIST (MUST DO)
+- Run the app and manually test:
+  1) Navbar links (desktop + mobile hamburger) across all pages
+  2) Logo click returns to "/"
+  3) No page jumps from "#" links
+  4) No full reload navigation for internal links
+  5) Resize browser width from 320px to 1440px:
+     - No horizontal scrolling
+     - No text spilling outside cards/sections/buttons
+- Report:
+  - Exact files changed
+  - Line ranges
+  - A short checklist confirming validations passed
+
+EDIT MINIMUM REQUIRED FILES ONLY.
+Start with an audit list, then apply fixes.

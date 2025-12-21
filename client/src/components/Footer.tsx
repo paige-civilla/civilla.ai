@@ -1,3 +1,5 @@
+import { Link } from "wouter";
+
 const footerLinks = {
   product: [
     { label: "How it works", href: "/how-civilla-works" },
@@ -32,14 +34,14 @@ export default function Footer() {
               </span>
               <div className="flex flex-col items-start w-full">
                 {footerLinks.product.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
                     href={link.href}
                     className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -50,14 +52,14 @@ export default function Footer() {
               </span>
               <div className="flex flex-col items-start w-full">
                 {footerLinks.learn.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
                     href={link.href}
                     className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -68,14 +70,14 @@ export default function Footer() {
               </span>
               <div className="flex flex-col items-start w-full">
                 {footerLinks.help.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
                     href={link.href}
                     className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -86,16 +88,16 @@ export default function Footer() {
           <p className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6]">
             2025 civilla.ai. All rights reserved.
           </p>
-          <div className="flex gap-6 items-center">
-            <a href="/privacy-policy" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-privacy">
+          <div className="flex gap-6 items-center flex-wrap">
+            <Link href="/privacy-policy" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-privacy">
               Privacy Policy
-            </a>
-            <a href="/terms" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-terms">
+            </Link>
+            <Link href="/terms" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-terms">
               Terms of Service
-            </a>
-            <a href="/legal-compliance" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-legal">
+            </Link>
+            <Link href="/legal-compliance" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-legal">
               Legal & Compliance
-            </a>
+            </Link>
           </div>
         </div>
       </div>
