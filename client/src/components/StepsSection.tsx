@@ -30,10 +30,11 @@ export default function StepsSection() {
           <div className="space-y-0">
             {steps.map((step, idx) => (
               <div key={step.id} className="py-6">
-                <div className="grid grid-cols-[70px,1fr] gap-4 items-center">
-                  <span className="font-sans font-semibold text-sm text-neutral-darkest flex items-center gap-1">
-                    Step <span className="font-heading font-bold text-2xl leading-none">{step.number}</span>
+                <div className="grid grid-cols-[32px,1px,1fr] gap-4 items-center">
+                  <span className="font-heading font-bold text-2xl text-neutral-darkest text-center leading-none">
+                    {step.number}
                   </span>
+                  <div className="w-px h-full min-h-[40px] bg-black/15" />
                   <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
                     {step.description}
                   </p>
