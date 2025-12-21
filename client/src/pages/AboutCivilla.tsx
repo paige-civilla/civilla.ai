@@ -7,7 +7,7 @@ const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/702bb028-ef73-
 
 function HeaderSection() {
   return (
-    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
+    <section id="mission" className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
       <div className="flex flex-col items-center max-w-container w-full">
         <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 items-center w-full">
@@ -179,7 +179,7 @@ function TimelineCard({ item }: { item: { title: string; subtitle: string; descr
 
 function TeamSection1() {
   return (
-    <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-team-1">
+    <section id="founders" className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-team-1">
       <div className="flex flex-col items-start max-w-container w-full">
         <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-start w-full">
           <div className="flex-1 w-full aspect-square rounded-2xl overflow-hidden">

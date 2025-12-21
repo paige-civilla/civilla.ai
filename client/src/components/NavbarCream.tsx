@@ -1,32 +1,51 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, LifeBuoy } from "lucide-react";
-import logoDark from "@assets/noBgColor-2_1766294100143.png";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn } from "lucide-react";
+import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
-const menuLinks = {
-  startHere: [
-    { label: "Home", href: "/" },
-    { label: "Plans & Pricing", href: "/plans" },
-    { label: "How Civilla Works", href: "/how-civilla-works" },
-  ],
-  about: [
-    { label: "About Us", href: "/about-civilla" },
-  ],
-  trustSafety: [
-    { label: "Safety & Support", href: "/safety-support" },
-    { label: "Legal & Compliance", href: "/legal-compliance" },
-    { label: "Accessibility", href: "/accessibility" },
-  ],
-  support: [
-    { label: "Contact", href: "/contact" },
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "/terms" },
-  ],
-  comingSoon: [
-    { label: "FAQ", href: "#", disabled: true },
-    { label: "Resources", href: "#", disabled: true },
-  ]
-};
+const menuSections = [
+  {
+    header: "Start Here",
+    icon: Sparkles,
+    links: [
+      { label: "Home", href: "/", icon: Home },
+      { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
+      { label: "How Civilla Works", href: "/how-civilla-works", icon: HelpCircle },
+    ],
+    comingSoon: [
+      { label: "FAQ" },
+      { label: "Resources" },
+    ]
+  },
+  {
+    header: "About Civilla",
+    icon: Info,
+    links: [
+      { label: "Our Mission", href: "/about#mission", icon: Info },
+      { label: "Meet The Founders", href: "/about#founders", icon: Info },
+      { label: "About Us", href: "/about", icon: Info },
+    ]
+  },
+  {
+    header: "Trust & Safety",
+    icon: ShieldCheck,
+    links: [
+      { label: "Safety & Support", href: "/safety-support", icon: ShieldCheck },
+      { label: "Legal & Compliance", href: "/legal-compliance", icon: FileText },
+      { label: "Accessibility", href: "/accessibility", icon: Lock },
+    ]
+  },
+  {
+    header: "Support",
+    icon: Heart,
+    links: [
+      { label: "Contact", href: "/contact", icon: Mail },
+      { label: "Privacy Policy", href: "/privacy-policy", icon: Lock },
+      { label: "Terms of Service", href: "/terms", icon: FileText },
+      { label: "Login", href: "/login", icon: LogIn },
+    ]
+  }
+];
 
 export default function NavbarCream() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -94,13 +113,13 @@ export default function NavbarCream() {
   };
 
   return (
-    <nav className="bg-cream w-full" data-testid="navbar-cream">
+    <nav className="bg-bush w-full relative" data-testid="navbar-cream">
       <div className="h-9 flex items-center justify-center px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
             <Link href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
               <img 
-                src={logoDark} 
+                src={logoWhite} 
                 alt="civilla.ai" 
                 className="h-full w-auto object-contain"
               />
@@ -114,9 +133,9 @@ export default function NavbarCream() {
               data-testid="button-theme-toggle"
             >
               {isDarkMode ? (
-                <Sun className="w-4 h-4 text-neutral-darkest" />
+                <Sun className="w-4 h-4 text-white" />
               ) : (
-                <Moon className="w-4 h-4 text-neutral-darkest" />
+                <Moon className="w-4 h-4 text-white" />
               )}
             </button>
             <button 
@@ -124,7 +143,7 @@ export default function NavbarCream() {
               aria-label="User login"
               data-testid="button-user-login"
             >
-              <User className="w-4 h-4 text-neutral-darkest" />
+              <User className="w-4 h-4 text-white" />
             </button>
             <button 
               ref={menuButtonRef}
@@ -134,137 +153,73 @@ export default function NavbarCream() {
               data-testid="button-menu"
             >
               {isMenuOpen ? (
-                <X className="w-4 h-4 text-neutral-darkest" />
+                <X className="w-4 h-4 text-white" />
               ) : (
-                <Menu className="w-4 h-4 text-neutral-darkest" />
+                <Menu className="w-4 h-4 text-white" />
               )}
             </button>
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 rounded-md"
-              style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #3D7A5A 50%, #4A8A6A 100%)" }}
+              className="ml-2 p-1.5 bg-white rounded-md"
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
-              <LogOut className="w-4 h-4 text-white" />
+              <LogOut className="w-4 h-4 text-neutral-darkest" />
             </button>
           </div>
         </div>
       </div>
 
       {isMenuOpen && (
-        <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-6" data-testid="mobile-menu">
-          <div className="flex flex-wrap gap-8 max-w-container mx-auto">
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[130px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3" />
-                Start Here
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.startHere.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <div className="mt-3 pt-3 border-t border-neutral-darkest/20 w-full">
-                  {menuLinks.comingSoon.map((link) => (
-                    <span
-                      key={link.label}
-                      className="py-1 font-sans font-normal text-[10px] text-neutral-darkest/40 leading-[1.6] w-full cursor-not-allowed flex items-center gap-1.5"
-                      aria-disabled="true"
-                      data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                    >
-                      {link.label}
-                      <span className="text-[9px] opacity-70">Soon</span>
-                    </span>
-                  ))}
+        <>
+          <div 
+            ref={menuRef} 
+            className="fixed inset-x-3 top-[44px] md:absolute md:right-4 md:left-auto md:top-full md:mt-3 md:w-[min(900px,calc(100vw-2rem))] bg-[#e7ebea] border border-black/10 rounded-2xl shadow-xl p-6 md:p-8 max-h-[75vh] overflow-auto z-50" 
+            data-testid="dropdown-menu"
+          >
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {menuSections.map((section) => (
+                <div key={section.header} className="flex flex-col">
+                  <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-neutral-700">
+                    <section.icon className="h-4 w-4" />
+                    {section.header}
+                  </div>
+                  <div className="mt-2 h-px w-full bg-black/10" />
+                  <div className="mt-4 flex flex-col">
+                    {section.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`flex items-center gap-3 py-2 text-[15px] text-neutral-900/90 hover:text-neutral-900 ${
+                          location === link.href ? "font-medium" : ""
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                        data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                      >
+                        <link.icon className="h-4 w-4 opacity-70" />
+                        {link.label}
+                      </Link>
+                    ))}
+                    {section.comingSoon && (
+                      <div className="mt-3 pt-3 border-t border-black/10">
+                        {section.comingSoon.map((item) => (
+                          <span
+                            key={item.label}
+                            className="flex items-center justify-between py-2 text-[15px] text-neutral-900/50 cursor-not-allowed"
+                            aria-disabled="true"
+                          >
+                            <span>{item.label}</span>
+                            <span className="text-[11px] opacity-60">Soon</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[100px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
-                <Info className="w-3 h-3" />
-                About Civilla
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.about.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[130px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3" />
-                Trust & Safety
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.trustSafety.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
-                <LifeBuoy className="w-3 h-3" />
-                Support
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.support.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <Link 
-                  href="/login"
-                  className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
-                  onClick={() => setIsMenuOpen(false)}
-                  data-testid="menu-link-login"
-                >
-                  Login
-                </Link>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
+        </>
       )}
     </nav>
   );
