@@ -1,5 +1,3 @@
-import { ChevronRight } from "lucide-react";
-
 const heroImageUrl = "https://www.figma.com/api/mcp/asset/85ca7531-1d25-422f-a53e-dda981af7a47";
 
 export default function Hero() {
@@ -20,20 +18,15 @@ export default function Hero() {
               <span className="block">Family law,</span>
               <span className="block">translated.</span>
             </h1>
-            <div className="flex flex-wrap gap-4 items-start">
-              <button 
-                className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-[22px] py-2 rounded-md"
-                data-testid="button-hero-explore"
-              >
-                Explore
-              </button>
-              <button 
-                className="bg-neutral-lightest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
-                data-testid="button-hero-signup"
-              >
-                Sign Up
-              </button>
-            </div>
+            <span 
+              className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm text-white underline underline-offset-4 opacity-80 hover:opacity-100"
+              onClick={() => {
+                document.getElementById("home-learn-more")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              data-testid="link-scroll-learn-more"
+            >
+              Scroll to learn more ↓
+            </span>
           </div>
         </div>
       </div>

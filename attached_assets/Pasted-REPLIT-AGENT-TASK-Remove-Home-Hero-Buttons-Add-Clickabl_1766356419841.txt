@@ -1,0 +1,48 @@
+REPLIT AGENT TASK: Remove Home Hero Buttons + Add Clickable “Scroll to learn more ↓” That Smooth-Scrolls To Second Hero Box
+
+GOAL
+- Remove the two big hero buttons (“Explore”, “Sign Up”) from the Home hero
+- Replace them with a subtle clickable text cue: “Scroll to learn more ↓”
+- Clicking the cue smooth-scrolls to the SECOND hero box section on the Home page
+
+FILES TO EDIT
+- client/src/pages/Home.tsx
+- client/src/components/ClaritySection.tsx  (this is the second hero box on Home)
+
+PART A — ADD A SCROLL TARGET ID TO THE SECOND HERO BOX
+1) Open: client/src/components/ClaritySection.tsx
+2) Find the OUTERMOST wrapper element returned by the component (the top-level <section> or <div>).
+3) Add an id attribute:
+   id="home-learn-more"
+Example:
+<section id="home-learn-more" ...>   OR   <div id="home-learn-more" ...>
+
+PART B — REMOVE HERO BUTTONS AND ADD THE SCROLL CUE
+4) Open: client/src/pages/Home.tsx
+5) Locate the first hero area (the section containing the headline “Family law, translated.”).
+6) Find the button group that renders “Explore” and “Sign Up”.
+7) Delete that entire button group.
+8) In its place, add a small clickable element under the headline, like:
+
+- Text: “Scroll to learn more ↓”
+- Style: small, subtle, not a button (text-sm, underline, opacity)
+- On click: smooth-scroll to the element with id="home-learn-more"
+
+Use this exact click handler in React:
+onClick={() => {
+  document.getElementById("home-learn-more")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}}
+
+Suggested Tailwind classes (adjust only if needed to match existing spacing):
+className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm underline underline-offset-4 opacity-80 hover:opacity-100"
+
+PART C — VERIFY
+9) Reload Home:
+- Confirm the hero no longer shows the two big buttons
+- Confirm “Scroll to learn more ↓” appears instead
+- Tap it on mobile: it scrolls smoothly to the second hero box (ClaritySection)
+- No lint/type errors
+
+REPORT BACK
+- Exact line ranges changed in Home.tsx and ClaritySection.tsx
+- Confirm scroll target lands at the top of the second hero box
