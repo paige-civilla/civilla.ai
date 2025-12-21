@@ -339,15 +339,6 @@ export default function SafetySupport() {
         </div>
       </section>
 
-      {/* Disclaimer */}
-      <section className="bg-cream py-8 px-4 md:px-16">
-        <div className="max-w-container mx-auto">
-          <p className="font-arimo font-normal italic text-sm text-neutral-darkest/70 text-center">
-            Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
-          </p>
-        </div>
-      </section>
-
       <Footer />
     </div>
   );
