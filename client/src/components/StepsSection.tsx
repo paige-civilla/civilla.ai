@@ -46,7 +46,7 @@ export default function StepsSection() {
         </div>
 
         <p className="font-sans font-bold italic text-sm text-neutral-darkest/70 text-center w-full mt-8">
-          Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
+          *Educational, Research, And Organizational Support — Not Legal Advice Or Representation.*
         </p>
       </div>
     </section>
