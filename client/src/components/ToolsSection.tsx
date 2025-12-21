@@ -96,7 +96,7 @@ export default function ToolsSection() {
               </p>
 
               <p className="mt-6 text-sm text-white/70 font-bold italic">
-                *Educational, Research, And Organizational Support — Not Legal Advice Or Representation.*
+                *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
               </p>
             </div>
           </div>
