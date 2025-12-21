@@ -12,14 +12,14 @@ export default function CTASection() {
           <div className="flex flex-col gap-5 md:gap-6 items-center text-center w-full">
             <div className="flex flex-col items-center">
               <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest">
-                Ready to begin
+                Ready When You Are
               </h2>
               <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest">
-                Take the first step
+                Take The First Step
               </h2>
             </div>
             <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-              You don't have to figure this out alone. Start learning about your case today.
+              You don't have to figure this out alone. Start with plain-language education, research with Lexi, and tools that organize what you share.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 items-center justify-center">
@@ -28,7 +28,7 @@ export default function CTASection() {
                 className="bg-bush text-white rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular button-inset-shadow"
                 data-testid="button-cta-start"
               >
-                Start now
+                Get Started
               </Button>
             </Link>
             <Link href="/how-civilla-works">
@@ -37,7 +37,7 @@ export default function CTASection() {
                 className="border-2 border-neutral-darkest text-neutral-darkest rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular bg-transparent"
                 data-testid="button-cta-learn"
               >
-                Learn more
+                How Civilla Works
               </Button>
             </Link>
           </div>
