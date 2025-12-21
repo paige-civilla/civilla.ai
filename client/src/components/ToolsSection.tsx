@@ -55,14 +55,14 @@ export default function ToolsSection() {
                   <div key={item.title} className="border-b border-white/20 last:border-b-0">
                     <button
                       type="button"
-                      className="w-full py-5 text-left text-xl md:text-2xl font-semibold tracking-tight text-white flex items-center justify-between gap-4"
+                      className="w-full py-5 text-center text-xl md:text-2xl font-semibold tracking-tight text-white flex items-center justify-center gap-2"
                       aria-expanded={isOpen}
                       aria-controls={`feature-panel-${idx}`}
                       onClick={() => setOpenIndex(isOpen ? null : idx)}
                       data-testid={`button-accordion-${item.title.toLowerCase().replace(/\s/g, "-")}`}
                     >
                       <span>{item.title}</span>
-                      <span className="text-white/70 text-xl">{isOpen ? "–" : "+"}</span>
+                      <span className="text-white/70 text-base">{isOpen ? "–" : "+"}</span>
                     </button>
 
                     <div
@@ -70,7 +70,7 @@ export default function ToolsSection() {
                       className={`${isOpen ? "pb-5" : "h-0 overflow-hidden"} transition-all`}
                     >
                       {isOpen && (
-                        <p className="text-white/85 leading-relaxed text-sm md:text-base">
+                        <p className="text-white/85 leading-relaxed text-sm md:text-base text-center">
                           {item.desc}
                         </p>
                       )}
