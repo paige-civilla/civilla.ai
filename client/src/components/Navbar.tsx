@@ -163,11 +163,12 @@ export default function Navbar() {
                   link.disabled ? (
                     <span
                       key={link.label}
-                      className="py-1.5 font-sans font-normal text-xs text-white/50 leading-[1.6] w-full cursor-not-allowed"
+                      className="py-1.5 font-sans font-normal text-xs text-white/50 leading-[1.6] w-full cursor-not-allowed flex items-center gap-2"
                       aria-disabled="true"
                       data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                     >
                       {link.label}
+                      <span className="text-[10px] opacity-70">Coming soon</span>
                     </span>
                   ) : (
                     <Link

@@ -11,8 +11,10 @@ const menuLinks = {
     { label: "Plans & Pricing", href: "/plans" },
   ],
   learn: [
-    { label: "Legal & Compliance", href: "/legal-compliance" },
-    { label: "Safety & Support", href: "/safety-support" },
+    { label: "Legal & Compliance", href: "/legal-compliance", disabled: false },
+    { label: "Safety & Support", href: "/safety-support", disabled: false },
+    { label: "FAQ", href: "#", disabled: true },
+    { label: "Resources", href: "#", disabled: true },
   ],
   help: [
     { label: "Privacy Policy", href: "/privacy-policy" },
@@ -160,17 +162,29 @@ export default function NavbarCream() {
               </span>
               <div className="flex flex-col items-start w-full">
                 {menuLinks.learn.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                      location === link.href ? "opacity-50" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                  >
-                    {link.label}
-                  </Link>
+                  link.disabled ? (
+                    <span
+                      key={link.label}
+                      className="py-1.5 font-sans font-normal text-xs text-neutral-darkest/50 leading-[1.6] w-full cursor-not-allowed flex items-center gap-2"
+                      aria-disabled="true"
+                      data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                    >
+                      {link.label}
+                      <span className="text-[10px] opacity-70">Coming soon</span>
+                    </span>
+                  ) : (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
+                        location === link.href ? "opacity-50" : ""
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                      data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                    >
+                      {link.label}
+                    </Link>
+                  )
                 ))}
               </div>
             </div>
