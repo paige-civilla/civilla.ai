@@ -312,8 +312,8 @@ export default function SafetySupport() {
           <div className="flex flex-col md:flex-row gap-20 items-center">
             <div className="flex-1">
               <img 
-                src={imgPlaceholderImage1} 
-                alt="Purple flowers" 
+                src="/attached_assets/foggy-landscape-reflected-in-lake_1766286894997.jpg" 
+                alt="Foggy landscape reflected in lake" 
                 className="w-full aspect-[600/640] object-cover rounded-2xl"
               />
             </div>
