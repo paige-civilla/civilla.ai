@@ -1,0 +1,71 @@
+REPLIT AGENT TASK: Safety & Support Page (US-Only) — Correct Crisis Resources + Remove Placeholder Help Number + Keep Civilla Support Email
+
+GOAL
+Update the Safety & Support page so it is accurate for a US-only product:
+- Clear: if in immediate danger call 911
+- Add: 988 (Suicide & Crisis Lifeline)
+- Add: National Domestic Violence Hotline (call + text)
+- Keep: Civilla support email (non-emergency)
+- Remove: any fake/placeholder “Help Center” phone number sections or duplicate links
+
+STEP 1 — FIND THE FILE
+Run:
+rg -n "Safety\\b|Safety & Support|In crisis|support@civilla\\.ai|Help Center|Hotline|1-800-799|911|988" client/src
+
+Open the page component that renders Safety & Support (likely client/src/pages/SafetySupport.tsx or similar).
+
+STEP 2 — UPDATE THE TOP HERO COPY
+Replace the hero content with:
+
+Eyebrow (if present): “Safety”
+Heading: “In Crisis”
+Body paragraph:
+“If you’re in immediate danger, call 911. Civilla is not an emergency service. Use Quick Exit if you need to leave this site quickly.”
+
+STEP 3 — REPLACE THE CONTENT BLOCKS / CARDS WITH THESE (US ONLY)
+
+A) CARD: Resources
+Title: “Resources”
+Body: “Learn about safety planning and find support options near you.”
+(If there is a self-link to “Safety & Support” on the same page, remove that link and keep only text.)
+
+B) CARD: Civilla Support (Non-Emergency)
+Title: “Civilla Support (Non-Emergency)”
+Body: “For account or site issues, email us anytime. If you’re in danger, call 911.”
+Link: support@civilla.ai as mailto
+href="mailto:support@civilla.ai"
+
+C) CARD: Crisis Support (U.S.)
+Title: “Crisis Support (U.S.)”
+Body: “Call or text 988 for free, confidential support 24/7.”
+
+D) CARD: Domestic Violence Support (U.S.)
+Title: “Domestic Violence Support (U.S.)”
+Body (exact):
+“National Domestic Violence Hotline: 1-800-799-7233. Text ‘START’ to 88788.”
+
+Optional second line (if there’s a subtitle slot):
+“Chat and local provider search are available at TheHotline.org.”
+
+STEP 4 — REMOVE PLACEHOLDER “HELP” PHONE SECTION
+Delete any section that:
+- Shows a Civilla “Help” phone number you don’t own
+- Says “Visit our Help Center for answers” (if it’s duplicated or irrelevant)
+- Repeats the same link multiple times
+
+Keep the page clean: one Resources block, one Civilla Support block, and the two US crisis resources (988 + DV hotline).
+
+STEP 5 — BOTTOM SAFETY LINE
+Add a small muted line at the bottom of the page:
+“Educational, Research, And Organizational Support — Not Legal Advice Or Representation.”
+
+VERIFY
+- Mobile layout looks clean (no duplicates)
+- support@civilla.ai opens email composer
+- 988 and DV hotline info is visible and correct
+- No placeholder numbers remain
+- No lint/type errors
+
+REPORT BACK
+- File edited + exact line ranges changed
+- Which placeholder sections were removed

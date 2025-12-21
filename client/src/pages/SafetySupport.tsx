@@ -307,7 +307,13 @@ export default function SafetySupport() {
                   <div className="flex gap-4 items-center">
                     <Phone className="w-6 h-6 text-white flex-shrink-0" />
                     <span className="font-arimo text-lg leading-[1.6] text-white">
-                      National DV Hotline: 1-800-799-7233
+                      Call or text 988 for crisis support (24/7)
+                    </span>
+                  </div>
+                  <div className="flex gap-4 items-center">
+                    <Phone className="w-6 h-6 text-white flex-shrink-0" />
+                    <span className="font-arimo text-lg leading-[1.6] text-white">
+                      National DV Hotline: 1-800-799-7233 or text START to 88788
                     </span>
                   </div>
                 </div>
@@ -330,6 +336,15 @@ export default function SafetySupport() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Disclaimer */}
+      <section className="bg-cream py-8 px-4 md:px-16">
+        <div className="max-w-container mx-auto">
+          <p className="font-arimo font-normal italic text-sm text-neutral-darkest/70 text-center">
+            Educational, Research, And Organizational Support — Not Legal Advice Or Representation.
+          </p>
         </div>
       </section>
 
