@@ -422,7 +422,7 @@ export default function SafetySupport() {
                   <img 
                     src={imgPrivateBrowser} 
                     alt="Laptop with colorful screen" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-bottom"
                   />
                 </div>
                 <div className="p-6 flex flex-col gap-4 flex-1">
