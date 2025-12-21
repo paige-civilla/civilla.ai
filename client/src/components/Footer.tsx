@@ -87,7 +87,7 @@ export default function Footer() {
 
         <div className="flex items-center justify-center w-full">
           <p className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6]">
-            © 2025 <span className="italic font-semibold">civilla.ai</span>. All rights reserved.
+            © 2025 <span className="italic font-medium">civilla.ai</span>. All rights reserved.
           </p>
         </div>
       </div>

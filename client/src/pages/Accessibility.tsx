@@ -22,7 +22,7 @@ export default function Accessibility() {
                   Everyone deserves access
                 </h1>
                 <p className="font-arimo text-sm md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  <span className="italic font-semibold">civilla</span> is built for all users, regardless of ability or circumstance.
+                  <span className="italic font-medium">civilla</span> is built for all users, regardless of ability or circumstance.
                 </p>
               </div>
             </div>
@@ -50,7 +50,7 @@ export default function Accessibility() {
                       Accessibility is not optional for us
                     </h2>
                     <p className="font-arimo text-sm md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                      We believe everyone deserves to navigate family law with dignity. That means <span className="italic font-semibold">civilla</span> works for people with disabilities, chronic illness, language barriers, and different learning styles. We follow WCAG 2.1 AA standards and test regularly with real users.
+                      We believe everyone deserves to navigate family law with dignity. That means <span className="italic font-medium">civilla</span> works for people with disabilities, chronic illness, language barriers, and different learning styles. We follow WCAG 2.1 AA standards and test regularly with real users.
                     </p>
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export default function Accessibility() {
                   Request accommodations
                 </h2>
                 <p className="font-arimo text-sm md:text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                  Tell us what you need to use <span className="italic font-semibold">civilla</span> fully and comfortably.
+                  Tell us what you need to use <span className="italic font-medium">civilla</span> fully and comfortably.
                 </p>
               </div>
               <div className="flex gap-4 items-center">

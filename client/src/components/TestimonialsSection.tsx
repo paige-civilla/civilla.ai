@@ -76,7 +76,7 @@ export default function TestimonialsSection() {
               Share Your Thoughts
             </h3>
             <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest/80">
-              Your feedback helps us improve <span className="italic font-semibold">civilla</span>. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
+              Your feedback helps us improve <span className="italic font-medium">civilla</span>. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
             </p>
           </div>
 

@@ -20,7 +20,7 @@ function HeaderSection() {
           <div className="flex flex-col gap-4 items-center w-full">
             <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
               <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
-                How <span className="italic font-semibold">civilla</span> works
+                How <span className="italic font-medium">civilla</span> works
               </h1>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 A calm, step-by-step guide to understanding your case and taking control
@@ -311,7 +311,7 @@ function TestimonialSection() {
             <img src={imgStars} alt="" className="w-full h-full" />
           </div>
           <p className="cv-p font-sans text-lg md:text-[24px] text-neutral-darkest text-center leading-[1.6] w-full">
-            "<span className="italic font-semibold">civilla</span> helped me understand what was happening in my case for the first time. I finally felt like I could breathe."
+            "<span className="italic font-medium">civilla</span> helped me understand what was happening in my case for the first time. I finally felt like I could breathe."
           </p>
           <div className="flex flex-col gap-2 items-center">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
@@ -339,7 +339,7 @@ function CTASection() {
                 Start your journey today
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                Whether you're just beginning or deep in the process, <span className="italic font-semibold">civilla</span> meets you where you are.
+                Whether you're just beginning or deep in the process, <span className="italic font-medium">civilla</span> meets you where you are.
               </p>
             </div>
             <div className="flex gap-6 items-center">

@@ -55,7 +55,7 @@ export default function FAQSection() {
             FAQs
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Quick answers about what <span className="italic font-semibold">civilla</span> does — and what it doesn't.
+            Quick answers about what <span className="italic font-medium">civilla</span> does — and what it doesn't.
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export default function FAQSection() {
                   {faq.question.includes("civilla.ai") 
                     ? faq.question.split("civilla.ai").map((part, i, arr) => 
                         i < arr.length - 1 
-                          ? <span key={i}>{part}<span className="italic font-semibold">civilla.ai</span></span>
+                          ? <span key={i}>{part}<span className="italic font-medium">civilla.ai</span></span>
                           : part
                       )
                     : faq.question}
@@ -85,7 +85,11 @@ export default function FAQSection() {
               {openItems.includes(faq.id) && (
                 <div className="flex items-start pb-6 w-full">
                   <p className="flex-1 font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest">
-                    {faq.answer}
+                    {faq.answer.split(/(civilla\.ai|civilla)/g).map((part, i) => 
+                      part === "civilla.ai" || part === "civilla" 
+                        ? <span key={i} className="italic font-medium">{part}</span>
+                        : part
+                    )}
                   </p>
                 </div>
               )}

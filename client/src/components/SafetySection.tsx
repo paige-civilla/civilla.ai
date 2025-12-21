@@ -53,7 +53,7 @@ export default function SafetySection() {
             In Crisis?
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-            If you are in immediate danger, <strong>ALWAYS</strong> call <strong>911</strong> (or your local emergency number), as <span className="italic font-semibold">civilla.ai</span> is not an emergency service. We also have Quick Exit, our built-in safety feature, always located at the top right corner of every page. When pressed, it instantly redirects to a neutral website and prevents the back button from returning to <span className="italic font-semibold">civilla</span>.
+            If you are in immediate danger, <strong>ALWAYS</strong> call <strong>911</strong> (or your local emergency number), as <span className="italic font-medium">civilla.ai</span> is not an emergency service. We also have Quick Exit, our built-in safety feature, always located at the top right corner of every page. When pressed, it instantly redirects to a neutral website and prevents the back button from returning to <span className="italic font-medium">civilla</span>.
           </p>
         </div>
 
@@ -70,7 +70,7 @@ export default function SafetySection() {
               <div className="flex flex-col gap-6 items-center w-full">
                 <div className="flex flex-col gap-4 items-center w-full">
                   <h3 className="font-heading font-bold text-heading-4-mobile md:text-heading-4 tracking-[0.3px] md:tracking-[0.4px] text-neutral-darkest">
-                    {item.titleStyled ? <><span className="italic font-semibold">civilla</span> Support</> : item.title}
+                    {item.titleStyled ? <><span className="italic font-medium">civilla</span> Support</> : item.title}
                   </h3>
                   <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest">
                     {item.description}
@@ -101,7 +101,7 @@ export default function SafetySection() {
         </div>
 
         <p className="font-sans font-normal italic text-sm text-neutral-darkest/70 text-center w-full">
-          <span className="italic font-semibold">civilla</span> provides educational, research, and organizational support — not legal advice or representation.
+          <span className="italic font-medium">civilla</span> provides educational, research, and organizational support — not legal advice or representation.
         </p>
       </div>
     </section>

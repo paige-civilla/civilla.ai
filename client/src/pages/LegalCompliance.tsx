@@ -25,7 +25,7 @@ function EducationSection() {
                   Education only, never legal advice
                 </h2>
                 <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-                  Everything on <span className="italic font-semibold">civilla</span> is designed to inform and explain. We do not provide legal advice, and nothing here replaces an attorney.
+                  Everything on <span className="italic font-medium">civilla</span> is designed to inform and explain. We do not provide legal advice, and nothing here replaces an attorney.
                 </p>
               </div>
             </div>
@@ -85,7 +85,7 @@ function BoundariesSection() {
                     What we can and cannot do for you. Understanding these limits keeps you safe and informed.
                   </h2>
                   <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-                    <span className="italic font-semibold">civilla</span> answers educational questions. We explain legal terms, show how courts work, and help you organize evidence. We do not answer case-specific questions or tell you what decisions to make.
+                    <span className="italic font-medium">civilla</span> answers educational questions. We explain legal terms, show how courts work, and help you organize evidence. We do not answer case-specific questions or tell you what decisions to make.
                   </p>
                 </div>
               </div>
@@ -179,7 +179,7 @@ function FAQSection() {
             Questions
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Find answers about how <span className="italic font-semibold">civilla</span> works and what it cannot do.
+            Find answers about how <span className="italic font-medium">civilla</span> works and what it cannot do.
           </p>
         </div>
 
@@ -217,7 +217,7 @@ function FAQSection() {
               Common questions answered
             </h3>
             <p className="font-sans font-normal text-body-medium leading-[1.6] w-full">
-              Everything you need to know about <span className="italic font-semibold">civilla</span>
+              Everything you need to know about <span className="italic font-medium">civilla</span>
             </p>
           </div>
           <div className="flex items-center">

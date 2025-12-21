@@ -41,7 +41,7 @@ export default function Contact() {
                   We're here to help
                 </h1>
                 <p className="font-arimo font-normal text-sm md:text-xl leading-[1.6] w-full" style={{ textWrap: "pretty" }}>
-                  <span className="italic font-semibold">civilla</span> is committed to supporting you with compassion, privacy, and respect. Reach out anytime.
+                  <span className="italic font-medium">civilla</span> is committed to supporting you with compassion, privacy, and respect. Reach out anytime.
                 </p>
               </div>
             </div>

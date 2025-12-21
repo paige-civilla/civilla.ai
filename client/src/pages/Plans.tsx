@@ -331,7 +331,7 @@ function OrganizationsSection() {
           </div>
           <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start">
             <p className="cv-panel-body font-sans text-sm md:text-[20px] leading-[1.6] text-neutral-darkest">
-              Domestic violence shelters, legal aid nonprofits, and family service organizations can access <span className="italic font-semibold">civilla</span> at custom rates. We work with you to make education and case support available to those who need it most. Your team gets dedicated onboarding and bulk access for the families you serve.
+              Domestic violence shelters, legal aid nonprofits, and family service organizations can access <span className="italic font-medium">civilla</span> at custom rates. We work with you to make education and case support available to those who need it most. Your team gets dedicated onboarding and bulk access for the families you serve.
             </p>
             <div className="flex flex-wrap gap-4 md:gap-6 items-center">
               <button 

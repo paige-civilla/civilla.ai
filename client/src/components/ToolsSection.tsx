@@ -41,10 +41,10 @@ export default function ToolsSection() {
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-5 md:gap-6 items-center text-white text-center max-w-content-large w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-            What You Can Do With <span className="italic font-semibold">civilla</span>
+            What You Can Do With <span className="italic font-medium">civilla</span>
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            <span className="italic font-semibold">civilla</span> is an educational, research, and organizational platform. We help you understand court processes, research questions with Lexi (our AI), and organize your case materials — but we don't provide legal advice, represent you in court, or guarantee outcomes.
+            <span className="italic font-medium">civilla</span> is an educational, research, and organizational platform. We help you understand court processes, research questions with Lexi (our AI), and organize your case materials — but we don't provide legal advice, represent you in court, or guarantee outcomes.
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export default function ToolsSection() {
                 Track What Matters In Your Case
               </h3>
               <p className="mt-4 text-white/85 leading-relaxed text-sm md:text-base">
-                Family court can feel chaotic. <span className="italic font-semibold">civilla</span> helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.
+                Family court can feel chaotic. <span className="italic font-medium">civilla</span> helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.
               </p>
 
               <p className="mt-6 text-[10px] text-white/70 font-bold italic">

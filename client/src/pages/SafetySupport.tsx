@@ -49,7 +49,7 @@ export default function SafetySupport() {
                   Leave in a click
                 </h2>
                 <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  If you need to exit <span className="italic font-semibold">civilla</span> quickly, use the quick exit button at the top of every page.
+                  If you need to exit <span className="italic font-medium">civilla</span> quickly, use the quick exit button at the top of every page.
                 </p>
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function SafetySupport() {
                       How quick exit works
                     </h3>
                     <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
-                      When you click the quick exit button, <span className="italic font-semibold">civilla</span> closes immediately and redirects you to a neutral website. Your browsing history in <span className="italic font-semibold">civilla</span> is cleared from your device, and no record of your visit remains visible on your screen.
+                      When you click the quick exit button, <span className="italic font-medium">civilla</span> closes immediately and redirects you to a neutral website. Your browsing history in <span className="italic font-medium">civilla</span> is cleared from your device, and no record of your visit remains visible on your screen.
                     </p>
                   </div>
                 </div>
@@ -108,7 +108,7 @@ export default function SafetySupport() {
                       Designed for discretion
                     </h2>
                     <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                      <span className="italic font-semibold">civilla</span> is built to be calm, quiet, and unintrusive. No flashing alerts, no unexpected pop-ups, no notifications that might draw unwanted attention.
+                      <span className="italic font-medium">civilla</span> is built to be calm, quiet, and unintrusive. No flashing alerts, no unexpected pop-ups, no notifications that might draw unwanted attention.
                     </p>
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function SafetySupport() {
                   Additional safety tools
                 </h2>
                 <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                  <span className="italic font-semibold">civilla</span> includes features designed to help you stay safe.
+                  <span className="italic font-medium">civilla</span> includes features designed to help you stay safe.
                 </p>
               </div>
             </div>
@@ -182,7 +182,7 @@ export default function SafetySupport() {
                       Customized notifications
                     </h3>
                     <p className="font-arimo text-lg leading-[1.6] text-white">
-                      Control when and how <span className="italic font-semibold">civilla</span> contacts you
+                      Control when and how <span className="italic font-medium">civilla</span> contacts you
                     </p>
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export default function SafetySupport() {
                   Your emotional safety matters
                 </h2>
                 <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  Family court can feel overwhelming or frightening. <span className="italic font-semibold">civilla</span> is here to help you feel informed, supported, and in control of your case.
+                  Family court can feel overwhelming or frightening. <span className="italic font-medium">civilla</span> is here to help you feel informed, supported, and in control of your case.
                 </p>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function SafetySupport() {
                     You are heard
                   </h3>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
-                    <span className="italic font-semibold">civilla</span> is non-judgmental and designed to validate your experience.
+                    <span className="italic font-medium">civilla</span> is non-judgmental and designed to validate your experience.
                   </p>
                 </div>
                 <div className="flex-1 px-6 py-4 flex flex-col gap-1 items-center text-center">
@@ -290,7 +290,7 @@ export default function SafetySupport() {
                   </p>
                   <div className="flex flex-col gap-6">
                     <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
-                      <span className="italic font-semibold">civilla</span> is not an emergency service
+                      <span className="italic font-medium">civilla</span> is not an emergency service
                     </h2>
                     <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
                       If you are in immediate danger, please contact emergency services.

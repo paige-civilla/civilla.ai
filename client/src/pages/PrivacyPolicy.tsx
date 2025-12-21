@@ -48,46 +48,46 @@ function ContentSection() {
           <div className="flex flex-col gap-4 items-start w-full">
             <div className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest w-full">
               <p className="mb-4">
-                <span className="italic font-semibold">civilla</span> collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
+                <span className="italic font-medium">civilla</span> collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
               </p>
               <p className="mb-4">
                 Your case materials—documents, timelines, evidence, and notes—belong to you. We store them securely on encrypted servers and never share them with third parties, sell them, or use them for marketing. You can download or delete your information at any time. We keep your data only as long as your account is active, unless legal requirements ask us to retain it longer.
               </p>
               <p className="mb-4">
-                <span className="italic font-semibold">civilla</span> uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
+                <span className="italic font-medium">civilla</span> uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
               </p>
               <p>
-                We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of <span className="italic font-semibold">civilla</span> after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the support page.
+                We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of <span className="italic font-medium">civilla</span> after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the support page.
               </p>
             </div>
 
             <div className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest w-full mt-4">
               <p className="mb-4">
-                <span className="italic font-semibold">civilla</span> collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
+                <span className="italic font-medium">civilla</span> collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
               </p>
               <p className="mb-4">
                 Your case materials—documents, timelines, evidence, and notes—belong to you. We store them securely on encrypted servers and never share them with third parties, sell them, or use them for marketing. You can download or delete your information at any time. We keep your data only as long as your account is active, unless legal requirements ask us to retain it longer.
               </p>
               <p className="mb-4">
-                <span className="italic font-semibold">civilla</span> uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
+                <span className="italic font-medium">civilla</span> uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
               </p>
               <p>
-                We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of <span className="italic font-semibold">civilla</span> after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the support page.
+                We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of <span className="italic font-medium">civilla</span> after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the support page.
               </p>
             </div>
 
             <div className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest w-full mt-4">
               <p className="mb-4">
-                <span className="italic font-semibold">civilla</span> collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
+                <span className="italic font-medium">civilla</span> collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
               </p>
               <p className="mb-4">
                 Your case materials—documents, timelines, evidence, and notes—belong to you. We store them securely on encrypted servers and never share them with third parties, sell them, or use them for marketing. You can download or delete your information at any time. We keep your data only as long as your account is active, unless legal requirements ask us to retain it longer.
               </p>
               <p className="mb-4">
-                <span className="italic font-semibold">civilla</span> uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
+                <span className="italic font-medium">civilla</span> uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
               </p>
               <p>
-                We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of <span className="italic font-semibold">civilla</span> after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the support page.
+                We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of <span className="italic font-medium">civilla</span> after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the support page.
               </p>
             </div>
           </div>

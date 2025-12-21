@@ -32,7 +32,7 @@ export default function CTASection() {
                 className="border-2 border-neutral-darkest text-neutral-darkest rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular bg-transparent"
                 data-testid="button-cta-learn"
               >
-                How <span className="italic font-semibold">civilla</span> Works
+                How <span className="italic font-medium">civilla</span> Works
               </Button>
             </Link>
           </div>
