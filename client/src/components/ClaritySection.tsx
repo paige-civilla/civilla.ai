@@ -11,7 +11,7 @@ export default function ClaritySection() {
               civilla.ai is not a law firm
             </h2>
             <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-              civilla.ai does not provide legal advice, represent you in court, or replace an attorney. We are an educational platform designed to help you understand family law and organize your case.
+              civilla is an educational and organizational platform. We can help you understand court processes and organize your case materials — but we don't provide legal advice, represent you in court, or guarantee outcomes.
             </p>
           </div>
         </div>
