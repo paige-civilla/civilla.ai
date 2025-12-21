@@ -29,8 +29,8 @@ export default function Footer() {
       data-testid="footer"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-start max-w-container w-full">
-        <div className="flex flex-col md:flex-row gap-10 md:gap-32 items-start w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest">
-          <div className="flex flex-1 flex-wrap gap-10 items-start">
+        <div className="flex flex-col md:flex-row gap-10 md:gap-32 items-center justify-center w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest">
+          <div className="flex flex-wrap gap-10 md:gap-32 items-start justify-center">
             <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Product
