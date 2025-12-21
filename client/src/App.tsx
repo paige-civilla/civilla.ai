@@ -11,6 +11,7 @@ import LegalCompliance from "@/pages/LegalCompliance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import SafetySupport from "@/pages/SafetySupport";
 import Accessibility from "@/pages/Accessibility";
+import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/safety-support" component={SafetySupport} />
       <Route path="/accessibility" component={Accessibility} />
+      <Route path="/contact" component={Contact} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,0 +1,578 @@
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "wouter";
+import { Menu, X, ChevronRight, User, Moon, Sun, LogOut, Mail, Phone, MapPin, ChevronDown } from "lucide-react";
+import Footer from "@/components/Footer";
+import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
+
+const menuLinks = {
+  product: [
+    { label: "Home", href: "/" },
+    { label: "How it works", href: "/how-civilla-works" },
+    { label: "About us", href: "/about-civilla" },
+    { label: "Plans & Pricing", href: "/plans" },
+  ],
+  learn: [
+    { label: "Legal & Compliance", href: "/legal-compliance" },
+    { label: "Safety & Support", href: "/safety-support" },
+    { label: "FAQ", href: "#" },
+    { label: "Resources", href: "#" },
+  ],
+  help: [
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms of Service", href: "#" },
+    { label: "Contact", href: "/contact" },
+    { label: "Accessibility", href: "/accessibility" },
+  ]
+};
+
+function NavbarCream() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [location] = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+  };
+
+  const handleQuickExit = () => {
+    window.location.href = "https://www.google.com";
+  };
+
+  return (
+    <nav className="bg-[#fcfbf9] w-full">
+      <div className="h-[72px] flex items-center justify-center px-16">
+        <div className="w-full max-w-[1280px] flex items-center justify-between gap-8">
+          <div className="flex-1">
+            <Link href="/">
+              <img 
+                src={logoDark} 
+                alt="Civilla" 
+                className="h-[30px] w-auto object-contain cursor-pointer"
+                data-testid="link-logo"
+              />
+            </Link>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <button
+              onClick={handleQuickExit}
+              className="bg-[#0f3b2e] text-white font-arimo font-bold text-lg leading-[1.6] px-5 py-2 rounded-xl relative overflow-hidden"
+              style={{
+                boxShadow: "0px 1px 2px 0px rgba(7,5,3,0.05), inset 0px 32px 24px 0px rgba(255,255,255,0.05), inset 0px 2px 1px 0px rgba(255,255,255,0.25), inset 0px 0px 0px 1px rgba(7,5,3,0.15), inset 0px -2px 1px 0px rgba(0,0,0,0.2)"
+              }}
+              data-testid="button-quick-exit"
+            >
+              Quick Exit
+            </button>
+            
+            <button
+              onClick={toggleTheme}
+              className="p-3"
+              data-testid="button-theme-toggle"
+            >
+              {isDarkMode ? (
+                <Sun className="w-6 h-6 text-neutral-darkest" />
+              ) : (
+                <Moon className="w-6 h-6 text-neutral-darkest" />
+              )}
+            </button>
+            
+            <button className="p-3" data-testid="button-user">
+              <User className="w-6 h-6 text-neutral-darkest" />
+            </button>
+            
+            <button 
+              ref={menuButtonRef}
+              className="p-3"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              data-testid="button-menu"
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6 text-neutral-darkest" />
+              ) : (
+                <Menu className="w-6 h-6 text-neutral-darkest" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {isMenuOpen && (
+        <div 
+          ref={menuRef}
+          className="absolute top-[72px] left-0 right-0 bg-[#fcfbf9] border-t border-neutral-darkest/10 z-50"
+        >
+          <div className="max-w-[1280px] mx-auto px-16 py-8">
+            <div className="grid grid-cols-3 gap-12">
+              <div className="flex flex-col gap-3">
+                <h3 className="font-arimo font-bold text-xs text-neutral-darkest/60 uppercase tracking-wider">Product</h3>
+                {menuLinks.product.map((link) => (
+                  <Link key={link.href} href={link.href}>
+                    <span 
+                      className={`font-arimo text-xs text-neutral-darkest hover:opacity-70 cursor-pointer ${location === link.href ? 'font-bold' : ''}`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                <h3 className="font-arimo font-bold text-xs text-neutral-darkest/60 uppercase tracking-wider">Learn</h3>
+                {menuLinks.learn.map((link) => (
+                  <Link key={link.href} href={link.href}>
+                    <span 
+                      className={`font-arimo text-xs text-neutral-darkest hover:opacity-70 cursor-pointer ${location === link.href ? 'font-bold' : ''}`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                <h3 className="font-arimo font-bold text-xs text-neutral-darkest/60 uppercase tracking-wider">Help</h3>
+                {menuLinks.help.map((link) => (
+                  <Link key={link.href} href={link.href}>
+                    <span 
+                      className={`font-arimo text-xs text-neutral-darkest hover:opacity-70 cursor-pointer ${location === link.href ? 'font-bold' : ''}`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
+
+const timelineItems = [
+  {
+    title: "General support",
+    description: "Your thoughts help us build a better tool. We'd love to hear what's working and what could improve."
+  },
+  {
+    title: "Accessibility needs",
+    description: "If you represent a shelter, nonprofit, or organization, we have options to discuss with you."
+  },
+  {
+    title: "Feedback and ideas",
+    description: "Questions about how Civilla works or need help navigating the platform"
+  },
+  {
+    title: "Organizations and nonprofits",
+    description: "Accessibility concerns, feature requests, or suggestions to make Civilla better"
+  }
+];
+
+export default function Contact() {
+  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [agreedDisclaimer, setAgreedDisclaimer] = useState(false);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#fcfbf9]">
+      <NavbarCream />
+      
+      {/* Hero Section */}
+      <section className="bg-[#e7ebea] px-16 py-28">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="flex flex-col items-center max-w-[768px] mx-auto gap-8">
+            <div className="flex flex-col items-center gap-4 w-full">
+              <div className="flex items-center w-full">
+                <p className="font-arimo font-bold text-base leading-[1.5] text-neutral-darkest text-center w-full">
+                  Support
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-6 text-center text-neutral-darkest w-full">
+                <h1 className="font-figtree font-bold text-[84px] leading-[1.1] tracking-[0.01em] w-full" style={{ textWrap: "balance" }}>
+                  We're here to help
+                </h1>
+                <p className="font-arimo font-normal text-xl leading-[1.6] w-full" style={{ textWrap: "pretty" }}>
+                  Civilla is committed to supporting you with compassion, privacy, and respect. Reach out anytime.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button 
+                className="bg-[#0f3b2e] text-white font-arimo font-bold text-lg leading-[1.6] px-6 py-2.5 rounded-xl relative"
+                style={{
+                  boxShadow: "0px 1px 2px 0px rgba(7,5,3,0.05), inset 0px 32px 24px 0px rgba(255,255,255,0.05), inset 0px 2px 1px 0px rgba(255,255,255,0.25), inset 0px 0px 0px 1px rgba(7,5,3,0.15), inset 0px -2px 1px 0px rgba(0,0,0,0.2)"
+                }}
+                data-testid="button-contact"
+              >
+                Contact
+              </button>
+              <button 
+                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg leading-[1.6] px-6 py-2.5 rounded-xl"
+                data-testid="button-learn-more"
+              >
+                Learn more
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How We Can Help Section */}
+      <section className="bg-[#fcfbf9] px-16 py-28">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="flex gap-20">
+            {/* Left Column */}
+            <div className="flex-1 flex flex-col gap-8">
+              <div className="flex flex-col gap-4">
+                <p className="font-arimo font-bold text-base leading-[1.5] text-neutral-darkest">
+                  Support
+                </p>
+                <h2 className="font-figtree font-bold text-[60px] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                  How we can help you
+                </h2>
+              </div>
+              <div className="flex items-center gap-6">
+                <button 
+                  className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg leading-[1.6] px-6 py-2.5 rounded-xl"
+                  data-testid="button-explore"
+                >
+                  Explore
+                </button>
+                <button 
+                  className="flex items-center gap-2 font-arimo font-bold text-lg leading-[1.6] text-neutral-darkest rounded-xl"
+                  data-testid="button-arrow"
+                >
+                  Arrow
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column - Timeline */}
+            <div className="flex-1 flex flex-col gap-4">
+              {timelineItems.map((item, index) => (
+                <div key={index} className="flex gap-10">
+                  {/* Icon and Line */}
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 flex items-center justify-center">
+                      <svg width="36" height="40" viewBox="0 0 36 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 0L35.3205 10V30L18 40L0.679491 30V10L18 0Z" fill="#070503"/>
+                      </svg>
+                    </div>
+                    {index < timelineItems.length - 1 && (
+                      <div className="w-0 h-[100px] border-l border-neutral-darkest" />
+                    )}
+                  </div>
+                  {/* Content */}
+                  <div className="flex-1 flex flex-col gap-4 text-neutral-darkest">
+                    <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em]">
+                      {item.title}
+                    </h3>
+                    <p className="font-arimo font-normal text-lg leading-[1.6]" style={{ textWrap: "pretty" }}>
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Form Section */}
+      <section className="bg-[#f2f2f2] px-16 py-28">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="flex gap-20">
+            {/* Left Column - Contact Info */}
+            <div className="flex-1 flex flex-col gap-8">
+              <div className="flex flex-col gap-4">
+                <p className="font-arimo font-bold text-base leading-[1.5] text-neutral-darkest">
+                  Message
+                </p>
+                <div className="flex flex-col gap-6 text-neutral-darkest">
+                  <h2 className="font-figtree font-bold text-[60px] leading-[1.2] tracking-[0.01em]" style={{ textWrap: "balance" }}>
+                    Send us a message
+                  </h2>
+                  <p className="font-arimo font-normal text-xl leading-[1.6]" style={{ textWrap: "pretty" }}>
+                    Tell us what's on your mind. We read every message and respond with care.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 py-2">
+                <div className="flex items-start gap-4">
+                  <Mail className="w-6 h-6 text-neutral-darkest" />
+                  <a href="mailto:email@example.com" className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest underline">
+                    email@example.com
+                  </a>
+                </div>
+                <div className="flex items-start gap-4">
+                  <Phone className="w-6 h-6 text-neutral-darkest" />
+                  <a href="tel:+15550000000" className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest underline">
+                    +1 (555) 000-0000
+                  </a>
+                </div>
+                <div className="flex items-start gap-4">
+                  <MapPin className="w-6 h-6 text-neutral-darkest" />
+                  <p className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                    123 Sample St, Sydney NSW 2000 AU
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Form */}
+            <div className="flex-1 flex flex-col gap-6">
+              {/* Name and Email Row */}
+              <div className="flex gap-6">
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                    Name
+                  </label>
+                  <input 
+                    type="text"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg"
+                    data-testid="input-name"
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                    Email
+                  </label>
+                  <input 
+                    type="email"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg"
+                    data-testid="input-email"
+                  />
+                </div>
+              </div>
+
+              {/* Message and Phone Row */}
+              <div className="flex gap-6">
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                    Message
+                  </label>
+                  <input 
+                    type="text"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg"
+                    data-testid="input-message-short"
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                    Phone number
+                  </label>
+                  <input 
+                    type="tel"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg"
+                    data-testid="input-phone"
+                  />
+                </div>
+              </div>
+
+              {/* Select Dropdown */}
+              <div className="flex flex-col gap-2">
+                <label className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                  What brings you here?
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedOption}
+                    onChange={(e) => setSelectedOption(e.target.value)}
+                    className="w-full bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg appearance-none cursor-pointer"
+                    data-testid="select-reason"
+                  >
+                    <option value="">Select one...</option>
+                    <option value="general">General inquiry</option>
+                    <option value="support">Technical support</option>
+                    <option value="feedback">Feedback</option>
+                    <option value="partnership">Partnership</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 text-neutral-darkest pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Radio Buttons */}
+              <div className="flex flex-col gap-4 py-4">
+                <p className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                  How would you describe yourself?
+                </p>
+                <div className="flex flex-col gap-3.5">
+                  <div className="flex gap-6">
+                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="self-represented"
+                        checked={selectedRole === "self-represented"}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
+                        data-testid="radio-self-represented"
+                      />
+                      <span className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                        Self-represented parent
+                      </span>
+                    </label>
+                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="nonprofit"
+                        checked={selectedRole === "nonprofit"}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
+                        data-testid="radio-nonprofit"
+                      />
+                      <span className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                        Nonprofit or shelter
+                      </span>
+                    </label>
+                  </div>
+                  <div className="flex gap-6">
+                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="researcher"
+                        checked={selectedRole === "researcher"}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
+                        data-testid="radio-researcher"
+                      />
+                      <span className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                        Researcher or educator
+                      </span>
+                    </label>
+                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="legal"
+                        checked={selectedRole === "legal"}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
+                        data-testid="radio-legal"
+                      />
+                      <span className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                        Legal professional
+                      </span>
+                    </label>
+                  </div>
+                  <div className="flex gap-6">
+                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="community"
+                        checked={selectedRole === "community"}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
+                        data-testid="radio-community"
+                      />
+                      <span className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                        Community partner
+                      </span>
+                    </label>
+                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="other"
+                        checked={selectedRole === "other"}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
+                        data-testid="radio-other"
+                      />
+                      <span className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                        Other
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Textarea */}
+              <div className="flex flex-col gap-2">
+                <label className="font-arimo font-normal text-lg leading-[1.6] text-neutral-darkest">
+                  Message
+                </label>
+                <textarea 
+                  placeholder="Share what's on your mind. We read and respond to every message with care and respect. Your privacy matters to us, and reaching out does not create an attorney-client relationship."
+                  className="bg-transparent border-2 border-neutral-darkest rounded-xl p-3 font-arimo text-lg h-[180px] resize-none placeholder:text-neutral-darkest/60"
+                  data-testid="textarea-message"
+                />
+              </div>
+
+              {/* Checkbox */}
+              <div className="flex items-center gap-2 pb-4">
+                <input 
+                  type="checkbox"
+                  checked={agreedDisclaimer}
+                  onChange={(e) => setAgreedDisclaimer(e.target.checked)}
+                  className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded appearance-none checked:bg-neutral-darkest cursor-pointer"
+                  data-testid="checkbox-disclaimer"
+                />
+                <span className="font-arimo font-normal text-base leading-[1.6] text-neutral-darkest">
+                  I understand this is not legal advice
+                </span>
+              </div>
+
+              {/* Submit Button */}
+              <button 
+                className="bg-[#0f3b2e] text-white font-arimo font-bold text-lg leading-[1.6] px-6 py-2.5 rounded-xl relative self-start"
+                style={{
+                  boxShadow: "0px 1px 2px 0px rgba(7,5,3,0.05), inset 0px 32px 24px 0px rgba(255,255,255,0.05), inset 0px 2px 1px 0px rgba(255,255,255,0.25), inset 0px 0px 0px 1px rgba(7,5,3,0.15), inset 0px -2px 1px 0px rgba(0,0,0,0.2)"
+                }}
+                data-testid="button-send"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}
