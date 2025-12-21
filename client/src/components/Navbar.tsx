@@ -7,7 +7,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/how-civilla-works", label: "How Civilla Works" },
   { href: "/about-civilla", label: "About Civilla" },
-  { href: "/plans", label: "Plans" },
+  { href: "/plans", label: "Plans & Pricing" },
   { href: "/legal-compliance", label: "Legal & Compliance" },
   { href: "/privacy-policy", label: "Privacy Policy" },
 ];
