@@ -24,6 +24,7 @@ function Router() {
       <Route path="/how-civilla-works" component={HowCivillaWorks} />
       <Route path="/about-civilla" component={AboutCivilla} />
       <Route path="/about" component={AboutCivilla} />
+      <Route path="/how-we-started" component={AboutCivilla} />
       <Route path="/plans" component={Plans} />
       <Route path="/legal-compliance" component={LegalCompliance} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

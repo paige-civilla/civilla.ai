@@ -23,7 +23,7 @@ const menuSections = [
     links: [
       { label: "Our Mission", href: "/about#mission", icon: Target },
       { label: "Meet The Founders", href: "/about#founders", icon: Users },
-      { label: "About Us", href: "/about", icon: Info },
+      { label: "How We Started", href: "/how-we-started", icon: Sparkles },
     ]
   },
   {
