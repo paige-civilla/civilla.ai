@@ -23,26 +23,43 @@ export default function StepsSection() {
       data-testid="section-steps"
     >
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 w-full">
-          {steps.map((step) => (
-            <h3 
-              key={step.id} 
-              className="font-heading font-bold text-heading-5-mobile md:text-heading-5 tracking-[0.2px] md:tracking-[0.32px] text-neutral-darkest pb-4 text-center"
-            >
-              {step.title}
-            </h3>
-          ))}
+        <div className="md:hidden w-full">
+          <div className="space-y-8">
+            {steps.map((step) => (
+              <div key={step.id} className="grid grid-cols-[100px,1fr] gap-4 items-start">
+                <h3 className="font-heading font-bold text-heading-5-mobile tracking-[0.2px] text-neutral-darkest">
+                  {step.title}
+                </h3>
+                <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
+                  {step.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          <div className="col-span-1 md:col-span-3 w-full border-b border-black/20 mb-6" />
+        <div className="hidden md:block w-full">
+          <div className="grid grid-cols-3 gap-x-12 w-full">
+            {steps.map((step) => (
+              <h3 
+                key={step.id} 
+                className="font-heading font-bold text-heading-5 tracking-[0.32px] text-neutral-darkest pb-4 text-center"
+              >
+                {step.title}
+              </h3>
+            ))}
 
-          {steps.map((step) => (
-            <p 
-              key={`${step.id}-desc`}
-              className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest mb-8 md:mb-0 text-center"
-            >
-              {step.description}
-            </p>
-          ))}
+            <div className="col-span-3 w-full border-b border-black/20 mb-6" />
+
+            {steps.map((step) => (
+              <p 
+                key={`${step.id}-desc`}
+                className="font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest text-center"
+              >
+                {step.description}
+              </p>
+            ))}
+          </div>
         </div>
 
         <p className="font-sans font-bold italic text-sm text-neutral-darkest/70 text-center w-full mt-8">

@@ -1,0 +1,67 @@
+REPLIT AGENT TASK: Fix Mobile Layout For StepsSection (Left “Step One/Two/Three” Column + Right Copy Column Aligned Per Row)
+
+GOAL
+On MOBILE, the “Step One / Step Two / Step Three” section should NOT stack the step labels on top and then the paragraphs below (it looks messy).
+Instead, MOBILE should render as 3 ROWS:
+- Left side: Step label (vertical list)
+- Right side: The matching paragraph aligned with that step
+On DESKTOP, keep the current 3-column layout with the single underline.
+
+FILE TO EDIT
+client/src/components/StepsSection.tsx
+
+INSTRUCTIONS
+1) Open client/src/components/StepsSection.tsx
+2) Create a single data structure at the top of the component (or reuse what exists) so we have one source of truth:
+
+const STEPS = [
+  { label: "Step One", body: "Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category." },
+  { label: "Step Two", body: "Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context." },
+  { label: "Step Three", body: "Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises." },
+];
+
+(Use the exact text already in the file so we don’t accidentally change copy.)
+
+3) Implement RESPONSIVE RENDERING:
+
+A) MOBILE VIEW (md:hidden)
+Render 3 rows where each row is a 2-column grid:
+- Left column: the step label (bold, Title Case)
+- Right column: the paragraph
+Example structure (adapt classNames to match your styling, but keep this layout):
+
+<div className="md:hidden">
+  <div className="space-y-10">
+    {STEPS.map((s) => (
+      <div key={s.label} className="grid grid-cols-[110px,1fr] gap-6 items-start">
+        <div className="font-semibold text-lg text-neutral-900">{s.label}</div>
+        <p className="text-neutral-700 leading-relaxed">{s.body}</p>
+      </div>
+    ))}
+  </div>
+</div>
+
+IMPORTANT:
+- Do NOT show the “Step One / Step Two / Step Three” header stack on mobile anymore.
+- No underline needed on mobile (optional: add a thin divider between rows if it looks nicer, but not required).
+
+B) DESKTOP VIEW (hidden md:block)
+Keep the existing desktop layout:
+- Step labels across the top in 3 columns
+- One continuous underline across all 3 columns
+- 3 paragraphs in 3 columns below
+
+Wrap the current desktop markup in:
+<div className="hidden md:block"> ...existing desktop layout... </div>
+
+4) Keep the small disclaimer line at the bottom as-is, but ensure it sits below both mobile and desktop layouts and remains centered.
+
+VERIFY
+- Mobile: you see 3 rows with “Step One” left + matching paragraph right, perfectly aligned.
+- Desktop: the existing 3-column header + single underline + 3 paragraphs remains unchanged.
+- No buttons appear in this section.
+- No lint/type errors.
+
+REPORT BACK
+- Exact line ranges changed
+- Confirm tested in mobile preview + desktop preview
