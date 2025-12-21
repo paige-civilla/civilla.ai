@@ -1,0 +1,69 @@
+REPLIT AGENT TASK: Mobile StepsSection Polish (Use Numeric Step Labels, Center The Number, Add Thin Dividers)
+
+GOAL (MOBILE ONLY)
+In client/src/components/StepsSection.tsx mobile layout (the md:hidden block):
+1) Replace “Step One/Two/Three” with numeric step labels: “Step 1”, “Step 2”, “Step 3”
+2) Display the NUMBER (1/2/3) as its own element and vertically CENTER it relative to the paragraph on the right (so it feels aligned in the middle of the text block).
+3) Add a thin divider line between each step row (mobile only), not after the last row.
+
+FILE TO EDIT
+client/src/components/StepsSection.tsx
+
+INSTRUCTIONS
+1) Open client/src/components/StepsSection.tsx
+2) In the MOBILE block (md:hidden), DO NOT change the desktop layout.
+3) Update the STEPS data so labels are numeric:
+- “Step One” -> “Step 1”
+- “Step Two” -> “Step 2”
+- “Step Three” -> “Step 3”
+
+4) Change the mobile row layout to a 3-column grid:
+- Column A: “Step” (small label)
+- Column B: the NUMBER (large, bold) — THIS should be vertically centered with the paragraph
+- Column C: the paragraph text
+
+Use a structure like this (adapt to existing classNames, but keep the intent):
+
+<div className="md:hidden">
+  <div className="space-y-0">
+    {STEPS.map((s, idx) => {
+      const num = s.label.replace("Step ", ""); // expects "Step 1/2/3"
+      return (
+        <div key={s.label} className="py-8">
+          <div className="grid grid-cols-[64px,40px,1fr] gap-4 items-center">
+            <div className="text-sm font-semibold text-neutral-900">Step</div>
+
+            <div className="text-3xl font-semibold text-neutral-900 text-center leading-none">
+              {num}
+            </div>
+
+            <p className="text-neutral-700 leading-relaxed">
+              {s.body}
+            </p>
+          </div>
+
+          {idx !== STEPS.length - 1 && (
+            <div className="mt-8 w-full border-b border-black/10" />
+          )}
+        </div>
+      );
+    })}
+  </div>
+</div>
+
+IMPORTANT:
+- items-center is required on the row grid so the number centers vertically against the paragraph.
+- The divider should be thin and subtle (border-black/10 or border-neutral/200).
+- Do not add a divider after the last item.
+
+5) Keep the disclaimer line unchanged and below the mobile layout.
+
+VERIFY
+- Mobile: left shows “Step” and a centered number (1/2/3) aligned with the paragraph block
+- Thin divider lines appear between steps
+- Desktop view remains unchanged
+- No lint/type errors
+
+REPORT BACK
+- Exact line ranges changed
+- Confirm tested mobile + desktop preview

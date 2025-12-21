@@ -1,16 +1,19 @@
 const steps = [
   {
     id: "step-one",
+    number: "1",
     title: "Step One",
     description: "Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category."
   },
   {
     id: "step-two",
+    number: "2",
     title: "Step Two",
     description: "Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context."
   },
   {
     id: "step-three",
+    number: "3",
     title: "Step Three",
     description: "Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises."
   }
@@ -24,15 +27,23 @@ export default function StepsSection() {
     >
       <div className="flex flex-col items-start max-w-container w-full">
         <div className="md:hidden w-full">
-          <div className="space-y-8">
-            {steps.map((step) => (
-              <div key={step.id} className="grid grid-cols-[100px,1fr] gap-4 items-start">
-                <h3 className="font-heading font-bold text-heading-5-mobile tracking-[0.2px] text-neutral-darkest">
-                  {step.title}
-                </h3>
-                <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
-                  {step.description}
-                </p>
+          <div className="space-y-0">
+            {steps.map((step, idx) => (
+              <div key={step.id} className="py-6">
+                <div className="grid grid-cols-[50px,32px,1fr] gap-3 items-center">
+                  <span className="font-sans font-semibold text-sm text-neutral-darkest">
+                    Step
+                  </span>
+                  <span className="font-heading font-bold text-2xl text-neutral-darkest text-center leading-none">
+                    {step.number}
+                  </span>
+                  <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
+                    {step.description}
+                  </p>
+                </div>
+                {idx !== steps.length - 1 && (
+                  <div className="mt-6 w-full border-b border-black/10" />
+                )}
               </div>
             ))}
           </div>
