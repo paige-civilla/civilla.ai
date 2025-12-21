@@ -73,10 +73,10 @@ export default function NavbarCream() {
 
   return (
     <nav className="bg-cream w-full" data-testid="navbar-cream">
-      <div className="h-16 md:h-9 flex items-center justify-center px-5 md:px-6 py-0">
+      <div className="h-9 flex items-center justify-center px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
-            <Link href="/" className="relative h-11 md:h-[30px] w-auto" data-testid="link-logo">
+            <Link href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
               <img 
                 src={logoDark} 
                 alt="civilla.ai" 
@@ -87,7 +87,7 @@ export default function NavbarCream() {
           <div className="flex items-center justify-center gap-2">
             <button 
               onClick={toggleDarkMode}
-              className="hidden md:block p-1.5"
+              className="p-1.5"
               aria-label="Toggle dark mode"
               data-testid="button-theme-toggle"
             >
@@ -98,34 +98,28 @@ export default function NavbarCream() {
               )}
             </button>
             <button 
-              className="hidden md:block p-1.5"
+              className="p-1.5"
               aria-label="User login"
               data-testid="button-user-login"
             >
               <User className="w-4 h-4 text-neutral-darkest" />
             </button>
             <button 
-              className="bg-bush text-white font-bold text-sm leading-[1.6] px-5 py-1 rounded-xl button-inset-shadow relative md:hidden"
-              data-testid="button-mobile-cta"
-            >
-              Button
-            </button>
-            <button 
               ref={menuButtonRef}
-              className="p-3 md:p-1"
+              className="p-1"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
               data-testid="button-menu"
             >
               {isMenuOpen ? (
-                <X className="w-6 h-6 md:w-4 md:h-4 text-neutral-darkest" />
+                <X className="w-4 h-4 text-neutral-darkest" />
               ) : (
-                <Menu className="w-6 h-6 md:w-4 md:h-4 text-neutral-darkest" />
+                <Menu className="w-4 h-4 text-neutral-darkest" />
               )}
             </button>
             <button 
               onClick={handleQuickExit}
-              className="hidden md:block ml-2 p-1.5 rounded-md"
+              className="ml-2 p-1.5 rounded-md"
               style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #3D7A5A 50%, #4A8A6A 100%)" }}
               aria-label="Quick exit"
               data-testid="button-quick-exit"
