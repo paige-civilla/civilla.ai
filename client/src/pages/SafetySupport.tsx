@@ -379,10 +379,10 @@ export default function SafetySupport() {
 
             <div className="w-full flex flex-col md:flex-row gap-8">
               {/* Neutral Username Card */}
-              <div className="md:w-[calc(25%-16px)] border-2 border-white rounded-2xl p-6 flex flex-col gap-6">
-                <div className="flex flex-col gap-4">
+              <div className="md:w-[calc(31.25%-16px)] border-2 border-white rounded-2xl p-8 flex flex-col gap-6 items-center text-center">
+                <div className="flex flex-col gap-4 items-center">
                   <UserX className="w-12 h-12 text-white" />
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 items-center">
                     <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-white">
                       Neutral username option
                     </h3>
@@ -398,10 +398,10 @@ export default function SafetySupport() {
               </div>
 
               {/* Customized Notifications Card */}
-              <div className="md:w-[calc(25%-16px)] border-2 border-white rounded-2xl p-6 flex flex-col gap-6">
-                <div className="flex flex-col gap-4">
+              <div className="md:w-[calc(31.25%-16px)] border-2 border-white rounded-2xl p-8 flex flex-col gap-6 items-center text-center">
+                <div className="flex flex-col gap-4 items-center">
                   <Bell className="w-12 h-12 text-white" />
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 items-center">
                     <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-white">
                       Customized notifications
                     </h3>
@@ -417,20 +417,20 @@ export default function SafetySupport() {
               </div>
 
               {/* Private Browser Mode Card */}
-              <div className="md:w-[calc(50%)] border-2 border-white rounded-2xl overflow-hidden flex flex-col self-stretch">
-                <div className="h-40">
+              <div className="md:w-[calc(37.5%)] border-2 border-white rounded-2xl overflow-hidden flex flex-col self-stretch">
+                <div className="h-48">
                   <img 
                     src={imgPrivateBrowser} 
                     alt="Laptop with colorful screen" 
-                    className="w-full h-full object-cover object-[center_25%]"
+                    className="w-full h-full object-cover object-center"
                   />
                 </div>
-                <div className="p-6 flex flex-col gap-4 flex-1">
-                  <div className="flex flex-col gap-4">
+                <div className="p-8 flex flex-col gap-4 flex-1 items-center text-center">
+                  <div className="flex flex-col gap-4 items-center">
                     <p className="font-arimo font-bold text-base text-white">
                       Privacy
                     </p>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 items-center">
                       <h3 className="font-figtree font-bold text-[32px] leading-[1.2] tracking-[0.01em] text-white">
                         Private browser mode
                       </h3>
