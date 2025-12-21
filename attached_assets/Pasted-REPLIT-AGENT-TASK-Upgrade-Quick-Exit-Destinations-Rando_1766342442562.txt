@@ -1,0 +1,52 @@
+REPLIT AGENT TASK: Upgrade Quick Exit Destinations (Random Neutral Pages + Mid-Page Anchors) Without Breaking Back-Button Safety
+
+GOAL
+Quick Exit should NOT go to Google. It should send users to a RANDOM, neutral, “safe to be seen on” page (works for anyone), ideally landing mid-page. It MUST still prevent returning to Civilla via the browser Back button (keep using window.location.replace).
+
+FILES TO EDIT
+1) client/src/components/Navbar.tsx
+2) client/src/components/NavbarCream.tsx
+
+DO NOT CHANGE
+- The Quick Exit button placement or icon
+- The use of window.location.replace (keep it)
+
+INSTRUCTIONS
+1) In BOTH files, locate:
+const handleQuickExit = () => {
+  window.location.replace("https://www.google.com");
+};
+
+2) Replace that implementation with the following (same function name):
+
+const handleQuickExit = () => {
+  const safePages = [
+    "https://en.wikipedia.org/wiki/Coffee#Preparation",
+    "https://en.wikipedia.org/wiki/Tea#Preparation",
+    "https://en.wikipedia.org/wiki/Houseplant#Care",
+    "https://en.wikipedia.org/wiki/Walking#Health_benefits",
+    "https://en.wikipedia.org/wiki/Recipe#Ingredients",
+    "https://en.wikipedia.org/wiki/Sleep#Recommendations",
+    "https://en.wikipedia.org/wiki/Weather#Forecasting",
+    "https://en.wikipedia.org/wiki/Photography#Digital_photography",
+    "https://en.wikipedia.org/wiki/Music#Elements",
+    "https://en.wikipedia.org/wiki/Cooking#Techniques",
+    "https://en.wikipedia.org/wiki/Book#Structure",
+    "https://en.wikipedia.org/wiki/Exercise#Health_effects"
+  ];
+
+  const destination = safePages[Math.floor(Math.random() * safePages.length)];
+  window.location.replace(destination);
+};
+
+3) Ensure the code compiles in BOTH navbars (no unused vars, no lint errors).
+
+VERIFY
+- Clicking Quick Exit navigates away immediately.
+- Refreshing and clicking again lands on different pages sometimes (random).
+- Pressing Back does NOT return to Civilla (replace() preserved).
+- Works on desktop and mobile.
+
+REPORT BACK
+- Confirm both files updated
+- Provide exact line ranges changed in each file

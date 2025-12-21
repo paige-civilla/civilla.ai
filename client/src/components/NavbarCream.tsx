@@ -70,7 +70,23 @@ export default function NavbarCream() {
   };
 
   const handleQuickExit = () => {
-    window.location.replace("https://www.google.com");
+    const safePages = [
+      "https://en.wikipedia.org/wiki/Coffee#Preparation",
+      "https://en.wikipedia.org/wiki/Tea#Preparation",
+      "https://en.wikipedia.org/wiki/Houseplant#Care",
+      "https://en.wikipedia.org/wiki/Walking#Health_benefits",
+      "https://en.wikipedia.org/wiki/Recipe#Ingredients",
+      "https://en.wikipedia.org/wiki/Sleep#Recommendations",
+      "https://en.wikipedia.org/wiki/Weather#Forecasting",
+      "https://en.wikipedia.org/wiki/Photography#Digital_photography",
+      "https://en.wikipedia.org/wiki/Music#Elements",
+      "https://en.wikipedia.org/wiki/Cooking#Techniques",
+      "https://en.wikipedia.org/wiki/Book#Structure",
+      "https://en.wikipedia.org/wiki/Exercise#Health_effects"
+    ];
+
+    const destination = safePages[Math.floor(Math.random() * safePages.length)];
+    window.location.replace(destination);
   };
 
   return (
