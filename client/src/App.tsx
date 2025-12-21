@@ -14,6 +14,7 @@ import SafetySupport from "@/pages/SafetySupport";
 import Accessibility from "@/pages/Accessibility";
 import Contact from "@/pages/Contact";
 import TermsOfService from "@/pages/TermsOfService";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/how-civilla-works" component={HowCivillaWorks} />
       <Route path="/about-civilla" component={AboutCivilla} />
+      <Route path="/about" component={AboutCivilla} />
       <Route path="/plans" component={Plans} />
       <Route path="/legal-compliance" component={LegalCompliance} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
@@ -29,6 +31,7 @@ function Router() {
       <Route path="/accessibility" component={Accessibility} />
       <Route path="/contact" component={Contact} />
       <Route path="/terms" component={TermsOfService} />
+      <Route path="/login" component={Login} />
       <Route component={NotFound} />
     </Switch>
   );
