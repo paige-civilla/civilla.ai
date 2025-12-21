@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, Check, ChevronRight, ChevronUp, ChevronDown, Home, User, Moon, Sun, LogOut } from "lucide-react";
 import Footer from "@/components/Footer";
@@ -17,6 +17,8 @@ function NavbarCream() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -25,6 +27,25 @@ function NavbarCream() {
       document.documentElement.classList.add("dark");
     }
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -75,6 +96,7 @@ function NavbarCream() {
               <User className="w-4 h-4 text-neutral-darkest" />
             </button>
             <button 
+              ref={menuButtonRef}
               className="p-1"
               data-testid="button-menu"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -99,7 +121,7 @@ function NavbarCream() {
       </div>
 
       {isMenuOpen && (
-        <div className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-4" data-testid="mobile-menu">
+        <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-4" data-testid="mobile-menu">
           <div className="flex flex-col gap-3 max-w-container mx-auto">
             {navLinks.map((link) => (
               <Link
