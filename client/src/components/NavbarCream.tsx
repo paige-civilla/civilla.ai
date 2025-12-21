@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, User, Moon, Sun, LogOut } from "lucide-react";
-import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
+import logoDark from "@assets/noBgColor-2_1766294100143.png";
 
 const menuLinks = {
   product: [
