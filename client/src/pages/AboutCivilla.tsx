@@ -7,15 +7,15 @@ const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/702bb028-ef73-
 
 function HeaderSection() {
   return (
-    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-16 py-28" data-testid="section-header">
+    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
       <div className="flex flex-col items-center max-w-container w-full">
-        <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
+        <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 items-center w-full">
-            <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-              <h1 className="cv-h font-heading text-[84px] tracking-[0.84px] w-full">
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+              <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
                 Why we exist
               </h1>
-              <p className="cv-p font-sans text-[20px] w-full">
+              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 Family law is complex. You shouldn't have to face it alone or confused.
               </p>
             </div>
@@ -73,18 +73,18 @@ function TimelineSection() {
   ];
 
   return (
-    <section className="bg-cream w-full flex flex-col items-center px-16 py-28" data-testid="section-timeline">
-      <div className="flex flex-col gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
+    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-timeline">
+      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
+        <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 items-center w-full">
-            <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
+            <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest text-center leading-[1.5]">
               Journey
             </span>
-            <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-              <h2 className="cv-h font-heading text-[60px] tracking-[0.6px] leading-[1.2] w-full">
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+              <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                 How Civilla came to be
               </h2>
-              <p className="cv-p font-sans text-[20px] w-full">
+              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 We built a rough version and put it in the hands of real parents. Their feedback was honest and shaped everything that came next. They told us what actually helped.
               </p>
             </div>
@@ -110,18 +110,20 @@ function TimelineSection() {
           {timelineItems.map((item) => (
             <div 
               key={item.id}
-              className={`flex gap-12 items-start w-full ${item.side === 'right' ? 'justify-end' : ''}`}
+              className={`flex flex-col md:flex-row gap-6 md:gap-12 items-start w-full ${item.side === 'right' ? 'md:justify-end' : ''}`}
               data-testid={`timeline-item-${item.id}`}
             >
-              {item.side === 'right' && <div className="flex-1" />}
+              <div className="hidden md:block">
+                {item.side === 'right' && <div className="flex-1" />}
+              </div>
               
               {item.side === 'left' && (
-                <div className="flex-1">
+                <div className="flex-1 w-full md:w-auto">
                   <TimelineCard item={item} />
                 </div>
               )}
               
-              <div className="flex flex-col items-center w-8 self-stretch">
+              <div className="hidden md:flex flex-col items-center w-8 self-stretch">
                 <div className="flex flex-col flex-1 gap-2 items-center">
                   <div className="bg-neutral-darkest h-10 w-[3px]" />
                   <div className="w-[15px] h-[15px] bg-neutral-darkest rounded-full" />
@@ -130,12 +132,14 @@ function TimelineSection() {
               </div>
               
               {item.side === 'right' && (
-                <div className="flex-1">
+                <div className="flex-1 w-full md:w-auto">
                   <TimelineCard item={item} />
                 </div>
               )}
               
-              {item.side === 'left' && <div className="flex-1" />}
+              <div className="hidden md:block">
+                {item.side === 'left' && <div className="flex-1" />}
+              </div>
             </div>
           ))}
         </div>
@@ -146,12 +150,12 @@ function TimelineSection() {
 
 function TimelineCard({ item }: { item: { title: string; subtitle: string; description: string } }) {
   return (
-    <div className="bg-cream border-2 border-neutral-darkest rounded-2xl p-8 flex flex-col gap-8">
-      <div className="flex flex-col gap-6 font-heading font-bold text-neutral-darkest leading-[1.2]">
-        <h3 className="cv-h text-[48px] tracking-[0.48px]">{item.title}</h3>
-        <h4 className="cv-h text-[40px] tracking-[0.4px]">{item.subtitle}</h4>
+    <div className="bg-cream border-2 border-neutral-darkest rounded-2xl p-6 md:p-8 flex flex-col gap-6 md:gap-8">
+      <div className="flex flex-col gap-4 md:gap-6 font-heading font-bold text-neutral-darkest leading-[1.2]">
+        <h3 className="cv-h text-heading-3-mobile md:text-[48px] tracking-[0.32px] md:tracking-[0.48px]">{item.title}</h3>
+        <h4 className="cv-h text-[28px] md:text-[40px] tracking-[0.28px] md:tracking-[0.4px]">{item.subtitle}</h4>
       </div>
-      <p className="cv-panel-body font-sans text-[20px] text-neutral-darkest leading-[1.6]">
+      <p className="cv-panel-body font-sans text-sm md:text-[20px] text-neutral-darkest leading-[1.6]">
         {item.description}
       </p>
       <div className="flex gap-6 items-center">
@@ -175,28 +179,28 @@ function TimelineCard({ item }: { item: { title: string; subtitle: string; descr
 
 function TeamSection1() {
   return (
-    <section className="bg-bush w-full flex flex-col items-center px-16 py-28" data-testid="section-team-1">
+    <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-team-1">
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex gap-20 items-start w-full">
-          <div className="flex-1 aspect-square rounded-2xl overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-start w-full">
+          <div className="flex-1 w-full aspect-square rounded-2xl overflow-hidden">
             <img 
               src={imgPlaceholderImage} 
               alt="Team" 
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 flex flex-col gap-6">
-            <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] text-white">
+          <div className="flex-1 flex flex-col gap-4 md:gap-6">
+            <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-white">
               Our team
             </h2>
             <div className="flex flex-col gap-4">
-              <p className="cv-panel-body font-sans text-[18px] text-white leading-[1.6]">
+              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
                 Sarah founded Civilla after years of watching parents navigate family court alone, overwhelmed and unsupported. She believed then, as she does now, that complexity shouldn't mean isolation. Sarah brings a background in education and a deep commitment to making legal processes accessible to everyone.
               </p>
-              <p className="cv-panel-body font-sans text-[18px] text-white leading-[1.6]">
+              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
                 Marcus joined early because he saw his own family in the stories parents were telling. His work in community support and crisis intervention shaped how Civilla thinks about trauma, safety, and meeting people where they are. He ensures every feature we build asks first: will this help someone feel less alone?
               </p>
-              <p className="cv-panel-body font-sans text-[18px] text-white leading-[1.6]">
+              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
                 Jen comes from a background in user research and design. She listens to how parents actually use Civilla, what confuses them, what helps them breathe easier. Her work keeps us honest about whether we're truly making things simpler or just moving the confusion around.
               </p>
             </div>
@@ -209,23 +213,23 @@ function TeamSection1() {
 
 function TeamSection2() {
   return (
-    <section className="bg-bush w-full flex flex-col items-center px-16 py-28" data-testid="section-team-2">
+    <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-team-2">
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex gap-20 items-start w-full">
-          <div className="flex-1 flex flex-col gap-6">
-            <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] text-white">
+        <div className="flex flex-col-reverse md:flex-row gap-12 md:gap-20 items-start w-full">
+          <div className="flex-1 flex flex-col gap-4 md:gap-6">
+            <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-white">
               Our team
             </h2>
             <div className="flex flex-col gap-4">
-              <p className="cv-panel-body font-sans text-[18px] text-white leading-[1.6]">
+              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
                 Our team is small and intentional. We're not lawyers. We're people who believe that understanding your own case shouldn't require a law degree, and that parents deserve tools built with their dignity in mind. We stay grounded in what parents tell us they need, and we build from there.
               </p>
-              <p className="cv-panel-body font-sans text-[18px] text-white leading-[1.6]">
+              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
                 Every person on this team chose to be here because they believe in the same thing: that family law can be less lonely, less confusing, and more within reach.
               </p>
             </div>
           </div>
-          <div className="flex-1 aspect-square rounded-2xl overflow-hidden">
+          <div className="flex-1 w-full aspect-square rounded-2xl overflow-hidden">
             <img 
               src={imgPlaceholderImage1} 
               alt="Team" 
@@ -240,15 +244,15 @@ function TeamSection2() {
 
 function CTASection() {
   return (
-    <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-16 py-28" data-testid="section-cta">
+    <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-cta">
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="bg-[#f2f2f2] border-2 border-neutral-darkest rounded-2xl p-16 flex flex-col items-center justify-center w-full">
-          <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
-            <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-              <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] w-full">
+        <div className="bg-[#f2f2f2] border-2 border-neutral-darkest rounded-2xl p-6 md:p-16 flex flex-col items-center justify-center w-full">
+          <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+              <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                 We want to hear your story
               </h2>
-              <p className="cv-p font-sans text-[20px] w-full">
+              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 Your experience matters. Tell us what you need, what's working, and what isn't.
               </p>
             </div>

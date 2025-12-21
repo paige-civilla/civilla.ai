@@ -6,38 +6,38 @@ import Footer from "@/components/Footer";
 function EducationSection() {
   return (
     <section 
-      className="bg-cream w-full flex flex-col items-center px-16 py-28"
+      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-education"
     >
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex gap-20 items-center w-full">
-          <div className="flex-1 aspect-[600/640] rounded-2xl overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-8 md:gap-20 items-center w-full">
+          <div className="flex-1 w-full aspect-[600/640] rounded-2xl overflow-hidden">
             <img 
               src="https://www.figma.com/api/mcp/asset/45617208-0482-4b11-9665-f57d418aec3c"
               alt="Open book representing education"
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 flex flex-col gap-8 items-start">
-            <div className="flex flex-col gap-6 items-start w-full">
-              <div className="flex flex-col gap-6 items-start text-neutral-darkest w-full">
-                <h2 className="cv-h font-heading font-bold tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
+          <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start">
+            <div className="flex flex-col gap-4 md:gap-6 items-start w-full">
+              <div className="flex flex-col gap-4 md:gap-6 items-start text-neutral-darkest w-full">
+                <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                   Education only, never legal advice
                 </h2>
-                <p className="cv-p font-sans font-normal text-[20px] leading-[1.6] w-full">
+                <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
                   Everything on Civilla is designed to inform and explain. We do not provide legal advice, and nothing here replaces an attorney.
                 </p>
               </div>
             </div>
             <div className="flex gap-6 items-center">
               <button 
-                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
+                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
                 data-testid="button-learn-more"
               >
                 Learn
               </button>
               <button 
-                className="flex gap-2 items-center text-neutral-darkest font-bold text-[18px] leading-[1.6]"
+                className="flex gap-2 items-center text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6]"
                 data-testid="button-read"
               >
                 Read
@@ -72,19 +72,19 @@ function BoundariesSection() {
 
   return (
     <section 
-      className="bg-bush w-full flex flex-col items-center px-16 py-28"
+      className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-boundaries"
     >
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex gap-20 items-center w-full">
-          <div className="flex-1 flex flex-col gap-8 items-start">
-            <div className="flex flex-col gap-8 items-start w-full">
+        <div className="flex flex-col-reverse md:flex-row gap-8 md:gap-20 items-center w-full">
+          <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start">
+            <div className="flex flex-col gap-6 md:gap-8 items-start w-full">
               <div className="flex flex-col gap-4 items-start w-full">
-                <div className="flex flex-col gap-6 items-start text-white w-full">
-                  <h2 className="cv-h font-heading font-bold tracking-[0.6px] leading-[1.2] w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
+                <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
+                  <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                     What we can and cannot do for you. Understanding these limits keeps you safe and informed.
                   </h2>
-                  <p className="cv-p font-sans font-normal text-[20px] leading-[1.6] w-full">
+                  <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
                     Civilla answers educational questions. We explain legal terms, show how courts work, and help you organize evidence. We do not answer case-specific questions or tell you what decisions to make.
                   </p>
                 </div>
@@ -93,7 +93,7 @@ function BoundariesSection() {
                 {items.map((item, index) => (
                   <div key={index} className="flex gap-4 items-center w-full">
                     <item.icon className="w-4 h-4 text-white flex-shrink-0" />
-                    <span className="font-sans font-normal text-[18px] leading-[1.6] text-white">
+                    <span className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-white">
                       {item.text}
                     </span>
                   </div>
@@ -102,13 +102,13 @@ function BoundariesSection() {
             </div>
             <div className="flex gap-6 items-center">
               <button 
-                className="bg-transparent border-2 border-white text-white font-bold text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
+                className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
                 data-testid="button-learn-boundaries"
               >
                 Learn
               </button>
               <button 
-                className="flex gap-2 items-center text-white font-bold text-[18px] leading-[1.6]"
+                className="flex gap-2 items-center text-white font-bold text-sm md:text-[18px] leading-[1.6]"
                 data-testid="button-read-boundaries"
               >
                 Read
@@ -116,7 +116,7 @@ function BoundariesSection() {
               </button>
             </div>
           </div>
-          <div className="flex-1 aspect-[600/640] rounded-2xl overflow-hidden">
+          <div className="flex-1 w-full aspect-[600/640] rounded-2xl overflow-hidden">
             <img 
               src="https://www.figma.com/api/mcp/asset/a8e88eac-3797-4930-8f68-b462609e9e2a"
               alt="Door representing boundaries"

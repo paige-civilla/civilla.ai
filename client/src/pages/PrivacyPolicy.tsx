@@ -3,15 +3,15 @@ import Footer from "@/components/Footer";
 
 function HeaderSection() {
   return (
-    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-16 py-28" data-testid="section-header">
+    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
       <div className="flex flex-col items-center max-w-container w-full">
-        <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
+        <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 items-center w-full">
-            <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
-              <h1 className="cv-h font-heading text-[84px] tracking-[0.84px] w-full">
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+              <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
                 Your privacy matters
               </h1>
-              <p className="cv-p font-sans text-[20px] w-full">
+              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 We protect your information with the same care you deserve in this process.
               </p>
             </div>
@@ -38,15 +38,15 @@ function HeaderSection() {
 
 function ContentSection() {
   return (
-    <section className="bg-cream w-full flex flex-col items-center px-16 py-28" data-testid="section-content">
+    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-content">
       <div className="flex flex-col items-center max-w-container w-full">
-        <div className="flex flex-col gap-6 items-start max-w-[768px] w-full">
-          <h2 className="cv-h font-heading font-bold text-[60px] tracking-[0.6px] leading-[1.2] text-neutral-darkest w-full" style={{ fontSize: 'clamp(36px, 4.5vw, 60px)' }}>
+        <div className="flex flex-col gap-4 md:gap-6 items-start max-w-[768px] w-full">
+          <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-neutral-darkest w-full">
             How we handle your data
           </h2>
           
           <div className="flex flex-col gap-4 items-start w-full">
-            <div className="font-sans font-normal text-[18px] leading-[1.6] text-neutral-darkest w-full">
+            <div className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest w-full">
               <p className="mb-4">
                 Civilla collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
               </p>
@@ -61,7 +61,7 @@ function ContentSection() {
               </p>
             </div>
 
-            <div className="font-sans font-normal text-[18px] leading-[1.6] text-neutral-darkest w-full mt-4">
+            <div className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest w-full mt-4">
               <p className="mb-4">
                 Civilla collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
               </p>
@@ -76,7 +76,7 @@ function ContentSection() {
               </p>
             </div>
 
-            <div className="font-sans font-normal text-[18px] leading-[1.6] text-neutral-darkest w-full mt-4">
+            <div className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest w-full mt-4">
               <p className="mb-4">
                 Civilla collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
               </p>

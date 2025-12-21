@@ -13,24 +13,24 @@ export default function Accessibility() {
       <NavbarCream />
 
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] py-28 px-4 md:px-16" data-testid="section-hero">
+      <section className="bg-[#e7ebea] py-16 md:py-28 px-5 md:px-16" data-testid="section-hero">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col gap-8 items-center text-center max-w-[768px] mx-auto">
+          <div className="flex flex-col gap-6 md:gap-8 items-center text-center max-w-[768px] mx-auto">
             <div className="flex flex-col gap-4 items-center w-full">
-              <div className="flex flex-col gap-6 items-center w-full">
-                <h1 className="font-figtree font-bold text-[clamp(48px,7vw,84px)] leading-[1.1] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+              <div className="flex flex-col gap-4 md:gap-6 items-center w-full">
+                <h1 className="font-figtree font-bold text-heading-1-mobile md:text-[84px] leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   Everyone deserves access
                 </h1>
-                <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
+                <p className="font-arimo text-sm md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
                   Civilla is built for all users, regardless of ability or circumstance.
                 </p>
               </div>
             </div>
             <div className="flex gap-4 items-center">
-              <button className="bg-bush text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-more-hero">
+              <button className="bg-bush text-white font-arimo font-bold text-sm md:text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-more-hero">
                 Learn more
               </button>
-              <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-report-issue">
+              <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg px-[22px] py-2 rounded-xl" data-testid="button-report-issue">
                 Report an issue
               </button>
             </div>
@@ -39,32 +39,32 @@ export default function Accessibility() {
       </section>
 
       {/* Accessibility is not optional Section */}
-      <section className="bg-cream py-28 px-4 md:px-16" data-testid="section-commitment">
+      <section className="bg-cream py-16 md:py-28 px-5 md:px-16" data-testid="section-commitment">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col md:flex-row gap-20 items-center">
-            <div className="flex-1 flex flex-col gap-8">
-              <div className="flex flex-col gap-8">
+          <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-center">
+            <div className="flex-1 flex flex-col gap-6 md:gap-8">
+              <div className="flex flex-col gap-6 md:gap-8">
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-6">
-                    <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                  <div className="flex flex-col gap-4 md:gap-6">
+                    <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest" style={{ textWrap: "balance" }}>
                       Accessibility is not optional for us
                     </h2>
-                    <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
+                    <p className="font-arimo text-sm md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
                       We believe everyone deserves to navigate family law with dignity. That means Civilla works for people with disabilities, chronic illness, language barriers, and different learning styles. We follow WCAG 2.1 AA standards and test regularly with real users.
                     </p>
                   </div>
                 </div>
-                <ul className="flex flex-col gap-4 list-disc list-inside font-arimo text-lg leading-[1.6] text-neutral-darkest ml-4">
+                <ul className="flex flex-col gap-3 md:gap-4 list-disc list-inside font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest ml-4">
                   <li>Screen reader compatible</li>
                   <li>Keyboard navigation available</li>
                   <li>Adjustable text and colors</li>
                 </ul>
               </div>
               <div className="flex gap-6 items-center">
-                <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-more-commitment">
+                <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-more-commitment">
                   Learn more
                 </button>
-                <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-report">
+                <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-sm md:text-lg" data-testid="button-report">
                   Report
                   <ChevronRight className="w-6 h-6" />
                 </button>
@@ -82,23 +82,23 @@ export default function Accessibility() {
       </section>
 
       {/* Request Accommodations Section */}
-      <section className="bg-[#0c2f24] py-28 px-4 md:px-16" data-testid="section-accommodations">
+      <section className="bg-[#0c2f24] py-16 md:py-28 px-5 md:px-16" data-testid="section-accommodations">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col gap-20 items-center">
-            <div className="flex flex-col gap-8 items-center text-center max-w-[768px]">
-              <div className="flex flex-col gap-6 items-center w-full">
-                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
+          <div className="flex flex-col gap-12 md:gap-20 items-center">
+            <div className="flex flex-col gap-6 md:gap-8 items-center text-center max-w-[768px]">
+              <div className="flex flex-col gap-4 md:gap-6 items-center w-full">
+                <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-white" style={{ textWrap: "balance" }}>
                   Request accommodations
                 </h2>
-                <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
+                <p className="font-arimo text-sm md:text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
                   Tell us what you need to use Civilla fully and comfortably.
                 </p>
               </div>
               <div className="flex gap-4 items-center">
-                <button className="bg-[#f2f2f2] text-neutral-darkest font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-request">
+                <button className="bg-[#f2f2f2] text-neutral-darkest font-arimo font-bold text-sm md:text-lg px-6 py-2.5 rounded-xl" data-testid="button-request">
                   Request
                 </button>
-                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-contact">
+                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-sm md:text-lg px-[22px] py-2 rounded-xl" data-testid="button-contact">
                   Contact
                 </button>
               </div>
@@ -115,63 +115,63 @@ export default function Accessibility() {
       </section>
 
       {/* Found a Problem Section */}
-      <section className="bg-cream py-28 px-4 md:px-16" data-testid="section-problem">
+      <section className="bg-cream py-16 md:py-28 px-5 md:px-16" data-testid="section-problem">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col md:flex-row gap-20 items-start">
-            <div className="flex-1 flex flex-col gap-8">
+          <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-start">
+            <div className="flex-1 flex flex-col gap-6 md:gap-8">
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-6">
-                  <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                <div className="flex flex-col gap-4 md:gap-6">
+                  <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest" style={{ textWrap: "balance" }}>
                     Found a problem
                   </h2>
-                  <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
+                  <p className="font-arimo text-sm md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
                     Tell us what isn't working so we can fix it quickly.
                   </p>
                 </div>
               </div>
-              <form className="flex flex-col gap-6">
+              <form className="flex flex-col gap-4 md:gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="font-arimo text-lg leading-[1.6] text-neutral-darkest">Name</label>
+                  <label className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest">Name</label>
                   <input 
                     type="text" 
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg"
                     data-testid="input-name"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="font-arimo text-lg leading-[1.6] text-neutral-darkest">Email</label>
+                  <label className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest">Email</label>
                   <input 
                     type="email" 
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-lg"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg"
                     data-testid="input-email"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="font-arimo text-lg leading-[1.6] text-neutral-darkest">Message</label>
+                  <label className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest">Message</label>
                   <textarea 
                     placeholder="Describe the issue"
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-3 font-arimo text-lg h-[180px] resize-none"
+                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-3 font-arimo text-sm md:text-lg h-[140px] md:h-[180px] resize-none"
                     data-testid="input-message"
                   />
                 </div>
-                <div className="flex items-center gap-2 py-4">
+                <div className="flex items-center gap-2 py-3 md:py-4">
                   <input 
                     type="checkbox" 
                     className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded"
                     data-testid="checkbox-terms"
                   />
-                  <span className="font-arimo text-base leading-[1.6] text-neutral-darkest">I agree to the terms</span>
+                  <span className="font-arimo text-sm md:text-base leading-[1.6] text-neutral-darkest">I agree to the terms</span>
                 </div>
                 <button 
                   type="submit"
-                  className="bg-bush text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl w-fit"
+                  className="bg-bush text-white font-arimo font-bold text-sm md:text-lg px-6 py-2.5 rounded-xl w-fit"
                   data-testid="button-send"
                 >
                   Send
                 </button>
               </form>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 hidden md:block">
               <img 
                 src={reportImage} 
                 alt="Found a problem" 
@@ -183,68 +183,68 @@ export default function Accessibility() {
       </section>
 
       {/* We're Here Section */}
-      <section className="bg-[#f2f2f2] py-28 px-4 md:px-16" data-testid="section-contact">
+      <section className="bg-[#f2f2f2] py-16 md:py-28 px-5 md:px-16" data-testid="section-contact">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col gap-20">
+          <div className="flex flex-col gap-12 md:gap-20">
             <div className="flex flex-col gap-4 max-w-[768px]">
-              <div className="flex flex-col gap-6">
-                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+              <div className="flex flex-col gap-4 md:gap-6">
+                <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   We're here
                 </h2>
-                <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
+                <p className="font-arimo text-sm md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
                   Reach out anytime with questions or concerns.
                 </p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-20 items-center">
-              <div className="flex-1 flex flex-col gap-10 max-w-[400px]">
-                <div className="flex flex-col gap-4">
-                  <Mail className="w-8 h-8 text-neutral-darkest" />
+            <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-center">
+              <div className="flex-1 flex flex-col gap-8 md:gap-10 max-w-[400px]">
+                <div className="flex flex-col gap-3 md:gap-4">
+                  <Mail className="w-6 h-6 md:w-8 md:h-8 text-neutral-darkest" />
                   <div className="flex flex-col gap-2">
-                    <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+                    <h3 className="font-figtree font-bold text-xl md:text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
                       Email
                     </h3>
-                    <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
+                    <p className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest">
                       Send us a message
                     </p>
-                    <a href="mailto:hello@civilla.ai" className="font-arimo text-lg leading-[1.6] text-neutral-darkest underline">
+                    <a href="mailto:hello@civilla.ai" className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest underline">
                       hello@civilla.ai
                     </a>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4">
-                  <Phone className="w-8 h-8 text-neutral-darkest" />
+                <div className="flex flex-col gap-3 md:gap-4">
+                  <Phone className="w-6 h-6 md:w-8 md:h-8 text-neutral-darkest" />
                   <div className="flex flex-col gap-2">
-                    <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+                    <h3 className="font-figtree font-bold text-xl md:text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
                       Phone
                     </h3>
-                    <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
+                    <p className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest">
                       Call during business hours
                     </p>
-                    <a href="tel:+18442484552" className="font-arimo text-lg leading-[1.6] text-neutral-darkest underline">
+                    <a href="tel:+18442484552" className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest underline">
                       +1 (844) 248-4552
                     </a>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4">
-                  <MapPin className="w-8 h-8 text-neutral-darkest" />
-                  <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 md:gap-4">
+                  <MapPin className="w-6 h-6 md:w-8 md:h-8 text-neutral-darkest" />
+                  <div className="flex flex-col gap-3 md:gap-4">
                     <div className="flex flex-col gap-2">
-                      <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+                      <h3 className="font-figtree font-bold text-xl md:text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
                         Office
                       </h3>
-                      <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
+                      <p className="font-arimo text-sm md:text-lg leading-[1.6] text-neutral-darkest">
                         Oakland, California, United States
                       </p>
                     </div>
-                    <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-directions">
+                    <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-sm md:text-lg" data-testid="button-directions">
                       Get directions
                       <ChevronRight className="w-6 h-6" />
                     </button>
                   </div>
                 </div>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 hidden md:block">
                 <img 
                   src={imgPlaceholderImage3} 
                   alt="Contact us" 
