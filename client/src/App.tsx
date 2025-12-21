@@ -12,6 +12,7 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import SafetySupport from "@/pages/SafetySupport";
 import Accessibility from "@/pages/Accessibility";
 import Contact from "@/pages/Contact";
+import TermsOfService from "@/pages/TermsOfService";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/safety-support" component={SafetySupport} />
       <Route path="/accessibility" component={Accessibility} />
       <Route path="/contact" component={Contact} />
+      <Route path="/terms-of-service" component={TermsOfService} />
       <Route component={NotFound} />
     </Switch>
   );

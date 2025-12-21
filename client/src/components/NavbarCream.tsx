@@ -16,6 +16,7 @@ const menuLinks = {
   ],
   help: [
     { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms of Service", href: "/terms-of-service" },
     { label: "Contact", href: "/contact" },
     { label: "Accessibility", href: "/accessibility" },
   ]
