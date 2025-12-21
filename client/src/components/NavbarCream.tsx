@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
 const menuSections = [
@@ -11,6 +11,7 @@ const menuSections = [
       { label: "Home", href: "/", icon: Home },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
       { label: "How Civilla Works", href: "/how-civilla-works", icon: HelpCircle },
+      { label: "Login", href: "/login", icon: LogIn },
     ],
     comingSoon: [
       { label: "FAQ" },
@@ -23,7 +24,7 @@ const menuSections = [
     links: [
       { label: "Our Mission", href: "/about#mission", icon: Target },
       { label: "Meet The Founders", href: "/about#founders", icon: Users },
-      { label: "How We Started", href: "/how-we-started", icon: Sparkles },
+      { label: "How We Started", href: "/how-we-started", icon: BookOpen },
     ]
   },
   {
@@ -42,7 +43,6 @@ const menuSections = [
       { label: "Contact", href: "/contact", icon: Mail },
       { label: "Privacy Policy", href: "/privacy-policy", icon: Lock },
       { label: "Terms of Service", href: "/terms", icon: FileText },
-      { label: "Login", href: "/login", icon: LogIn },
     ]
   }
 ];
