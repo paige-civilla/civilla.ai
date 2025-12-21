@@ -18,9 +18,6 @@ export default function SafetySupport() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col items-center text-center max-w-[768px] mx-auto gap-8">
             <div className="flex flex-col gap-4 items-center w-full">
-              <p className="font-arimo font-bold text-base text-neutral-darkest">
-                Grounded
-              </p>
               <div className="flex flex-col gap-6 items-center w-full">
                 <h1 className="font-figtree font-bold text-[clamp(48px,6vw,84px)] leading-[1.1] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
                   Safety and support

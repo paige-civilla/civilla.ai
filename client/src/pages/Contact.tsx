@@ -36,11 +36,6 @@ export default function Contact() {
         <div className="max-w-[1280px] mx-auto">
           <div className="flex flex-col items-center max-w-[768px] mx-auto gap-8">
             <div className="flex flex-col items-center gap-4 w-full">
-              <div className="flex items-center w-full">
-                <p className="font-arimo font-bold text-base leading-[1.5] text-neutral-darkest text-center w-full">
-                  Support
-                </p>
-              </div>
               <div className="flex flex-col items-center gap-6 text-center text-neutral-darkest w-full">
                 <h1 className="font-figtree font-bold text-[84px] leading-[1.1] tracking-[0.01em] w-full" style={{ textWrap: "balance" }}>
                   We're here to help

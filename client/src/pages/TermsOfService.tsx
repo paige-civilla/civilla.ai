@@ -21,14 +21,6 @@ export default function TermsOfService() {
         <div className="max-w-[1280px] mx-auto">
           <div className="flex flex-col gap-8 items-center max-w-[768px] mx-auto">
             <div className="flex flex-col gap-4 items-center w-full">
-              <div className="flex items-center w-full">
-                <p 
-                  className="font-sans font-bold text-base leading-[1.5] text-neutral-darkest text-center"
-                  data-testid="text-tagline"
-                >
-                  Educational
-                </p>
-              </div>
               <div className="flex flex-col gap-6 items-center w-full text-neutral-darkest text-center">
                 <h1 
                   className="font-heading font-bold text-heading-1 leading-[1.1] tracking-[0.84px] w-full"

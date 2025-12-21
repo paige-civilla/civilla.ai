@@ -18,9 +18,6 @@ function HeaderSection() {
       <div className="flex flex-col items-center max-w-container w-full">
         <div className="flex flex-col gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 items-center w-full">
-            <span className="font-sans font-bold text-[16px] text-neutral-darkest text-center leading-[1.5]">
-              Process
-            </span>
             <div className="flex flex-col gap-6 items-center text-neutral-darkest text-center w-full">
               <h1 className="cv-h font-heading text-[84px] tracking-[0.84px] w-full">
                 How Civilla works
@@ -38,7 +35,7 @@ function HeaderSection() {
               Explore
             </button>
             <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
+              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-[22px] py-2 rounded-md"
               data-testid="button-signup"
             >
               Sign Up
