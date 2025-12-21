@@ -27,7 +27,7 @@ const menuLinks = {
 
 const imgQuickExit = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
 const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/70cd2b88-b5c3-4123-83da-b783c1fed0c1";
-const imgPlaceholderImage2 = "https://www.figma.com/api/mcp/asset/1fa3a533-6771-4f19-9a86-f841e6fce0c2";
+const imgPrivateBrowser = "https://www.figma.com/api/mcp/asset/a44db474-56ed-4b20-a4be-61f3fa8be1ed";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
 const imgPlaceholderImage3 = "https://www.figma.com/api/mcp/asset/86d7b009-7a1d-4335-8b7c-21b12690b64e";
 
@@ -378,7 +378,7 @@ export default function SafetySupport() {
 
             <div className="w-full flex flex-col md:flex-row gap-8">
               {/* Neutral Username Card */}
-              <div className="flex-1 border-2 border-white rounded-2xl p-6 flex flex-col gap-6">
+              <div className="md:w-[calc(25%-16px)] border-2 border-white rounded-2xl p-6 flex flex-col gap-6">
                 <div className="flex flex-col gap-4">
                   <UserX className="w-12 h-12 text-white" />
                   <div className="flex flex-col gap-2">
@@ -397,7 +397,7 @@ export default function SafetySupport() {
               </div>
 
               {/* Customized Notifications Card */}
-              <div className="flex-1 border-2 border-white rounded-2xl p-6 flex flex-col gap-6">
+              <div className="md:w-[calc(25%-16px)] border-2 border-white rounded-2xl p-6 flex flex-col gap-6">
                 <div className="flex flex-col gap-4">
                   <Bell className="w-12 h-12 text-white" />
                   <div className="flex flex-col gap-2">
@@ -416,11 +416,11 @@ export default function SafetySupport() {
               </div>
 
               {/* Private Browser Mode Card */}
-              <div className="flex-1 border-2 border-white rounded-2xl overflow-hidden flex flex-row">
-                <div className="w-1/2 h-full">
+              <div className="md:w-[calc(50%)] border-2 border-white rounded-2xl overflow-hidden flex flex-row self-stretch">
+                <div className="w-1/2 min-h-full">
                   <img 
-                    src={imgPlaceholderImage2} 
-                    alt="Phone on table" 
+                    src={imgPrivateBrowser} 
+                    alt="Laptop with colorful screen" 
                     className="w-full h-full object-cover"
                   />
                 </div>
