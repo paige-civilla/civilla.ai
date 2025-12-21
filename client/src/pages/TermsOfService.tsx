@@ -1,8 +1,7 @@
 import { Link } from "wouter";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-
-const placeholderImage = "https://www.figma.com/api/mcp/asset/ec97ba80-a317-42e0-b8b3-09f37d39dd77";
+import termsImage from "@assets/casey-horner-4rDCa5hBlCs-unsplash_1766291139825.jpg";
 
 const tableOfContents = [
   { label: "Heading 2", level: 1, active: true },
@@ -156,7 +155,7 @@ export default function TermsOfService() {
               <div className="py-12 w-full flex flex-col gap-2">
                 <div className="aspect-[768/480] w-full rounded-2xl overflow-hidden">
                   <img 
-                    src={placeholderImage} 
+                    src={termsImage} 
                     alt="Terms of service illustration" 
                     className="w-full h-full object-cover"
                     data-testid="img-terms-illustration"
