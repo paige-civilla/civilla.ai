@@ -12,10 +12,6 @@ const menuSections = [
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
       { label: "How Civilla Works", href: "/how-civilla-works", icon: HelpCircle },
       { label: "Login", href: "/login", icon: LogIn },
-    ],
-    comingSoon: [
-      { label: "FAQ" },
-      { label: "Resources" },
     ]
   },
   {
@@ -43,6 +39,10 @@ const menuSections = [
       { label: "Contact", href: "/contact", icon: Mail },
       { label: "Privacy Policy", href: "/privacy-policy", icon: Lock },
       { label: "Terms of Service", href: "/terms", icon: FileText },
+    ],
+    comingSoon: [
+      { label: "FAQ" },
+      { label: "Resources" },
     ]
   }
 ];
