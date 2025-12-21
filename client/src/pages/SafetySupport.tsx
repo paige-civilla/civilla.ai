@@ -418,15 +418,15 @@ export default function SafetySupport() {
 
               {/* Private Browser Mode Card */}
               <div className="md:w-[calc(50%)] border-2 border-white rounded-2xl overflow-hidden flex flex-col self-stretch">
-                <div className="h-1/2">
+                <div className="h-40">
                   <img 
                     src={imgPrivateBrowser} 
                     alt="Laptop with colorful screen" 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="p-6 flex flex-col gap-6 justify-center flex-1">
-                  <div className="flex flex-col gap-2">
+                <div className="p-6 flex flex-col gap-4 flex-1">
+                  <div className="flex flex-col gap-4">
                     <p className="font-arimo font-bold text-base text-white">
                       Privacy
                     </p>
