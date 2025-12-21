@@ -1,0 +1,70 @@
+REPLIT AGENT TASK: Improve Public Menu Organization + Add Column Header Icons + Clean Up CTA Headline
+
+GOALS
+1) Make the public dropdown menu more visually pleasing and better organized.
+2) Add small outline icons to each menu column header (Lucide icons).
+3) Ensure “Get Started” routes to /plans (Plans & Pricing).
+4) Replace the CTASection headline/subhead with cleaner, more hopeful copy.
+
+FILES TO EDIT
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+- client/src/components/CTASection.tsx
+
+PART A — MENU INFORMATION ARCHITECTURE (NAVBAR + NAVBARCREAM)
+1) In BOTH Navbar.tsx and NavbarCream.tsx, update the public dropdown menu grouping to these columns:
+
+COLUMN 1 HEADER: “Start Here” (add Lucide icon Sparkles or Flag)
+Links:
+- Home ( / )
+- Plans & Pricing ( /plans )
+- How Civilla Works ( /how-civilla-works )
+
+COLUMN 2 HEADER: “About Civilla” (add Lucide icon Info or HeartHandshake)
+Links:
+- About Us ( /about )
+
+COLUMN 3 HEADER: “Trust & Safety” (add Lucide icon ShieldCheck)
+Links:
+- Safety & Support ( /safety-support )
+- Legal & Compliance ( /legal-compliance )
+- Accessibility ( /accessibility )
+
+COLUMN 4 HEADER: “Support” (add Lucide icon LifeBuoy)
+Links:
+- Contact ( /contact )
+- Privacy Policy ( /privacy-policy )
+- Terms of Service ( /terms )
+- Login ( /login )
+
+2) Keep “FAQ (Coming Soon)” and “Resources (Coming Soon)” but visually de-emphasize:
+- Place them under a “Learn” area OR at the bottom of “Start Here”
+- Keep them disabled
+- Style: smaller + muted (opacity) so they don’t clutter
+
+3) Add/keep a PRIMARY CTA button labeled “Get Started” in the navbar that routes to /plans (public funnel). Do not add signup/onboarding routes.
+
+4) Add small outline icons ONLY next to the column headers (not next to every link).
+Use lucide-react icons already used elsewhere in the project if available.
+
+PART B — CTA SECTION COPY CLEANUP
+FILE: client/src/components/CTASection.tsx
+
+1) Replace the headline/subhead with this (keep styling/layout):
+Headline line 1: “Start With Clarity”
+Headline line 2: (remove the second headline line entirely if possible; otherwise set it to empty or delete it)
+Subhead: “You don’t have to figure this out alone. Learn in plain language, research with Lexi, and stay organized — at your pace.”
+
+2) Buttons:
+- Primary button text stays “Get Started” and MUST route to /plans
+- Secondary button text stays “How Civilla Works” and routes to /how-civilla-works
+
+VERIFY
+- Menu looks less chunky, better grouped, and icons appear beside headers
+- “Get Started” goes to /plans everywhere
+- CTA section reads clean and hopeful
+- No lint/type errors
+
+REPORT BACK
+- Exact files and line ranges changed
+- Confirm routing targets for both CTA buttons

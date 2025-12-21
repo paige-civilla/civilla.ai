@@ -10,16 +10,11 @@ export default function CTASection() {
       <div className="flex flex-col items-center max-w-container w-full">
         <div className="flex flex-col gap-8 items-center max-w-content-large w-full">
           <div className="flex flex-col gap-5 md:gap-6 items-center text-center w-full">
-            <div className="flex flex-col items-center">
-              <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest">
-                Ready When You Are
-              </h2>
-              <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest">
-                Take The First Step
-              </h2>
-            </div>
+            <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest">
+              Start With Clarity
+            </h2>
             <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-              You don't have to figure this out alone. Start with plain-language education, research with Lexi, and tools that organize what you share.
+              You don't have to figure this out alone. Learn in plain language, research with Lexi, and stay organized — at your pace.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 items-center justify-center">

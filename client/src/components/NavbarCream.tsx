@@ -1,26 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, LifeBuoy } from "lucide-react";
 import logoDark from "@assets/noBgColor-2_1766294100143.png";
 
 const menuLinks = {
-  product: [
+  startHere: [
     { label: "Home", href: "/" },
-    { label: "How it works", href: "/how-civilla-works" },
-    { label: "About us", href: "/about-civilla" },
     { label: "Plans & Pricing", href: "/plans" },
+    { label: "How Civilla Works", href: "/how-civilla-works" },
   ],
-  learn: [
-    { label: "Legal & Compliance", href: "/legal-compliance", disabled: false },
-    { label: "Safety & Support", href: "/safety-support", disabled: false },
-    { label: "FAQ", href: "#", disabled: true },
-    { label: "Resources", href: "#", disabled: true },
+  about: [
+    { label: "About Us", href: "/about-civilla" },
   ],
-  help: [
+  trustSafety: [
+    { label: "Safety & Support", href: "/safety-support" },
+    { label: "Legal & Compliance", href: "/legal-compliance" },
+    { label: "Accessibility", href: "/accessibility" },
+  ],
+  support: [
+    { label: "Contact", href: "/contact" },
     { label: "Privacy Policy", href: "/privacy-policy" },
     { label: "Terms of Service", href: "/terms" },
-    { label: "Contact", href: "/contact" },
-    { label: "Accessibility", href: "/accessibility" },
+  ],
+  comingSoon: [
+    { label: "FAQ", href: "#", disabled: true },
+    { label: "Resources", href: "#", disabled: true },
   ]
 };
 
@@ -150,13 +154,14 @@ export default function NavbarCream() {
 
       {isMenuOpen && (
         <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-6" data-testid="mobile-menu">
-          <div className="flex flex-wrap gap-10 max-w-container mx-auto">
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Product
+          <div className="flex flex-wrap gap-8 max-w-container mx-auto">
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[130px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" />
+                Start Here
               </span>
               <div className="flex flex-col items-start w-full">
-                {menuLinks.product.map((link) => (
+                {menuLinks.startHere.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -169,48 +174,29 @@ export default function NavbarCream() {
                     {link.label}
                   </Link>
                 ))}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Learn
-              </span>
-              <div className="flex flex-col items-start w-full">
-                {menuLinks.learn.map((link) => (
-                  link.disabled ? (
+                <div className="mt-3 pt-3 border-t border-neutral-darkest/20 w-full">
+                  {menuLinks.comingSoon.map((link) => (
                     <span
                       key={link.label}
-                      className="py-1.5 font-sans font-normal text-xs text-neutral-darkest/50 leading-[1.6] w-full cursor-not-allowed flex items-center gap-2"
+                      className="py-1 font-sans font-normal text-[10px] text-neutral-darkest/40 leading-[1.6] w-full cursor-not-allowed flex items-center gap-1.5"
                       aria-disabled="true"
                       data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                     >
                       {link.label}
-                      <span className="text-[10px] opacity-70">Coming soon</span>
+                      <span className="text-[9px] opacity-70">Soon</span>
                     </span>
-                  ) : (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
-                        location === link.href ? "opacity-50" : ""
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                      data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
-                    >
-                      {link.label}
-                    </Link>
-                  )
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Help
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[100px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
+                <Info className="w-3 h-3" />
+                About Civilla
               </span>
               <div className="flex flex-col items-start w-full">
-                {menuLinks.help.map((link) => (
+                {menuLinks.about.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -223,6 +209,56 @@ export default function NavbarCream() {
                     {link.label}
                   </Link>
                 ))}
+              </div>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[130px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
+                <ShieldCheck className="w-3 h-3" />
+                Trust & Safety
+              </span>
+              <div className="flex flex-col items-start w-full">
+                {menuLinks.trustSafety.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
+                      location === link.href ? "opacity-50" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6] flex items-center gap-1.5">
+                <LifeBuoy className="w-3 h-3" />
+                Support
+              </span>
+              <div className="flex flex-col items-start w-full">
+                {menuLinks.support.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
+                      location === link.href ? "opacity-50" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <button 
+                  className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full text-left"
+                  data-testid="menu-button-login"
+                >
+                  Login
+                </button>
               </div>
             </div>
           </div>
