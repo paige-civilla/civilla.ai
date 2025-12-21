@@ -48,10 +48,10 @@ export default function ToolsSection() {
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-5 md:gap-6 items-center text-white text-center max-w-content-large w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-            What civilla.ai does
+            What does civilla.ai Do?
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Each tool is built to help you move through your case with less confusion and more confidence. You choose what you need, when you need it.
+            Civilla is an educational, research, and organizational platform. We help you understand court processes, research questions with Lexi (our AI), and organize your case materials — but we don't provide legal advice, represent you in court, or guarantee outcomes.
           </p>
         </div>
 
