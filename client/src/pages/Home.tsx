@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import ClaritySection from "@/components/ClaritySection";
 import ToolsSection from "@/components/ToolsSection";
 import StepsSection from "@/components/StepsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
@@ -12,7 +11,6 @@ export default function Home() {
     <div className="flex flex-col items-start w-full min-h-screen" data-testid="page-home">
       <Navbar />
       <Hero />
-      <ClaritySection />
       <ToolsSection />
       <StepsSection />
       <TestimonialsSection />
