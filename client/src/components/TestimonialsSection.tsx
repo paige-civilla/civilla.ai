@@ -48,6 +48,9 @@ export default function TestimonialsSection() {
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
             We're in early access. Here's the kind of feedback we're hearing — and what we're building toward.
           </p>
+          <p className="font-sans font-normal text-xs text-neutral-darkest/50 w-full">
+            We don't publish feedback without permission.
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8 w-full">
@@ -73,7 +76,7 @@ export default function TestimonialsSection() {
               Share Your Thoughts
             </h3>
             <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest/80">
-              Your feedback helps us improve Civilla. No legal details needed — just what felt helpful or what felt confusing.
+              Your feedback helps us improve Civilla. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
             </p>
           </div>
 
