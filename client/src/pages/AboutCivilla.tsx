@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/plans", label: "Plans & Pricing" },
   { href: "/legal-compliance", label: "Legal & Compliance" },
   { href: "/privacy-policy", label: "Privacy Policy" },
+  { href: "/safety-support", label: "Safety & Support" },
 ];
 
 const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/26166652-168b-426b-9744-1082df316ceb";

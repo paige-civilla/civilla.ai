@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/plans", label: "Plans & Pricing" },
   { href: "/legal-compliance", label: "Legal & Compliance" },
   { href: "/privacy-policy", label: "Privacy Policy" },
+  { href: "/safety-support", label: "Safety & Support" },
 ];
 
 export default function Navbar() {

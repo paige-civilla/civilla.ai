@@ -9,6 +9,7 @@ import AboutCivilla from "@/pages/AboutCivilla";
 import Plans from "@/pages/Plans";
 import LegalCompliance from "@/pages/LegalCompliance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import SafetySupport from "@/pages/SafetySupport";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/plans" component={Plans} />
       <Route path="/legal-compliance" component={LegalCompliance} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/safety-support" component={SafetySupport} />
       <Route component={NotFound} />
     </Switch>
   );
