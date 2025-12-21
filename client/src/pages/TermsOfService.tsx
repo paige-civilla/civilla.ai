@@ -17,20 +17,20 @@ export default function TermsOfService() {
       <NavbarCream />
       
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] px-16 py-28">
+      <section className="bg-[#e7ebea] px-5 md:px-16 py-16 md:py-28">
         <div className="max-w-[1280px] mx-auto">
-          <div className="flex flex-col gap-8 items-center max-w-[768px] mx-auto">
+          <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] mx-auto">
             <div className="flex flex-col gap-4 items-center w-full">
-              <div className="flex flex-col gap-6 items-center w-full text-neutral-darkest text-center">
+              <div className="flex flex-col gap-4 md:gap-6 items-center w-full text-neutral-darkest text-center">
                 <h1 
-                  className="font-heading font-bold text-heading-1 leading-[1.1] tracking-[0.84px] w-full"
+                  className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] w-full"
                   style={{ textWrap: "balance" }}
                   data-testid="text-terms-title"
                 >
                   Terms of service
                 </h1>
                 <p 
-                  className="font-sans font-normal text-body-medium leading-[1.6] w-full"
+                  className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-terms-description"
                 >
@@ -40,7 +40,7 @@ export default function TermsOfService() {
             </div>
             <div className="flex gap-4 items-start">
               <button 
-                className="bg-bush text-white font-sans font-bold text-body leading-[1.6] px-6 py-2.5 rounded-xl shadow-[0px_1px_2px_0px_rgba(7,5,3,0.05)] relative overflow-hidden"
+                className="bg-bush text-white font-sans font-bold text-sm md:text-body leading-[1.6] px-6 py-2.5 rounded-xl shadow-[0px_1px_2px_0px_rgba(7,5,3,0.05)] relative overflow-hidden"
                 data-testid="button-read"
               >
                 Read
@@ -48,7 +48,7 @@ export default function TermsOfService() {
               </button>
               <Link href="/">
                 <button 
-                  className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-sans font-bold text-body leading-[1.6] px-[22px] py-2 rounded-xl"
+                  className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-sans font-bold text-sm md:text-body leading-[1.6] px-[22px] py-2 rounded-xl"
                   data-testid="button-back"
                 >
                   Back
@@ -60,15 +60,15 @@ export default function TermsOfService() {
       </section>
 
       {/* Content Section */}
-      <section className="bg-[#f2f2f2] px-16 py-28">
+      <section className="bg-[#f2f2f2] px-5 md:px-16 py-16 md:py-28">
         <div className="max-w-[1280px] mx-auto">
-          <div className="flex items-start justify-between w-full gap-8">
+          <div className="flex flex-col md:flex-row items-start justify-between w-full gap-8 md:gap-8">
             {/* Rich Text Content */}
-            <div className="flex-1 flex flex-col items-start max-w-[768px]">
+            <div className="flex-1 flex flex-col items-start max-w-[768px] order-2 md:order-1">
               {/* Overview */}
               <div className="pb-4 w-full">
                 <h2 
-                  className="font-heading font-bold text-heading-2 leading-[1.2] tracking-[0.6px] text-neutral-darkest"
+                  className="font-heading font-bold text-heading-2-mobile md:text-heading-2 leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest"
                   style={{ textWrap: "balance" }}
                   data-testid="text-overview-title"
                 >
@@ -77,7 +77,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-bold text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-bold text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-overview-bold"
                 >
@@ -86,7 +86,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-normal text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-overview-paragraph"
                 >
@@ -95,9 +95,9 @@ export default function TermsOfService() {
               </div>
 
               {/* What civilla.ai is */}
-              <div className="py-6 w-full">
+              <div className="py-4 md:py-6 w-full">
                 <h3 
-                  className="font-heading font-bold text-heading-3 leading-[1.2] tracking-[0.48px] text-neutral-darkest"
+                  className="font-heading font-bold text-heading-3-mobile md:text-heading-3 leading-[1.2] tracking-[0.32px] md:tracking-[0.48px] text-neutral-darkest"
                   style={{ textWrap: "balance" }}
                   data-testid="text-what-civilla-title"
                 >
@@ -106,7 +106,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-normal text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-what-civilla-p1"
                 >
@@ -115,7 +115,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-normal text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-what-civilla-p2"
                 >
@@ -124,9 +124,9 @@ export default function TermsOfService() {
               </div>
 
               {/* Your responsibilities */}
-              <div className="pt-6 pb-5 w-full">
+              <div className="pt-4 md:pt-6 pb-4 md:pb-5 w-full">
                 <h4 
-                  className="font-heading font-bold text-heading-4 leading-[1.2] tracking-[0.4px] text-neutral-darkest"
+                  className="font-heading font-bold text-[28px] md:text-heading-4 leading-[1.2] tracking-[0.28px] md:tracking-[0.4px] text-neutral-darkest"
                   style={{ textWrap: "balance" }}
                   data-testid="text-responsibilities-title"
                 >
@@ -135,7 +135,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-normal text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-responsibilities-paragraph"
                 >
@@ -144,7 +144,7 @@ export default function TermsOfService() {
               </div>
 
               {/* Image */}
-              <div className="py-12 w-full">
+              <div className="py-8 md:py-12 w-full">
                 <div className="aspect-[768/480] w-full rounded-2xl overflow-hidden">
                   <img 
                     src={termsImage} 
@@ -156,9 +156,9 @@ export default function TermsOfService() {
               </div>
 
               {/* Educational materials */}
-              <div className="pt-5 pb-4 w-full">
+              <div className="pt-4 md:pt-5 pb-4 w-full">
                 <h5 
-                  className="font-heading font-bold text-heading-5 leading-[1.2] tracking-[0.32px] text-neutral-darkest"
+                  className="font-heading font-bold text-[24px] md:text-heading-5 leading-[1.2] tracking-[0.24px] md:tracking-[0.32px] text-neutral-darkest"
                   style={{ textWrap: "balance" }}
                   data-testid="text-educational-title"
                 >
@@ -167,7 +167,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-normal text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-educational-paragraph"
                 >
@@ -176,11 +176,11 @@ export default function TermsOfService() {
               </div>
 
               {/* Blockquote */}
-              <div className="py-9 w-full">
-                <div className="flex gap-5 items-start pl-0 pr-5">
+              <div className="py-6 md:py-9 w-full">
+                <div className="flex gap-4 md:gap-5 items-start pl-0 pr-4 md:pr-5">
                   <div className="w-0.5 self-stretch bg-neutral-darkest" />
                   <p 
-                    className="flex-1 font-sans font-normal italic text-xl leading-7 text-neutral-darkest"
+                    className="flex-1 font-sans font-normal italic text-base md:text-xl leading-6 md:leading-7 text-neutral-darkest"
                     data-testid="text-blockquote"
                   >
                     "Ipsum sit mattis nulla quam nulla. Gravida id gravida ac enim mauris id. Non pellentesque congue eget consectetur turpis. Sapien, dictum molestie sem tempor. Diam elit, orci, tincidunt aenean tempus."
@@ -189,9 +189,9 @@ export default function TermsOfService() {
               </div>
 
               {/* Limitations of liability */}
-              <div className="pt-5 pb-4 w-full">
+              <div className="pt-4 md:pt-5 pb-4 w-full">
                 <h6 
-                  className="font-heading font-bold text-heading-6 leading-[1.2] tracking-[0.26px] text-neutral-darkest"
+                  className="font-heading font-bold text-[22px] md:text-heading-6 leading-[1.2] tracking-[0.22px] md:tracking-[0.26px] text-neutral-darkest"
                   style={{ textWrap: "balance" }}
                   data-testid="text-limitations-title"
                 >
@@ -200,7 +200,7 @@ export default function TermsOfService() {
               </div>
               <div className="pb-4 w-full">
                 <p 
-                  className="font-sans font-normal text-body leading-[1.6] text-neutral-darkest"
+                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-limitations-paragraph"
                 >
@@ -210,24 +210,24 @@ export default function TermsOfService() {
             </div>
 
             {/* Table of Contents Sidebar */}
-            <div className="flex flex-col gap-6 items-start w-[320px] shrink-0">
+            <div className="flex flex-col gap-4 md:gap-6 items-start w-full md:w-[320px] shrink-0 order-1 md:order-2">
               <h3 
-                className="font-heading font-bold text-heading-5 leading-[1.2] tracking-[0.32px] text-neutral-darkest"
+                className="font-heading font-bold text-[24px] md:text-heading-5 leading-[1.2] tracking-[0.24px] md:tracking-[0.32px] text-neutral-darkest"
                 data-testid="text-toc-title"
               >
                 Contents
               </h3>
               <div className="flex flex-col items-start w-full">
                 {tableOfContents.map((item, index) => {
-                  const paddingLeft = item.level === 1 ? "px-4" : 
-                                      item.level === 2 ? "px-8" : 
-                                      item.level === 3 ? "px-12" : 
-                                      item.level === 4 ? "px-16" : "px-20";
+                  const paddingLeft = item.level === 1 ? "px-3 md:px-4" : 
+                                      item.level === 2 ? "px-6 md:px-8" : 
+                                      item.level === 3 ? "px-9 md:px-12" : 
+                                      item.level === 4 ? "px-12 md:px-16" : "px-15 md:px-20";
                   
                   return (
                     <button
                       key={index}
-                      className={`flex items-start py-3 w-full text-left ${paddingLeft} ${
+                      className={`flex items-start py-2 md:py-3 w-full text-left ${paddingLeft} ${
                         item.active 
                           ? "bg-[#f2f2f2] border border-neutral-darkest font-bold" 
                           : "font-normal"
@@ -235,7 +235,7 @@ export default function TermsOfService() {
                       data-testid={`button-toc-${index}`}
                     >
                       <span 
-                        className={`flex-1 font-sans text-body-medium leading-[1.6] text-neutral-darkest ${
+                        className={`flex-1 font-sans text-sm md:text-body-medium leading-[1.6] text-neutral-darkest ${
                           item.active ? "font-bold" : "font-normal"
                         }`}
                       >
