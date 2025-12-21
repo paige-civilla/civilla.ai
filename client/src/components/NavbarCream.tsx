@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
 const menuSections = [
@@ -21,8 +21,8 @@ const menuSections = [
     header: "About Civilla",
     icon: Info,
     links: [
-      { label: "Our Mission", href: "/about#mission", icon: Info },
-      { label: "Meet The Founders", href: "/about#founders", icon: Info },
+      { label: "Our Mission", href: "/about#mission", icon: Target },
+      { label: "Meet The Founders", href: "/about#founders", icon: Users },
       { label: "About Us", href: "/about", icon: Info },
     ]
   },
@@ -180,11 +180,11 @@ export default function NavbarCream() {
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {menuSections.map((section) => (
                 <div key={section.header} className="flex flex-col">
-                  <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-700">
+                  <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-800">
                     <section.icon className="h-4 w-4" />
                     {section.header}
                   </div>
-                  <div className="mt-2 h-px w-full bg-black/10" />
+                  <div className="mt-2 h-px w-full bg-black/20" />
                   <div className="mt-4 flex flex-col">
                     {section.links.map((link) => (
                       <Link

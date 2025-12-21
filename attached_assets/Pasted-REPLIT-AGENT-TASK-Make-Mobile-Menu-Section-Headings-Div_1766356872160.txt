@@ -1,0 +1,61 @@
+REPLIT AGENT TASK: Make Mobile Menu Section Headings + Divider Lines Bold + Use Distinct Icons For “About Civilla” Items
+
+GOAL
+In the mobile dropdown menu:
+1) Section headings (e.g., “ABOUT CIVILLA”, “TRUST & SAFETY”) should look bolder/more prominent.
+2) The thin line under each section heading should be bolder/darker.
+3) The “About Civilla” *items* must use different icons (not the same icon as the section header).
+
+FILES TO EDIT
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+
+PART A — UPDATE ICONS FOR ABOUT CIVILLA ITEMS (BOTH FILES)
+1) In BOTH Navbar.tsx and NavbarCream.tsx, update lucide imports to include:
+- Target (for Our Mission)
+- Users (for Meet The Founders)
+- Info (or UserRound) (for About Us)
+Keep the existing section header icon for About Civilla as: Info (or whatever it currently is).
+
+2) Find the menu link objects for the “About Civilla” section items:
+- Our Mission → /about#mission
+- Meet The Founders → /about#founders
+- About Us → /about
+
+3) Replace their icons so they are distinct:
+- Our Mission: Target
+- Meet The Founders: Users
+- About Us: Info (or UserRound if you prefer a person icon)
+IMPORTANT: Do NOT change labels or routes—icons only.
+
+PART B — MAKE SECTION HEADINGS BOLD (BOTH FILES)
+4) Locate the JSX that renders section headings like:
+“ABOUT CIVILLA”, “TRUST & SAFETY”, “SUPPORT”, etc.
+
+5) Update the heading className so it is visibly bold:
+- Add/ensure: font-bold
+- Increase tracking slightly if desired, but keep the same vibe:
+  tracking-widest uppercase text-xs font-bold
+- Darken heading text a bit if it’s too light:
+  text-neutral-800 (instead of text-neutral-700)
+
+PART C — MAKE THE UNDERLINE/DIVIDER UNDER HEADINGS BOLDER (BOTH FILES)
+6) Locate the underline element directly beneath each section heading (currently a thin line like bg-black/10).
+7) Make it bolder/darker by changing to one of:
+- h-px bg-black/20  (subtle but stronger)
+OR
+- h-[2px] bg-black/15 (slightly thicker)
+
+Use the same choice consistently across all headings.
+
+PART D — VERIFY
+8) On mobile:
+- Open hamburger menu
+- Confirm section headings are clearly bold
+- Confirm underline is darker/thicker
+- Confirm About Civilla section items show 3 different icons (Target / Users / Info)
+- No lint/type errors
+
+REPORT BACK
+- Line ranges changed in Navbar.tsx and NavbarCream.tsx
+- Confirm bold headings + bold lines + distinct About icons visible on mobile
