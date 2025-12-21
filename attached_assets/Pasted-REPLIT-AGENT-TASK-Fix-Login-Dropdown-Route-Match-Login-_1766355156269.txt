@@ -1,0 +1,54 @@
+REPLIT AGENT TASK: Fix “Login” Dropdown Route + Match Login Hero Background To How Civilla Works Hero
+
+GOAL
+1) The “Login” item in the navbar dropdown must route to /login (no 404, no wrong path).
+2) The Login page hero area should use the SAME background color/style as the FIRST hero box on /how-civilla-works.
+
+FILES TO EDIT
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+- client/src/pages/Login.tsx
+(Reference-only: client/src/pages/HowCivillaWorks.tsx)
+
+PART A — FIX NAVBAR DROPDOWN LOGIN ROUTE
+1) Find where the dropdown/mobile menu items are defined in BOTH navbars:
+Run:
+rg -n "\"Login\"|label:\\s*\"Login\"|href:\\s*\"/login\"|/auth|/sign" client/src/components/Navbar.tsx client/src/components/NavbarCream.tsx
+
+2) Ensure the “Login” menu item exists and its href is EXACTLY:
+"/login"
+
+3) Ensure it renders as a real link (wouter <Link href="/login">) and NOT a <span> / disabled item.
+
+4) Do this in BOTH Navbar.tsx and NavbarCream.tsx (desktop + mobile dropdown, wherever the menu is generated).
+(If the menu uses a shared links array/object, update it once per file.)
+
+PART B — MATCH LOGIN HERO BACKGROUND/STYLING TO HOW CIVILLA WORKS HERO
+1) Open client/src/pages/HowCivillaWorks.tsx and locate the FIRST hero section wrapper at the top of the page
+(the section that contains the main heading on that page).
+Identify the className(s) that define the hero’s background + border/rounding if applicable.
+
+2) Update client/src/pages/Login.tsx so the Login content sits inside a hero wrapper with the SAME styling:
+- Use the same background-related Tailwind classes (bg-*, border-*, rounded-*, etc.)
+- Keep NavbarCream and Footer as-is
+- Only adjust the container/wrapper around the hero content
+
+Suggested structure (adapt to match exact hero classes from HowCivillaWorks):
+- Keep <NavbarCream />
+- Wrap the login hero content in a <section className="(COPIED HERO CLASSES FROM HowCivillaWorks)"> 
+- Inside it, keep a centered container like: mx-auto max-w-3xl px-4 py-12 (or match HowCivillaWorks spacing)
+
+IMPORTANT
+- Do NOT change the routes of the two buttons on Login (Plans & Pricing → /plans, How Civilla Works → /how-civilla-works).
+- Do NOT change global styles.
+- Make only the minimum class/layout changes required.
+
+VERIFY
+- Open mobile menu dropdown → tap Login → lands on /login
+- /login hero background matches the first hero on /how-civilla-works
+- No lint/type errors
+
+REPORT BACK
+- Exact line ranges changed in each file
+- Confirm dropdown Login works in BOTH navbars (cream + default)
+- Confirm hero background visually matches

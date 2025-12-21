@@ -251,12 +251,14 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
-                <button 
-                  className="py-1.5 font-sans font-normal text-xs text-white leading-[1.6] w-full text-left"
-                  data-testid="menu-button-login"
+                <Link 
+                  href="/login"
+                  className="py-1.5 font-sans font-normal text-xs text-white leading-[1.6] w-full"
+                  onClick={() => setIsMenuOpen(false)}
+                  data-testid="menu-link-login"
                 >
                   Login
-                </button>
+                </Link>
               </div>
             </div>
           </div>
