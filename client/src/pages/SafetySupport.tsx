@@ -34,7 +34,7 @@ export default function SafetySupport() {
               <button className="bg-bush text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl shadow-sm" data-testid="button-learn">
                 Learn
               </button>
-              <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-resources">
+              <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-resources">
                 Resources
               </button>
             </div>
@@ -77,7 +77,7 @@ export default function SafetySupport() {
                   </div>
                 </div>
                 <div className="flex gap-6 items-center">
-                  <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-more-quick-exit">
+                  <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-more-quick-exit">
                     Learn more
                   </button>
                   <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-help-quick-exit">
@@ -137,7 +137,7 @@ export default function SafetySupport() {
                 </div>
               </div>
               <div className="flex gap-6 items-center">
-                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-discretion">
+                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-discretion">
                   Learn
                 </button>
                 <button className="flex items-center gap-2 text-white font-arimo font-bold text-lg" data-testid="button-help-discretion">
@@ -334,7 +334,7 @@ export default function SafetySupport() {
                 </div>
               </div>
               <div className="flex gap-6 items-center">
-                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-resources-emergency">
+                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-resources-emergency">
                   Resources
                 </button>
                 <button className="flex items-center gap-2 text-white font-arimo font-bold text-lg" data-testid="button-help-emergency">

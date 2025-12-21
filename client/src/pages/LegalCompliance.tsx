@@ -31,7 +31,7 @@ function EducationSection() {
             </div>
             <div className="flex gap-6 items-center">
               <button 
-                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-xl"
+                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
                 data-testid="button-learn-more"
               >
                 Learn
@@ -105,7 +105,7 @@ function BoundariesSection() {
             </div>
             <div className="flex gap-6 items-center">
               <button 
-                className="bg-transparent border-2 border-white text-white font-bold text-[18px] leading-[1.6] px-6 py-2.5 rounded-xl"
+                className="bg-transparent border-2 border-white text-white font-bold text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
                 data-testid="button-learn-boundaries"
               >
                 Learn

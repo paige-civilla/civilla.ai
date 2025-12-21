@@ -33,7 +33,7 @@ export default function Accessibility() {
               <button className="bg-bush text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-more-hero">
                 Learn more
               </button>
-              <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-report-issue">
+              <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-report-issue">
                 Report an issue
               </button>
             </div>
@@ -67,7 +67,7 @@ export default function Accessibility() {
                 </ul>
               </div>
               <div className="flex gap-6 items-center">
-                <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-more-commitment">
+                <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-more-commitment">
                   Learn more
                 </button>
                 <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-report">
@@ -104,7 +104,7 @@ export default function Accessibility() {
                 <button className="bg-[#f2f2f2] text-neutral-darkest font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-request">
                   Request
                 </button>
-                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl" data-testid="button-contact">
+                <button className="bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-contact">
                   Contact
                 </button>
               </div>

@@ -248,7 +248,7 @@ function ClaritySection() {
 
         <div className="flex gap-6 items-center">
           <button 
-            className="bg-transparent border-2 border-white text-white font-bold text-body-regular leading-[1.6] px-6 py-2.5 rounded-xl"
+            className="bg-transparent border-2 border-white text-white font-bold text-body-regular leading-[1.6] px-[22px] py-2 rounded-xl"
             data-testid="button-clarity-explore"
           >
             Explore
