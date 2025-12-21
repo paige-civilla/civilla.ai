@@ -52,7 +52,7 @@ export default function SafetySection() {
             In Crisis?
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-            If you're in immediate danger, call 911 (or your local emergency number). Civilla is not an emergency service. Use Quick Exit if you need to leave this site quickly, always located at the top right corner of every page.
+            If you're in immediate danger, call 911 (or your local emergency number). Civilla is not an emergency service. Use Quick Exit if you need to leave this site quickly, always located at the top right corner of every pages navigation bar.
           </p>
         </div>
 
