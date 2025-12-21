@@ -426,3 +426,19 @@ p,
                 inset 0px -2px 1px 0px rgba(0,0,0,0.2);
   }
 }
+
+/* Global typography rule: do not split words across lines */
+html, body {
+  -webkit-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Stronger safety net for typical text elements */
+h1, h2, h3, h4, h5, h6, p, li, span, a, button, label, small {
+  -webkit-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
