@@ -1,0 +1,106 @@
+REPLIT AGENT TASK: Replace “What People Are Saying” With “Early Notes” (Anonymous) + Add Simple Feedback Submit Box (Non-Logged-In)
+
+GOAL
+We don’t have real public reviews yet. Convert the Home “testimonials” section into:
+- Anonymous “Early Notes” (clearly labeled as early access)
+- No star ratings, no fake names, no avatars
+- Add a small feedback submit box (name optional, email optional, message required)
+- Submit should email support@civilla.ai via mailto OR post to an existing feedback endpoint if one already exists
+  (Prefer a real endpoint if available; otherwise mailto fallback)
+
+STEP 1 — FIND THE SECTION FILE
+Search:
+rg -n "What people are saying|Sarah M\\.|James T\\.|Maria L\\.|Self-represented parent|Here\\'s what they have to say|★★★★★" client/src
+
+Open the component/file that renders this section on Home.
+
+STEP 2 — UPDATE SECTION HEADING + SUBHEAD
+Replace:
+Heading: “What people are saying”
+Subhead: (current)
+
+With:
+Heading: “Early Notes”
+Subhead:
+“We’re in early access. Here’s the kind of feedback we’re hearing — and what we’re building toward.”
+
+STEP 3 — REPLACE THE 3 CARDS (ANONYMOUS NOTES)
+For each of the three cards:
+- REMOVE star row
+- REMOVE avatar image
+- REMOVE person name + “Self-represented parent”
+- Replace with:
+
+CARD 1
+Quote:
+“I needed a calmer way to understand what’s typical — without feeling judged or overwhelmed.”
+Attribution line (small/muted):
+“Anonymous — Early Access”
+
+CARD 2
+Quote:
+“Having my notes, messages, and documents in one place made it easier to stay organized.”
+Attribution:
+“Anonymous — Early Access”
+
+CARD 3
+Quote:
+“The plain-language explanations helped me feel less panicked about what comes next.”
+Attribution:
+“Anonymous — Early Access”
+
+(Keep the same card layout/styling as much as possible; just swap content.)
+
+STEP 4 — ADD FEEDBACK SUBMIT BOX UNDER THE CARDS
+Directly below the cards, add a small “Share Your Thoughts” box.
+
+Title:
+“Share Your Thoughts”
+
+Helper text:
+“Your feedback helps us improve Civilla. No legal details needed — just what felt helpful or what felt confusing.”
+
+Fields:
+- Name (optional)
+- Email (optional)
+- Message (required) — textarea
+
+Submit button text:
+“Send Feedback”
+
+SUBMISSION BEHAVIOR (IMPORTANT)
+A) First, check if a public feedback endpoint already exists:
+Search:
+rg -n "/api/feedback|feedback|Send Feedback" server client/src
+
+If a suitable endpoint exists (public, no-auth), POST JSON:
+{ name, email, message, source: "home_early_notes" }
+
+B) If no endpoint exists, implement a mailto fallback:
+On submit, build:
+mailto:support@civilla.ai
+subject: "Civilla Early Access Feedback"
+body includes Name/Email/Message (URL-encoded)
+Open via window.location.href = mailto...
+Also show a small note under the button:
+“This will open your email app.”
+
+VALIDATION
+- Require message (non-empty)
+- Disable submit button if message is empty
+- On success (POST) show a simple “Thanks — we got it.” confirmation
+- If using mailto, no success state required beyond opening the email client
+
+UPL SAFETY NOTE
+Do NOT ask for case details. Do NOT frame it as legal advice. Keep copy focused on product experience.
+
+VERIFY
+- Section no longer resembles real reviews (no stars, no names/photos)
+- Cards read as anonymous early access notes
+- Feedback form works (endpoint OR mailto fallback)
+- No lint/type errors
+
+REPORT BACK
+- File edited + line ranges
+- Whether an endpoint existed (and which) OR confirm mailto fallback implemented
+- Show the final text used in the section
