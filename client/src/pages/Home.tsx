@@ -14,9 +14,9 @@ export default function Home() {
       <Navbar />
       <Hero />
       <ToolsSection />
+      <StepsSection />
       <CTASection />
       <SafetySection />
-      <StepsSection />
       <TestimonialsSection />
       <FAQSection />
       <Footer />
