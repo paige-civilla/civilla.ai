@@ -3,22 +3,16 @@ const footerLinks = {
     { label: "How it works", href: "/how-civilla-works" },
     { label: "About us", href: "/about-civilla" },
     { label: "Plans", href: "/plans" },
-    { label: "Support", href: "#" },
-    { label: "Resources", href: "#" }
   ],
   learn: [
     { label: "Legal", href: "/legal-compliance" },
-    { label: "Safety", href: "#" },
-    { label: "FAQ", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Accessibility", href: "#" }
+    { label: "Safety", href: "/safety-support" },
+    { label: "Contact", href: "/contact" },
+    { label: "Accessibility", href: "/accessibility" }
   ],
   help: [
     { label: "Privacy", href: "/privacy-policy" },
-    { label: "Terms", href: "#" },
     { label: "Legal & Compliance", href: "/legal-compliance" },
-    { label: "Status", href: "#" },
-    { label: "Updates", href: "#" }
   ]
 };
 
@@ -95,11 +89,8 @@ export default function Footer() {
             <a href="/privacy-policy" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-privacy">
               Privacy Policy
             </a>
-            <a href="#" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-terms">
-              Terms of Service
-            </a>
-            <a href="#" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-cookies">
-              Cookies Settings
+            <a href="/legal-compliance" className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] underline" data-testid="link-legal">
+              Legal & Compliance
             </a>
           </div>
         </div>

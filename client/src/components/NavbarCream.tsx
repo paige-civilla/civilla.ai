@@ -13,12 +13,9 @@ const menuLinks = {
   learn: [
     { label: "Legal & Compliance", href: "/legal-compliance" },
     { label: "Safety & Support", href: "/safety-support" },
-    { label: "FAQ", href: "#" },
-    { label: "Resources", href: "#" },
   ],
   help: [
     { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "#" },
     { label: "Contact", href: "/contact" },
     { label: "Accessibility", href: "/accessibility" },
   ]
