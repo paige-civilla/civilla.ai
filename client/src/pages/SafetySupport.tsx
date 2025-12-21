@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, ChevronRight, User, Moon, Sun, LogOut, Phone, AlertTriangle, UserX, Bell, Shield } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
+import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
 
 const menuLinks = {
   product: [
@@ -312,7 +313,7 @@ export default function SafetySupport() {
           <div className="flex flex-col md:flex-row gap-20 items-center">
             <div className="flex-1">
               <img 
-                src="/attached_assets/foggy-landscape-reflected-in-lake_1766286894997.jpg" 
+                src={foggyLandscape} 
                 alt="Foggy landscape reflected in lake" 
                 className="w-full aspect-[600/640] object-cover rounded-2xl"
               />
