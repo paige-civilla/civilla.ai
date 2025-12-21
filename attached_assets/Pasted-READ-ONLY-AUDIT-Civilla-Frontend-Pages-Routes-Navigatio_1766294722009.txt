@@ -1,0 +1,82 @@
+READ-ONLY AUDIT: Civilla Frontend Pages, Routes, Navigation, and Responsive Behavior
+Do NOT debug, refactor, redesign, or change code. Do NOT generate new components. Audit only.
+
+GOAL
+Confirm that all desktop + mobile Figma pages are implemented, routed correctly, navigable, responsive, and consistent with expected behavior (logo → home, nav links, hamburger menu). Identify missing pages, broken routes, overflow issues, and disconnected components.
+
+OUTPUT FORMAT
+Return a concise report with:
+1) Page Inventory (table)
+2) Route Map (table)
+3) Navigation + Linking Checks (checklist)
+4) Responsive/Layout Issues (bulleted, with file paths + line numbers)
+5) Broken/Missing Items (bulleted)
+6) “Fix Plan” (high-level only, no code)
+
+AUDIT STEPS
+
+A) PAGE INVENTORY
+1. List all page components under:
+   - client/src/pages/**
+   Include: filename, exported component name, and whether it’s used by App routing.
+
+B) ROUTE MAP
+2. Open client/src/App.tsx and list every <Route ...> including:
+   - path
+   - component/page file
+   - auth protection (if any)
+   - redirects (e.g., /pricing -> /subscribe)
+3. Identify any pages that exist but have NO route.
+
+C) NAVIGATION + LINKING
+4. Audit Navbar:
+   - file path: client/src/components/Navbar.tsx (or equivalent)
+   Check:
+   - Links point to correct routes and do not 404
+   - Mobile hamburger menu opens/closes correctly
+   - Menu contains the intended page links
+   - Current-page active state styling (if present)
+5. Confirm logo click behavior:
+   - On every page, clicking the Civilla logo routes to "/"
+   - Specify where implemented (Navbar logo link or click handler)
+6. Audit Footer links:
+   - list all href targets and confirm each route exists
+
+D) RESPONSIVE + OVERFLOW (CRITICAL)
+7. Run a quick scan for layout overflow risks:
+   - Look for: fixed widths, absolute positioning, hardcoded px widths, missing max-w, missing flex-wrap, missing overflow-hidden, long unbroken strings
+   - Identify the TOP 10 likely offenders with file path + line range.
+8. Specifically check for “text leaving the box” behavior:
+   - Identify any elements missing:
+     - min-w-0 on flex children
+     - max-w-full
+     - break-words / break-all (only where needed)
+     - overflow-hidden / text-ellipsis (only where needed)
+9. Confirm mobile breakpoints are present on:
+   - Hero
+   - Tabs/Tools section
+   - Testimonials/cards
+   - FAQ accordion
+   - Pricing cards (if built)
+   - Footer columns
+
+E) ROUTE BEHAVIOR
+10. Confirm navigation works without full reload:
+   - If using wouter/react-router, confirm links use <Link> not window.location.href (except where intentional).
+11. Confirm 404 handling:
+   - Is there a fallback “Not Found” route?
+   - If missing, note it (do not implement).
+
+F) ASSETS + FIGMA PARITY
+12. List how logos/images are loaded:
+   - local assets vs external URLs
+   - confirm correct “dark logo” usage on dark navbar (if present)
+13. Note any missing Figma sections or mismatched page order, based on current page structure.
+
+DELIVERABLE
+Provide:
+- A route map table
+- A list of pages not wired to routes
+- A list of broken links (if any)
+- A list of overflow/responsive issues with exact file paths + line numbers
+- A short “what to fix first” prioritization (P0/P1/P2)
