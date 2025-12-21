@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
 const navLinks = [
@@ -13,6 +13,30 @@ const navLinks = [
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    if (!isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
+  const handleQuickExit = () => {
+    window.location.replace("https://www.google.com");
+  };
 
   return (
     <nav className="bg-bush w-full" data-testid="navbar">
@@ -29,10 +53,23 @@ export default function Navbar() {
           </div>
           <div className="flex items-center justify-center gap-2">
             <button 
-              className="hidden md:block bg-transparent border border-white text-white font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
-              data-testid="button-login"
+              onClick={toggleDarkMode}
+              className="p-1.5"
+              aria-label="Toggle dark mode"
+              data-testid="button-theme-toggle"
             >
-              Login
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 text-white" />
+              ) : (
+                <Moon className="w-4 h-4 text-white" />
+              )}
+            </button>
+            <button 
+              className="p-1.5"
+              aria-label="User login"
+              data-testid="button-user-login"
+            >
+              <User className="w-4 h-4 text-white" />
             </button>
             <button 
               className="p-1"
@@ -44,6 +81,14 @@ export default function Navbar() {
               ) : (
                 <Menu className="w-4 h-4 text-white" />
               )}
+            </button>
+            <button 
+              onClick={handleQuickExit}
+              className="ml-2 p-1.5 bg-white rounded-md"
+              aria-label="Quick exit"
+              data-testid="button-quick-exit"
+            >
+              <LogOut className="w-4 h-4 text-neutral-darkest" />
             </button>
           </div>
         </div>

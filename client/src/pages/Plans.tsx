@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Check, ChevronRight, ChevronUp, ChevronDown, Home } from "lucide-react";
+import { Menu, X, Check, ChevronRight, ChevronUp, ChevronDown, Home, User, Moon, Sun, LogOut } from "lucide-react";
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 
@@ -14,6 +14,30 @@ const navLinks = [
 function NavbarCream() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    if (!isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
+  const handleQuickExit = () => {
+    window.location.replace("https://www.google.com");
+  };
 
   return (
     <nav className="bg-cream w-full" data-testid="navbar-cream">
@@ -30,10 +54,23 @@ function NavbarCream() {
           </div>
           <div className="flex items-center justify-center gap-2">
             <button 
-              className="hidden md:block bg-transparent border border-neutral-darkest text-neutral-darkest font-bold text-xs leading-[1.6] px-3 py-0.5 rounded"
-              data-testid="button-login"
+              onClick={toggleDarkMode}
+              className="p-1.5"
+              aria-label="Toggle dark mode"
+              data-testid="button-theme-toggle"
             >
-              Login
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 text-neutral-darkest" />
+              ) : (
+                <Moon className="w-4 h-4 text-neutral-darkest" />
+              )}
+            </button>
+            <button 
+              className="p-1.5"
+              aria-label="User login"
+              data-testid="button-user-login"
+            >
+              <User className="w-4 h-4 text-neutral-darkest" />
             </button>
             <button 
               className="p-1"
@@ -45,6 +82,15 @@ function NavbarCream() {
               ) : (
                 <Menu className="w-4 h-4 text-neutral-darkest" />
               )}
+            </button>
+            <button 
+              onClick={handleQuickExit}
+              className="ml-2 p-1.5 rounded-md"
+              style={{ background: "linear-gradient(135deg, #2D5A4A 0%, #7B9B8E 50%, #D4A574 100%)" }}
+              aria-label="Quick exit"
+              data-testid="button-quick-exit"
+            >
+              <LogOut className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>
