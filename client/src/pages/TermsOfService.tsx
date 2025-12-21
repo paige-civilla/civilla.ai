@@ -143,8 +143,8 @@ export default function TermsOfService() {
                 </p>
               </div>
 
-              {/* Image with caption */}
-              <div className="py-12 w-full flex flex-col gap-2">
+              {/* Image */}
+              <div className="py-12 w-full">
                 <div className="aspect-[768/480] w-full rounded-2xl overflow-hidden">
                   <img 
                     src={termsImage} 
@@ -152,15 +152,6 @@ export default function TermsOfService() {
                     className="w-full h-full object-cover"
                     data-testid="img-terms-illustration"
                   />
-                </div>
-                <div className="flex gap-2 items-start w-full">
-                  <div className="w-0.5 self-stretch bg-neutral-darkest" />
-                  <p 
-                    className="flex-1 font-sans font-normal text-body-small leading-[1.6] text-neutral-darkest"
-                    data-testid="text-image-caption"
-                  >
-                    Image caption goes here
-                  </p>
                 </div>
               </div>
 

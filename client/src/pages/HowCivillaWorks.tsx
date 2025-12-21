@@ -191,9 +191,8 @@ function ClaritySection() {
           </div>
         </div>
 
-        <div className="flex flex-col items-start w-full">
-          <div className="flex gap-12 items-start w-full">
-            <div className="flex flex-1 flex-col gap-6 items-center min-h-0">
+        <div className="flex gap-12 items-start w-full">
+          <div className="flex flex-1 flex-col gap-6 items-center min-h-0">
               <div className="w-12 h-12 relative flex-shrink-0">
                 <img src={imgVector2} alt="" className="w-full h-full" />
               </div>
@@ -234,7 +233,6 @@ function ClaritySection() {
                 </p>
               </div>
             </div>
-          </div>
         </div>
 
         <div className="flex gap-6 items-center">
