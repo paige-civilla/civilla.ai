@@ -5,21 +5,25 @@ const faqs = [
   {
     id: 1,
     question: "Is civilla.ai a law firm?",
+    questionStyled: true,
     answer: "No. civilla is an educational, research, and organizational platform. We don't provide legal advice, represent you in court, or replace an attorney."
   },
   {
     id: 2,
     question: "Can I use civilla.ai with an attorney?",
+    questionStyled: true,
     answer: "Yes. Many people use civilla to stay organized and share timelines, notes, and documents with their attorney. civilla supports your preparation — your attorney remains your legal advisor."
   },
   {
     id: 3,
     question: "What states does civilla.ai cover?",
+    questionStyled: true,
     answer: "civilla is built for U.S. family law. You can choose your state to view educational information and typical court processes. Because rules and forms can vary by county, always confirm details with official court sources or an attorney."
   },
   {
     id: 4,
     question: "Will civilla.ai tell me what to file?",
+    questionStyled: true,
     answer: "No. civilla can explain what documents exist and how they're typically used, but it doesn't tell you what to file or when. Those decisions are yours — ideally with an attorney's guidance."
   },
   {
@@ -64,7 +68,13 @@ export default function FAQSection() {
                 data-testid={`button-faq-${faq.id}`}
               >
                 <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest">
-                  {faq.question}
+                  {faq.question.includes("civilla.ai") 
+                    ? faq.question.split("civilla.ai").map((part, i, arr) => 
+                        i < arr.length - 1 
+                          ? <span key={i}>{part}<span className="italic font-semibold">civilla.ai</span></span>
+                          : part
+                      )
+                    : faq.question}
                 </span>
                 {openItems.includes(faq.id) ? (
                   <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />

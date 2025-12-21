@@ -29,12 +29,15 @@ export default function TermsOfService() {
                 >
                   Terms of service
                 </h1>
+                <p className="font-sans font-normal text-xs md:text-sm leading-[1.6] text-neutral-darkest/70">
+                  Civilla LLC DBA <span className="italic font-semibold">civilla.ai</span> & www.<span className="italic font-semibold">civilla.ai</span>
+                </p>
                 <p 
                   className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-terms-description"
                 >
-                  Please read these terms carefully before using civilla.ai
+                  Please read these terms carefully before using <span className="italic font-semibold">civilla.ai</span>
                 </p>
               </div>
             </div>
@@ -101,7 +104,7 @@ export default function TermsOfService() {
                   style={{ textWrap: "balance" }}
                   data-testid="text-what-civilla-title"
                 >
-                  What civilla.ai is
+                  What <span className="italic font-semibold">civilla.ai</span> is
                 </h3>
               </div>
               <div className="pb-4 w-full">

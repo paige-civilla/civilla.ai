@@ -53,7 +53,7 @@ export default function SafetySection() {
             In Crisis?
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest">
-            If you are in immediate danger, call <strong>911</strong> (or your local emergency number), as <span className="italic font-semibold">civilla</span>.ai is not an emergency service. We also have Quick Exit, our built-in safety feature, always located at the top right corner of every page. When pressed, it instantly redirects to a neutral website and prevents the back button from returning to <span className="italic font-semibold">civilla</span>.
+            If you are in immediate danger, <strong>ALWAYS</strong> call <strong>911</strong> (or your local emergency number), as <span className="italic font-semibold">civilla.ai</span> is not an emergency service. We also have Quick Exit, our built-in safety feature, always located at the top right corner of every page. When pressed, it instantly redirects to a neutral website and prevents the back button from returning to <span className="italic font-semibold">civilla</span>.
           </p>
         </div>
 
