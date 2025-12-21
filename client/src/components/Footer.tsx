@@ -30,7 +30,7 @@ export default function Footer() {
           <div className="flex flex-wrap gap-10 md:gap-32 items-start justify-center">
             <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Product
+                Explore
               </span>
               <div className="flex flex-col items-start w-full">
                 {footerLinks.product.map((link) => (

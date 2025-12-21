@@ -1,0 +1,65 @@
+REPLIT AGENT TASK: Update Footer Across All Pages (Single Source Footer Component)
+
+GOAL
+Make the footer clean, consistent with the new navbar IA, and remove duplicate/odd link groupings.
+This should update across all pages by editing the shared Footer component only.
+
+FILE TO EDIT
+client/src/components/Footer.tsx
+
+WHAT TO CHANGE
+
+1) COLUMN HEADERS + LINK GROUPS (REPLACE CURRENT FOOTER NAV LISTS)
+Use exactly these 3 columns and link labels:
+
+COLUMN 1 HEADER: “Product”
+Links (in this order):
+- Home → /
+- Plans & Pricing → /plans
+- How Civilla Works → /how-civilla-works
+- About Us → /about
+
+COLUMN 2 HEADER: “Trust & Safety”
+Links:
+- Safety & Support → /safety-support
+- Legal & Compliance → /legal-compliance
+- Accessibility → /accessibility
+
+COLUMN 3 HEADER: “Help”
+Links:
+- Contact → /contact
+- Privacy Policy → /privacy-policy
+- Terms of Service → /terms
+- Login → /login
+
+IMPORTANT:
+- Do NOT include “Legal” as a separate link. Use “Legal & Compliance” only.
+- Do NOT include “Safety” as a separate link. Use “Safety & Support” only.
+- Ensure all internal links use the existing routing component (wouter <Link href="...">).
+
+2) REMOVE DUPLICATE BOTTOM LINK LIST
+In the screenshot, the footer shows:
+- a column list of Privacy/Terms/etc
+AND ALSO
+- a separate bottom list of “Privacy Policy / Terms of Service / Legal & Compliance”
+Remove the bottom duplicate link list so links appear only once (in the columns).
+
+3) COPYRIGHT LINE
+Set the copyright line to:
+“© 2025 civilla.ai. All rights reserved.”
+(Keep casing exactly as shown unless the project already uses a different canonical style.)
+
+4) MOBILE SPACING / READABILITY (LIGHT POLISH ONLY)
+Without changing overall styling, ensure:
+- Columns stack nicely on mobile (gap/spacing consistent)
+- Link lists have consistent vertical rhythm (no cramped lines)
+
+VERIFY
+- Footer looks updated on every page that uses <Footer />
+- No duplicated “Privacy Policy / Terms / Legal & Compliance” links at the bottom
+- Routes all work (tap each on mobile preview)
+- No lint/type errors
+
+REPORT BACK
+- Exact line ranges changed in Footer.tsx
+- Confirm the footer is used site-wide (no other footer variants)
