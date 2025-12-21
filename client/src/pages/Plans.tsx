@@ -4,15 +4,26 @@ import { Menu, X, Check, ChevronRight, ChevronUp, ChevronDown, Home, User, Moon,
 import Footer from "@/components/Footer";
 import logoDark from "@assets/noBgColor_(1)_1766261333621.png";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/how-civilla-works", label: "How Civilla Works" },
-  { href: "/about-civilla", label: "About Civilla" },
-  { href: "/plans", label: "Plans & Pricing" },
-  { href: "/legal-compliance", label: "Legal & Compliance" },
-  { href: "/privacy-policy", label: "Privacy Policy" },
-  { href: "/safety-support", label: "Safety & Support" },
-];
+const menuLinks = {
+  product: [
+    { label: "Home", href: "/" },
+    { label: "How it works", href: "/how-civilla-works" },
+    { label: "About us", href: "/about-civilla" },
+    { label: "Plans & Pricing", href: "/plans" },
+  ],
+  learn: [
+    { label: "Legal & Compliance", href: "/legal-compliance" },
+    { label: "Safety & Support", href: "/safety-support" },
+    { label: "FAQ", href: "#" },
+    { label: "Resources", href: "#" },
+  ],
+  help: [
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms of Service", href: "#" },
+    { label: "Contact", href: "#" },
+    { label: "Accessibility", href: "#" },
+  ]
+};
 
 function NavbarCream() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -122,27 +133,76 @@ function NavbarCream() {
       </div>
 
       {isMenuOpen && (
-        <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-4" data-testid="mobile-menu">
-          <div className="flex flex-col gap-3 max-w-container mx-auto">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-neutral-darkest font-bold text-sm leading-[1.6] py-2 px-3 rounded ${
-                  location === link.href ? "bg-neutral-darkest/10" : "hover-elevate active-elevate-2"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-                data-testid={`mobile-link-${link.href.replace("/", "") || "home"}`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <button 
-              className="text-left text-neutral-darkest font-bold text-sm leading-[1.6] py-2 px-3 rounded hover-elevate active-elevate-2"
-              data-testid="mobile-button-login"
-            >
-              Login
-            </button>
+        <div ref={menuRef} className="bg-cream border-t border-neutral-darkest/20 px-3 md:px-6 py-6" data-testid="mobile-menu">
+          <div className="flex flex-wrap gap-10 max-w-container mx-auto">
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+                Product
+              </span>
+              <div className="flex flex-col items-start w-full">
+                {menuLinks.product.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
+                      location === link.href ? "opacity-50" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+                Learn
+              </span>
+              <div className="flex flex-col items-start w-full">
+                {menuLinks.learn.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
+                      location === link.href ? "opacity-50" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+                Help
+              </span>
+              <div className="flex flex-col items-start w-full">
+                {menuLinks.help.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full ${
+                      location === link.href ? "opacity-50" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                    data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <button 
+                  className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full text-left"
+                  data-testid="menu-button-login"
+                >
+                  Login
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

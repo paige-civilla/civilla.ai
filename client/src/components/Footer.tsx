@@ -1,5 +1,3 @@
-const logoUrl = "https://www.figma.com/api/mcp/asset/a24a48c1-9ca1-4e0e-95d3-6685bff3db92";
-
 const footerLinks = {
   product: [
     { label: "How it works", href: "/how-civilla-works" },
@@ -33,18 +31,8 @@ export default function Footer() {
       <div className="flex flex-col gap-12 md:gap-20 items-start max-w-container w-full">
         <div className="flex flex-col md:flex-row gap-10 md:gap-32 items-start w-full">
           <div className="flex flex-1 flex-wrap gap-10 items-start">
-            <div className="flex flex-col items-start min-w-[80px]">
-              <a href="/" className="relative h-11 w-[84px]" data-testid="link-footer-logo">
-                <img 
-                  src={logoUrl} 
-                  alt="civilla.ai" 
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              </a>
-            </div>
-            
-            <div className="flex flex-1 flex-col gap-4 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-body-regular text-neutral-darkest leading-[1.6]">
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Product
               </span>
               <div className="flex flex-col items-start w-full">
@@ -52,7 +40,7 @@ export default function Footer() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="py-2 font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {link.label}
@@ -61,8 +49,8 @@ export default function Footer() {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-4 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-body-regular text-neutral-darkest leading-[1.6]">
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Learn
               </span>
               <div className="flex flex-col items-start w-full">
@@ -70,7 +58,7 @@ export default function Footer() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="py-2 font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {link.label}
@@ -79,8 +67,8 @@ export default function Footer() {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-4 items-start min-w-[120px]">
-              <span className="font-sans font-bold text-body-regular text-neutral-darkest leading-[1.6]">
+            <div className="flex flex-1 flex-col gap-3 items-start min-w-[120px]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Help
               </span>
               <div className="flex flex-col items-start w-full">
@@ -88,7 +76,7 @@ export default function Footer() {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="py-2 font-sans font-normal text-body-small text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {link.label}
