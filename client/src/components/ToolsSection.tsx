@@ -34,6 +34,7 @@ export default function ToolsSection() {
 
   return (
     <section 
+      id="home-learn-more"
       className="bg-bush-dark w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-tools"
     >

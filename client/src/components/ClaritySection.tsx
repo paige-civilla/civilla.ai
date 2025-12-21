@@ -1,7 +1,6 @@
 export default function ClaritySection() {
   return (
     <section 
-      id="home-learn-more"
       className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-clarity"
     >
