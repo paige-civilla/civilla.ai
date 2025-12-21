@@ -27,9 +27,9 @@ export default function Footer() {
       data-testid="footer"
     >
       <div className="flex flex-col gap-12 md:gap-16 items-start max-w-container w-full">
-        <div className="flex flex-col md:flex-row gap-10 md:gap-32 items-center justify-center w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest">
-          <div className="flex flex-wrap gap-10 md:gap-32 items-start justify-center">
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[140px]">
+        <div className="w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-16 max-w-content-large mx-auto">
+            <div className="flex flex-col gap-3 items-start">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Explore
               </span>
@@ -47,7 +47,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[140px]">
+            <div className="flex flex-col gap-3 items-start">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Trust & Safety
               </span>
@@ -65,7 +65,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-3 items-start min-w-[140px]">
+            <div className="flex flex-col gap-3 items-start">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
                 Help
               </span>
