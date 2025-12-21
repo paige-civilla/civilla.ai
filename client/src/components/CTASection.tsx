@@ -23,7 +23,7 @@ export default function CTASection() {
             </p>
           </div>
           <div className="flex flex-wrap gap-4 items-center justify-center">
-            <Link href="/how-civilla-works">
+            <Link href="/plans">
               <Button
                 className="bg-bush text-white rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular button-inset-shadow"
                 data-testid="button-cta-start"
