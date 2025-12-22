@@ -1,117 +1,80 @@
-import React from "react";
-
-type Step = {
-  key: string;
-  title: React.ReactNode;
-  body: React.ReactNode;
-  imageSrc?: string;
-  imageAlt?: string;
-};
-
-function StepCard({
-  title,
-  body,
-  imageSrc,
-  imageAlt,
-  variant = "standard",
-}: Step & { variant?: "standard" | "wideTop" }) {
-  const hasImage = Boolean(imageSrc);
-
-  return (
-    <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden min-w-0">
-      <div
-        className={[
-          variant === "wideTop"
-            ? "grid grid-cols-1 md:grid-cols-[1fr_360px]"
-            : "grid grid-cols-1",
-        ].join(" ")}
-      >
-        <div className="p-8 min-w-0">
-          <div className="text-4xl md:text-5xl font-black leading-[1.02] tracking-tight min-w-0">
-            {title}
-          </div>
-
-          <div className="mt-5 text-base md:text-lg leading-relaxed text-neutral-800 min-w-0">
-            {body}
-          </div>
-        </div>
-
-        {hasImage ? (
-          <div className="min-w-0">
-            <img
-              src={imageSrc}
-              alt={imageAlt ?? ""}
-              className={[
-                "block w-full object-cover",
-                variant === "wideTop" ? "h-full md:min-h-[260px]" : "h-auto",
-              ].join(" ")}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 export default function StepsSection() {
-  const step1: Step = {
-    key: "step-1",
-    title: <>Understand your case type and timeline</>,
-    body: (
-      <>
-        Choose your state and case type to view plain-language education and the
-        common stages people often see.
-      </>
-    ),
-    imageSrc: "/images/steps/step-1.jpg",
-    imageAlt: "Compass on a map",
-  };
-
-  const step2to4: Step[] = [
-    {
-      key: "step-2",
-      title: <>Gather and organize your information</>,
-      body: (
-        <>
-          Add documents, messages, and key events.{" "}
-          <em className="cv-brand">civilla</em> organizes what you provide into a
-          clear, reviewable timeline.
-        </>
-      ),
-      imageSrc: "/images/steps/step-2.jpg",
-      imageAlt: "Desk with laptop and pencils",
-    },
-    {
-      key: "step-3",
-      title: <>Information & Guidelines Available to the Public</>,
-      body: (
-        <>
-          Review statutes, court rules, and educational resources — without
-          advice, predictions, or filing instructions.
-        </>
-      ),
-    },
-    {
-      key: "step-4",
-      title: <>Prepare with knowledge and clarity</>,
-      body: (
-        <>
-          Turn information into structure: a calmer record, clearer questions,
-          and better next steps for you to decide.
-        </>
-      ),
-    },
-  ];
-
   return (
     <section className="px-6 md:px-10">
-      <div className="mx-auto max-w-6xl">
-        <StepCard {...step1} variant="wideTop" />
+      <div className="mx-auto max-w-6xl w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+          {/* STEP 1: full width */}
+          <div className="lg:col-span-12 w-full min-w-0">
+            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] w-full min-w-0">
+                <div className="p-8 min-w-0">
+                  <h3 className="text-4xl md:text-5xl font-black leading-[1.02] tracking-tight">
+                    Understand your case type and timeline
+                  </h3>
+                  <p className="mt-5 text-base md:text-lg leading-relaxed text-neutral-800">
+                    Choose your state and case type to view plain-language education and the
+                    common stages people often see.
+                  </p>
+                </div>
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {step2to4.map(({ key, ...rest }) => (
-            <StepCard key={key} {...rest} />
-          ))}
+                <div className="min-w-0">
+                  <img
+                    src="/images/steps/step-1.jpg"
+                    alt="Compass on a map"
+                    className="block w-full h-full md:min-h-[260px] object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 2 */}
+          <div className="lg:col-span-4 w-full min-w-0">
+            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+              <div className="p-8 min-w-0">
+                <div className="text-sm font-semibold opacity-70">Step two</div>
+                <h3 className="mt-2 text-3xl font-black leading-tight">
+                  Gather and organize your information
+                </h3>
+                <p className="mt-4 text-base leading-relaxed text-neutral-800">
+                  Add documents, messages, and key events. <em className="cv-brand">civilla</em> organizes what you
+                  provide into a clear, reviewable timeline.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 3 */}
+          <div className="lg:col-span-4 w-full min-w-0">
+            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+              <div className="p-8 min-w-0">
+                <div className="text-sm font-semibold opacity-70">Step three</div>
+                <h3 className="mt-2 text-3xl font-black leading-tight">
+                  Information & Guidelines Available to the Public
+                </h3>
+                <p className="mt-4 text-base leading-relaxed text-neutral-800">
+                  Review statutes, court rules, and educational resources — without advice,
+                  predictions, or filing instructions.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 4 */}
+          <div className="lg:col-span-4 w-full min-w-0">
+            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+              <div className="p-8 min-w-0">
+                <div className="text-sm font-semibold opacity-70">Step four</div>
+                <h3 className="mt-2 text-3xl font-black leading-tight">
+                  Prepare with knowledge and clarity
+                </h3>
+                <p className="mt-4 text-base leading-relaxed text-neutral-800">
+                  Turn information into structure: a calmer record, clearer questions, and better
+                  next steps for you to decide.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

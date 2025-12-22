@@ -1,0 +1,85 @@
+// Wherever the "Step one / Step two / Step three / Step four" cards are rendered
+// (either in StepsSection.tsx or directly inside HowCivillaWorks.tsx)
+
+<section className="px-6 md:px-10">
+  <div className="mx-auto max-w-6xl w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      {/* STEP 1: full width */}
+      <div className="lg:col-span-12 w-full min-w-0">
+        <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] w-full min-w-0">
+            {/* text */}
+            <div className="p-8 min-w-0">
+              {/* REMOVE the "Step one" label entirely */}
+              <h3 className="text-4xl md:text-5xl font-black leading-[1.02] tracking-tight">
+                Understand your case type and timeline
+              </h3>
+              <p className="mt-5 text-base md:text-lg leading-relaxed text-neutral-800">
+                Choose your state and case type to view plain-language education and the
+                common stages people often see.
+              </p>
+            </div>
+
+            {/* image */}
+            <div className="min-w-0">
+              <img
+                src="/images/steps/step-1.jpg"
+                alt="Compass on a map"
+                className="block w-full h-full md:min-h-[260px] object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* STEP 2 */}
+      <div className="lg:col-span-4 w-full min-w-0">
+        <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+          <div className="p-8 min-w-0">
+            {/* keep Step two label if you want */}
+            <div className="text-sm font-semibold opacity-70">Step two</div>
+            <h3 className="mt-2 text-3xl font-black leading-tight">
+              Gather and organize your information
+            </h3>
+            <p className="mt-4 text-base leading-relaxed text-neutral-800">
+              Add documents, messages, and key events. <em className="cv-brand">civilla</em> organizes what you
+              provide into a clear, reviewable timeline.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* STEP 3 */}
+      <div className="lg:col-span-4 w-full min-w-0">
+        <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+          <div className="p-8 min-w-0">
+            <div className="text-sm font-semibold opacity-70">Step three</div>
+            <h3 className="mt-2 text-3xl font-black leading-tight">
+              Learn what’s typical (not what to do)
+            </h3>
+            <p className="mt-4 text-base leading-relaxed text-neutral-800">
+              Review statutes, court rules, and educational resources — without advice,
+              predictions, or filing instructions.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* STEP 4 */}
+      <div className="lg:col-span-4 w-full min-w-0">
+        <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
+          <div className="p-8 min-w-0">
+            <div className="text-sm font-semibold opacity-70">Step four</div>
+            <h3 className="mt-2 text-3xl font-black leading-tight">
+              Prepare with knowledge and clarity
+            </h3>
+            <p className="mt-4 text-base leading-relaxed text-neutral-800">
+              Turn information into structure: a calmer record, clearer questions, and better
+              next steps for you to decide.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
