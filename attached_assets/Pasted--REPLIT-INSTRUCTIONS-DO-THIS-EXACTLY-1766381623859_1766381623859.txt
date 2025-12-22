@@ -1,0 +1,173 @@
+/* =========================================================
+   REPLIT INSTRUCTIONS (DO THIS EXACTLY)
+   1) ONLY edit the files listed below. Do NOT touch Navbar / Footer files.
+   2) Paste each file section into the matching file path (replace the file’s contents where noted).
+   3) Don’t “auto-refactor” strings that include the word civilla — keep the <BrandMark /> usage as-is.
+   ========================================================= */
+
+/* =========================
+   FILE: client/src/index.css
+   ADD/REPLACE (keep your other CSS)
+   Find your existing .cv-brand and REPLACE it with this.
+   ========================= */
+.cv-brand{
+  font-style: italic;
+  font-weight: 600;
+  text-transform: lowercase;
+  white-space: nowrap;
+  letter-spacing: normal;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1;
+  display: inline;          /* prevents weird inline-block spacing */
+  padding: 0;
+  margin: 0;
+}
+
+/* Optional helper for cases like “How civilla Works” */
+.cv-brand-tight{
+  letter-spacing: 0;
+  word-spacing: 0;
+}
+
+/* =========================
+   FILE: client/src/components/BrandMark.tsx
+   (If you already have this file, just update it to match.)
+   ========================= */
+import React from "react";
+
+type BrandMarkProps = {
+  /** Defaults to "civilla" */
+  text?: string;
+  className?: string;
+};
+
+/**
+ * Always renders brand word consistently:
+ * lowercase + italic + semibold + no-wrap
+ */
+export default function BrandMark({ text = "civilla", className = "" }: BrandMarkProps) {
+  return (
+    <span className={`cv-brand ${className}`.trim()}>
+      {String(text).toLowerCase()}
+    </span>
+  );
+}
+
+/* =========================
+   FILE: client/src/pages/Plans.tsx
+   UPDATE the “Most Popular” / featured plan hero-card copy + features.
+   - Keep your existing monthly/yearly toggle logic.
+   - Only swap the copy + features + button label as shown below.
+   ========================= */
+
+/**
+ * Locate the section that renders:
+ *   - "Most Popular"
+ *   - the Monthly/Yearly toggle
+ *   - the big featured plan card (currently civilla pro $29.99/mo)
+ *
+ * Then update the featured card content to match this.
+ * (You can paste this JSX inside your existing featured-card container.)
+ */
+
+import BrandMark from "@/components/BrandMark"; // adjust import path if needed
+import { Link } from "react-router-dom";       // if you already use Link, keep yours
+
+// ...keep your existing component code above
+
+/* ---------- Replace ONLY the featured card’s inner content with this ---------- */
+
+{
+  /* Featured plan header */
+}
+<div className="text-center">
+  <div className="text-2xl sm:text-3xl font-semibold">
+    <BrandMark className="cv-brand-tight" />{" "}
+    <span className="font-semibold">pro</span>
+  </div>
+
+  {/* Price line: keep your real price variables/state here */}
+  <div className="mt-2">
+    <span className="text-5xl sm:text-6xl font-bold">
+      {/* EXAMPLE: replace with your existing computed price */}
+      {isYearly ? "$299.99" : "$29.99"}
+    </span>
+    <span className="ml-2 text-base sm:text-lg opacity-80">
+      {isYearly ? "/yr" : "/mo"}
+    </span>
+  </div>
+
+  <div className="mt-1 text-sm sm:text-base opacity-80">
+    {isYearly ? "billed yearly" : "billed monthly"}
+  </div>
+
+  <div className="mt-4 text-sm sm:text-base max-w-xl mx-auto opacity-90">
+    Built for people representing themselves who want a calm, organized way to
+    understand what’s typical, track what matters, and prepare more confidently —
+    <span className="font-semibold"> without legal advice</span>.
+  </div>
+</div>
+
+{
+  /* Featured plan feature list (REAL app capabilities) */
+}
+<ul className="mt-8 space-y-3 text-left max-w-xl mx-auto">
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Case Journey overview (common stages + what to expect next)</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Timeline builder for key events, filings, and milestones</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Document organizer (upload, label, and group your case documents)</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Evidence & Communication Log (messages, incidents, and notes in one place)</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Tasks & deadline tracking (so nothing slips through the cracks)</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Learning Hub + guided research prompts (education-first, not advice)</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Court Prep Packet drafts (export with watermark + required disclaimers)</span>
+  </li>
+  <li className="flex gap-3">
+    <span className="mt-1">✓</span>
+    <span>Support & safety resources (for planning and next-step clarity)</span>
+  </li>
+</ul>
+
+{
+  /* Button: keep it, but make wording less “salesy” and more neutral.
+     Route: keep your existing destination. If your app uses /login for sign up too, use /login.
+  */
+}
+<div className="mt-8 flex justify-center">
+  <Link
+    to="/plans" /* if you already open checkout modal, keep that handler instead */
+    className="inline-flex items-center justify-center rounded-full px-8 py-3 font-semibold border border-black/20 bg-emerald-900 text-white hover:opacity-90 transition"
+  >
+    Compare plans below
+  </Link>
+</div>
+
+/* ---------- END featured card content ---------- */
+
+/**
+ * QUICK TWEAK (the one I mentioned):
+ * If you still want a CTA here but not “Start now”, use either:
+ *   - "Compare plans below" (above)
+ *   - OR if it must go to auth: "Create an account" linking to /login
+ *
+ * If you choose auth CTA, swap the Link text + destination:
+ *   to="/login"  and label: "Create an account"
+ */

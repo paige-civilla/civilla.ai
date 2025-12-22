@@ -36,11 +36,14 @@ function HeaderSection() {
 
 function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod: "monthly" | "yearly"; setBillingPeriod: (v: "monthly" | "yearly") => void }) {
   const features = [
-    "Case journey overview",
-    "Document organization tools",
-    "Educational research resources",
-    "Timeline building",
-    "Basic deadline tracking"
+    "Case Journey overview (common stages + what to expect next)",
+    "Timeline builder for key events, filings, and milestones",
+    "Document organizer (upload, label, and group your case documents)",
+    "Evidence & Communication Log (messages, incidents, and notes in one place)",
+    "Tasks & deadline tracking (so nothing slips through the cracks)",
+    "Learning Hub + guided research prompts (education-first, not advice)",
+    "Court Prep Packet drafts (export with watermark + required disclaimers)",
+    "Support & safety resources (for planning and next-step clarity)"
   ];
 
   return (
@@ -57,7 +60,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
           </div>
         </div>
 
-        <div className="flex flex-col gap-8 md:gap-12 items-center w-full md:max-w-[560px]">
+        <div className="flex flex-col gap-8 md:gap-12 items-center w-full md:max-w-[640px]">
           <div 
             className="bg-cream border-2 border-neutral-darkest rounded-[10px] p-1 flex"
             role="group"
@@ -93,37 +96,44 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
 
           <div className="bg-cream border-2 border-neutral-darkest rounded-2xl p-6 md:p-8 flex flex-col gap-6 md:gap-8 items-center w-full">
             <div className="flex flex-col gap-2 items-center text-neutral-darkest text-center w-full">
-              <span className="font-heading font-bold text-[22px] md:text-[26px] tracking-[0.22px] md:tracking-[0.26px] leading-[1.2]">
-                <Brand>civilla</Brand> pro
-              </span>
-              <div className="flex flex-col gap-1 items-center">
+              <div className="text-2xl sm:text-3xl font-semibold">
+                <BrandMark className="cv-brand-tight" />{" "}
+                <span className="font-semibold">pro</span>
+              </div>
+              <div className="flex flex-col gap-1 items-center mt-2">
                 <span className="pricing-display font-heading font-bold tracking-[0.48px] md:tracking-[0.84px] leading-[1.1]" style={{ fontSize: 'clamp(48px, 6vw, 84px)' }}>
-                  {billingPeriod === "monthly" ? "$29.99" : "$299"}
+                  {billingPeriod === "monthly" ? "$29.99" : "$299.99"}
                   <span className="price-period">{billingPeriod === "monthly" ? "/mo" : "/yr"}</span>
                 </span>
                 <span className="font-sans text-sm md:text-[18px] leading-[1.6]">
-                  {billingPeriod === "monthly" ? "per month" : "$24.91/month billed annually"}
+                  {billingPeriod === "monthly" ? "billed monthly" : "billed yearly"}
                 </span>
               </div>
+              <p className="mt-4 text-sm sm:text-base max-w-xl mx-auto opacity-90">
+                Built for people representing themselves who want a calm, organized way to
+                understand what's typical, track what matters, and prepare more confidently —
+                <span className="font-semibold"> without legal advice</span>.
+              </p>
             </div>
 
-            <div className="flex flex-col gap-4 py-2 w-full">
+            <div className="flex flex-col gap-4 py-2 w-full text-left">
               {features.map((feature, index) => (
-                <div key={index} className="flex gap-4 items-start w-full">
-                  <Check className="w-5 md:w-6 h-5 md:h-6 text-neutral-darkest flex-shrink-0" />
-                  <span className="cv-panel-body font-sans text-sm md:text-[18px] leading-[1.6] text-neutral-darkest">
+                <div key={index} className="flex gap-3 items-start w-full">
+                  <Check className="w-5 md:w-6 h-5 md:h-6 text-neutral-darkest flex-shrink-0 mt-0.5" />
+                  <span className="cv-panel-body font-sans text-sm md:text-[16px] leading-[1.6] text-neutral-darkest">
                     {feature}
                   </span>
                 </div>
               ))}
             </div>
 
-            <button 
-              className="w-full bg-bush text-white font-bold text-sm md:text-[18px] leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
-              data-testid="button-start-now"
+            <Link 
+              href="/plans#compare"
+              className="w-full bg-bush text-white font-bold text-sm md:text-[18px] leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative text-center inline-flex items-center justify-center"
+              data-testid="button-compare-plans"
             >
-              Start now
-            </button>
+              Compare plans below
+            </Link>
           </div>
         </div>
       </div>
