@@ -122,9 +122,6 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
             <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
               Most Popular
             </h2>
-            <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              Choose what works for your situation
-            </p>
           </div>
         </div>
 
