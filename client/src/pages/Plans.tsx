@@ -295,9 +295,14 @@ function PricingCardsSection() {
       bullets: ["+30 GB storage per case", "Full feature parity with your current plan"],
     },
     {
-      title: "Evidence-Only Storage",
+      title: "Archive Mode",
       price: "$4.99 per month",
-      bullets: ["Evidence uploads", "Journaling", "Timeline storage", "No analysis until upgraded"],
+      bullets: [
+        "For high-conflict cases between court dates",
+        "Evidence uploads and journaling",
+        "Timeline storage preserved",
+        "Reactivate full features anytime",
+      ],
     },
     {
       title: "Over-Limit Processing Pack",
