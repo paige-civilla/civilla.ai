@@ -195,13 +195,13 @@ export default function NavbarCream() {
               aria-expanded={isMenuOpen}
               data-testid="button-menu"
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5">
                 {isMenuOpen ? (
-                  <X className="h-5 w-5 text-neutral-darkest" aria-hidden="true" />
+                  <X className="h-4 w-4 text-neutral-darkest" aria-hidden="true" />
                 ) : (
-                  <Menu className="h-5 w-5 text-neutral-darkest" aria-hidden="true" />
+                  <Menu className="h-4 w-4 text-neutral-darkest" aria-hidden="true" />
                 )}
-                <span className="text-sm font-medium text-neutral-darkest">Menu</span>
+                <span className="text-xs font-medium text-neutral-darkest">Menu</span>
               </span>
             </button>
             <button 

@@ -195,13 +195,13 @@ export default function Navbar() {
               aria-label="Open menu"
               aria-expanded={isMenuOpen}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5">
                 {isMenuOpen ? (
-                  <X className="h-5 w-5 text-white" aria-hidden="true" />
+                  <X className="h-4 w-4 text-white" aria-hidden="true" />
                 ) : (
-                  <Menu className="h-5 w-5 text-white" aria-hidden="true" />
+                  <Menu className="h-4 w-4 text-white" aria-hidden="true" />
                 )}
-                <span className="text-sm font-medium text-white">Menu</span>
+                <span className="text-xs font-medium text-white">Menu</span>
               </span>
             </button>
             <button 
