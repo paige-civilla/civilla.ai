@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { BrandText } from "./Brand";
 
 const faqs = [
   {
@@ -55,7 +56,7 @@ export default function FAQSection() {
             FAQs
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Quick answers about what <span className="italic font-medium">civilla</span> does — and what it doesn't.
+            <BrandText>Quick answers about what civilla does — and what it doesn't.</BrandText>
           </p>
         </div>
 
@@ -68,13 +69,7 @@ export default function FAQSection() {
                 data-testid={`button-faq-${faq.id}`}
               >
                 <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest">
-                  {faq.question.includes("civilla.ai") 
-                    ? faq.question.split("civilla.ai").map((part, i, arr) => 
-                        i < arr.length - 1 
-                          ? <span key={i}>{part}<span className="italic font-medium">civilla.ai</span></span>
-                          : part
-                      )
-                    : faq.question}
+                  <BrandText>{faq.question}</BrandText>
                 </span>
                 {openItems.includes(faq.id) ? (
                   <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />
@@ -85,11 +80,7 @@ export default function FAQSection() {
               {openItems.includes(faq.id) && (
                 <div className="flex items-start pb-6 w-full">
                   <p className="flex-1 font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest">
-                    {faq.answer.split(/(civilla\.ai|civilla)/g).map((part, i) => 
-                      part === "civilla.ai" || part === "civilla" 
-                        ? <span key={i} className="italic font-medium">{part}</span>
-                        : part
-                    )}
+                    <BrandText>{faq.answer}</BrandText>
                   </p>
                 </div>
               )}

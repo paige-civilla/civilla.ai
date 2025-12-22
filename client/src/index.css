@@ -74,6 +74,22 @@ div {
   min-width: 0;
 }
 
+/* =========================================
+   CIVILLA BRAND STYLING
+   Applies to all "civilla", "civilla.ai", "www.civilla.ai" mentions
+   ========================================= */
+.civilla-brand {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  text-transform: lowercase;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  white-space: inherit;
+}
+
 /* Images and media never exceed containers */
 img,
 svg,

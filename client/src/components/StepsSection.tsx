@@ -1,3 +1,5 @@
+import { BrandText } from "./Brand";
+
 const steps = [
   {
     id: "step-one",
@@ -40,11 +42,7 @@ export default function StepsSection() {
                     <div className="w-px bg-black/15" />
                   </div>
                   <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
-                    {step.description.split(/(civilla)/g).map((part, i) => 
-                      part === "civilla" 
-                        ? <span key={i} className="italic font-medium">civilla</span>
-                        : part
-                    )}
+                    <BrandText>{step.description}</BrandText>
                   </p>
                 </div>
                 {idx !== steps.length - 1 && (
@@ -73,11 +71,7 @@ export default function StepsSection() {
                 key={`${step.id}-desc`}
                 className="font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest text-center"
               >
-                {step.description.split(/(civilla)/g).map((part, i) => 
-                  part === "civilla" 
-                    ? <span key={i} className="italic font-medium">civilla</span>
-                    : part
-                )}
+                <BrandText>{step.description}</BrandText>
               </p>
             ))}
           </div>

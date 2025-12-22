@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { BrandText } from "./Brand";
 
 export default function CTASection() {
   return (
@@ -32,7 +33,7 @@ export default function CTASection() {
                 className="border-2 border-neutral-darkest text-neutral-darkest rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular bg-transparent"
                 data-testid="button-cta-learn"
               >
-                How <span className="italic font-medium">civilla</span> Works
+                <BrandText>How civilla Works</BrandText>
               </Button>
             </Link>
           </div>

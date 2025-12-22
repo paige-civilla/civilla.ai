@@ -1,0 +1,105 @@
+REPLIT AGENT TASK: Enforce Global “civilla” Brand Styling (lowercase + italic + semi-bold) Across Current + Future UI
+
+REQUIREMENT
+Anywhere the app displays:
+- “civilla”
+- “civilla.ai”
+- “www.civilla.ai”
+…it must render as:
+- lowercase
+- italic
+- medium-bold / semi-bold (font-weight ~600)
+
+IMPORTANT NOTE (WHY THIS NEEDS A COMPONENT)
+CSS alone cannot reliably “find and style” specific words inside arbitrary text nodes across React.
+So we’ll implement:
+1) A global CSS class for the look
+2) A reusable <Brand /> component for single tokens
+3) A <BrandText /> wrapper that automatically styles these tokens inside longer strings
+4) Update existing pages/components to use <BrandText> where brand appears
+
+FILES TO CREATE / EDIT
+CREATE:
+- client/src/components/Brand.tsx
+
+EDIT:
+- client/src/index.css
+- Update existing components that contain “civilla” text:
+  client/src/components/FAQSection.tsx
+  client/src/components/TestimonialsSection.tsx
+  client/src/components/CTASection.tsx
+  client/src/components/ClaritySection.tsx
+  client/src/components/Footer.tsx
+  client/src/pages/Login.tsx
+  client/src/pages/LegalCompliance.tsx (and any other page with brand mentions)
+
+PART A — ADD GLOBAL BRAND CSS
+1) Open: client/src/index.css
+2) Add this class near other global utilities (keep it global):
+
+.civilla-brand {
+  font-style: italic;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+(Do NOT apply globally to all text — only via the wrapper/component.)
+
+PART B — CREATE Brand COMPONENTS
+3) Create: client/src/components/Brand.tsx with:
+
+- export function Brand({ children }: { children: string })
+  -> returns <span className="civilla-brand">{children}</span>
+
+- export function BrandText({ children }: { children: React.ReactNode })
+  -> If children is a string, replace any occurrences of:
+     www.civilla.ai
+     civilla.ai
+     civilla
+     (case-insensitive)
+     with <span className="civilla-brand">MATCH_LOWERCASED</span>
+     and return an array of nodes.
+  -> If children is not a string (e.g. JSX), just return children unchanged (don’t break layouts).
+
+Use a regex with word boundaries so “civilla” doesn’t match inside other words:
+/(\bwww\.civilla\.ai\b|\bcivilla\.ai\b|\bcivilla\b)/gi
+
+When rendering a match, output it as match.toLowerCase().
+
+PART C — APPLY TO CURRENT APP COPY (SEARCH + UPDATE)
+4) Run a search to find all current brand mentions:
+rg -n "(www\\.)?civilla\\.ai|\\bcivilla\\b" client/src
+
+5) For each place where “civilla…” appears inside longer text copy, wrap the string with <BrandText>.
+Examples:
+BEFORE:
+<p>civilla.ai is an educational platform...</p>
+AFTER:
+<p><BrandText>civilla.ai is an educational platform...</BrandText></p>
+
+For isolated tokens, use <Brand>:
+<Brand>civilla.ai</Brand>
+
+6) Minimum required updates (so the public site looks consistent immediately):
+- FAQSection.tsx (all answers with civilla)
+- TestimonialsSection.tsx (subheads/quotes if any include civilla)
+- CTASection.tsx (subhead line)
+- ClaritySection.tsx (not-law-firm style copy)
+- Footer.tsx (copyright line)
+- Login.tsx (copy)
+- LegalCompliance.tsx + SafetySupport related pages (any brand mentions)
+
+PART D — FUTURE-PROOFING
+7) Add a short dev note comment at the top of Brand.tsx:
+“Use <Brand> for standalone tokens and <BrandText> for long strings so Civilla branding always stays lowercase/italic/semi-bold.”
+
+VERIFY
+- Build passes / no TS errors
+- On Home + FAQ + Footer + Login, all visible instances of “civilla”, “civilla.ai”, “www.civilla.ai” render:
+  lowercase + italic + semi-bold
+- No unintended styling on other text
+
+REPORT BACK
+- How many matches rg found
+- Which files were updated (file + line ranges)
+- Confirm visually on Home + FAQ + Footer + Login

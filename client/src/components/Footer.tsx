@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { BrandText, Brand } from "./Brand";
 
 const footerLinks = {
   explore: [
@@ -41,13 +42,7 @@ export default function Footer() {
                     className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    {link.label.includes("civilla") 
-                      ? link.label.split("civilla").map((part, i, arr) => 
-                          i < arr.length - 1 
-                            ? <span key={i}>{part}<span className="italic font-medium">civilla</span></span>
-                            : part
-                        )
-                      : link.label}
+                    <BrandText>{link.label}</BrandText>
                   </Link>
                 ))}
               </div>
@@ -93,7 +88,7 @@ export default function Footer() {
 
         <div className="flex items-center justify-center w-full">
           <p className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6]">
-            © 2025 <span className="italic font-medium">civilla.ai</span>. All rights reserved.
+            © 2025 <Brand>civilla.ai</Brand>. All rights reserved.
           </p>
         </div>
       </div>

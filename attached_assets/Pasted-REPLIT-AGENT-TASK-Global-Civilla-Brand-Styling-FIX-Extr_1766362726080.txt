@@ -1,0 +1,75 @@
+REPLIT AGENT TASK: Global Civilla Brand Styling + FIX “Extra Space” Issue Around Italicized Brand Word
+
+PROBLEM TO SOLVE
+When “civilla / civilla.ai / www.civilla.ai” is wrapped in a styled span, the spacing before/after can LOOK wider (or accidentally become wider if we introduce extra whitespace during string splitting).
+
+We will fix BOTH causes:
+1) Prevent accidental extra spaces in the replacement logic (no double spaces introduced).
+2) Avoid true italic font side-bearing expansion by using an “oblique” skew transform that preserves normal spacing much closer to non-italic text.
+
+FILES
+CREATE:
+- client/src/components/Brand.tsx
+
+EDIT:
+- client/src/index.css
+- Apply BrandText/Brand to existing copy (same as prior task)
+
+PART A — CSS: BRAND LOOK + SPACING-SAFE “ITALIC”
+1) Open client/src/index.css
+2) Add/replace the class with this exact version:
+
+.civilla-brand {
+  /* Keep the same baseline spacing as normal text */
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+
+  /* Always lowercase + slightly bold */
+  text-transform: lowercase;
+  font-weight: 600;
+
+  /* “Italic” without changing font spacing metrics as much */
+  font-style: normal;
+  transform: skewX(-10deg);
+  transform-origin: left bottom;
+
+  /* Ensure no spacing overrides */
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  white-space: inherit;
+}
+
+NOTE: This intentionally uses a skew to *look* italic while keeping spacing closer to normal text. If you want true italics instead, tell me and we’ll switch back—but spacing may remain visually wider due to font glyph metrics.
+
+PART B — BrandText: GUARANTEE NO EXTRA SPACES ARE INTRODUCED
+3) Create client/src/components/Brand.tsx with TWO exports:
+- Brand (for standalone tokens)
+- BrandText (for long strings)
+
+4) In BrandText, DO NOT use a naive split that can introduce whitespace.
+Implement replacement by iterating matches with indices and slicing the original string exactly.
+
+Rules:
+- Regex: /(\bwww\.civilla\.ai\b|\bcivilla\.ai\b|\bcivilla\b)/gi
+- Preserve all original characters around the match by slicing
+- Render the match as match.toLowerCase() wrapped in <span className="civilla-brand" />
+- Do not add any manual spaces anywhere (no " " insertion)
+This guarantees the spacing in the raw string remains identical.
+
+PART C — APPLY WHERE BRAND APPEARS
+5) Search:
+rg -n "(www\\.)?civilla\\.ai|\\bcivilla\\b" client/src
+6) Wrap long copy strings containing brand words with <BrandText>...</BrandText>.
+Use <Brand>civilla.ai</Brand> for standalone tokens.
+
+VERIFY
+- Visually inspect Home hero/Clarity/FAQ/Footer/Login:
+  The brand word is lowercase + “italic” look + semi-bold
+  Spacing before/after no longer looks exaggerated or “double spaced”
+- No TS/lint errors
+
+REPORT BACK
+- File/line ranges changed
+- Confirm BrandText replacement uses index slicing (not split with added whitespace)
+- Confirm spacing issue is resolved on mobile preview
