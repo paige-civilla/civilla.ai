@@ -577,53 +577,6 @@ function PricingCardsSection() {
         </div>
       </div>
 
-      {/* Organizations hero box */}
-      <div className="mt-10 rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 md:p-10">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:items-start">
-          <div className="md:col-span-7 min-w-0">
-            <h3 className="text-3xl font-black text-neutral-900">Organizations & DV Shelters</h3>
-            <p className="mt-2 text-base text-neutral-900/75">
-              Custom pricing for domestic violence shelters, legal aid organizations, and advocacy groups.
-            </p>
-
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {["Custom onboarding", "Privacy-first configurations", "Non-profit pricing", "Bulk access options"].map(
-                (t) => (
-                  <div
-                    key={t}
-                    className="rounded-2xl border border-neutral-900/15 bg-white/60 p-4 text-sm font-semibold text-neutral-900/80"
-                  >
-                    {t}
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-
-          <div className="md:col-span-5 min-w-0">
-            <div className="rounded-[24px] border border-neutral-900/15 bg-white/60 p-6">
-              <div className="text-sm font-semibold text-neutral-900">Custom pricing</div>
-              <div className="mt-2 text-sm text-neutral-900/75">
-                Contact us for onboarding and privacy-first configuration options.
-              </div>
-
-              <button
-                type="button"
-                className="mt-5 w-full rounded-full bg-[#0F3B2E] px-5 py-3 text-center text-sm font-semibold text-white hover:opacity-95"
-                onClick={() => (window.location.href = "/contact")}
-                data-testid="button-contact-org"
-              >
-                Contact Us
-              </button>
-
-              <div className="mt-4 text-xs text-neutral-900/60">
-                <BrandMark /> is educational and organizational only. Not legal advice.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Full feature comparison — MOBILE first */}
       <div id="full-features" className="mt-10 rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 md:p-10">
         <div className="min-w-0">
