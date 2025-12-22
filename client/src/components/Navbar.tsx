@@ -189,7 +189,7 @@ export default function Navbar() {
             </button>
             <button 
               ref={menuButtonRef}
-              className="inline-flex items-center justify-center rounded-md px-2 py-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="inline-flex items-center justify-center rounded-md p-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               data-testid="button-menu"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"

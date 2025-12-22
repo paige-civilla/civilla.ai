@@ -189,7 +189,7 @@ export default function NavbarCream() {
             </button>
             <button 
               ref={menuButtonRef}
-              className="inline-flex items-center justify-center rounded-md px-2 py-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
+              className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"
               aria-expanded={isMenuOpen}
