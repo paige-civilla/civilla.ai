@@ -191,8 +191,8 @@ export default function Navbar() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`flex items-center gap-3 py-2 text-[15px] text-neutral-900/90 hover:text-neutral-900 ${
-                          location === link.href ? "font-medium" : ""
+                        className={`flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-[15px] text-neutral-900/90 hover:text-neutral-900 ${
+                          location === link.href ? "font-medium bg-black/[0.06]" : ""
                         }`}
                         onClick={() => setIsMenuOpen(false)}
                         data-testid={`menu-link-${link.label.toLowerCase().replace(/\s/g, "-")}`}
