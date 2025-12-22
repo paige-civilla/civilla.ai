@@ -116,7 +116,7 @@ export default function NavbarCream() {
   };
 
   return (
-    <nav className="sticky top-0 z-[60] bg-cream/90 backdrop-blur supports-[backdrop-filter]:bg-cream/75 w-full relative" data-testid="navbar-cream">
+    <nav className="bg-cream w-full relative" data-testid="navbar-cream">
       <div className="h-9 flex items-center justify-center px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
