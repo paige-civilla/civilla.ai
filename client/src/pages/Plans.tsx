@@ -164,7 +164,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
             <button
               type="button"
               className={[
-                "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition flex items-center gap-2",
+                "ml-1 rounded-full pl-5 pr-3 py-2 text-sm font-semibold transition flex items-center gap-3",
                 billingPeriod === "yearly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
               ].join(" ")}
               onClick={() => setBillingPeriod("yearly")}
@@ -174,11 +174,11 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
             >
               <span>Yearly</span>
               {billingPeriod === "yearly" ? (
-                <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
+                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
                   2 Mo. Free
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black">
+                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-black/10 px-2.5 py-0.5 text-xs font-semibold text-black">
                   2 Mo. Free
                 </span>
               )}
@@ -560,7 +560,7 @@ function PricingCardsSection() {
                 type="button"
                 onClick={() => setBillingPeriod("yearly")}
                 className={[
-                  "ml-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center gap-2",
+                  "ml-1 rounded-full pl-4 pr-3 py-2 text-sm font-semibold transition flex items-center gap-3",
                   billingPeriod === "yearly"
                     ? "bg-neutral-900 text-white"
                     : "text-neutral-900/70 hover:text-neutral-900",
@@ -569,11 +569,11 @@ function PricingCardsSection() {
               >
                 <span>Yearly</span>
                 {billingPeriod === "yearly" ? (
-                  <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
+                  <span className="inline-flex items-center whitespace-nowrap rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
                     2 Mo. Free
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black">
+                  <span className="inline-flex items-center whitespace-nowrap rounded-full bg-black/10 px-2.5 py-0.5 text-xs font-semibold text-black">
                     2 Mo. Free
                   </span>
                 )}
