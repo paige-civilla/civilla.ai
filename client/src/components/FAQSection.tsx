@@ -68,7 +68,7 @@ export default function FAQSection() {
                 className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
                 data-testid={`button-faq-${faq.id}`}
               >
-                <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest">
+                <span className="flex-1 font-sans font-normal text-body-medium leading-[1.6] text-neutral-darkest">
                   <BrandText>{faq.question}</BrandText>
                 </span>
                 {openItems.includes(faq.id) ? (
