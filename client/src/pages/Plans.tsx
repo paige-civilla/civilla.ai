@@ -252,7 +252,6 @@ function PricingCardsSection() {
         "Tasks and reminders",
       ],
       cta: "Choose Core",
-      badge: "Most Popular",
     },
     {
       id: "pro",
@@ -260,6 +259,7 @@ function PricingCardsSection() {
       monthlyPrice: "$29.99",
       yearlyPrice: "$299",
       priceNote: "Advanced evidence workflows",
+      badge: "Most Popular",
       highlights: [
         "50 GB storage",
         "Video uploads",
