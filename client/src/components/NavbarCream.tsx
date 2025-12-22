@@ -27,7 +27,7 @@ const menuSections = [
     header: "Trust & Safety",
     icon: ShieldCheck,
     links: [
-      { label: "Safety & Support", href: "/safety-support", icon: ShieldCheck },
+      { label: "Safety & Support", href: "/safety-support", icon: Heart },
       { label: "Legal & Compliance", href: "/legal-compliance", icon: FileText },
       { label: "Accessibility", href: "/accessibility", icon: Lock },
     ]
