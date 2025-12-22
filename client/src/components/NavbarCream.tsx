@@ -189,16 +189,20 @@ export default function NavbarCream() {
             </button>
             <button 
               ref={menuButtonRef}
-              className="p-1"
+              className="inline-flex items-center justify-center rounded-md p-2 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
+              aria-label="Open menu"
+              aria-expanded={isMenuOpen}
               data-testid="button-menu"
             >
-              {isMenuOpen ? (
-                <X className="w-4 h-4 text-neutral-darkest" />
-              ) : (
-                <Menu className="w-4 h-4 text-neutral-darkest" />
-              )}
+              <span className="flex items-center gap-2">
+                {isMenuOpen ? (
+                  <X className="h-5 w-5 text-neutral-darkest" aria-hidden="true" />
+                ) : (
+                  <Menu className="h-5 w-5 text-neutral-darkest" aria-hidden="true" />
+                )}
+                <span className="text-sm font-medium text-neutral-darkest">Menu</span>
+              </span>
             </button>
             <button 
               onClick={handleQuickExit}

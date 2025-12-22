@@ -189,15 +189,20 @@ export default function Navbar() {
             </button>
             <button 
               ref={menuButtonRef}
-              className="p-1"
+              className="inline-flex items-center justify-center rounded-md p-2 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               data-testid="button-menu"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Open menu"
+              aria-expanded={isMenuOpen}
             >
-              {isMenuOpen ? (
-                <X className="w-4 h-4 text-white" />
-              ) : (
-                <Menu className="w-4 h-4 text-white" />
-              )}
+              <span className="flex items-center gap-2">
+                {isMenuOpen ? (
+                  <X className="h-5 w-5 text-white" aria-hidden="true" />
+                ) : (
+                  <Menu className="h-5 w-5 text-white" aria-hidden="true" />
+                )}
+                <span className="text-sm font-medium text-white">Menu</span>
+              </span>
             </button>
             <button 
               onClick={handleQuickExit}
