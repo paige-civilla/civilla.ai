@@ -73,9 +73,6 @@ function JourneySection() {
               <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 w-full flex flex-col md:flex-row min-w-0">
                 <div className="flex flex-1 flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
                   <div className="flex flex-col gap-2 items-start w-full">
-                    <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest leading-[1.5]">
-                      Step two
-                    </span>
                     <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
                       <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
                         Gather And Organize Your Information
