@@ -59,7 +59,7 @@ export default function Contact() {
                 className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg leading-[1.6] px-[22px] py-2 rounded-xl"
                 data-testid="button-learn-more"
               >
-                Learn more
+                Learn More
               </button>
             </div>
           </div>

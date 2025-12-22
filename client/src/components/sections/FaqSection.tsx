@@ -27,7 +27,7 @@ export function FaqSection({
   ctaTitle = "Still have questions?",
   ctaSubtitle = "Our team is here to help",
   ctaHref = "/contact",
-  ctaLabel = "Contact us",
+  ctaLabel = "Contact Us",
 }: FaqSectionProps) {
   const defaultItems: FaqItem[] = [
     {

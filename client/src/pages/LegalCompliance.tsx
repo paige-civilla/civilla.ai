@@ -225,7 +225,7 @@ function FAQSection() {
               className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
               data-testid="button-contact-faq"
             >
-              Contact us
+              Contact Us
             </button>
           </div>
         </div>

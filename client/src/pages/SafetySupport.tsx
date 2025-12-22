@@ -69,7 +69,7 @@ export default function SafetySupport() {
                 </div>
                 <div className="flex gap-6 items-center">
                   <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-more-quick-exit">
-                    Learn more
+                    Learn More
                   </button>
                   <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-lg" data-testid="button-help-quick-exit">
                     Help

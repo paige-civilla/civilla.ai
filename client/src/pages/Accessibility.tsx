@@ -28,7 +28,7 @@ export default function Accessibility() {
             </div>
             <div className="flex gap-4 items-center">
               <button className="bg-bush text-white font-arimo font-bold text-sm md:text-lg px-6 py-2.5 rounded-xl" data-testid="button-learn-more-hero">
-                Learn more
+                Learn More
               </button>
               <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg px-[22px] py-2 rounded-xl" data-testid="button-report-issue">
                 Report an issue
@@ -62,7 +62,7 @@ export default function Accessibility() {
               </div>
               <div className="flex gap-6 items-center">
                 <button className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg px-[22px] py-2 rounded-xl" data-testid="button-learn-more-commitment">
-                  Learn more
+                  Learn More
                 </button>
                 <button className="flex items-center gap-2 text-neutral-darkest font-arimo font-bold text-sm md:text-lg" data-testid="button-report">
                   Report
