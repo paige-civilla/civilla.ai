@@ -64,9 +64,9 @@ function JourneySection() {
 
         <div className="flex flex-col items-start w-full">
           <div className="flex flex-col md:flex-row gap-8 items-start w-full">
-            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col">
-              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8">
-                <div className="flex flex-col gap-2 items-start w-full">
+            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
+              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
+                <div className="flex flex-col gap-2 items-start w-full min-w-0">
                   <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest leading-[1.5]">
                     Step one
                   </span>
@@ -91,9 +91,9 @@ function JourneySection() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-8 items-start w-full md:w-[864px]">
-              <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 w-full flex flex-col md:flex-row">
-                <div className="flex flex-1 flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8">
+            <div className="flex flex-col gap-8 items-start w-full md:w-[864px] min-w-0">
+              <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 w-full flex flex-col md:flex-row min-w-0">
+                <div className="flex flex-1 flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
                   <div className="flex flex-col gap-2 items-start w-full">
                     <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest leading-[1.5]">
                       Step two
@@ -119,14 +119,14 @@ function JourneySection() {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row gap-8 items-start w-full">
-                <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col">
-                  <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8">
-                    <div className="flex flex-col gap-4 md:gap-6 items-start w-full">
-                      <div className="w-10 h-10 md:w-12 md:h-12 relative">
+              <div className="flex flex-col md:flex-row gap-8 items-start w-full min-w-0">
+                <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
+                  <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
+                    <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
                         <img src={imgRuleIcon} alt="" className="w-full h-full" />
                       </div>
-                      <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
+                      <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                         <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
                           Step three
                         </h3>
@@ -144,13 +144,13 @@ function JourneySection() {
                   </div>
                 </div>
 
-                <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col">
-                  <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8">
-                    <div className="flex flex-col gap-4 md:gap-6 items-start w-full">
-                      <div className="w-10 h-10 md:w-12 md:h-12 relative">
+                <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
+                  <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
+                    <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
                         <img src={imgExploreIcon} alt="" className="w-full h-full" />
                       </div>
-                      <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
+                      <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                         <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
                           Explore
                         </h3>
@@ -192,11 +192,11 @@ function ClaritySection() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start w-full">
-          <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0">
+          <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
                 <img src={imgVector2} alt="" className="w-full h-full" />
               </div>
-              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full">
+              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
                 <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
                   The stress of not knowing what comes next
                 </h3>
@@ -206,11 +206,11 @@ function ClaritySection() {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0">
+            <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
                 <img src={imgVector1} alt="" className="w-full h-full" />
               </div>
-              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full">
+              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
                 <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
                   What your options actually are
                 </h3>
@@ -220,11 +220,11 @@ function ClaritySection() {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0">
+            <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
               <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
                 <img src={imgVector} alt="" className="w-full h-full" />
               </div>
-              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full">
+              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
                 <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
                   Your sense of agency in your own case
                 </h3>
@@ -333,7 +333,7 @@ function CTASection() {
     <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-cta">
       <div className="flex flex-col items-start max-w-container w-full">
         <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-center w-full">
-          <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start">
+          <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start min-w-0">
             <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
               <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                 Start your journey today
@@ -357,8 +357,8 @@ function CTASection() {
               </button>
             </div>
           </div>
-          <div className="flex-1 w-full">
-            <div className="aspect-[600/400] rounded-2xl bg-white/10 flex items-center justify-center">
+          <div className="flex-1 w-full min-w-0">
+            <div className="aspect-[600/400] rounded-2xl bg-white/10 flex items-center justify-center min-w-0">
               <p className="font-sans text-sm md:text-[18px] text-white/50">Product preview</p>
             </div>
           </div>

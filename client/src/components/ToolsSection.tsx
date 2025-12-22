@@ -50,7 +50,7 @@ export default function ToolsSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 items-stretch w-full">
-          <div className="rounded-2xl border border-white/30 bg-white/5 p-4 text-center">
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-4 text-center min-w-0">
             <div className="flex flex-col">
               {FEATURES.map((item, idx) => {
                 const isOpen = openIndex === idx;
@@ -88,8 +88,8 @@ export default function ToolsSection() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/30 bg-white/5 p-6 text-center h-full self-stretch">
-            <div className="h-full flex flex-col justify-center">
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-6 text-center h-full self-stretch min-w-0">
+            <div className="h-full flex flex-col justify-center min-w-0">
               <h3 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
                 Track What Matters In Your Case
               </h3>

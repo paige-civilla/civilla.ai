@@ -53,8 +53,8 @@ export default function StepsSection() {
           </div>
         </div>
 
-        <div className="hidden md:block w-full">
-          <div className="grid grid-cols-3 gap-x-12 w-full">
+        <div className="hidden md:block w-full min-w-0">
+          <div className="grid grid-cols-3 gap-x-12 w-full min-w-0">
             {steps.map((step) => (
               <h3 
                 key={step.id} 

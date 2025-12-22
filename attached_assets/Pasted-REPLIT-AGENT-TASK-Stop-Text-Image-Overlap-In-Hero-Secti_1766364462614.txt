@@ -1,0 +1,71 @@
+REPLIT AGENT TASK: Stop Text/Image Overlap In Hero Sections (Responsive Containment Fixes) — DO NOT TOUCH NAVBARS
+
+NON-NEGOTIABLES
+- DO NOT edit:
+  - client/src/components/Navbar.tsx
+  - client/src/components/NavbarCream.tsx
+
+GOAL
+Across Home + key marketing pages, ensure hero boxes and section blocks reflow cleanly at different screen widths:
+- No text overlays images
+- No headings overlap other text
+- Images stay inside their containers
+- Cards/columns wrap without crossing boundaries
+
+PHASE 1 — IDENTIFY OVERLAP CAUSES (SEARCH)
+1) Search for absolute positioning / z-index / transforms in marketing components:
+rg -n "absolute|fixed|sticky|z-|translate-|top-|left-|right-|bottom-|\-mt-|\-mb-|\-ml-|\-mr-" client/src/pages client/src/components
+
+2) Focus on these likely hero/section files if they exist:
+- client/src/pages/Home.tsx
+- client/src/components/Hero*.tsx
+- client/src/components/ClaritySection.tsx
+- client/src/components/ToolsSection.tsx
+- client/src/components/StepsSection.tsx
+- client/src/components/CTASection.tsx
+- client/src/pages/HowCivillaWorks.tsx
+
+PHASE 2 — APPLY STANDARD “CONTAINMENT” FIXES (MINIMAL CHANGES)
+For each hero/section where overlap occurs, apply the following rules:
+
+A) Ensure parent containers are positioned normally
+- If a section uses any absolutely positioned children, add `relative` to the section wrapper.
+
+B) Prevent flex/grid children from overflowing into each other
+- On any flex/grid child that contains text, add Tailwind: `min-w-0`
+- If a two-column layout exists, ensure the text column has `min-w-0` and the image column has `min-w-0`.
+
+C) Ensure images cannot float over text
+- Any <img> should have:
+  - `w-full h-full object-cover` OR `object-contain`
+  - and be placed inside a wrapper with an explicit sizing rule:
+    - e.g. `aspect-[4/3]` (or an existing height constraint)
+- If the image is currently absolutely positioned over content, change it to normal flow (remove absolute) unless it’s purely decorative background.
+
+D) Make columns stack on small screens
+- Any 2-column hero layout must have:
+  - `grid grid-cols-1 md:grid-cols-2` OR `flex flex-col md:flex-row`
+- Ensure there is a `gap-*` between columns so they don’t collide.
+
+E) Remove negative margins/transforms that cause collisions on small screens
+- If any `-mt-*`, `translate-y-*`, or z-index hacks cause overlap at small widths, gate them behind md+:
+  - Example: change `-mt-10` to `md:-mt-10`
+  - change `translate-y-8` to `md:translate-y-8`
+
+PHASE 3 — VERIFY IN RESPONSIVE PREVIEW
+Check these widths at minimum:
+- 375px (iPhone)
+- 768px (tablet)
+- 1024px (desktop)
+
+Verify:
+- Home hero: image never overlaps headline/subhead
+- Section hero boxes: headings and body text never overlap
+- CTASection: buttons/text remain within card
+- Tools/Steps: no collision after accordion expansion
+- No horizontal scroll introduced
+
+REPORT BACK
+- List each file changed + line ranges
+- For each fix, note the cause (absolute/z-index, missing min-w-0, image sizing, negative margin)
+- Confirm navbars were not modified
