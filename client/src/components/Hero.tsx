@@ -20,6 +20,9 @@ export default function Hero() {
               <span className="block">Family Law,</span>
               <span className="block">Translated.</span>
             </h1>
+            <p className="mt-3 text-base text-white/80 md:text-lg">
+              Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
+            </p>
             <div className="mt-6 flex items-center gap-6">
               <a
                 href="/plans"
