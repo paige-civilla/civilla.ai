@@ -160,7 +160,8 @@ export default function NavbarCream() {
             </button>
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 bg-gradient-to-r from-bush to-bush-dark rounded-md"
+              className="ml-2 p-1.5 rounded-md"
+              style={{ background: 'linear-gradient(to right, #3d7a6a, #2a5c4e)' }}
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
