@@ -20,16 +20,25 @@ export default function Hero() {
               <span className="block">Family Law,</span>
               <span className="block">Translated.</span>
             </h1>
-            <span 
-              className="mt-6 inline-flex cursor-pointer items-center gap-2 text-sm text-white underline underline-offset-4 opacity-80 hover:opacity-100 whitespace-nowrap"
-              onClick={() => {
-                document.getElementById("home-learn-more")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-              data-testid="link-scroll-learn-more"
-            >
-              Scroll to Learn More
-              <ArrowDown className="w-4 h-4" />
-            </span>
+            <div className="mt-6 flex items-center gap-6">
+              <a
+                href="/plans"
+                className="inline-flex items-center justify-center rounded-full border-2 border-white bg-transparent px-8 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                data-testid="button-sign-up-hero"
+              >
+                Sign Up
+              </a>
+              <span 
+                className="inline-flex cursor-pointer items-center gap-2 text-sm text-white underline underline-offset-4 opacity-80 hover:opacity-100 whitespace-nowrap"
+                onClick={() => {
+                  document.getElementById("home-learn-more")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                data-testid="link-scroll-learn-more"
+              >
+                Scroll To Learn More
+                <ArrowDown className="w-4 h-4" />
+              </span>
+            </div>
           </div>
         </div>
       </div>
