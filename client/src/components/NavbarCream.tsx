@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen } from "lucide-react";
-import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
+import logoColor from "@assets/noBgColor-2_1766294100143.png";
 
 const menuSections = [
   {
@@ -113,13 +113,13 @@ export default function NavbarCream() {
   };
 
   return (
-    <nav className="bg-bush w-full relative" data-testid="navbar-cream">
+    <nav className="bg-cream w-full relative" data-testid="navbar-cream">
       <div className="h-9 flex items-center justify-center px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
             <Link href="/" className="relative h-[30px] w-auto" data-testid="link-logo">
               <img 
-                src={logoWhite} 
+                src={logoColor} 
                 alt="civilla.ai" 
                 className="h-full w-auto object-contain"
               />
@@ -133,9 +133,9 @@ export default function NavbarCream() {
               data-testid="button-theme-toggle"
             >
               {isDarkMode ? (
-                <Sun className="w-4 h-4 text-white" />
+                <Sun className="w-4 h-4 text-neutral-darkest" />
               ) : (
-                <Moon className="w-4 h-4 text-white" />
+                <Moon className="w-4 h-4 text-neutral-darkest" />
               )}
             </button>
             <button 
@@ -143,7 +143,7 @@ export default function NavbarCream() {
               aria-label="User login"
               data-testid="button-user-login"
             >
-              <User className="w-4 h-4 text-white" />
+              <User className="w-4 h-4 text-neutral-darkest" />
             </button>
             <button 
               ref={menuButtonRef}
@@ -153,18 +153,18 @@ export default function NavbarCream() {
               data-testid="button-menu"
             >
               {isMenuOpen ? (
-                <X className="w-4 h-4 text-white" />
+                <X className="w-4 h-4 text-neutral-darkest" />
               ) : (
-                <Menu className="w-4 h-4 text-white" />
+                <Menu className="w-4 h-4 text-neutral-darkest" />
               )}
             </button>
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 bg-white rounded-md"
+              className="ml-2 px-3 py-1.5 rounded-md bg-gradient-to-r from-bush to-bush-dark text-white text-xs font-bold"
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
-              <LogOut className="w-4 h-4 text-neutral-darkest" />
+              Quick Exit
             </button>
           </div>
         </div>
