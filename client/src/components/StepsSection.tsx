@@ -1,80 +1,58 @@
 export default function StepsSection() {
+  const steps = [
+    {
+      num: "1",
+      label: "Step One",
+      text: "Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category.",
+    },
+    {
+      num: "2",
+      label: "Step Two",
+      text: "Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context.",
+    },
+    {
+      num: "3",
+      label: "Step Three",
+      text: "Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises.",
+    },
+  ];
+
   return (
-    <section className="px-6 md:px-10">
-      <div className="mx-auto max-w-6xl w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
-          {/* STEP 1: full width */}
-          <div className="lg:col-span-12 w-full min-w-0">
-            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] w-full min-w-0">
-                <div className="p-8 min-w-0">
-                  <h3 className="text-4xl md:text-5xl font-black leading-[1.02] tracking-tight">
-                    Understand your case type and timeline
-                  </h3>
-                  <p className="mt-5 text-base md:text-lg leading-relaxed text-neutral-800">
-                    Choose your state and case type to view plain-language education and the
-                    common stages people often see.
-                  </p>
+    <section className="w-full">
+      <div className="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+        <div className="space-y-10 md:space-y-12">
+          {steps.map((s) => (
+            <div
+              key={s.num}
+              className="grid grid-cols-[44px_1fr] items-start gap-4 md:grid-cols-12 md:gap-8"
+            >
+              {/* Left column */}
+              <div className="md:col-span-4">
+                {/* Mobile: number to the LEFT of the paragraph */}
+                <div className="md:hidden text-left text-4xl font-semibold leading-none pt-1">
+                  {s.num}
                 </div>
 
-                <div className="min-w-0">
-                  <img
-                    src="/images/steps/step-1.jpg"
-                    alt="Compass on a map"
-                    className="block w-full h-full md:min-h-[260px] object-cover"
-                  />
+                {/* Desktop: underlined Step One/Two/Three */}
+                <div className="hidden md:block">
+                  <div className="inline-block border-b border-neutral-darkest/80 pb-2 text-2xl font-semibold">
+                    {s.label}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* STEP 2 */}
-          <div className="lg:col-span-4 w-full min-w-0">
-            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
-              <div className="p-8 min-w-0">
-                <div className="text-sm font-semibold opacity-70">Step two</div>
-                <h3 className="mt-2 text-3xl font-black leading-tight">
-                  Gather and organize your information
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-neutral-800">
-                  Add documents, messages, and key events. <em className="cv-brand">civilla</em> organizes what you
-                  provide into a clear, reviewable timeline.
+              {/* Right column */}
+              <div className="md:col-span-8">
+                <p className="text-left text-base leading-relaxed text-neutral-darkest/80 md:text-lg">
+                  {s.text}
                 </p>
               </div>
             </div>
-          </div>
+          ))}
 
-          {/* STEP 3 */}
-          <div className="lg:col-span-4 w-full min-w-0">
-            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
-              <div className="p-8 min-w-0">
-                <div className="text-sm font-semibold opacity-70">Step three</div>
-                <h3 className="mt-2 text-3xl font-black leading-tight">
-                  Information & Guidelines Available to the Public
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-neutral-800">
-                  Review statutes, court rules, and educational resources — without advice,
-                  predictions, or filing instructions.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* STEP 4 */}
-          <div className="lg:col-span-4 w-full min-w-0">
-            <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden w-full min-w-0">
-              <div className="p-8 min-w-0">
-                <div className="text-sm font-semibold opacity-70">Step four</div>
-                <h3 className="mt-2 text-3xl font-black leading-tight">
-                  Prepare with knowledge and clarity
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-neutral-800">
-                  Turn information into structure: a calmer record, clearer questions, and better
-                  next steps for you to decide.
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="pt-2 text-center text-sm italic font-medium text-neutral-darkest/70 md:text-base">
+            *Educational, Research, And Organizational Support — Not Legal Advice Or Representation.*
+          </p>
         </div>
       </div>
     </section>
