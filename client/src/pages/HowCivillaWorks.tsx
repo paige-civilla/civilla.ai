@@ -48,43 +48,43 @@ function JourneySection() {
 
         <div className="flex flex-col items-start w-full">
           <div className="flex flex-col md:flex-row gap-8 items-start w-full">
-            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col md:flex-row min-w-0">
-              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0 md:flex-1">
-                <div className="flex flex-col gap-2 items-start w-full min-w-0">
+            <div className="cv-isolate bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 min-w-0">
+              <div className="cv-split">
+                <div className="cv-split-text p-6 md:p-8 flex flex-col gap-2 justify-center">
                   <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest leading-[1.5]">
                     Step one
                   </span>
-                  <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
-                    <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                      Understand Your Case Type And Timeline
-                    </h3>
-                    <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                      Choose your state and case type to view plain-language education and common stages people often see.
-                    </p>
+                  <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px]">
+                    Understand Your Case Type And Timeline
+                  </h3>
+                  <p className="mt-2 font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest">
+                    Choose your state and case type to view plain-language education and common stages people often see.
+                  </p>
+                </div>
+                <div className="cv-split-media">
+                  <div className="h-56 w-full md:h-full">
+                    <img src={imgPlaceholderImage} alt="" />
                   </div>
                 </div>
-              </div>
-              <div className="h-[280px] md:h-auto w-full md:w-1/2 flex items-center justify-center">
-                <img src={imgPlaceholderImage} alt="" className="w-full h-full object-cover" />
               </div>
             </div>
 
             <div className="flex flex-col gap-8 items-start w-full md:w-[864px] min-w-0">
-              <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 w-full flex flex-col md:flex-row min-w-0">
-                <div className="flex flex-1 flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
-                  <div className="flex flex-col gap-2 items-start w-full">
-                    <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
-                      <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                        Gather And Organize Your Information
-                      </h3>
-                      <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                        Add documents, messages, and key events.{" "}<BrandMark text="civilla" />{" "}organizes what you provide into a clear, reviewable timeline.
-                      </p>
+              <div className="cv-isolate bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 w-full min-w-0">
+                <div className="cv-split">
+                  <div className="cv-split-text p-6 md:p-8 flex flex-col gap-3 justify-center">
+                    <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px]">
+                      Gather And Organize Your Information
+                    </h3>
+                    <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest">
+                      Add documents, messages, and key events. <BrandMark text="civilla" /> organizes what you provide into a clear, reviewable timeline.
+                    </p>
+                  </div>
+                  <div className="cv-split-media">
+                    <div className="h-56 w-full md:h-full">
+                      <img src={imgPlaceholderImage1} alt="" />
                     </div>
                   </div>
-                </div>
-                <div className="h-[200px] md:h-auto w-full md:w-[432px] flex items-center justify-center">
-                  <img src={imgPlaceholderImage1} alt="" className="w-full h-full object-cover" />
                 </div>
               </div>
 
