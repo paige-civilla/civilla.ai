@@ -535,40 +535,38 @@ function PricingCardsSection() {
           </div>
 
           {/* Toggle */}
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center rounded-full border border-neutral-900/15 bg-white/60 p-1">
-              <button
-                type="button"
-                onClick={() => setBillingPeriod("monthly")}
-                className={[
-                  "rounded-full px-4 py-2 text-sm font-semibold transition",
-                  billingPeriod === "monthly"
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-900/70 hover:text-neutral-900",
-                ].join(" ")}
-                data-testid="button-cards-monthly"
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingPeriod("yearly")}
-                className={[
-                  "ml-1 rounded-full px-4 py-2 text-sm font-semibold transition",
-                  billingPeriod === "yearly"
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-900/70 hover:text-neutral-900",
-                ].join(" ")}
-                data-testid="button-cards-yearly"
-              >
-                Yearly*
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-neutral-900/60 text-center">
-              *Yearly plans include two months free — at signup and every renewal.
-            </p>
+          <div className="inline-flex items-center rounded-full border border-neutral-900/15 bg-white/60 p-1">
+            <button
+              type="button"
+              onClick={() => setBillingPeriod("monthly")}
+              className={[
+                "rounded-full px-5 py-2 text-sm font-semibold transition",
+                billingPeriod === "monthly"
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-900/70 hover:text-neutral-900",
+              ].join(" ")}
+              data-testid="button-cards-monthly"
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingPeriod("yearly")}
+              className={[
+                "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition",
+                billingPeriod === "yearly"
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-900/70 hover:text-neutral-900",
+              ].join(" ")}
+              data-testid="button-cards-yearly"
+            >
+              Yearly*
+            </button>
           </div>
         </div>
+        <p className="mt-3 text-xs text-neutral-900/60">
+          *Yearly plans include two months free — at signup and every renewal.
+        </p>
 
         {/* 4 plan cards */}
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-stretch">
