@@ -10,12 +10,12 @@ const menuSections = [
     links: [
       { label: "Home", href: "/", icon: Home },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
-      { label: "How civilla Works", href: "/how-civilla-works", icon: HelpCircle },
+      { label: "How it Works", href: "/how-civilla-works", icon: HelpCircle },
       { label: "Login", href: "/login", icon: LogIn },
     ]
   },
   {
-    header: "About civilla",
+    header: "About Us",
     icon: Info,
     links: [
       { label: "Our Mission", href: "/about#mission", icon: Target },
