@@ -96,7 +96,7 @@ function HeaderSection() {
 
           <div className="min-w-0">
             <p className="text-base sm:text-lg leading-relaxed text-neutral-darkest/80 max-w-[34rem]">
-              Choose a plan that fits where you are—whether you're learning the process,
+              Choose a plan that fits where you are. Whether you're learning the process,
               organizing your information, or preparing your next steps. No surprises, no hidden
               fees.
             </p>
