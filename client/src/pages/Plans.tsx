@@ -520,7 +520,7 @@ function PricingCardsSection() {
               Choose Your Plan
             </h2>
             <p className="mt-2 max-w-xl text-base text-neutral-900/75">
-              Educational, research, and organization tools for family law cases, powered by information you enter.
+              Educational, research, and organization tools for family law cases, powered by information you enter. Not legal advice.
             </p>
 
             <button
@@ -565,7 +565,7 @@ function PricingCardsSection() {
           </div>
         </div>
         <p className="mt-3 text-xs text-neutral-900/60">
-          Not legal advice. *Yearly plans include two months free — at signup and every renewal.
+          *Yearly plans include two months free — at signup and every renewal.
         </p>
 
         {/* 4 plan cards */}
