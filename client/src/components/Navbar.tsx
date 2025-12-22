@@ -182,11 +182,7 @@ export default function Navbar() {
                   <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-800">
                     <section.icon className="h-4 w-4" />
                     {section.header.includes("civilla") 
-                      ? section.header.split("civilla").map((part, i, arr) => 
-                          i < arr.length - 1 
-                            ? <span key={i}>{part}<span className="italic font-medium normal-case">civilla</span></span>
-                            : part
-                        )
+                      ? <><span>ABOUT </span><span className="italic font-medium normal-case tracking-normal">civilla</span></>
                       : section.header}
                   </div>
                   <div className="mt-2 h-px w-full bg-black/20" />
@@ -203,11 +199,7 @@ export default function Navbar() {
                       >
                         <link.icon className="h-4 w-4 opacity-70" />
                         {link.label.includes("civilla") 
-                          ? link.label.split("civilla").map((part, i, arr) => 
-                              i < arr.length - 1 
-                                ? <span key={i}>{part}<span className="italic font-medium">civilla</span></span>
-                                : part
-                            )
+                          ? <>How <span className="italic font-medium">civilla</span> Works</>
                           : link.label}
                       </Link>
                     ))}
