@@ -4,20 +4,28 @@ import { Check, ChevronRight, ChevronUp, ChevronDown, Home } from "lucide-react"
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { Brand, BrandText } from "@/components/Brand";
+import BrandMark from "@/components/BrandMark";
 
 function HeaderSection() {
   return (
-    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
-      <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-20 items-start w-full">
-          <div className="flex-1">
-            <h1 className="cv-h font-heading font-bold text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] leading-[1.1] text-neutral-darkest">
-              Plans for everyone
+    <section className="bg-[#e7ebea]" data-testid="section-header">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          <div className="min-w-0">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-neutral-darkest">
+              Plans &amp; Pricing
             </h1>
           </div>
-          <div className="flex-1">
-            <p className="cv-p font-sans text-sm md:text-[20px] leading-[1.6] text-neutral-darkest">
-              Transparent, simple plans for self-represented parents and organizations. No hidden fees.
+
+          <div className="min-w-0">
+            <p className="text-base sm:text-lg leading-relaxed text-neutral-darkest/80 max-w-[34rem]">
+              Choose a plan that fits where you are—whether you're learning the process,
+              organizing your information, or preparing your next steps. No surprises, no hidden
+              fees.
+            </p>
+
+            <p className="mt-4 text-sm leading-relaxed text-neutral-darkest/70 max-w-[34rem]">
+              <BrandMark text="civilla" /> is educational only and does not provide legal advice.
             </p>
           </div>
         </div>
