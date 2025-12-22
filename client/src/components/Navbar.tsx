@@ -159,10 +159,11 @@ export default function Navbar() {
             </button>
             <button 
               onClick={handleQuickExit}
-              className="ml-2 px-3 py-1.5 rounded-md bg-gradient-to-r from-white to-neutral-100 text-neutral-darkest text-xs font-bold"
+              className="ml-2 px-3 py-1.5 rounded-md bg-gradient-to-r from-white to-neutral-100 text-neutral-darkest text-xs font-bold flex items-center gap-1.5"
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
+              <LogOut className="w-3.5 h-3.5" />
               Quick Exit
             </button>
           </div>
