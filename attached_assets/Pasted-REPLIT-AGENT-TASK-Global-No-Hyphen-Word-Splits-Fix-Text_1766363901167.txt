@@ -1,0 +1,102 @@
+REPLIT AGENT TASK: Global No-Hyphen Word Splits + Fix Text Overflow/Escaping Boxes Across ALL Pages (DO NOT TOUCH NAVBARS)
+
+NON-NEGOTIABLES
+- DO NOT edit these files at all:
+  - client/src/components/Navbar.tsx
+  - client/src/components/NavbarCream.tsx
+- Goal is global: prevent mid-word breaks (orga-nized) and keep text contained inside its boxes across ALL current + future pages/components.
+
+WHAT’S HAPPENING
+- The “no hyphen / no mid-word split” behavior is currently only applying on some pages, which means:
+  1) Home likely has a CSS override or component-level class re-enabling hyphenation/word-break, OR
+  2) Some pages use different typography wrappers/components that aren’t covered by the global rules.
+
+PHASE 1 — VERIFY GLOBAL RULES ARE ACTUALLY GLOBAL
+1) Open: client/src/index.css
+2) Ensure these global rules exist (or replace with these exact rules at the BOTTOM of the file so they win):
+
+html, body {
+  -webkit-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Safety net for common text elements */
+h1, h2, h3, h4, h5, h6,
+p, li, span, a, button, label, small, strong, em,
+blockquote, dd, dt, figcaption {
+  -webkit-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Optional: if you use Tailwind Typography (.prose) anywhere */
+.prose, .prose * {
+  -webkit-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+3) IMPORTANT: Do NOT add letter-spacing, margins, or font changes here. Only word-breaking/hyphenation controls.
+
+PHASE 2 — FIND WHY HOME IS STILL BREAKING WORDS
+4) Run these searches and identify any Home-only overrides:
+rg -n "hyphens|hyphen|word-break|break-words|overflow-wrap|text-wrap|whitespace|prose" client/src/pages/Home.tsx client/src/components
+
+5) If you find any of these classes/styles on Home or its hero/sections, REMOVE them (Home only) so the global rule governs:
+- hyphens-auto
+- break-words
+- break-all
+- [word-break:...]
+- [hyphens:...]
+- whitespace-pre-wrap (can behave oddly with wrapping)
+Do not change layout or colors; only remove word-break/hyphenation overrides.
+
+PHASE 3 — FIX “TEXT ESCAPES THE BOX” ACROSS ALL PAGES (RESPONSIVE)
+This is usually caused by flex/grid children not allowing shrink, or by long unbreakable strings.
+We want: normal wrapping (no mid-word splits), but also no overflow out of cards.
+
+6) Add a small global utility class in index.css (safe, does NOT affect navbars):
+.safe-text-container {
+  min-width: 0;       /* critical for flex children to allow wrapping */
+  overflow: hidden;   /* prevents text visually escaping rounded cards */
+}
+
+7) Apply .safe-text-container to card/box wrappers across pages/components where text can overflow.
+Search likely offenders (cards/sections):
+rg -n "rounded-|border|card|p-6|p-8|max-w|grid|flex" client/src/components client/src/pages
+
+When a card is inside a flex or grid, ensure:
+- The text container (the element wrapping the paragraph/headline) has: min-w-0
+- If it’s Tailwind, prefer adding: min-w-0 overflow-hidden
+Example pattern to apply inside cards:
+className="min-w-0 overflow-hidden"
+
+8) For edge cases like long URLs/emails (which can overflow without breaking mid-word):
+- ONLY on those specific elements, allow safe breaking without hyphenating normal words:
+  Add Tailwind class: break-all OR break-words
+  BUT do NOT apply globally; only to known unbreakable strings (URLs, long IDs).
+
+PHASE 4 — SMOKE TEST (DO THIS ON MULTIPLE PAGES)
+9) Test on mobile preview:
+- Home (hero + steps + FAQ + footer)
+- How Civilla Works
+- Plans & Pricing (since we’re starting it next)
+- Legal & Compliance
+- Safety & Support
+Confirm:
+- No mid-word splits anywhere (no orga-nized)
+- Text wraps normally to the next line instead of breaking inside a word
+- No text overflows out of rounded boxes/cards
+- Navbars are unchanged
+
+DELIVERABLE / REPORT BACK
+- Confirm Navbar.tsx and NavbarCream.tsx were NOT modified
+- Report file:line ranges for:
+  - index.css global rules
+  - any Home overrides removed
+  - any components updated with min-w-0 / overflow-hidden / safe-text-container
+- Confirm the issue is fixed on Home AND at least 3 other pages

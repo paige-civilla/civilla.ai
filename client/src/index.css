@@ -21,7 +21,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Core text wrapping rules */
+/* Core text wrapping rules - allow wrapping but not mid-word */
 p,
 h1,
 h2,
@@ -33,9 +33,10 @@ span,
 li,
 a,
 div {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  word-wrap: normal;
+  overflow-wrap: normal;
   white-space: normal;
+  hyphens: none;
 }
 
 /* Ensure containers never allow overflow */
@@ -59,13 +60,14 @@ div {
   overflow: hidden;
 }
 
-/* Text inside cards must wrap */
+/* Text inside cards must wrap - but no mid-word splits */
 .cv-card *,
 .card *,
 [class*="card"] *,
 [class*="box"] * {
   min-width: 0;
-  word-break: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 
 /* Flex & grid children must allow shrinking */
@@ -117,7 +119,7 @@ p,
 .cv-p,
 .cv-panel-body {
   text-wrap: pretty;
-  hyphens: auto;
+  hyphens: none;
 }
 
 /* Responsive font sizing using clamp() - scales between min and max based on viewport */
@@ -353,15 +355,15 @@ p,
   }
 
   .cv-panel-body {
-    @apply min-h-0 break-words leading-relaxed overflow-auto;
+    @apply min-h-0 leading-relaxed overflow-auto;
   }
 
   .cv-h {
-    @apply font-bold leading-tight break-words;
+    @apply font-bold leading-tight;
   }
 
   .cv-p {
-    @apply break-words leading-relaxed;
+    @apply leading-relaxed;
   }
 }
 
@@ -443,7 +445,11 @@ p,
   }
 }
 
-/* Global typography rule: do not split words across lines */
+/* =========================================
+   GLOBAL NO-HYPHEN RULES (MUST BE AT BOTTOM TO WIN)
+   Prevents mid-word splits like "orga-nized"
+   ========================================= */
+
 html, body {
   -webkit-hyphens: none;
   hyphens: none;
@@ -451,10 +457,26 @@ html, body {
   overflow-wrap: normal;
 }
 
-/* Stronger safety net for typical text elements */
-h1, h2, h3, h4, h5, h6, p, li, span, a, button, label, small {
+/* Safety net for common text elements */
+h1, h2, h3, h4, h5, h6,
+p, li, span, a, button, label, small, strong, em,
+blockquote, dd, dt, figcaption {
   -webkit-hyphens: none;
   hyphens: none;
   word-break: normal;
   overflow-wrap: normal;
+}
+
+/* If Tailwind Typography (.prose) is used anywhere */
+.prose, .prose * {
+  -webkit-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Safe text container utility for flex/grid children */
+.safe-text-container {
+  min-width: 0;
+  overflow: hidden;
 }
