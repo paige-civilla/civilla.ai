@@ -81,7 +81,7 @@ export const PRICING_PLANS = [
   },
 ] as const;
 
-export const YEARLY_SAVINGS_LABEL = "Save 17%";
+export const YEARLY_SAVINGS_LABEL = "2 Mo. Free";
 
 function HeaderSection() {
   return (
@@ -152,17 +152,17 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               ].join(" ")}
               onClick={() => setBillingPeriod("yearly")}
               aria-pressed={billingPeriod === "yearly"}
-              aria-label="Select yearly billing with 17% savings"
+              aria-label="Select yearly billing with 2 months free"
               data-testid="button-yearly"
             >
               <span>Yearly</span>
               {billingPeriod === "yearly" ? (
                 <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
-                  Save 17%
+                  2 Mo. Free
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black">
-                  Save 17%
+                  2 Mo. Free
                 </span>
               )}
             </button>
@@ -240,7 +240,7 @@ function PricingCardsSection() {
       name: "Core",
       monthlyPrice: "$19.99",
       yearlyPrice: "$199",
-      priceNote: "≈ 17% savings billed yearly",
+      priceNote: "2 Mo. Free billed yearly",
       highlights: [
         "1 active family law case",
         "30 GB storage",
@@ -481,7 +481,7 @@ function PricingCardsSection() {
               </button>
             </div>
             <span className="rounded-full border border-neutral-900/15 bg-white px-3 py-1 text-xs font-semibold text-neutral-900">
-              Save 17%
+              2 Mo. Free
             </span>
           </div>
         </div>
