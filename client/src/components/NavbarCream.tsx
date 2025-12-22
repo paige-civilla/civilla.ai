@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, BookOpen, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen } from "lucide-react";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
 
 const menuSections = [
@@ -10,7 +10,7 @@ const menuSections = [
     links: [
       { label: "Home", href: "/", icon: Home },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
-      { label: "How it Works", href: "/how-civilla-works", icon: HelpCircle },
+      { label: "How it Works", href: "/how-civilla-works", icon: Compass },
       { label: "Login", href: "/login", icon: LogIn },
     ]
   },
