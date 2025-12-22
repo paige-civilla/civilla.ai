@@ -31,6 +31,9 @@ const menuSections = [
       { label: "Safety & Support", href: "/safety-support", icon: Heart },
       { label: "Legal & Compliance", href: "/legal-compliance", icon: FileText },
       { label: "Accessibility", href: "/accessibility", icon: Accessibility },
+    ],
+    comingSoon: [
+      { label: "Resources", icon: FolderOpen },
     ]
   },
   {
@@ -43,7 +46,6 @@ const menuSections = [
     ],
     comingSoon: [
       { label: "FAQ", icon: CircleHelp },
-      { label: "Resources", icon: FolderOpen },
     ]
   }
 ];
