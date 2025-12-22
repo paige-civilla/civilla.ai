@@ -200,7 +200,7 @@ export default function NavbarCream() {
                       >
                         <link.icon className="h-4 w-4 opacity-70" />
                         {link.label.includes("civilla") 
-                          ? <>How<span className="italic font-medium mx-[0.08em]">civilla</span>Works</>
+                          ? <>How <span className="italic font-medium">civilla</span> Works</>
                           : link.label}
                       </Link>
                     ))}
