@@ -12,7 +12,7 @@ export const PRICING_PLANS = [
     id: "trial",
     name: "three day trial",
     tagline: "Start free. Upgrade anytime.",
-    cta: "start trial",
+    cta: "Start Trial",
     monthly: 0,
     yearly: 0,
     priceNote: "three day trial",
@@ -28,7 +28,7 @@ export const PRICING_PLANS = [
     id: "core",
     name: "civilla core",
     tagline: "Build your case workspace.",
-    cta: "start core",
+    cta: "Start Core",
     monthly: 19.99,
     yearly: 199.99,
     priceNote: "per month",
@@ -47,7 +47,7 @@ export const PRICING_PLANS = [
     id: "pro",
     name: "civilla pro",
     tagline: "For higher-conflict or higher-volume cases.",
-    cta: "start pro",
+    cta: "Start Pro",
     monthly: 29.99,
     yearly: 299.99,
     priceNote: "per month",
@@ -66,7 +66,7 @@ export const PRICING_PLANS = [
     id: "premium",
     name: "civilla premium",
     tagline: "For organizations and people who want hands-on support.",
-    cta: "start premium",
+    cta: "Start Premium",
     monthly: 49.99,
     yearly: 499.99,
     priceNote: "per month",
@@ -692,7 +692,7 @@ function PricingCardsSection() {
             className="inline-flex items-center justify-center rounded-full bg-emerald-950 px-8 py-3 font-semibold text-white shadow-sm hover:bg-emerald-900 transition"
             data-testid="button-contact-org"
           >
-            Contact us
+            Contact Us
           </a>
 
           <p className="mt-4 text-sm italic text-neutral-900/70">
@@ -850,13 +850,13 @@ function OrganizationsSection() {
                 className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6] px-6 py-2.5 rounded-md"
                 data-testid="button-contact-us"
               >
-                Contact us
+                Contact Us
               </button>
               <button 
                 className="flex gap-2 items-center text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6]"
                 data-testid="button-learn-more"
               >
-                Learn more
+                Learn More
                 <ChevronRight className="w-6 h-6" />
               </button>
             </div>

@@ -92,7 +92,7 @@ export default function PlansFaqSection() {
             href="/contact"
             className="inline-flex items-center gap-2 rounded-full border border-neutral-900/60 bg-white/40 px-6 py-3 text-sm font-medium text-neutral-900 shadow-sm transition hover:bg-white"
           >
-            Contact us <ArrowRight className="h-4 w-4" />
+            Contact Us <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
