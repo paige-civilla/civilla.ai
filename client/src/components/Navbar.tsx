@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen, Accessibility, ScrollText, MessageCircle } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
 const menuSections = [
@@ -41,8 +41,8 @@ const menuSections = [
       { label: "Terms of Service", href: "/terms", icon: ScrollText },
     ],
     comingSoon: [
-      { label: "FAQ" },
-      { label: "Resources" },
+      { label: "FAQ", icon: CircleHelp },
+      { label: "Resources", icon: FolderOpen },
     ]
   }
 ];
@@ -211,7 +211,10 @@ export default function Navbar() {
                             className="flex items-center justify-between py-2 text-[15px] text-neutral-900/50 cursor-not-allowed"
                             aria-disabled="true"
                           >
-                            <span>{item.label}</span>
+                            <span className="flex items-center gap-3">
+                              <item.icon className="h-4 w-4 opacity-70" />
+                              {item.label}
+                            </span>
                             <span className="text-[11px] opacity-60">Coming Soon</span>
                           </span>
                         ))}
