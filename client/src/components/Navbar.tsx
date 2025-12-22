@@ -199,7 +199,7 @@ export default function Navbar() {
                       >
                         <link.icon className="h-4 w-4 opacity-70" />
                         {link.label.includes("civilla") 
-                          ? <>How<span className="italic font-medium mx-1">civilla</span>Works</>
+                          ? <>How<span className="italic font-medium mx-[2px]">civilla</span>Works</>
                           : link.label}
                       </Link>
                     ))}
