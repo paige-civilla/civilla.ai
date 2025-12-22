@@ -1,3 +1,5 @@
+import { ArrowDown } from "lucide-react";
+
 const heroImageUrl = "https://www.figma.com/api/mcp/asset/85ca7531-1d25-422f-a53e-dda981af7a47";
 
 export default function Hero() {
@@ -25,7 +27,8 @@ export default function Hero() {
               }}
               data-testid="link-scroll-learn-more"
             >
-              Scroll to Learn More ⬇
+              Scroll to Learn More
+              <ArrowDown className="w-4 h-4" />
             </span>
           </div>
         </div>
