@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   Civilla: Fixed navbar shell (no blur, no color changes)
+   - Avoids sticky failures caused by overflow parents
+   - Adds top padding only when enabled via body attribute
+   ========================================================= */
+
+:root {
+  --civilla-nav-h: 0px;
+}
+
+/* Only add top padding when JS sets the attribute */
+body[data-civilla-fixed-nav="true"] {
+  padding-top: var(--civilla-nav-h);
+}
+
+/* Fixed shell that sits above content */
+.civilla-nav-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  /* Keep whatever the navbar already looks like (no frosty blur) */
+  backdrop-filter: none !important;
+}
+
 /* =========================================
    GLOBAL TEXT CONTAINMENT & RESPONSIVE RULES
    Prevents text from escaping containers on ALL pages

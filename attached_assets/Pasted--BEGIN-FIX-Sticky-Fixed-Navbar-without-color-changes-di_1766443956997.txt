@@ -1,0 +1,156 @@
+*** BEGIN FIX: Sticky / Fixed Navbar without color changes ***
+
+diff --git a/client/src/index.css b/client/src/index.css
+index 0000000..0000000 100644
+--- a/client/src/index.css
++++ b/client/src/index.css
+@@ -1,3 +1,38 @@
++/* =========================================================
++   Civilla: Fixed navbar shell (no blur, no color changes)
++   - Avoids sticky failures caused by overflow parents
++   - Adds top padding only when enabled via body attribute
++   ========================================================= */
++
++:root {
++  --civilla-nav-h: 0px;
++}
++
++/* Only add top padding when JS sets the attribute */
++body[data-civilla-fixed-nav="true"] {
++  padding-top: var(--civilla-nav-h);
++}
++
++/* Fixed shell that sits above content */
++.civilla-nav-shell {
++  position: fixed;
++  top: 0;
++  left: 0;
++  right: 0;
++  z-index: 1000;
++  /* Keep whatever the navbar already looks like (no frosty blur) */
++  backdrop-filter: none !important;
++}
++
+diff --git a/client/src/components/Navbar.tsx b/client/src/components/Navbar.tsx
+index 0000000..0000000 100644
+--- a/client/src/components/Navbar.tsx
++++ b/client/src/components/Navbar.tsx
+@@ -1,6 +1,62 @@
++import { useEffect, useRef } from "react";
++
+ export default function Navbar() {
++  const shellRef = useRef<HTMLDivElement | null>(null);
++
++  useEffect(() => {
++    const shell = shellRef.current;
++    if (!shell) return;
++
++    // Enable top-padding on the whole app while the fixed nav is mounted
++    document.body.setAttribute("data-civilla-fixed-nav", "true");
++
++    const applyHeightAndBg = () => {
++      // Measure the actual rendered height
++      const h = shell.getBoundingClientRect().height;
++      document.documentElement.style.setProperty("--civilla-nav-h", `${Math.ceil(h)}px`);
++
++      // Preserve existing navbar color:
++      // We copy computed background from the first <header> or <nav> inside.
++      const innerHeader = shell.querySelector("header") as HTMLElement | null;
++      const innerNav = shell.querySelector("nav") as HTMLElement | null;
++      const source = innerNav ?? innerHeader;
++      if (source) {
++        const bg = window.getComputedStyle(source).backgroundColor;
++        // If it's transparent, don't force a color. If it's solid, set it on the shell.
++        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
++          (shell as HTMLElement).style.backgroundColor = bg;
++        } else {
++          (shell as HTMLElement).style.backgroundColor = "";
++        }
++      }
++    };
++
++    applyHeightAndBg();
++    const ro = new ResizeObserver(() => applyHeightAndBg());
++    ro.observe(shell);
++    window.addEventListener("resize", applyHeightAndBg);
++
++    return () => {
++      ro.disconnect();
++      window.removeEventListener("resize", applyHeightAndBg);
++      document.body.removeAttribute("data-civilla-fixed-nav");
++    };
++  }, []);
++
+   return (
+-    <header className="w-full">
+-      {/* existing content */}
+-    </header>
++    <div ref={shellRef} className="civilla-nav-shell">
++      {/* KEEP YOUR EXISTING NAVBAR MARKUP EXACTLY THE SAME BELOW */}
++      <header className="w-full">
++        {/* existing content */}
++      </header>
++      {/* KEEP YOUR EXISTING NAVBAR MARKUP EXACTLY THE SAME ABOVE */}
++    </div>
+   );
+ }
+diff --git a/client/src/components/NavbarCream.tsx b/client/src/components/NavbarCream.tsx
+index 0000000..0000000 100644
+--- a/client/src/components/NavbarCream.tsx
++++ b/client/src/components/NavbarCream.tsx
+@@ -1,6 +1,62 @@
++import { useEffect, useRef } from "react";
++
+ export default function NavbarCream() {
++  const shellRef = useRef<HTMLDivElement | null>(null);
++
++  useEffect(() => {
++    const shell = shellRef.current;
++    if (!shell) return;
++
++    document.body.setAttribute("data-civilla-fixed-nav", "true");
++
++    const applyHeightAndBg = () => {
++      const h = shell.getBoundingClientRect().height;
++      document.documentElement.style.setProperty("--civilla-nav-h", `${Math.ceil(h)}px`);
++
++      const innerHeader = shell.querySelector("header") as HTMLElement | null;
++      const innerNav = shell.querySelector("nav") as HTMLElement | null;
++      const source = innerNav ?? innerHeader;
++      if (source) {
++        const bg = window.getComputedStyle(source).backgroundColor;
++        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
++          (shell as HTMLElement).style.backgroundColor = bg;
++        } else {
++          (shell as HTMLElement).style.backgroundColor = "";
++        }
++      }
++    };
++
++    applyHeightAndBg();
++    const ro = new ResizeObserver(() => applyHeightAndBg());
++    ro.observe(shell);
++    window.addEventListener("resize", applyHeightAndBg);
++
++    return () => {
++      ro.disconnect();
++      window.removeEventListener("resize", applyHeightAndBg);
++      document.body.removeAttribute("data-civilla-fixed-nav");
++    };
++  }, []);
++
+   return (
+-    <header className="w-full">
+-      {/* existing content */}
+-    </header>
++    <div ref={shellRef} className="civilla-nav-shell">
++      {/* KEEP YOUR EXISTING NAVBAR MARKUP EXACTLY THE SAME BELOW */}
++      <header className="w-full">
++        {/* existing content */}
++      </header>
++      {/* KEEP YOUR EXISTING NAVBAR MARKUP EXACTLY THE SAME ABOVE */}
++    </div>
+   );
+ }
+
+*** END FIX ***

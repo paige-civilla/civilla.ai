@@ -4,6 +4,41 @@ import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, H
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 import BrandMark from "@/components/BrandMark";
 
+function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    document.body.setAttribute("data-civilla-fixed-nav", "true");
+
+    const applyHeightAndBg = () => {
+      const h = shell.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--civilla-nav-h", `${Math.ceil(h)}px`);
+
+      const innerNav = shell.querySelector("nav") as HTMLElement | null;
+      if (innerNav) {
+        const bg = window.getComputedStyle(innerNav).backgroundColor;
+        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+          shell.style.backgroundColor = bg;
+        } else {
+          shell.style.backgroundColor = "";
+        }
+      }
+    };
+
+    applyHeightAndBg();
+    const ro = new ResizeObserver(() => applyHeightAndBg());
+    ro.observe(shell);
+    window.addEventListener("resize", applyHeightAndBg);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", applyHeightAndBg);
+      document.body.removeAttribute("data-civilla-fixed-nav");
+    };
+  }, [shellRef]);
+}
+
 const menuSections = [
   {
     header: "Start Here",
@@ -56,6 +91,9 @@ export default function Navbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  useFixedNavShell(shellRef);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -116,6 +154,7 @@ export default function Navbar() {
   };
 
   return (
+    <div ref={shellRef} className="civilla-nav-shell">
     <nav className="bg-bush w-full relative" data-testid="navbar">
       <div className="h-9 flex items-center justify-center px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
@@ -231,5 +270,6 @@ export default function Navbar() {
         </>
       )}
     </nav>
+    </div>
   );
 }
