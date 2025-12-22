@@ -1,0 +1,80 @@
+TASK: Update /how-civilla-works page to remove ALL buttons/CTAs, remove “Explore” on step cards, and enforce consistent brand styling for civilla/civilla.ai/www.civilla.ai — WITHOUT touching navbars or footer.
+
+STRICT RULES:
+- Do NOT modify: client/src/components/Navbar.tsx, client/src/components/NavbarCream.tsx, client/src/components/Footer.tsx
+- Do NOT add new routes or change routing.
+- Only edit the files listed below.
+
+FILES TO CHANGE:
+1) Create: client/src/components/BrandMark.tsx
+2) Edit: client/src/index.css
+3) Edit: client/src/pages/HowCivillaWorks.tsx
+
+A) Create BrandMark component
+Create file: client/src/components/BrandMark.tsx
+
+Requirements:
+- Renders one of: "civilla", "civilla.ai", "www.civilla.ai"
+- Always lowercase
+- Always italic
+- Always semi-bold/medium-bold
+- Inline, no extra spacing/margins/padding
+- Uses className "cv-brand"
+- Prop: variant?: "civilla" | "civilla.ai" | "www.civilla.ai" (default "civilla")
+
+Example implementation:
+export function BrandMark({ variant = "civilla" }: { variant?: "civilla" | "civilla.ai" | "www.civilla.ai" }) {
+  return <span className="cv-brand">{variant}</span>;
+}
+
+B) Add global CSS utility class for the brand word
+Edit: client/src/index.css
+Add this class near other global utilities:
+
+.cv-brand{
+  font-style: italic;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: normal;
+  word-spacing: normal;
+  margin: 0;
+  padding: 0;
+  display: inline;
+  white-space: nowrap;
+}
+
+C) Update HowCivillaWorks page (remove ALL buttons/CTAs on this page)
+Edit: client/src/pages/HowCivillaWorks.tsx
+
+1) Import BrandMark:
+import { BrandMark } from "@/components/BrandMark";
+
+2) Fix the hero headline spacing by using BrandMark inline:
+Change the hero H1 to:  How <BrandMark variant="civilla" /> works
+IMPORTANT: Use explicit {" "} around the component so spacing is normal:
+How{" "}<BrandMark variant="civilla" />{" "}works
+
+3) Remove ALL hero buttons (e.g., “Explore”, “Sign Up”) entirely.
+- Delete the button group container, not just the labels, so there is no empty space.
+
+4) Remove ALL remaining buttons/CTAs anywhere else on this page as well:
+- Any “Explore” button
+- Any “Learn” link/button
+- Any “Start now” / “Learn more” CTA row
+If removing a CTA leaves awkward gaps, tighten spacing by removing the now-unused wrapper and/or reducing margin/padding on that section (keep the layout consistent).
+
+5) Step Cards: remove “Explore” rows
+On each step card that shows “Explore >”:
+- Remove that entire row (text + arrow icon)
+- Keep the step label, title, and description
+- Do not leave an empty placeholder where the row used to be
+
+6) Brand text consistency on this page:
+- Wherever the visible text includes: “civilla”, “civilla.ai”, or “www.civilla.ai” in headings/subheads/quotes on THIS PAGE, replace the literal text with <BrandMark variant="..."/> so it always renders with the brand styling and consistent spacing.
+Use {" "} around BrandMark when it appears inside sentences to prevent weird spacing.
+
+DELIVERABLE CHECKLIST:
+- /how-civilla-works has ZERO buttons/CTAs anywhere.
+- “Explore” is removed from all step cards.
+- Brand word renders consistently (lowercase, italic, semi-bold) for civilla / civilla.ai / www.civilla.ai where used on this page.
+- Navbars + Footer unchanged.

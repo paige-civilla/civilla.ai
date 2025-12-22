@@ -1,6 +1,6 @@
-import { ChevronRight } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import { BrandMark } from "@/components/BrandMark";
 
 const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
 const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/9a0ac209-9561-45fe-b293-55d1583c7ca2";
@@ -17,29 +17,13 @@ function HeaderSection() {
     <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
       <div className="flex flex-col items-center max-w-container w-full">
         <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
-          <div className="flex flex-col gap-4 items-center w-full">
-            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
-              <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
-                How <span className="italic font-medium">civilla</span> works
-              </h1>
-              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                A calm, step-by-step guide to understanding your case and taking control
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-start">
-            <button 
-              className="bg-bush text-white font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
-              data-testid="button-explore"
-            >
-              Explore
-            </button>
-            <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-[22px] py-2 rounded-md"
-              data-testid="button-signup"
-            >
-              Sign Up
-            </button>
+          <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+            <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
+              How{" "}<BrandMark variant="civilla" />{" "}works
+            </h1>
+            <p className="cv-p font-sans text-sm md:text-[20px] w-full">
+              A calm, step-by-step guide to understanding your case and taking control
+            </p>
           </div>
         </div>
       </div>
@@ -79,12 +63,6 @@ function JourneySection() {
                     </p>
                   </div>
                 </div>
-                <button className="flex gap-2 items-center" data-testid="button-step1-explore">
-                  <span className="font-sans font-bold text-sm md:text-body-regular text-neutral-darkest leading-[1.6]">
-                    Explore
-                  </span>
-                  <ChevronRight className="w-6 h-6 text-neutral-darkest" />
-                </button>
               </div>
               <div className="h-[280px] md:h-[416px] w-full">
                 <img src={imgPlaceholderImage} alt="" className="w-full h-full object-cover" />
@@ -107,12 +85,6 @@ function JourneySection() {
                       </p>
                     </div>
                   </div>
-                  <button className="flex gap-2 items-center" data-testid="button-step2-explore">
-                    <span className="font-sans font-bold text-sm md:text-body-regular text-neutral-darkest leading-[1.6]">
-                      Explore
-                    </span>
-                    <ChevronRight className="w-6 h-6 text-neutral-darkest" />
-                  </button>
                 </div>
                 <div className="h-[200px] md:h-full w-full md:w-[432px]">
                   <img src={imgPlaceholderImage1} alt="" className="w-full h-full object-cover" />
@@ -135,12 +107,6 @@ function JourneySection() {
                         </p>
                       </div>
                     </div>
-                    <button className="flex gap-2 items-center" data-testid="button-step3-explore">
-                      <span className="font-sans font-bold text-sm md:text-body-regular text-neutral-darkest leading-[1.6]">
-                        Find state-specific statutes, court rules, and educational resources
-                      </span>
-                      <ChevronRight className="w-6 h-6 text-neutral-darkest" />
-                    </button>
                   </div>
                 </div>
 
@@ -152,19 +118,13 @@ function JourneySection() {
                       </div>
                       <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                         <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                          Explore
+                          Step four
                         </h3>
                         <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                          Step four
+                          Prepare yourself with knowledge and clarity
                         </p>
                       </div>
                     </div>
-                    <button className="flex gap-2 items-center" data-testid="button-step4-explore">
-                      <span className="font-sans font-bold text-sm md:text-body-regular text-neutral-darkest leading-[1.6]">
-                        Prepare yourself with knowledge and clarity
-                      </span>
-                      <ChevronRight className="w-6 h-6 text-neutral-darkest" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -193,61 +153,46 @@ function ClaritySection() {
 
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start w-full">
           <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                <img src={imgVector2} alt="" className="w-full h-full" />
-              </div>
-              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
-                <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                  The stress of not knowing what comes next
-                </h3>
-                <p className="cv-p font-sans text-sm md:text-body-regular w-full">
-                  You move from confusion to clarity. From isolated to supported. From powerless to informed.
-                </p>
-              </div>
+            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
+              <img src={imgVector2} alt="" className="w-full h-full" />
             </div>
-
-            <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                <img src={imgVector1} alt="" className="w-full h-full" />
-              </div>
-              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
-                <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                  What your options actually are
-                </h3>
-                <p className="cv-p font-sans text-sm md:text-body-regular w-full">
-                  When you understand the process, fear loses its grip. You see the path ahead.
-                </p>
-              </div>
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
+              <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
+                The stress of not knowing what comes next
+              </h3>
+              <p className="cv-p font-sans text-sm md:text-body-regular w-full">
+                You move from confusion to clarity. From isolated to supported. From powerless to informed.
+              </p>
             </div>
+          </div>
 
-            <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                <img src={imgVector} alt="" className="w-full h-full" />
-              </div>
-              <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
-                <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                  Your sense of agency in your own case
-                </h3>
-                <p className="cv-p font-sans text-sm md:text-body-regular w-full">
-                  Education is power. We explain how family law works so you can make decisions that fit your situation.
-                </p>
-              </div>
+          <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
+              <img src={imgVector1} alt="" className="w-full h-full" />
             </div>
-        </div>
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
+              <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
+                What your options actually are
+              </h3>
+              <p className="cv-p font-sans text-sm md:text-body-regular w-full">
+                When you understand the process, fear loses its grip. You see the path ahead.
+              </p>
+            </div>
+          </div>
 
-        <div className="flex gap-6 items-center">
-          <button 
-            className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-body-regular leading-[1.6] px-[22px] py-2 rounded-xl"
-            data-testid="button-clarity-explore"
-          >
-            Explore
-          </button>
-          <button className="flex gap-2 items-center" data-testid="button-clarity-learn">
-            <span className="font-sans font-bold text-sm md:text-body-regular text-white leading-[1.6]">
-              Learn
-            </span>
-            <ChevronRight className="w-6 h-6 text-white" />
-          </button>
+          <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
+              <img src={imgVector} alt="" className="w-full h-full" />
+            </div>
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
+              <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
+                Your sense of agency in your own case
+              </h3>
+              <p className="cv-p font-sans text-sm md:text-body-regular w-full">
+                Education is power. We explain how family law works so you can make decisions that fit your situation.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -311,7 +256,7 @@ function TestimonialSection() {
             <img src={imgStars} alt="" className="w-full h-full" />
           </div>
           <p className="cv-p font-sans text-lg md:text-[24px] text-neutral-darkest text-center leading-[1.6] w-full">
-            "<span className="italic font-medium">civilla</span> helped me understand what was happening in my case for the first time. I finally felt like I could breathe."
+            "<BrandMark variant="civilla" /> helped me understand what was happening in my case for the first time. I finally felt like I could breathe."
           </p>
           <div className="flex flex-col gap-2 items-center">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
@@ -339,22 +284,8 @@ function CTASection() {
                 Start your journey today
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                Whether you're just beginning or deep in the process, <span className="italic font-medium">civilla</span> meets you where you are.
+                Whether you're just beginning or deep in the process,{" "}<BrandMark variant="civilla" />{" "}meets you where you are.
               </p>
-            </div>
-            <div className="flex gap-6 items-center">
-              <button 
-                className="bg-white text-bush font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-xl"
-                data-testid="button-cta-start"
-              >
-                Start now
-              </button>
-              <button className="flex gap-2 items-center" data-testid="button-cta-learn">
-                <span className="font-sans font-bold text-sm md:text-body-regular text-white leading-[1.6]">
-                  Learn more
-                </span>
-                <ChevronRight className="w-6 h-6 text-white" />
-              </button>
             </div>
           </div>
           <div className="flex-1 w-full min-w-0">

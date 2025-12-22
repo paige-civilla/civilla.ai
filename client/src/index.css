@@ -92,6 +92,18 @@ div {
   white-space: inherit;
 }
 
+.cv-brand {
+  font-style: italic;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: normal;
+  word-spacing: normal;
+  margin: 0;
+  padding: 0;
+  display: inline;
+  white-space: nowrap;
+}
+
 /* Images and media never exceed containers */
 img,
 svg,
