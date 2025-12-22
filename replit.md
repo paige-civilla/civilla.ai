@@ -1,0 +1,38 @@
+# Civilla.ai Website
+
+## Overview
+Pixel-perfect frontend implementation of the Civilla.ai website from Figma design using React and Tailwind CSS. This is a design-locked, frontend-only build with zero creative interpretation - Figma is the single source of truth, except where user explicitly requests design deviations.
+
+## User Preferences
+- **LOW AUTONOMY**: Ask before making design, copy, IA, or feature changes
+- **Brand styling**: "civilla" must always appear in lowercase, italicized (.cv-brand class)
+- **Figma is source of truth** except where user explicitly overrides
+
+## Locked Pages (NO EDITS ALLOWED)
+- **Home page** (`client/src/pages/Home.tsx`) - LOCKED
+- **How Civilla Works page** (`client/src/pages/HowCivillaWorks.tsx`) - LOCKED
+
+## Recent Changes
+- 2024-12-22: Locked Home and How Civilla Works pages per user request
+- 2024-12-22: Updated StepsSection with Step One/Two/Three layout
+- 2024-12-22: Updated Plans page with new pricing copy, taglines, add-ons, and FAQ updates
+
+## Project Architecture
+- React + Vite frontend
+- Express backend
+- Tailwind CSS styling
+- Shadcn UI components
+- wouter for routing
+
+## Key Components
+- `BrandMark`: Renders lowercase italicized "civilla" brand name
+- `NavbarCream`: Cream-colored navigation bar
+- `Footer`: Site footer
+- `FaqSection`: Shared FAQ accordion component
+
+## Pricing Structure
+- Trial: Free (3-day)
+- Core: $19.99/mo or $199/yr
+- Pro: $29.99/mo or $299/yr (Most Popular)
+- Premium: $49.99/mo or $499/yr
+- Yearly badge: "2 Mo. Free"
