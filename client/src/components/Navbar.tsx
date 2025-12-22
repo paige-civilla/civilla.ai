@@ -185,7 +185,7 @@ export default function Navbar() {
                   <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-800">
                     <section.icon className="h-4 w-4" />
                     {section.header.includes("civilla") 
-                      ? <span className="normal-case tracking-normal text-sm">About{" "}<BrandMark /></span>
+                      ? <span className="normal-case tracking-normal text-sm">About <BrandMark text="civilla" /></span>
                       : section.header}
                   </div>
                   <div className="mt-2 h-px w-full bg-black/20" />
@@ -202,7 +202,7 @@ export default function Navbar() {
                       >
                         <link.icon className="h-4 w-4 opacity-70" />
                         {link.label.includes("civilla") 
-                          ? <>How{" "}<BrandMark />{" "}Works</>
+                          ? <span className="inline">How <BrandMark text="civilla" /> Works</span>
                           : link.label}
                       </Link>
                     ))}

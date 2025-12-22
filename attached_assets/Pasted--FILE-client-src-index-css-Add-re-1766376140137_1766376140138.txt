@@ -1,0 +1,231 @@
+/* =========================================================
+   FILE: client/src/index.css
+   Add/replace the .cv-brand rules with this exact block.
+   ========================================================= */
+
+.cv-brand {
+  font-style: italic;
+  font-weight: 600; /* medium-bold */
+  text-transform: lowercase;
+
+  /* Spacing/kerning fixes (prevents the “extra gap” look) */
+  display: inline;              /* NOT inline-block */
+  white-space: nowrap;
+  letter-spacing: normal;
+  word-spacing: normal;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1;
+
+  /* Ensure no accidental spacing from utility merges */
+  margin: 0;
+  padding: 0;
+}
+
+
+/* =========================================================
+   FILE: client/src/components/BrandMark.tsx
+   (If it already exists, replace it with this.)
+   ========================================================= */
+import React from "react";
+
+type BrandMarkProps = {
+  text?: string;        // "civilla" | "civilla.ai" | "www.civilla.ai"
+  className?: string;
+};
+
+export default function BrandMark({ text = "civilla", className = "" }: BrandMarkProps) {
+  return (
+    <span className={`cv-brand ${className}`.trim()}>
+      {String(text).toLowerCase()}
+    </span>
+  );
+}
+
+
+/* =========================================================
+   FILE: client/src/components/Navbar.tsx
+   Fix the dropdown label spacing by rendering the label as
+   ONE inline text flow. Also allow “About civilla” heading.
+   (Find the Start Here links + About section title and update.)
+   ========================================================= */
+
+// ✅ ADD THIS IMPORT (if not already there)
+import BrandMark from "./BrandMark";
+
+// ✅ OPTIONAL: lock note at top of file (non-functional, but keeps Replit honest)
+/**
+ * LOCKED UI: Do not change navbar layout/styling.
+ * Allowed edits: add/remove links, change link text, change icons.
+ */
+
+// --- Wherever your dropdown section title currently says "About Civilla",
+// change it to this ReactNode:
+const aboutCivillaTitle = (
+  <>
+    About <BrandMark text="civilla" />
+  </>
+);
+
+// --- Wherever your Start Here link label is defined for "How Civilla Works",
+// change it to this ReactNode (IMPORTANT: keep it as ONE inline span):
+const howCivillaWorksLabel = (
+  <span className="inline">
+    How <BrandMark text="civilla" /> Works
+  </span>
+);
+
+// ✅ Then use those in your menu config / render:
+// Example (adjust to your structure):
+// {
+//   section: aboutCivillaTitle,
+//   links: [...]
+/* and */
+// { href: "/how-civilla-works", label: howCivillaWorksLabel, ... }
+
+
+// =========================================================
+// FILE: client/src/components/NavbarCream.tsx
+// Make the same label/title changes as Navbar.tsx
+// =========================================================
+
+// ✅ ADD THIS IMPORT (if not already there)
+import BrandMark from "./BrandMark";
+
+/**
+ * LOCKED UI: Do not change navbar layout/styling.
+ * Allowed edits: add/remove links, change link text, change icons.
+ */
+
+const aboutCivillaTitle = (
+  <>
+    About <BrandMark text="civilla" />
+  </>
+);
+
+const howCivillaWorksLabel = (
+  <span className="inline">
+    How <BrandMark text="civilla" /> Works
+  </span>
+);
+
+// Use those in the menu config / render exactly like in Navbar.tsx
+
+
+/* =========================================================
+   FILE: client/src/pages/HowCivillaWorks.tsx
+   OPTION A (your choice): keep previews OFF for now, remove
+   fake testimonial, remove step-label line (“Step two”), fix
+   alignment + calmer icons, add “Your” above tools list, and
+   add CTAs ONLY in “Start your journey today”.
+   ---------------------------------------------------------
+   Apply these targeted changes in the existing page.
+   ========================================================= */
+
+// ✅ Add these imports near the top (lucide icons may vary in your file)
+import BrandMark from "../components/BrandMark";
+import { Cloud, Compass, HandHeart } from "lucide-react";
+import { Link } from "wouter";
+
+/* --- 1) HERO: ensure title capitalization + punctuation, and NO buttons --- */
+// Title should be:
+{/* <h1>How <BrandMark text="civilla" /> Works</h1> */}
+
+// Subhead should be (note the period):
+{/* <p>A calm, step-by-step overview of what <BrandMark text="civilla" /> can help you understand and organize — without legal advice.</p> */}
+
+// Ensure there are no hero buttons rendered here.
+
+
+/* --- 2) “Your case, step by step” cards: remove the small “Step two” line --- */
+// In each step card component/markup, DELETE the small label element like:
+// <p className="...">Step two</p>
+// Keep only the main heading + body text.
+// (Do this for all step cards so the first card doesn’t look “off”.)
+
+
+/* --- 3) Fix the “weird space” inside sentences like:
+       “... <civilla> organizes what you provide ...”
+   Use BrandMark inline exactly like this (no extra wrappers):
+*/
+// Example:
+// <p>... <BrandMark text="civilla" /> organizes what you provide into a clear, reviewable timeline.</p>
+
+
+/* --- 4) “What changes…” section: calmer icons + consistent alignment --- */
+// Replace the 3-up items with a uniform, centered layout.
+// (Put this inside that section where the three columns are rendered.)
+
+const changes = [
+  {
+    Icon: Cloud,
+    title: "The stress of not knowing what comes next",
+    body: "You move from guessing to informed preparation — one step at a time.",
+  },
+  {
+    Icon: Compass,
+    title: "What your options actually are",
+    body: "Education helps you evaluate choices with more context — without advice or promises.",
+  },
+  {
+    Icon: HandHeart,
+    title: "Your sense of agency in your own case",
+    body: "You can feel steadier when your information is organized and your questions are clearer.",
+  },
+];
+
+// Render (example):
+/*
+<div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+  {changes.map(({ Icon, title, body }) => (
+    <div key={title} className="flex flex-col items-center">
+      <Icon className="h-10 w-10" aria-hidden="true" />
+      <h3 className="mt-6 font-semibold text-3xl leading-tight max-w-[18ch]">
+        {title}
+      </h3>
+      <p className="mt-4 text-base leading-relaxed max-w-[38ch]">
+        {body}
+      </p>
+    </div>
+  ))}
+</div>
+*/
+
+
+/* --- 5) “What you get inside”: add “Your” above tools list + NO previews yet --- */
+// Above the tools list box title, add a small line:
+// <p className="...">Your</p>
+// so it reads as “Your tools …” / “Your tools list …”
+//
+// For the preview area: keep it as a neutral placeholder ONLY.
+// Example placeholder box content:
+// “Tool previews coming soon.”
+/*
+<div className="rounded-3xl border ... p-10 text-center">
+  <p className="text-sm opacity-70">Tool previews coming soon.</p>
+</div>
+*/
+
+
+/* --- 6) Remove the fake testimonial hero box entirely --- */
+// Delete the whole quote/testimonial section that claims a user quote.
+// (Keep your “Early Notes” approach only where you truly collect permissioned feedback.)
+
+
+/* --- 7) “Start your journey today”: add ONLY these two buttons --- */
+// Inside that final CTA section, add:
+ /*
+<div className="mt-8 flex flex-col sm:flex-row gap-4">
+  <Link href="/plans">
+    <a className="inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold border">
+      Plans & Pricing
+    </a>
+  </Link>
+
+  <Link href="/login">
+    <a className="inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold bg-[#e7ebea] border">
+      Sign Up
+    </a>
+  </Link>
+</div>
+ */
+// (Routes are safe: /login is your placeholder.)
