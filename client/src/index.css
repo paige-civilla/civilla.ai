@@ -96,12 +96,12 @@ div {
   font-style: italic;
   font-weight: 600;
   text-transform: lowercase;
-  letter-spacing: normal;
-  word-spacing: normal;
-  margin: 0;
-  padding: 0;
-  display: inline;
   white-space: nowrap;
+  display: inline;
+  letter-spacing: 0;
+  font-kerning: normal;
+  margin-left: -0.03em;
+  margin-right: -0.03em;
 }
 
 /* Images and media never exceed containers */

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, BookOpen, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
+import BrandMark from "@/components/BrandMark";
 
 const menuSections = [
   {
@@ -9,13 +10,13 @@ const menuSections = [
     icon: Sparkles,
     links: [
       { label: "Home", href: "/", icon: Home },
-      { label: "How it Works", href: "/how-civilla-works", icon: Compass },
+      { label: "How civilla Works", href: "/how-civilla-works", icon: Compass },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
       { label: "Login", href: "/login", icon: LogIn },
     ]
   },
   {
-    header: "About Us",
+    header: "About civilla",
     icon: Info,
     links: [
       { label: "Our Mission", href: "/about#mission", icon: Target },
@@ -182,7 +183,7 @@ export default function Navbar() {
                   <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-800">
                     <section.icon className="h-4 w-4" />
                     {section.header.includes("civilla") 
-                      ? <>ABOUT<span className="italic font-medium normal-case tracking-normal text-sm ml-[0.08em]">civilla</span></>
+                      ? <span className="normal-case tracking-normal text-sm">About{" "}<BrandMark /></span>
                       : section.header}
                   </div>
                   <div className="mt-2 h-px w-full bg-black/20" />
@@ -199,7 +200,7 @@ export default function Navbar() {
                       >
                         <link.icon className="h-4 w-4 opacity-70" />
                         {link.label.includes("civilla") 
-                          ? <>How <span className="italic font-medium">civilla</span> Works</>
+                          ? <>How{" "}<BrandMark />{" "}Works</>
                           : link.label}
                       </Link>
                     ))}

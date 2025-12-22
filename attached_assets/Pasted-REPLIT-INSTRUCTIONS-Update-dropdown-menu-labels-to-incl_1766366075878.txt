@@ -1,0 +1,90 @@
+REPLIT INSTRUCTIONS — Update dropdown menu labels to include <BrandMark /> (no weird spacing)
+
+DO NOT MODIFY:
+- Footer.tsx
+- Any routing
+- Anything outside the dropdown menu label text + BrandMark styling
+
+FILES TO EDIT:
+1) client/src/components/BrandMark.tsx
+2) client/src/index.css
+3) client/src/components/Navbar.tsx
+4) client/src/components/NavbarCream.tsx
+
+
+1) FIX BRAND SPACING + INLINE BEHAVIOR
+Open: client/src/components/BrandMark.tsx
+Update it so the span is strictly inline and doesn’t introduce layout spacing.
+
+Make BrandMark look like this:
+
+---
+import React from "react";
+
+type BrandMarkProps = {
+  text?: string; // default "civilla"
+  className?: string;
+};
+
+export default function BrandMark({ text = "civilla", className = "" }: BrandMarkProps) {
+  return (
+    <span className={`cv-brand ${className}`.trim()}>{text}</span>
+  );
+}
+---
+
+Open: client/src/index.css
+Add/replace the .cv-brand rule with:
+
+---
+.cv-brand{
+  font-style: italic;
+  font-weight: 600;
+  text-transform: lowercase;
+  white-space: nowrap;
+  display: inline;           /* IMPORTANT: not inline-block */
+  letter-spacing: normal;    /* prevent accidental tracking */
+  font-kerning: normal;      /* normal kerning (helps “spacing looks off”) */
+}
+---
+
+
+2) DESKTOP DROPDOWN: “About civilla” COLUMN TITLE
+Open: client/src/components/Navbar.tsx
+Find the dropdown column header currently showing:
+About Civilla
+
+Replace the label portion ONLY with JSX that uses BrandMark with controlled spacing:
+
+---
+About{" "}<BrandMark text="civilla" />
+---
+
+(Keep the existing icon + layout classes exactly as-is.)
+
+Do the same change in:
+client/src/components/NavbarCream.tsx
+
+
+3) DROPDOWN LINK LABEL: “How civilla Works” UNDER “Start Here”
+In BOTH Navbar.tsx and NavbarCream.tsx, find the Start Here column link text:
+How Civilla Works
+
+Replace the link label with:
+
+---
+How{" "}<BrandMark text="civilla" />{" "}Works
+---
+
+IMPORTANT:
+- Do NOT write "How " (with a trailing space) inside the string.
+- Do NOT add extra {" "} anywhere else.
+- The only spaces should be the two shown above (one on each side of BrandMark).
+
+
+4) VERIFY
+- Dropdown should now read: About civilla (with civilla styled) as the column title
+- The Start Here link should read: How civilla Works (with civilla styled)
+- No “double space / weird gap” around the italicized brand word
+
+SAVE ALL FILES.

@@ -1,0 +1,344 @@
+/* =========================================
+   1) BrandMark: tighten spacing + variants
+   File: client/src/components/BrandMark.tsx
+   ========================================= */
+import React from "react";
+
+type BrandMarkProps = {
+  text?: "civilla" | "civilla.ai" | "www.civilla.ai";
+  className?: string;
+};
+
+export default function BrandMark({ text = "civilla", className = "" }: BrandMarkProps) {
+  // Always enforce lowercase, even if a dev passes something else later
+  const v = String(text).toLowerCase() as BrandMarkProps["text"];
+
+  return (
+    <span
+      className={`cv-brand ${className}`}
+      aria-label={v}
+    >
+      {v}
+    </span>
+  );
+}
+
+
+/* =========================================
+   2) Global brand styling (spacing fix)
+   File: client/src/index.css
+   Add near other utilities/components
+   ========================================= */
+.cv-brand{
+  font-style: italic;
+  font-weight: 600;
+  text-transform: lowercase;
+  white-space: nowrap;
+  display: inline-block;
+
+  /* Prevent the “italic looks like it adds space” effect */
+  letter-spacing: 0;
+  font-kerning: normal;
+
+  /* Tiny optical tightening so spaces before/after look normal */
+  margin-left: -0.03em;
+  margin-right: -0.03em;
+}
+
+
+/* =========================================
+   3) Navbar dropdown label fixes (ONLY text/icons)
+   Files:
+   - client/src/components/Navbar.tsx
+   - client/src/components/NavbarCream.tsx
+
+   Search/replace the specific menu labels:
+   - Column title: "About Civilla" -> `About <BrandMark />`
+   - Link: "How Civilla Works" -> `How <BrandMark /> Works`
+   Also: give About-subitems unique icons (not all same as section icon).
+   ========================================= */
+
+/* Example snippet pattern (apply in BOTH navbars where menu data is defined)
+   You may already have arrays like menuLinks.learn / menuGroups, etc.
+   Replace only the labels + icons like below.
+*/
+import BrandMark from "@/components/BrandMark";
+import { Info, HeartHandshake, Users, Shield, Heart } from "lucide-react";
+
+/* In your dropdown groups/columns:
+   - Make the heading bold + divider bold
+   - Change About section icon usage
+*/
+const aboutHeading = (
+  <span className="font-semibold tracking-wide">
+    About <BrandMark />
+  </span>
+);
+
+// Support icon should be a heart (per your request)
+const supportHeadingIcon = Heart;
+
+// About sub-item icons should differ from the section icon
+const aboutLinks = [
+  { label: "Our Mission", href: "/mission", icon: HeartHandshake },
+  { label: "Meet the Founders", href: "/founders", icon: Users },
+  { label: "About Us", href: "/about", icon: Info },
+];
+
+// Start Here link label should be "How civilla Works" with BrandMark
+const howItWorksLabel = (
+  <span>
+    How <BrandMark /> Works
+  </span>
+);
+
+/* For bold headings + bold divider line (where you render column titles):
+   - add font-semibold to heading
+   - make divider thicker/darker
+   Example:
+   <div className="font-semibold text-white/90">...</div>
+   <div className="h-[2px] bg-white/30 mt-2" />
+*/
+
+
+/* =========================================
+   4) HowCivillaWorks page fixes + copy + layout
+   File: client/src/pages/HowCivillaWorks.tsx
+   ========================================= */
+import React from "react";
+import BrandMark from "@/components/BrandMark";
+import { Info, Wind, Compass } from "lucide-react";
+import { Link } from "wouter";
+
+export default function HowCivillaWorks() {
+  const steps = [
+    {
+      // IMPORTANT: remove the small "Step two" label from the FIRST card
+      label: "",
+      title: "Understand your case type and timeline",
+      body:
+        "Choose your state and case type to see educational overviews and typical stages people often encounter. No legal advice — just plain-language context.",
+      imageSrc: "/images/steps/step1.jpg",
+    },
+    {
+      label: "Step two",
+      title: "Gather and organize your information",
+      body:
+        "Add the documents, notes, messages, and key dates you decide to store. " +
+        "Then review everything in one clear place so you can stay grounded and prepared.",
+      imageSrc: "/images/steps/step2.jpg",
+    },
+    {
+      label: "Step three",
+      title: "Learn what’s typical (without promises)",
+      body:
+        "See common terms and stages explained in plain language — " +
+        "so you can understand options and questions to ask, without outcome guarantees.",
+      imageSrc: "/images/steps/step3.jpg",
+    },
+  ];
+
+  return (
+    <div className="w-full">
+      {/* HERO (no buttons) */}
+      <section className="bg-[#e7ebea]">
+        <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+          <h1 className="text-5xl md:text-7xl font-black leading-[0.95]">
+            How <BrandMark /> Works
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg md:text-xl text-black/70">
+            A calm, step-by-step guide to understanding your case and taking control.
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 2 */}
+      <section className="bg-[#f7f4ef]">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h2 className="text-5xl md:text-6xl font-black text-center">
+            Your case, step by step
+          </h2>
+          <p className="mt-4 text-center text-black/70 max-w-2xl mx-auto">
+            See how family law cases often move through the courts — in plain language, for education only.
+          </p>
+
+          {/* FIX “weird space” vertical rule on mobile:
+              If you have any decorative vertical line here, it MUST be hidden on small screens.
+              This wrapper ensures nothing renders as a lone line with tons of empty space.
+          */}
+          <div className="mt-10 space-y-10">
+            {steps.map((s, idx) => (
+              <div key={idx} className="rounded-[24px] border-2 border-black bg-white overflow-hidden">
+                <div className="p-8 md:p-10">
+                  {s.label ? (
+                    <div className="text-sm font-semibold text-black/70">{s.label}</div>
+                  ) : null}
+
+                  <h3 className="mt-3 text-4xl md:text-5xl font-black leading-tight">
+                    {s.title}
+                  </h3>
+
+                  <p className="mt-4 max-w-2xl text-black/70 text-lg">
+                    {s.body.replace("civilla", "") /* avoid accidental raw brand word here */}
+                    {/* If you DO want the brand word here later, use: <BrandMark /> */}
+                  </p>
+                </div>
+
+                {/* image */}
+                <div className="h-[320px] md:h-[420px] w-full">
+                  <img
+                    src={s.imageSrc}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-sm italic font-semibold text-black/60">
+            Educational, research, and organizational support — not legal advice or representation.
+          </p>
+        </div>
+      </section>
+
+      {/* WHAT CHANGES (icons + alignment fixes) */}
+      <section className="bg-[#0f3f33] text-white">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="text-5xl md:text-6xl font-black text-center">
+            What changes when you understand the process
+          </h2>
+          <p className="mt-6 text-center text-white/80 max-w-3xl mx-auto text-lg">
+            When the steps feel clearer, overwhelm can ease. <BrandMark /> helps you learn what’s typical,
+            track what matters, and stay organized — without advice or promises.
+          </p>
+
+          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-12">
+            {[
+              {
+                Icon: Wind,
+                title: "The stress of not knowing what comes next",
+                body:
+                  "You move from guessing to informed preparation — one step at a time, at your pace.",
+              },
+              {
+                Icon: Compass,
+                title: "What your options actually are",
+                body:
+                  "Education helps you evaluate choices with more context — without legal advice or outcome guarantees.",
+              },
+              {
+                Icon: Info,
+                title: "Your sense of agency in your own case",
+                body:
+                  "You can feel steadier when your information is organized and your questions are clearer.",
+              },
+            ].map(({ Icon, title, body }, i) => (
+              <div key={i} className="flex flex-col items-center text-center">
+                <Icon className="h-10 w-10 text-white/90" />
+                {/* Force title blocks to align */}
+                <h3 className="mt-6 font-black text-3xl md:text-4xl leading-tight min-h-[4.8rem] flex items-center justify-center">
+                  {title}
+                </h3>
+                <p className="mt-5 text-white/80 max-w-sm text-lg min-h-[4.2rem] flex items-start justify-center">
+                  {body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT YOU GET INSIDE (add “Your tools” + preview guidance) */}
+      <section className="bg-[#f7f4ef]">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="text-5xl md:text-6xl font-black text-center">
+            What you get inside
+          </h2>
+          <p className="mt-6 text-center text-black/70 max-w-3xl mx-auto text-lg">
+            These are tools inside your account that help you stay organized and informed.
+            They’re designed for education and case organization — not legal advice.
+          </p>
+
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-black/60 mb-3">
+                Your tools
+              </div>
+
+              <div className="rounded-[22px] border-2 border-black bg-white overflow-hidden">
+                {[
+                  "Case journey",
+                  "Evidence map",
+                  "Research guide",
+                  "Document prep",
+                  "Timeline view",
+                  "Safety tools",
+                ].map((t) => (
+                  <div key={t} className="px-8 py-6 border-t border-black/20 first:border-t-0 text-center font-semibold">
+                    {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="min-w-0">
+              <div className="rounded-[22px] border-2 border-black bg-white p-10 min-h-[320px] flex items-center justify-center text-center">
+                <div>
+                  <div className="font-semibold text-black/70">Illustrative preview</div>
+                  <p className="mt-3 text-black/60">
+                    We’ll add static screenshots of the interface here (no real case data, no advice).
+                    Screens are examples only.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* DELETE the fake testimonial block:
+              If your file has a quote/testimonial section here, remove it entirely.
+              (Anything like: “civilla helped me…”)
+          */}
+        </div>
+      </section>
+
+      {/* START YOUR JOURNEY TODAY (buttons added back ONLY here) */}
+      <section className="bg-[#0f3f33] text-white">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="text-5xl md:text-6xl font-black">
+            Start your journey today
+          </h2>
+          <p className="mt-6 max-w-2xl text-white/80 text-lg">
+            If you’re ready to get organized, you can review plans or create an account.
+            <span className="block mt-2 text-white/70 text-base">
+              (This is an educational and organizational platform — not legal advice or representation.)
+            </span>
+          </p>
+
+          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <Link href="/plans">
+              <a className="inline-flex items-center justify-center rounded-full bg-white text-black font-semibold px-8 py-4">
+                Plans &amp; Pricing
+              </a>
+            </Link>
+            <Link href="/login">
+              <a className="inline-flex items-center justify-center rounded-full border-2 border-white/80 text-white font-semibold px-8 py-4">
+                Sign up
+              </a>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
+/* =========================================
+   5) Replit “LOCK” instruction (paste into your Replit directive)
+   =========================================
+   - Navbar.tsx, NavbarCream.tsx, Footer.tsx are LOCKED.
+   - Do not modify layout, styling, or structure of these files.
+   - Only allowed edits: add/remove a link route or fix a broken href/label/icon.
+   - Any other UI/spacing changes must
