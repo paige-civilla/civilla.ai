@@ -1,0 +1,78 @@
+// Plans & Pricing — real feature lists (match current Civilla build)
+// Replace your existing plan/tiers config with this (keep your existing rendering UI)
+
+export const PRICING_PLANS = [
+  {
+    id: "trial",
+    name: "three day trial",
+    tagline: "Start free. Upgrade anytime.",
+    cta: "start trial",
+    monthly: 0,
+    yearly: 0,
+    priceNote: "three day trial",
+    highlights: [
+      "Case journey overview",
+      "Basic document storage",
+      "Learning Hub (education-only resources)",
+      "Safety & Support hub access",
+    ],
+    finePrint: "No credit card required.",
+  },
+  {
+    id: "core",
+    name: "civilla core",
+    tagline: "Build your case workspace.",
+    cta: "start core",
+    monthly: 19.99,
+    yearly: 199.99, // adjust if your yearly pricing differs
+    priceNote: "per month",
+    highlights: [
+      "Everything in trial, plus",
+      "Create & manage your case journey",
+      "Timeline building (events + milestones)",
+      "Tasks & deadline tracking",
+      "Document uploads + organization",
+      "Readiness / preparation checklists",
+      "Schedule templates",
+    ],
+    finePrint: "Cancel anytime.",
+  },
+  {
+    id: "pro",
+    name: "civilla pro",
+    tagline: "For higher-conflict or higher-volume cases.",
+    cta: "start pro",
+    monthly: 29.99,
+    yearly: 299.99, // adjust if your yearly pricing differs
+    priceNote: "per month",
+    highlights: [
+      "Everything in core, plus",
+      "Evidence map + communication log",
+      "Court Prep Packet builder (organized export-ready packet)",
+      "Draft documents workspace (education-only) + export",
+      "PDF + DOCX export with watermark/disclaimer enforcement",
+      "Lexi in-app guidance (context + navigation help)",
+      "Quick wins + case health insights",
+    ],
+    finePrint: "Cancel anytime. Education-only tools — not legal advice.",
+  },
+  {
+    id: "premium",
+    name: "civilla premium",
+    tagline: "For organizations and people who want hands-on support.",
+    cta: "start premium",
+    monthly: 49.99,
+    yearly: 499.99, // adjust if your yearly pricing differs
+    priceNote: "per month",
+    highlights: [
+      "Everything in pro, plus",
+      "Priority support",
+      "Onboarding help (setup + best practices)",
+      "Nonprofit / shelter pricing options",
+      "Team enablement (for approved org use)",
+    ],
+    finePrint: "Contact us for org onboarding details.",
+  },
+] as const;
+
+export const YEARLY_SAVINGS_LABEL = "Save 17%"; // used by toggle UI

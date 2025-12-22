@@ -6,6 +6,82 @@ import Footer from "@/components/Footer";
 import { Brand, BrandText } from "@/components/Brand";
 import BrandMark from "@/components/BrandMark";
 
+export const PRICING_PLANS = [
+  {
+    id: "trial",
+    name: "three day trial",
+    tagline: "Start free. Upgrade anytime.",
+    cta: "start trial",
+    monthly: 0,
+    yearly: 0,
+    priceNote: "three day trial",
+    highlights: [
+      "Case journey overview",
+      "Basic document storage",
+      "Learning Hub (education-only resources)",
+      "Safety & Support hub access",
+    ],
+    finePrint: "No credit card required.",
+  },
+  {
+    id: "core",
+    name: "civilla core",
+    tagline: "Build your case workspace.",
+    cta: "start core",
+    monthly: 19.99,
+    yearly: 199.99,
+    priceNote: "per month",
+    highlights: [
+      "Everything in trial, plus",
+      "Create & manage your case journey",
+      "Timeline building (events + milestones)",
+      "Tasks & deadline tracking",
+      "Document uploads + organization",
+      "Readiness / preparation checklists",
+      "Schedule templates",
+    ],
+    finePrint: "Cancel anytime.",
+  },
+  {
+    id: "pro",
+    name: "civilla pro",
+    tagline: "For higher-conflict or higher-volume cases.",
+    cta: "start pro",
+    monthly: 29.99,
+    yearly: 299.99,
+    priceNote: "per month",
+    highlights: [
+      "Everything in core, plus",
+      "Evidence map + communication log",
+      "Court Prep Packet builder (organized export-ready packet)",
+      "Draft documents workspace (education-only) + export",
+      "PDF + DOCX export with watermark/disclaimer enforcement",
+      "Lexi in-app guidance (context + navigation help)",
+      "Quick wins + case health insights",
+    ],
+    finePrint: "Cancel anytime. Education-only tools — not legal advice.",
+  },
+  {
+    id: "premium",
+    name: "civilla premium",
+    tagline: "For organizations and people who want hands-on support.",
+    cta: "start premium",
+    monthly: 49.99,
+    yearly: 499.99,
+    priceNote: "per month",
+    highlights: [
+      "Everything in pro, plus",
+      "Priority support",
+      "Onboarding help (setup + best practices)",
+      "Nonprofit / shelter pricing options",
+      "Team enablement (for approved org use)",
+    ],
+    finePrint: "Contact us for org onboarding details.",
+  },
+] as const;
+
+export const YEARLY_SAVINGS_LABEL = "Save 17%";
+
 function HeaderSection() {
   return (
     <section className="bg-[#e7ebea]" data-testid="section-header">
@@ -35,16 +111,7 @@ function HeaderSection() {
 }
 
 function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod: "monthly" | "yearly"; setBillingPeriod: (v: "monthly" | "yearly") => void }) {
-  const features = [
-    "Case Journey overview (common stages + what to expect next)",
-    "Timeline builder for key events, filings, and milestones",
-    "Document organizer (upload, label, and group your case documents)",
-    "Evidence & Communication Log (messages, incidents, and notes in one place)",
-    "Tasks & deadline tracking (so nothing slips through the cracks)",
-    "Learning Hub + guided research prompts (education-first, not advice)",
-    "Court Prep Packet drafts (export with watermark + required disclaimers)",
-    "Support & safety resources (for planning and next-step clarity)"
-  ];
+  const proPlan = PRICING_PLANS.find(p => p.id === "pro")!;
 
   return (
     <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-most-popular">
@@ -111,7 +178,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               </div>
               <div className="flex flex-col gap-1 items-center mt-2">
                 <span className="pricing-display font-heading font-bold tracking-[0.48px] md:tracking-[0.84px] leading-[1.1]" style={{ fontSize: 'clamp(48px, 6vw, 84px)' }}>
-                  {billingPeriod === "monthly" ? "$29.99" : "$299.99"}
+                  {billingPeriod === "monthly" ? `$${proPlan.monthly}` : `$${proPlan.yearly}`}
                   <span className="price-period">{billingPeriod === "monthly" ? "/mo" : "/yr"}</span>
                 </span>
                 <span className="font-sans text-sm md:text-[18px] leading-[1.6]">
@@ -119,14 +186,13 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
                 </span>
               </div>
               <p className="mt-4 text-sm sm:text-base max-w-xl mx-auto opacity-90">
-                Built for people representing themselves who want a calm, organized way to
-                understand what's typical, track what matters, and prepare more confidently —
-                <span className="font-semibold"> without legal advice</span>.
+                {proPlan.tagline}
+                <span className="font-semibold"> {proPlan.finePrint}</span>
               </p>
             </div>
 
             <div className="flex flex-col gap-4 py-2 w-full text-left">
-              {features.map((feature, index) => (
+              {proPlan.highlights.map((feature, index) => (
                 <div key={index} className="flex gap-3 items-start w-full">
                   <Check className="w-5 md:w-6 h-5 md:h-6 text-neutral-darkest flex-shrink-0 mt-0.5" />
                   <span className="cv-panel-body font-sans text-sm md:text-[16px] leading-[1.6] text-neutral-darkest">
@@ -151,78 +217,8 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
 }
 
 function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPeriod: "monthly" | "yearly"; setBillingPeriod: (v: "monthly" | "yearly") => void }) {
-  const plans = [
-    {
-      name: "three day trial",
-      subtitle: "Start free, upgrade when",
-      monthlyPrice: "$0",
-      yearlyPrice: "$0",
-      period: billingPeriod === "monthly" ? "/mo" : "/yr",
-      monthlyNote: "three day trial",
-      yearlyNote: "three day trial",
-      buttonText: "start trial",
-      stripePriceId: { monthly: null, yearly: null },
-      features: [
-        "Case journey overview",
-        "Basic document storage",
-        "Educational resources"
-      ]
-    },
-    {
-      name: "civilla core",
-      subtitle: "No credit card required",
-      monthlyPrice: "$19.99",
-      yearlyPrice: "$199",
-      period: billingPeriod === "monthly" ? "/mo" : "/yr",
-      monthlyNote: "Per month",
-      yearlyNote: "$16.58/month billed annually",
-      buttonText: "start core",
-      stripePriceId: { monthly: "price_core_monthly", yearly: "price_core_yearly" },
-      features: [
-        "Everything free, plus",
-        "Timeline building",
-        "Deadline tracking"
-      ]
-    },
-    {
-      name: "civilla pro",
-      subtitle: "Cancel anytime, no",
-      monthlyPrice: "$29.99",
-      yearlyPrice: "$299",
-      period: billingPeriod === "monthly" ? "/mo" : "/yr",
-      monthlyNote: "per month",
-      yearlyNote: "$24.91/month billed annually",
-      buttonText: "start pro",
-      stripePriceId: { monthly: "price_pro_monthly", yearly: "price_pro_yearly" },
-      features: [
-        "Pattern analysis tools",
-        "Lexi research assistant",
-        "Document drafting",
-        "Start now"
-      ]
-    },
-    {
-      name: "civilla premium",
-      subtitle: "Transparent pricing,",
-      monthlyPrice: "$49.99",
-      yearlyPrice: "$499",
-      period: billingPeriod === "monthly" ? "/mo" : "/yr",
-      monthlyNote: "Dedicated onboarding",
-      yearlyNote: "$41.58/month billed annually",
-      buttonText: "start premium",
-      stripePriceId: { monthly: "price_premium_monthly", yearly: "price_premium_yearly" },
-      features: [
-        "Shelter and nonprofit rates",
-        "Team training included",
-        "Contact us",
-        "Learn more",
-        "Priority support"
-      ]
-    }
-  ];
-
   return (
-    <section className="bg-[#cfd7d5] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-pricing-cards">
+    <section className="bg-[#cfd7d5] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-pricing-cards" id="compare">
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-6 md:gap-8 items-start w-full">
           <div className="flex-1 flex flex-col gap-4 items-start max-w-[768px]">
@@ -231,23 +227,23 @@ function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPerio
                 What you get
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.
+                Every plan includes educational tools to help you understand, organize, and prepare. Choose the level that fits your needs.
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 items-start">
             <div 
-              className="bg-[#cfd7d5] border-2 border-neutral-darkest rounded-[10px] p-1 flex"
+              className="inline-flex items-center rounded-full border border-black/20 bg-white p-1"
               role="group"
               aria-label="Billing period selection"
             >
               <button
-                className={`px-4 md:px-6 py-2.5 rounded-lg font-bold text-sm md:text-[18px] leading-[1.6] transition-colors ${
-                  billingPeriod === "monthly" 
-                    ? "border-2 border-neutral-darkest text-neutral-darkest" 
-                    : "border border-transparent text-neutral-darkest"
-                }`}
+                type="button"
+                className={[
+                  "rounded-full px-5 py-2 text-sm font-semibold transition",
+                  billingPeriod === "monthly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
+                ].join(" ")}
                 onClick={() => setBillingPeriod("monthly")}
                 aria-pressed={billingPeriod === "monthly"}
                 aria-label="Select monthly billing"
@@ -256,36 +252,47 @@ function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPerio
                 Monthly
               </button>
               <button
-                className={`px-4 md:px-6 py-2.5 rounded-lg text-sm md:text-[18px] leading-[1.6] transition-colors ${
-                  billingPeriod === "yearly" 
-                    ? "border-2 border-neutral-darkest font-bold text-neutral-darkest" 
-                    : "border border-transparent font-normal text-neutral-darkest"
-                }`}
+                type="button"
+                className={[
+                  "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition flex items-center gap-2",
+                  billingPeriod === "yearly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
+                ].join(" ")}
                 onClick={() => setBillingPeriod("yearly")}
                 aria-pressed={billingPeriod === "yearly"}
                 aria-label="Select yearly billing with 17% savings"
                 data-testid="button-cards-yearly"
               >
-                Yearly (Save ~17%)
+                <span>Yearly</span>
+                {billingPeriod === "yearly" ? (
+                  <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
+                    {YEARLY_SAVINGS_LABEL}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black">
+                    {YEARLY_SAVINGS_LABEL}
+                  </span>
+                )}
               </button>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch w-full">
-          {plans.map((plan, index) => (
+          {PRICING_PLANS.map((plan) => (
             <div 
-              key={index}
+              key={plan.id}
               className="bg-[#cfd7d5] border-2 border-neutral-darkest rounded-2xl p-5 flex flex-col"
-              data-testid={`pricing-card-${index}`}
+              data-testid={`pricing-card-${plan.id}`}
             >
               <div className="flex flex-col gap-1 text-neutral-darkest pricing-card-header">
                 <h3 className="cv-h font-heading font-bold text-[18px] md:text-[20px] tracking-[0.18px] md:tracking-[0.2px] leading-[1.2]">
                   <BrandText>{plan.name}</BrandText>
                 </h3>
-                <p className="cv-panel-body font-sans text-[13px] md:text-[14px] leading-[1.5]">
-                  {plan.subtitle}
-                </p>
+                {plan.tagline && (
+                  <p className="cv-panel-body font-sans text-[13px] md:text-[14px] leading-[1.5]">
+                    {plan.tagline}
+                  </p>
+                )}
               </div>
 
               <div className="w-full h-[2px] bg-neutral-darkest my-4" />
@@ -294,27 +301,27 @@ function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPerio
                 <div className="flex flex-col gap-1 text-neutral-darkest">
                   <div className="pricing-display font-heading font-bold">
                     <span className="price-value">
-                      {billingPeriod === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
+                      ${billingPeriod === "monthly" ? plan.monthly : plan.yearly}
                     </span>
-                    {plan.period && <span className="price-period">{plan.period}</span>}
+                    <span className="price-period">{billingPeriod === "monthly" ? "/mo" : "/yr"}</span>
                   </div>
                   <p className="font-sans text-[12px] md:text-[13px] leading-[1.5] min-h-[40px]">
-                    {billingPeriod === "monthly" ? plan.monthlyNote : plan.yearlyNote}
+                    {plan.priceNote}
                   </p>
                 </div>
 
                 <button 
                   className="w-full bg-bush text-white font-bold text-[13px] md:text-[14px] leading-[1.5] px-4 py-2 rounded-md button-inset-shadow relative"
-                  data-testid={`button-${plan.buttonText.replace(" ", "-")}`}
+                  data-testid={`button-${plan.cta.replace(" ", "-")}`}
                 >
-                  {plan.buttonText}
+                  {plan.cta}
                 </button>
               </div>
 
               <div className="w-full h-[2px] bg-neutral-darkest my-4" />
 
-              <div className="flex flex-col gap-3 pricing-card-features">
-                {plan.features.map((feature, featureIndex) => (
+              <div className="flex flex-col gap-3 pricing-card-features flex-1">
+                {plan.highlights.map((feature, featureIndex) => (
                   <div key={featureIndex} className="flex gap-2 items-start">
                     <Check className="w-4 md:w-5 h-4 md:h-5 text-neutral-darkest flex-shrink-0" />
                     <span className="cv-panel-body font-sans text-[13px] md:text-[14px] leading-[1.5] text-neutral-darkest">
@@ -323,6 +330,10 @@ function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPerio
                   </div>
                 ))}
               </div>
+
+              {plan.finePrint && (
+                <p className="mt-4 text-xs text-neutral-darkest/70">{plan.finePrint}</p>
+              )}
             </div>
           ))}
         </div>
