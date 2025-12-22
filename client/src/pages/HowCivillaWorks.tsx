@@ -283,9 +283,14 @@ function CTASection() {
               </p>
             </div>
           </div>
-          <div className="flex-1 w-full min-w-0">
-            <div className="aspect-[600/400] rounded-2xl bg-white/10 flex items-center justify-center min-w-0">
-              <p className="font-sans text-sm md:text-[18px] text-white/50">Product preview</p>
+          <div className="min-w-0 flex-1">
+            <div className="w-full rounded-2xl border-2 border-black bg-[#f7f4ef] p-8">
+              <div className="h-48 sm:h-56 rounded-xl border-2 border-black bg-white flex items-center justify-center text-neutral-darkest font-semibold">
+                Private preview coming soon
+              </div>
+              <p className="mt-4 text-sm text-neutral-darkest/70">
+                We'll add privacy-safe, blurred screenshots once the tools are finalized.
+              </p>
             </div>
           </div>
         </div>

@@ -1,0 +1,56 @@
+{/* Start your journey (single CTA area on page) */}
+<section className="bg-[#0f3b2e] text-white">
+  <div className="mx-auto max-w-6xl px-6 py-16">
+    <div className="flex flex-col lg:flex-row lg:items-center gap-10">
+      {/* Left */}
+      <div className="min-w-0 flex-1">
+        <h2 className="text-5xl sm:text-6xl font-extrabold leading-[0.95] tracking-tight">
+          Start Your
+          <br />
+          Journey
+          <br />
+          Today
+        </h2>
+
+        <p className="mt-6 max-w-md text-white/85 text-base sm:text-lg leading-relaxed">
+          Whether you’re just beginning or deep in the process,{" "}
+          <span className="cv-brand">civilla</span> helps you stay organized and learn what’s typical — without legal
+          advice.
+        </p>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <a
+            href="/plans"
+            className="inline-flex items-center justify-center rounded-full bg-white text-[#0f3b2e] px-6 py-3 font-semibold border-2 border-white hover:bg-white/90"
+          >
+            Plans &amp; Pricing
+          </a>
+
+          <a
+            href="/login"
+            className="inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold border-2 border-white/70 text-white hover:border-white"
+          >
+            Sign up
+          </a>
+        </div>
+
+        <p className="mt-4 text-xs text-white/70 max-w-md">
+          Educational &amp; organizational support — not legal advice or representation.
+        </p>
+      </div>
+
+      {/* Right: placeholder only (no product claims) */}
+      <div className="min-w-0 flex-1">
+        <div className="w-full rounded-2xl border border-white/20 bg-white/10 p-8">
+          <div className="h-48 sm:h-56 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white/70 font-semibold">
+            Private preview coming soon
+          </div>
+
+          <div className="mt-4 text-sm text-white/70">
+            We’ll add blurred, privacy-safe screenshots once the tools are finalized.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

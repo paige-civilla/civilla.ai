@@ -92,18 +92,20 @@ div {
   white-space: inherit;
 }
 
+/* Brand word: always lowercase, italic, slightly bold — and NO weird spacing */
 .cv-brand {
   font-style: italic;
   font-weight: 600;
   text-transform: lowercase;
-  display: inline;
-  white-space: nowrap;
+
+  /* spacing normalization */
   letter-spacing: normal;
   word-spacing: normal;
   font-kerning: normal;
-  font-feature-settings: "kern" 1;
-  margin: 0;
-  padding: 0;
+
+  /* keep it behaving like normal text */
+  display: inline;
+  white-space: nowrap;
 }
 
 /* =========================================
