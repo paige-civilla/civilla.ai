@@ -1,3 +1,4 @@
+// client/src/components/StepsSection.tsx
 import React from "react";
 
 type Step = {
@@ -21,11 +22,13 @@ function StepCard({
     <div className="rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden min-w-0">
       <div
         className={[
+          // wideTop: text left + image right (desktop), stacked on mobile
           variant === "wideTop"
             ? "grid grid-cols-1 md:grid-cols-[1fr_360px]"
             : "grid grid-cols-1",
         ].join(" ")}
       >
+        {/* TEXT */}
         <div className="p-8 min-w-0">
           <div className="text-4xl md:text-5xl font-black leading-[1.02] tracking-tight min-w-0">
             {title}
@@ -36,6 +39,7 @@ function StepCard({
           </div>
         </div>
 
+        {/* IMAGE */}
         {hasImage ? (
           <div className="min-w-0">
             <img
@@ -43,6 +47,7 @@ function StepCard({
               alt={imageAlt ?? ""}
               className={[
                 "block w-full object-cover",
+                // keep the right side looking like a “panel” on the wide top card
                 variant === "wideTop" ? "h-full md:min-h-[260px]" : "h-auto",
               ].join(" ")}
             />
@@ -83,7 +88,7 @@ export default function StepsSection() {
     },
     {
       key: "step-3",
-      title: <>Information & Guidelines Available to the Public</>,
+      title: <>Learn what’s typical (not what to do)</>,
       body: (
         <>
           Review statutes, court rules, and educational resources — without
@@ -106,11 +111,13 @@ export default function StepsSection() {
   return (
     <section className="px-6 md:px-10">
       <div className="mx-auto max-w-6xl">
+        {/* TOP: full width */}
         <StepCard {...step1} variant="wideTop" />
 
+        {/* BOTTOM: 3 across (desktop), stacked on mobile */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {step2to4.map(({ key, ...rest }) => (
-            <StepCard key={key} {...rest} />
+          {step2to4.map((s) => (
+            <StepCard key={s.key} {...s} />
           ))}
         </div>
       </div>
