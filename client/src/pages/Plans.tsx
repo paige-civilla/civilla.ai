@@ -62,16 +62,16 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
 
         <div className="flex flex-col gap-8 md:gap-12 items-center w-full md:max-w-[640px]">
           <div 
-            className="bg-cream border-2 border-neutral-darkest rounded-[10px] p-1 flex"
+            className="inline-flex items-center rounded-full border border-black/20 bg-white p-1"
             role="group"
             aria-label="Billing period selection"
           >
             <button
-              className={`px-4 md:px-6 py-2.5 rounded-lg font-bold text-sm md:text-[18px] leading-[1.6] transition-colors ${
-                billingPeriod === "monthly" 
-                  ? "border-2 border-neutral-darkest text-neutral-darkest" 
-                  : "border border-transparent text-neutral-darkest"
-              }`}
+              type="button"
+              className={[
+                "rounded-full px-5 py-2 text-sm font-semibold transition",
+                billingPeriod === "monthly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
+              ].join(" ")}
               onClick={() => setBillingPeriod("monthly")}
               aria-pressed={billingPeriod === "monthly"}
               aria-label="Select monthly billing"
@@ -80,17 +80,26 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               Monthly
             </button>
             <button
-              className={`px-4 md:px-6 py-2.5 rounded-lg text-sm md:text-[18px] leading-[1.6] transition-colors ${
-                billingPeriod === "yearly" 
-                  ? "border-2 border-neutral-darkest font-bold text-neutral-darkest" 
-                  : "border border-transparent font-normal text-neutral-darkest"
-              }`}
+              type="button"
+              className={[
+                "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition flex items-center gap-2",
+                billingPeriod === "yearly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
+              ].join(" ")}
               onClick={() => setBillingPeriod("yearly")}
               aria-pressed={billingPeriod === "yearly"}
               aria-label="Select yearly billing with 17% savings"
               data-testid="button-yearly"
             >
-              Yearly (Save ~17%)
+              <span>Yearly</span>
+              {billingPeriod === "yearly" ? (
+                <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
+                  Save 17%
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black">
+                  Save 17%
+                </span>
+              )}
             </button>
           </div>
 
