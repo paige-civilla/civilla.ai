@@ -120,16 +120,11 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-              <span className="relative inline-block">
+              <span 
+                className="underline decoration-[#0F3B2E]/50 decoration-[6px] md:decoration-[10px] underline-offset-4 md:underline-offset-8"
+                style={{ textDecorationSkipInk: 'none' }}
+              >
                 Most Popular
-                <span 
-                  className="absolute left-0 right-0 -bottom-1 md:-bottom-2 h-2 md:h-3 opacity-40"
-                  style={{
-                    background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 12\'%3E%3Cpath d=\'M0 8 Q 12.5 2, 25 8 T 50 8 T 75 8 T 100 8\' stroke=\'%230F3B2E\' stroke-width=\'4\' fill=\'none\' stroke-linecap=\'round\'/%3E%3C/svg%3E") repeat-x',
-                    backgroundSize: 'auto 100%',
-                  }}
-                  aria-hidden="true"
-                />
               </span>
             </h2>
           </div>
