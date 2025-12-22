@@ -9,8 +9,8 @@ const menuSections = [
     icon: Sparkles,
     links: [
       { label: "Home", href: "/", icon: Home },
-      { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
       { label: "How it Works", href: "/how-civilla-works", icon: Compass },
+      { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
       { label: "Login", href: "/login", icon: LogIn },
     ]
   },
