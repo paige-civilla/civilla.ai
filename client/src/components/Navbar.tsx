@@ -182,7 +182,7 @@ export default function Navbar() {
                   <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-neutral-800">
                     <section.icon className="h-4 w-4" />
                     {section.header.includes("civilla") 
-                      ? <>ABOUT<span className="italic font-medium normal-case tracking-normal ml-[0.15em]">civilla</span></>
+                      ? <>ABOUT<span className="italic font-medium normal-case tracking-normal text-sm ml-[0.08em]">civilla</span></>
                       : section.header}
                   </div>
                   <div className="mt-2 h-px w-full bg-black/20" />
@@ -199,7 +199,7 @@ export default function Navbar() {
                       >
                         <link.icon className="h-4 w-4 opacity-70" />
                         {link.label.includes("civilla") 
-                          ? <>How<span className="italic font-medium mx-[0.15em]">civilla</span>Works</>
+                          ? <>How<span className="italic font-medium mx-[0.08em]">civilla</span>Works</>
                           : link.label}
                       </Link>
                     ))}
