@@ -12,6 +12,11 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **Home page** (`client/src/pages/Home.tsx`) - LOCKED
 - **How Civilla Works page** (`client/src/pages/HowCivillaWorks.tsx`) - LOCKED
 
+## Locked Components (NO EDITS ALLOWED)
+- **Footer** (`client/src/components/Footer.tsx`) - LOCKED
+- **Navbar (green)** (`client/src/components/Navbar.tsx`) - LOCKED
+- **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
+
 ## Recent Changes
 - 2024-12-22: Locked Home and How Civilla Works pages per user request
 - 2024-12-22: Updated StepsSection with Step One/Two/Three layout
