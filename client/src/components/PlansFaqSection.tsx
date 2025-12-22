@@ -9,7 +9,8 @@ import {
 
 export default function PlansFaqSection() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
+    <section className="bg-neutral-lightest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28">
+      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-6xl w-full">
       <div className="text-center">
         <h2 className="text-5xl sm:text-6xl font-semibold tracking-tight">
           FAQs
@@ -94,6 +95,7 @@ export default function PlansFaqSection() {
             Contact us <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
+      </div>
       </div>
     </section>
   );
