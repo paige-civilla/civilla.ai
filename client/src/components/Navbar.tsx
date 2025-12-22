@@ -170,7 +170,7 @@ export default function Navbar() {
           <div className="flex items-center justify-center gap-2">
             <button 
               onClick={toggleDarkMode}
-              className="p-1.5"
+              className="inline-flex items-center justify-center rounded-md p-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Toggle dark mode"
               data-testid="button-theme-toggle"
             >
@@ -181,7 +181,7 @@ export default function Navbar() {
               )}
             </button>
             <button 
-              className="p-1.5"
+              className="inline-flex items-center justify-center rounded-md p-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="User login"
               data-testid="button-user-login"
             >
@@ -189,7 +189,7 @@ export default function Navbar() {
             </button>
             <button 
               ref={menuButtonRef}
-              className="inline-flex items-center justify-center rounded-md p-2 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="inline-flex items-center justify-center rounded-md px-2 py-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               data-testid="button-menu"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"
