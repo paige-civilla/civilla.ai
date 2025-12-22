@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Check, ChevronRight, ChevronUp, ChevronDown, Home, X, ArrowDownRight } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-import { FaqSection } from "@/components/sections/FaqSection";
+import FAQSection from "@/components/FAQSection";
 import { Brand, BrandText } from "@/components/Brand";
 import BrandMark from "@/components/BrandMark";
 
@@ -758,10 +758,7 @@ export default function Plans() {
         <HeaderSection />
         <MostPopularSection billingPeriod={billingPeriod} setBillingPeriod={setBillingPeriod} />
         <PricingCardsSection />
-        <FaqSection
-          title="Common questions"
-          subtitle="Everything you need to know about our plans"
-        />
+        <FAQSection />
       </main>
       <Footer />
     </div>
