@@ -25,7 +25,7 @@ export default function PlansFaqSection() {
       <div className="mt-6">
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="cancel">
-            <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+            <AccordionTrigger className="text-left text-base sm:text-lg font-bold">
               Can I cancel anytime?
             </AccordionTrigger>
             <AccordionContent className="text-neutral-700 leading-relaxed">
@@ -35,7 +35,7 @@ export default function PlansFaqSection() {
           </AccordionItem>
 
           <AccordionItem value="payments">
-            <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+            <AccordionTrigger className="text-left text-base sm:text-lg font-bold">
               What payment methods do you accept?
             </AccordionTrigger>
             <AccordionContent className="text-neutral-700 leading-relaxed">
@@ -45,7 +45,7 @@ export default function PlansFaqSection() {
           </AccordionItem>
 
           <AccordionItem value="trial">
-            <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+            <AccordionTrigger className="text-left text-base sm:text-lg font-bold">
               Is there a free trial?
             </AccordionTrigger>
             <AccordionContent className="text-neutral-700 leading-relaxed">
@@ -56,7 +56,7 @@ export default function PlansFaqSection() {
           </AccordionItem>
 
           <AccordionItem value="upgrade">
-            <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+            <AccordionTrigger className="text-left text-base sm:text-lg font-bold">
               What happens when I upgrade?
             </AccordionTrigger>
             <AccordionContent className="text-neutral-700 leading-relaxed">
@@ -67,7 +67,7 @@ export default function PlansFaqSection() {
           </AccordionItem>
 
           <AccordionItem value="refunds">
-            <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+            <AccordionTrigger className="text-left text-base sm:text-lg font-bold">
               Do you offer refunds?
             </AccordionTrigger>
             <AccordionContent className="text-neutral-700 leading-relaxed">
