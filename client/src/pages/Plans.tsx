@@ -164,7 +164,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
             <button
               type="button"
               className={[
-                "ml-1 rounded-full pl-5 pr-3 py-2 text-sm font-semibold transition flex items-center gap-3",
+                "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition",
                 billingPeriod === "yearly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
               ].join(" ")}
               onClick={() => setBillingPeriod("yearly")}
@@ -172,18 +172,12 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               aria-label="Select yearly billing with 2 months free"
               data-testid="button-yearly"
             >
-              <span>Yearly</span>
-              {billingPeriod === "yearly" ? (
-                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-                  2 Mo. Free
-                </span>
-              ) : (
-                <span className="inline-flex items-center whitespace-nowrap rounded-full bg-black/10 px-2.5 py-0.5 text-xs font-semibold text-black">
-                  2 Mo. Free
-                </span>
-              )}
+              Yearly*
             </button>
           </div>
+          <p className="mt-3 text-xs text-white/70 text-center max-w-md">
+            *Yearly plans include two months free — at signup and every renewal.
+          </p>
 
           <div className="bg-cream border-2 border-neutral-darkest rounded-2xl p-6 md:p-8 flex flex-col gap-6 md:gap-8 items-center w-full">
             <div className="flex flex-col gap-2 items-center text-neutral-darkest text-center w-full">
@@ -560,25 +554,19 @@ function PricingCardsSection() {
                 type="button"
                 onClick={() => setBillingPeriod("yearly")}
                 className={[
-                  "ml-1 rounded-full pl-4 pr-3 py-2 text-sm font-semibold transition flex items-center gap-3",
+                  "ml-1 rounded-full px-4 py-2 text-sm font-semibold transition",
                   billingPeriod === "yearly"
                     ? "bg-neutral-900 text-white"
                     : "text-neutral-900/70 hover:text-neutral-900",
                 ].join(" ")}
                 data-testid="button-cards-yearly"
               >
-                <span>Yearly</span>
-                {billingPeriod === "yearly" ? (
-                  <span className="inline-flex items-center whitespace-nowrap rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-                    2 Mo. Free
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center whitespace-nowrap rounded-full bg-black/10 px-2.5 py-0.5 text-xs font-semibold text-black">
-                    2 Mo. Free
-                  </span>
-                )}
+                Yearly*
               </button>
             </div>
+            <p className="mt-2 text-xs text-neutral-900/60 text-center">
+              *Yearly plans include two months free — at signup and every renewal.
+            </p>
           </div>
         </div>
 
