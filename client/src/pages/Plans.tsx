@@ -101,8 +101,8 @@ function HeaderSection() {
               fees.
             </p>
 
-            <p className="mt-4 text-sm leading-relaxed text-neutral-darkest/70 max-w-[34rem]">
-              <BrandMark text="civilla" /> is educational only and does not provide legal advice.
+            <p className="mt-4 text-sm leading-relaxed text-neutral-darkest/70 max-w-[34rem] italic">
+              *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
             </p>
           </div>
         </div>
