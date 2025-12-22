@@ -19,10 +19,10 @@ function HeaderSection() {
         <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
             <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
-              How{" "}<BrandMark variant="civilla" />{" "}Works
+              How{" "}<BrandMark text="civilla" />{" "}Works
             </h1>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              A calm, step-by-step overview of what{" "}<BrandMark variant="civilla" />{" "}can help you understand and organize — without legal advice.
+              A calm, step-by-step overview of what{" "}<BrandMark text="civilla" />{" "}can help you understand and organize — without legal advice.
             </p>
           </div>
         </div>
@@ -48,8 +48,8 @@ function JourneySection() {
 
         <div className="flex flex-col items-start w-full">
           <div className="flex flex-col md:flex-row gap-8 items-start w-full">
-            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
-              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
+            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col md:flex-row min-w-0">
+              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0 md:flex-1">
                 <div className="flex flex-col gap-2 items-start w-full min-w-0">
                   <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest leading-[1.5]">
                     Step one
@@ -64,7 +64,7 @@ function JourneySection() {
                   </div>
                 </div>
               </div>
-              <div className="h-[280px] md:h-[416px] w-full">
+              <div className="h-[280px] md:h-auto w-full md:w-1/2 flex items-center justify-center">
                 <img src={imgPlaceholderImage} alt="" className="w-full h-full object-cover" />
               </div>
             </div>
@@ -78,7 +78,7 @@ function JourneySection() {
                         Gather And Organize Your Information
                       </h3>
                       <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                        Add documents, messages, and key events.{" "}<BrandMark variant="civilla" />{" "}organizes what you provide into a clear, reviewable timeline.
+                        Add documents, messages, and key events.{" "}<BrandMark text="civilla" />{" "}organizes what you provide into a clear, reviewable timeline.
                       </p>
                     </div>
                   </div>
@@ -100,7 +100,7 @@ function JourneySection() {
                           Learn What's Typical (Not What To Do)
                         </h3>
                         <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                          Review statutes, court rules, and educational resources.{" "}<BrandMark variant="civilla" />{" "}does not tell you what to file, when to file, or what will happen.
+                          Review statutes, court rules, and educational resources.{" "}<BrandMark text="civilla" />{" "}does not tell you what to file, when to file, or what will happen.
                         </p>
                       </div>
                     </div>
@@ -143,7 +143,7 @@ function ClaritySection() {
               What Changes When You Understand The Process
             </h2>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              When the steps feel clearer, the overwhelm can ease.{" "}<BrandMark variant="civilla" />{" "}is built to help you learn what's typical, track what matters, and stay organized.
+              When the steps feel clearer, the overwhelm can ease.{" "}<BrandMark text="civilla" />{" "}is built to help you learn what's typical, track what matters, and stay organized.
             </p>
           </div>
         </div>
@@ -253,7 +253,7 @@ function TestimonialSection() {
             <img src={imgStars} alt="" className="w-full h-full" />
           </div>
           <p className="cv-p font-sans text-lg md:text-[24px] text-neutral-darkest text-center leading-[1.6] w-full">
-            "<BrandMark variant="civilla" /> helped me feel less overwhelmed by what was happening — because I could finally see everything in one place."
+            "<BrandMark text="civilla" /> helped me feel less overwhelmed by what was happening — because I could finally see everything in one place."
           </p>
           <div className="flex flex-col gap-2 items-center">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
@@ -281,7 +281,7 @@ function CTASection() {
                 Start Your Journey Today
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                Whether you're just beginning or deep in the process,{" "}<BrandMark variant="civilla" />{" "}meets you where you are.
+                Whether you're just beginning or deep in the process,{" "}<BrandMark text="civilla" />{" "}meets you where you are.
               </p>
             </div>
           </div>
