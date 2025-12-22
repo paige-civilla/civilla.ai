@@ -83,7 +83,7 @@ function JourneySection() {
                     </div>
                   </div>
                 </div>
-                <div className="h-[200px] md:h-full w-full md:w-[432px]">
+                <div className="h-[200px] md:h-auto w-full md:w-[432px] flex items-center justify-center">
                   <img src={imgPlaceholderImage1} alt="" className="w-full h-full object-cover" />
                 </div>
               </div>
