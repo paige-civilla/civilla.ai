@@ -1,85 +1,120 @@
-import { BrandText } from "./Brand";
+import React from "react";
 
-const steps = [
-  {
-    id: "step-one",
-    number: "1",
-    title: "Step One",
-    description: "Choose your state and case type. civilla surfaces educational information and typical court steps for that jurisdiction and case category."
-  },
-  {
-    id: "step-two",
-    number: "2",
-    title: "Step Two",
-    description: "Add your documents, messages, and key events. civilla organizes what you provide into a clear timeline so you can review everything in context."
-  },
-  {
-    id: "step-three",
-    number: "3",
-    title: "Step Three",
-    description: "Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises."
-  }
-];
+type Step = {
+  step: string;
+  title: React.ReactNode;
+  body: React.ReactNode;
+  imageSrc?: string;
+  imageAlt?: string;
+};
+
+function StepCard({
+  step,
+  title,
+  body,
+  imageSrc,
+  imageAlt,
+  className = "",
+  showStepLabel = true,
+}: Step & { className?: string; showStepLabel?: boolean }) {
+  return (
+    <div
+      className={[
+        "rounded-[24px] border-2 border-black bg-[#f6f4ef] overflow-hidden",
+        "min-w-0",
+        className,
+      ].join(" ")}
+    >
+      <div className="p-8 min-w-0">
+        {showStepLabel && (
+          <div className="text-sm font-semibold tracking-tight text-neutral-800">
+            {step}
+          </div>
+        )}
+
+        <div className="mt-3 text-4xl md:text-5xl font-black leading-[1.02] tracking-tight min-w-0">
+          {title}
+        </div>
+
+        <div className="mt-5 text-base md:text-lg leading-relaxed text-neutral-800 min-w-0">
+          {body}
+        </div>
+      </div>
+
+      {imageSrc ? (
+        <div className="w-full min-w-0">
+          <img
+            src={imageSrc}
+            alt={imageAlt ?? ""}
+            className="block w-full h-auto object-cover"
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function StepsSection() {
+  const steps: Step[] = [
+    {
+      step: "Step one",
+      title: "Understand your case type and timeline",
+      body: (
+        <>
+          Choose your state and case type to view plain-language education and
+          common stages people often see.
+        </>
+      ),
+      imageSrc: "/images/steps/step-1.jpg",
+      imageAlt: "Compass on a map",
+    },
+    {
+      step: "Step two",
+      title: "Gather and organize your information",
+      body: (
+        <>
+          Add documents, messages, and key events. <em className="cv-brand">civilla</em>{" "}
+          organizes what you provide into a clear, reviewable timeline.
+        </>
+      ),
+      imageSrc: "/images/steps/step-2.jpg",
+      imageAlt: "Desk with laptop and pencils",
+    },
+    {
+      step: "Step three",
+      title: "Information & Guidelines Available to the Public",
+      body: (
+        <>
+          Review statutes, court rules, and educational resources — without advice,
+          predictions, or filing instructions.
+        </>
+      ),
+    },
+    {
+      step: "Step four",
+      title: "Prepare with knowledge and clarity",
+      body: (
+        <>
+          Turn information into structure: a calmer record, clearer questions, and
+          better next steps for you to decide.
+        </>
+      ),
+    },
+  ];
+
   return (
-    <section 
-      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
-      data-testid="section-steps"
-    >
-      <div className="flex flex-col items-start max-w-container w-full">
-        <div className="md:hidden w-full">
-          <div className="space-y-0">
-            {steps.map((step, idx) => (
-              <div key={step.id} className="py-6">
-                <div className="grid grid-cols-[32px,12px,1fr] gap-3 items-stretch">
-                  <div className="flex items-center justify-center">
-                    <span className="font-heading font-bold text-2xl text-neutral-darkest leading-none">
-                      {step.number}
-                    </span>
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="w-px bg-black/15" />
-                  </div>
-                  <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
-                    <BrandText>{step.description}</BrandText>
-                  </p>
-                </div>
-                {idx !== steps.length - 1 && (
-                  <div className="mt-6 w-full border-b border-black/10" />
-                )}
-              </div>
-            ))}
-          </div>
+    <section className="px-6 md:px-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {steps.map((s, idx) => (
+            <StepCard
+              key={String(s.step) + idx}
+              {...s}
+              className={idx === 0 ? "md:col-span-2 lg:col-span-3" : ""}
+              showStepLabel={idx !== 0}
+            />
+          ))}
         </div>
-
-        <div className="hidden md:block w-full min-w-0">
-          <div className="grid grid-cols-3 gap-x-12 w-full min-w-0">
-            {steps.map((step) => (
-              <h3 
-                key={step.id} 
-                className="font-heading font-bold text-heading-5 tracking-[0.32px] text-neutral-darkest pb-4 text-center"
-              >
-                {step.title}
-              </h3>
-            ))}
-
-            <div className="col-span-3 w-full border-b border-black/20 mb-6" />
-
-            {steps.map((step) => (
-              <p 
-                key={`${step.id}-desc`}
-                className="font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest text-center"
-              >
-                <BrandText>{step.description}</BrandText>
-              </p>
-            ))}
-          </div>
-        </div>
-
-        <p className="font-sans font-bold italic text-[10px] text-neutral-darkest/70 text-center w-full mt-8">
-          *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
-        </p>
       </div>
     </section>
   );
