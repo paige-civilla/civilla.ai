@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Check, ChevronRight, ChevronUp, ChevronDown, Home, X, ArrowDownRight } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import { FaqSection } from "@/components/sections/FaqSection";
 import { Brand, BrandText } from "@/components/Brand";
 import BrandMark from "@/components/BrandMark";
 
@@ -732,110 +733,6 @@ function OrganizationsSection() {
   );
 }
 
-function FAQSection() {
-  const [openItems, setOpenItems] = useState<number[]>([0]);
-
-  const faqs = [
-    {
-      id: 0,
-      question: "Can I cancel anytime?",
-      answer: "Yes. You can cancel your subscription at any time through your account settings. Your access continues until the end of your current billing period."
-    },
-    {
-      id: 1,
-      question: "What payment methods do you accept?",
-      answer: "We accept all major credit cards (Visa, Mastercard, American Express) and debit cards. All payments are processed securely through Stripe."
-    },
-    {
-      id: 2,
-      question: "Is there a free trial?",
-      answer: "Yes, we offer a 3-day free trial so you can explore civilla before committing. No credit card required to start your trial."
-    },
-    {
-      id: 3,
-      question: "Can I switch plans?",
-      answer: "Absolutely. You can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle."
-    },
-    {
-      id: 4,
-      question: "Do you offer refunds?",
-      answer: "We offer refunds on a case-by-case basis. If you're not satisfied with civilla, contact our support team within 14 days of your purchase."
-    }
-  ];
-
-  const toggleItem = (id: number) => {
-    setOpenItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
-    );
-  };
-
-  return (
-    <section className="bg-[#f2f2f2] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-faq">
-      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
-            <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-              Common questions
-            </h2>
-            <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              Everything you need to know about our plans
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-start max-w-[768px] w-full border-b-2 border-neutral-darkest">
-          {faqs.map((faq) => (
-            <div key={faq.id} className="flex flex-col items-start w-full">
-              <button
-                onClick={() => toggleItem(faq.id)}
-                className="flex gap-4 md:gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
-                data-testid={`button-faq-${faq.id}`}
-              >
-                <span className="flex-1 font-sans font-bold text-sm md:text-[18px] leading-[1.6] text-neutral-darkest">
-                  {faq.question}
-                </span>
-                {openItems.includes(faq.id) ? (
-                  <ChevronUp className="w-6 md:w-8 h-6 md:h-8 text-neutral-darkest shrink-0" />
-                ) : (
-                  <ChevronDown className="w-6 md:w-8 h-6 md:h-8 text-neutral-darkest shrink-0" />
-                )}
-              </button>
-              {openItems.includes(faq.id) && (
-                <div className="flex items-start pb-6 w-full">
-                  <p className="flex-1 font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest">
-                    <BrandText>{faq.answer}</BrandText>
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-4 md:gap-6 items-center max-w-[560px] w-full">
-          <div className="flex flex-col gap-4 items-center text-neutral-darkest text-center w-full">
-            <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] leading-[1.2] w-full">
-              Still have questions?
-            </h3>
-            <p className="font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-              Our team is here to help
-            </p>
-          </div>
-          <div className="flex items-center">
-            <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6] px-6 py-2.5 rounded-md"
-              data-testid="button-contact-faq"
-            >
-              Contact us
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function Plans() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
@@ -846,7 +743,10 @@ export default function Plans() {
         <HeaderSection />
         <MostPopularSection billingPeriod={billingPeriod} setBillingPeriod={setBillingPeriod} />
         <PricingCardsSection />
-        <FAQSection />
+        <FaqSection
+          title="Common questions"
+          subtitle="Everything you need to know about our plans"
+        />
       </main>
       <Footer />
     </div>
