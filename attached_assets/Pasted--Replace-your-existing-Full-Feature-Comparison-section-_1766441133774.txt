@@ -1,0 +1,179 @@
+/* ✅ Replace your existing "Full Feature Comparison" section/component in:
+   client/src/pages/Plans.tsx
+   with the block below.
+
+   - Removes the Trial column from the table (Core/Pro/Premium only)
+   - Adds a Trial callout block ABOVE the table inside the same hero box
+*/
+
+type PaidTierKey = "core" | "pro" | "premium";
+
+const PAID_TIER_ORDER: PaidTierKey[] = ["core", "pro", "premium"];
+const PAID_TIER_LABEL: Record<PaidTierKey, string> = {
+  core: "Core",
+  pro: "Pro",
+  premium: "Premium",
+};
+
+const tierIndex = (t: PaidTierKey) => PAID_TIER_ORDER.indexOf(t);
+
+const FeatureComparisonSection = () => {
+  // ✅ Features listed by where they START
+  // Higher tiers automatically inherit checkmarks.
+  const featureGroups: Array<{
+    title: string;
+    rows: Array<{ label: string; startsIn: PaidTierKey }>;
+  }> = [
+    {
+      title: "Starts in Core",
+      rows: [
+        { label: "One active family law case", startsIn: "core" },
+        { label: "Storage (30 GB)", startsIn: "core" },
+        { label: "Unlimited document uploads (reasonable use)", startsIn: "core" },
+        { label: "Interactive timeline", startsIn: "core" },
+        { label: "Lexi research with citations", startsIn: "core" },
+        { label: "AI document analysis", startsIn: "core" },
+        { label: "AI deadline extraction (confirmation required)", startsIn: "core" },
+        { label: "Task & deadline tracking", startsIn: "core" },
+        { label: "Reminders (opt-in)", startsIn: "core" },
+        { label: "Educational document creator", startsIn: "core" },
+        { label: "Downloads with required acknowledgments + disclaimers", startsIn: "core" },
+        { label: "Audio uploads + transcription", startsIn: "core" },
+        { label: "Basic exhibits builder", startsIn: "core" },
+        { label: "Parenting plan builder", startsIn: "core" },
+        { label: "Child support estimator (education only)", startsIn: "core" },
+      ],
+    },
+    {
+      title: "Starts in Pro",
+      rows: [
+        { label: "Storage (50 GB)", startsIn: "pro" },
+        { label: "Advanced exhibits builder", startsIn: "pro" },
+        { label: "Video uploads", startsIn: "pro" },
+        { label: "Dual OCR verification (cross-checked)", startsIn: "pro" },
+        { label: "Advanced pattern reporting (timeline → evidence → mapping)", startsIn: "pro" },
+        { label: "Hearing & trial prep organization", startsIn: "pro" },
+      ],
+    },
+    {
+      title: "Starts in Premium",
+      rows: [
+        { label: "Storage (100 GB)", startsIn: "premium" },
+        { label: "Advanced narrative reports (still educational)", startsIn: "premium" },
+        { label: "Full exhibits management", startsIn: "premium" },
+        { label: "Multi-child, multi-issue analytics", startsIn: "premium" },
+        { label: "Advanced reminders + escalation tracking", startsIn: "premium" },
+        { label: "Complex discovery tracking", startsIn: "premium" },
+        { label: "Post-judgment workflows (education only)", startsIn: "premium" },
+      ],
+    },
+  ];
+
+  const cellMark = (startsIn: PaidTierKey, colTier: PaidTierKey) => {
+    // ✓ if this tier is at/above where it starts; otherwise ×
+    const ok = tierIndex(colTier) >= tierIndex(startsIn);
+    return ok ? "✓" : "×";
+  };
+
+  return (
+    <section id="full-features" className="mt-16">
+      <div className="rounded-[24px] border border-neutral-900/20 bg-white/40 p-6 md:p-10">
+        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">
+          Full Feature Comparison
+        </h2>
+        <p className="mt-2 text-neutral-900/70">
+          Features listed by where they start. Higher tiers add more checkmarks.
+        </p>
+
+        {/* ✅ TRIAL CALLOUT (no Trial column in table) */}
+        <div className="mt-6 rounded-[18px] border border-neutral-900/15 bg-white/60 p-5 md:p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-lg font-bold text-neutral-900">3-Day Trial</p>
+              <p className="text-neutral-900/70">
+                Try Premium workflows first — with a few protective limits.
+              </p>
+            </div>
+            <div className="text-sm font-semibold text-neutral-900/70">
+              Ends automatically • No auto-billing
+            </div>
+          </div>
+
+          <ul className="mt-4 space-y-2 text-neutral-900/80">
+            <li className="flex gap-2">
+              <span className="mt-[2px]">✓</span>
+              <span>Access to Premium-level features to explore the workflow.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-[2px]">×</span>
+              <span>No audio or video uploads during trial.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-[2px]">×</span>
+              <span>No full exhibit builder access (you can generate 1 sample exhibit).</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-[2px]">×</span>
+              <span>
+                No document downloads (you can generate 1 sample educational document with a large
+                watermark).
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-[2px]">✓</span>
+              <span>Upgrade anytime to unlock full access immediately.</span>
+            </li>
+          </ul>
+
+          <p className="mt-4 text-sm italic text-neutral-900/70">
+            *Educational, research, and organizational support — not legal advice or representation.*
+          </p>
+        </div>
+
+        {/* ✅ TABLE (Paid tiers only) */}
+        <div className="mt-8 overflow-x-auto rounded-[18px] border border-neutral-900/15 bg-white/60">
+          <table className="min-w-[720px] w-full text-left">
+            <thead>
+              <tr className="border-b border-neutral-900/10">
+                <th className="px-5 py-4 text-sm font-bold text-neutral-900">Feature</th>
+                {PAID_TIER_ORDER.map((t) => (
+                  <th key={t} className="px-5 py-4 text-sm font-bold text-neutral-900">
+                    {PAID_TIER_LABEL[t]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {featureGroups.map((group) => (
+                <React.Fragment key={group.title}>
+                  <tr className="border-t border-neutral-900/10">
+                    <td colSpan={1 + PAID_TIER_ORDER.length} className="px-5 py-4">
+                      <div className="text-sm font-black text-neutral-900">{group.title}</div>
+                    </td>
+                  </tr>
+
+                  {group.rows.map((row) => (
+                    <tr key={row.label} className="border-t border-neutral-900/10">
+                      <td className="px-5 py-4 text-sm text-neutral-900/85">{row.label}</td>
+                      {PAID_TIER_ORDER.map((t) => (
+                        <td
+                          key={`${row.label}-${t}`}
+                          className="px-5 py-4 text-lg font-semibold text-neutral-900"
+                        >
+                          {cellMark(row.startsIn, t)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default FeatureComparisonSection;
