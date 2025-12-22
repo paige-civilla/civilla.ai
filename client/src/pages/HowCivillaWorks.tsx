@@ -9,8 +9,6 @@ const imgVector1 = "https://www.figma.com/api/mcp/asset/e735d03f-ac75-40ca-bfe1-
 const imgVector2 = "https://www.figma.com/api/mcp/asset/91268db6-076c-4db4-9141-c3f3fa218d73";
 const imgRuleIcon = "https://www.figma.com/api/mcp/asset/eb534531-c64a-41f5-8ac8-db343f842da1";
 const imgExploreIcon = "https://www.figma.com/api/mcp/asset/b7406a41-4908-40e6-bf88-31270c1ca4cb";
-const imgStars = "https://www.figma.com/api/mcp/asset/9a8784d4-e265-4a60-8093-549fabd13b41";
-const imgAvatarImage = "https://www.figma.com/api/mcp/asset/56ff492f-7eaa-408f-a9f2-2256c46176ba";
 
 function HeaderSection() {
   return (
@@ -269,31 +267,6 @@ function ToolsSection() {
   );
 }
 
-function TestimonialSection() {
-  return (
-    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-testimonial">
-      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
-          <div className="w-12 h-12 md:w-16 md:h-16 relative">
-            <img src={imgStars} alt="" className="w-full h-full" />
-          </div>
-          <p className="cv-p font-sans text-lg md:text-[24px] text-neutral-darkest text-center leading-[1.6] w-full">
-            "<BrandMark text="civilla" /> helped me feel less overwhelmed by what was happening — because I could finally see everything in one place."
-          </p>
-          <div className="flex flex-col gap-2 items-center">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
-              <img src={imgAvatarImage} alt="Parent testimonial" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex flex-col items-center text-neutral-darkest text-center">
-              <span className="font-sans font-bold text-sm md:text-[16px] leading-[1.5]">Parent in California</span>
-              <span className="font-sans font-normal text-xs md:text-[14px] leading-[1.5]">Custody case, 2024</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function CTASection() {
   return (
@@ -330,7 +303,6 @@ export default function HowCivillaWorks() {
         <JourneySection />
         <ClaritySection />
         <ToolsSection />
-        <TestimonialSection />
         <CTASection />
       </main>
       <Footer />
