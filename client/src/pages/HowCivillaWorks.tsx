@@ -197,13 +197,13 @@ function ClaritySection() {
 }
 
 function ToolsSection() {
-  const tabs = [
-    { id: "case-journey", label: "Your Case Journey" },
-    { id: "evidence-map", label: "Evidence Map" },
-    { id: "research-guide", label: "Research Guide" },
-    { id: "document-prep", label: "Document Prep" },
-    { id: "timeline-view", label: "Timeline View" },
-    { id: "safety-tools", label: "Safety Tools" },
+  const toolTabs = [
+    "Your Case Journey",
+    "Evidence Map",
+    "Research Guide",
+    "Document Prep",
+    "Timeline View",
+    "Safety Tools",
   ];
 
   return (
@@ -220,23 +220,48 @@ function ToolsSection() {
           </div>
         </div>
 
-        <div className="bg-[#f2f2f2] border-2 border-neutral-darkest rounded-2xl overflow-hidden w-full">
-          <div className="flex flex-col md:flex-row items-start w-full">
-            {tabs.map((tab, index) => (
-              <div
-                key={tab.id}
-                className={`w-full md:flex-1 flex flex-col items-center justify-center px-6 md:px-8 py-4 md:py-6 ${
-                  index === 0 ? "" : "border-t-2 md:border-t-0 md:border-l-2 border-neutral-darkest"
-                }`}
-              >
-                <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest text-center leading-[1.5]">
-                  {tab.label}
-                </span>
-              </div>
-            ))}
+        <div className="cv-isolate overflow-hidden rounded-[28px] border-2 border-black bg-[#f7f5ef] w-full">
+          <div className="border-b-2 border-black bg-[#e7ebea]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
+              {toolTabs.map((label, idx) => (
+                <div
+                  key={label}
+                  className={`min-w-0 px-3 py-5 text-center text-xs sm:text-sm font-semibold leading-snug ${
+                    idx !== 0 ? "md:border-l-2 md:border-black" : ""
+                  }`}
+                >
+                  <span className="block break-normal hyphens-none">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="h-[280px] md:h-[400px] w-full bg-cream border-t-2 border-neutral-darkest flex items-center justify-center">
-            <p className="font-sans text-sm md:text-[18px] text-neutral-darkest/50">Tool preview area</p>
+
+          <div className="p-6 sm:p-8">
+            <div className="relative min-h-[320px] overflow-hidden rounded-2xl border-2 border-black bg-white">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute left-8 top-10 h-10 w-52 rounded-lg bg-black/10 blur-sm" />
+                <div className="absolute left-8 top-28 h-7 w-64 rounded-lg bg-black/10 blur-sm" />
+                <div className="absolute left-8 top-44 h-7 w-56 rounded-lg bg-black/10 blur-sm" />
+                <div className="absolute right-10 top-24 h-40 w-56 rounded-xl bg-black/10 blur-sm" />
+                <div className="absolute bottom-10 left-8 h-9 w-40 rounded-lg bg-black/10 blur-sm" />
+              </div>
+
+              <div className="relative flex h-full min-h-[320px] items-center justify-center p-8">
+                <div className="max-w-xl text-center">
+                  <p className="text-base font-semibold">
+                    Tool previews are coming soon.
+                  </p>
+                  <p className="mt-2 text-sm text-neutral-700">
+                    This page explains what each tool is for. Inside the app, you'll use them with
+                    <span className="font-semibold"> your </span>
+                    own information to stay organized and understand what's typical — without legal advice.
+                  </p>
+                  <p className="mt-3 text-xs text-neutral-600">
+                    Educational &amp; organizational support — not legal advice or representation.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
