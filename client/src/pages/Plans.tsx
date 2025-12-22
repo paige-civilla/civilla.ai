@@ -236,16 +236,16 @@ function PricingCardsSection() {
     {
       id: "trial",
       name: "3-Day Trial",
-      monthlyPrice: "$0",
-      yearlyPrice: "$0",
-      priceNote: "Ends automatically after 3 days. No auto-billing.",
+      monthlyPrice: "Free",
+      yearlyPrice: "Free",
+      tagline: "Ends after 3 days. No auto-billing.",
       highlights: [
-        "1 family law case",
-        "Evidence upload",
-        "Timeline",
-        "Pattern insights",
+        "One family law case",
+        "Evidence upload (documents only)",
+        "Timeline (read-only)",
+        "Pattern insights (limited)",
         "Lexi education",
-        "Educational document creator",
+        "Educational document creator (watermarked, no download)",
       ],
       cta: "Start Trial",
     },
@@ -254,9 +254,9 @@ function PricingCardsSection() {
       name: "Core",
       monthlyPrice: "$19.99",
       yearlyPrice: "$199",
-      priceNote: "2 Mo. Free billed yearly",
+      tagline: "Built for one active case — full tools, downloads, and tracking.",
       highlights: [
-        "1 active family law case",
+        "One active family law case",
         "30 GB storage",
         "Interactive timeline",
         "Lexi research with citations",
@@ -270,7 +270,7 @@ function PricingCardsSection() {
       name: "Pro",
       monthlyPrice: "$29.99",
       yearlyPrice: "$299",
-      priceNote: "Advanced evidence workflows",
+      tagline: "For higher-volume cases — deeper evidence workflows and court prep exports.",
       badge: "Most Popular",
       highlights: [
         "50 GB storage",
@@ -287,7 +287,7 @@ function PricingCardsSection() {
       name: "Premium",
       monthlyPrice: "$49.99",
       yearlyPrice: "$499",
-      priceNote: "Maximum capacity and tracking",
+      tagline: "For complex cases — maximum storage, tracking, and organization tools.",
       highlights: [
         "100 GB storage",
         "Full exhibits management",
@@ -303,31 +303,37 @@ function PricingCardsSection() {
   const addOns = [
     {
       title: "Additional Case Slot",
-      price: "$9.99 per month per additional case",
-      bullets: ["+30 GB storage per case", "Full feature parity with your current plan"],
+      price: "$9.99 / month",
+      description: "Add another active case without changing your base plan.",
+      bullets: [
+        "+30 GB storage for that case",
+        "Same features as your current plan",
+        "Helpful for cases in multiple states, or children with different parents",
+      ],
     },
     {
       title: "Archive Mode",
-      price: "$4.99 per month",
+      price: "$4.99 / month",
+      description: "Downgrade to preserve your case between active periods.",
       bullets: [
-        "For high-conflict cases between court dates",
         "Evidence uploads and journaling",
-        "Timeline storage preserved",
+        "Timeline and storage preserved",
+        "No new analysis while archived",
         "Reactivate full features anytime",
       ],
     },
     {
       title: "Over-Limit Processing Pack",
       price: "Starts at $19.99 one-time",
+      description: "",
       bullets: [
         "Includes 200 additional analysis credits",
-        "Internal soft limits",
-        "In-app warnings if you get close",
+        "We warn you before you reach limits",
         "No automatic overage charges",
-        "Offered only if exceeded",
+        "Offered only if you exceed soft limits",
       ],
       footnote:
-        "If you approach internal limits, we'll warn you. If exceeded, you'll see an optional one-time pack before any additional processing runs.",
+        "If you approach limits, we'll notify you. If exceeded, you can optionally add a one-time pack before more processing runs.",
     },
   ] as const;
 
@@ -450,7 +456,7 @@ function PricingCardsSection() {
               Choose Your Plan
             </h2>
             <p className="mt-2 max-w-2xl text-base text-neutral-900/75">
-              All plans are educational and organizational tools for family law.
+              Educational, research, and organization tools for family law — powered by what you enter. Not legal advice.
             </p>
 
             <button

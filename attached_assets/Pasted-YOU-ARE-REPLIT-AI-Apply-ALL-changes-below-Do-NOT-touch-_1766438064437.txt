@@ -1,0 +1,167 @@
+YOU ARE REPLIT AI. Apply ALL changes below. Do NOT touch the Cream Navbar, Footer, or the FIRST hero box. Only update the “Choose Your Plan” section + plan cards, Add-ons, Organizations box, Feature Comparison table, and FAQs.
+
+────────────────────────────────────────────────────────────
+A) PLANS PAGE COPY + TAGLINES (Choose Your Plan section)
+FILE: client/src/pages/Plans.tsx  (or client/src/pages/Plans.tsx / client/src/pages/plans.tsx if different)
+
+1) In the “Choose Your Plan” section:
+- Change the subtitle text under “Choose Your Plan” to:
+  "Educational, research, and organization tools for family law — powered by what you enter. Not legal advice."
+- Keep the “See Full List Of Features ↘” button, but ensure it scrolls to the Feature Comparison section (anchor id like #feature-comparison). If the id differs, update it consistently.
+
+2) In the plan cards data (where the 4 plans are defined: Trial/Core/Pro/Premium):
+- TRIAL card:
+  - Replace the "$0" price display with the word: "Free"
+  - Keep “3-Day Trial” as the plan name (do NOT add “Free Starter” anywhere).
+  - Add/ensure a small note (under the button or under the highlights) that reads:
+    "Ends after 3 days. No auto-billing."
+  - Trial should be positioned as “try the full app with limits”:
+    - They can explore broadly, but: NO audio uploads, NO video uploads.
+    - Document creator + exhibits can be tried once each, but NO downloads; apply heavy watermark.
+    - (Do NOT add long explanations inside the card; keep it short.)
+
+- CORE / PRO / PREMIUM:
+  - Update the short tagline sentence under each price (the “for X user…” style line) to be clearer + less wordy:
+
+    Core tagline:
+    "Built for one active case — full tools, downloads, and tracking."
+
+    Pro tagline:
+    "For higher-volume cases — deeper evidence workflows and court prep exports."
+
+    Premium tagline:
+    "For complex cases — maximum storage, tracking, and organization tools."
+
+  - Remove any “Billed monthly” line that appears inside/above cards (especially the “Most Popular” area).
+  - Keep the monthly/yearly toggle behavior intact.
+
+3) Add a little extra spacing between the last highlight bullet and the button on each plan card:
+- Add a wrapper class or style like `mt-6` on the button container (or `pt-4` / `gap-4`) so the UI breathes more.
+
+────────────────────────────────────────────────────────────
+B) ADD-ONS SECTION (Rewrite Archive Mode + Additional Case Slot + Over-limit pack)
+FILE: client/src/pages/Plans.tsx (same file, add-ons data section)
+
+4) Additional Case Slot card:
+- Keep price: $9.99 / month
+- Replace the description/bullets with clearer language:
+  Title: "Additional Case Slot"
+  Short description:
+    "Add another active case without changing your base plan."
+  Bullets:
+    - "+30 GB storage for that case"
+    - "Same features as your current plan"
+    - "Helpful for cases in multiple states, or children with different parents"
+
+5) Archive Mode card (this is the $4.99/mo one):
+- Keep price: $4.99 / month
+- Replace the current “high conflict between court dates” wording.
+  Title: "Archive Mode"
+  Short description:
+    "Downgrade to preserve your case between active periods."
+  Bullets:
+    - "Evidence uploads and journaling"
+    - "Timeline and storage preserved"
+    - "No new analysis while archived"
+    - "Reactivate full features anytime"
+
+6) Over-Limit Processing Pack card:
+- Add/keep it as an add-on card alongside the other add-ons.
+- Remove “rare/extreme” wording everywhere.
+- Set the pricing line to:
+  "Starts at $19.99 one-time"
+- Bullets:
+    - "Includes 200 additional analysis credits"
+    - "We warn you before you reach limits"
+    - "No automatic overage charges"
+    - "Offered only if you exceed soft limits"
+
+- Small helper text (1–2 lines max, not wordy):
+  "If you approach limits, we’ll notify you. If exceeded, you can optionally add a one-time pack before more processing runs."
+
+────────────────────────────────────────────────────────────
+C) ORGANIZATIONS & DV SHELTERS HERO BOX (Rewrite + remove repeated “Contact us”)
+FILE: client/src/pages/Plans.tsx (organizations section)
+
+7) Rewrite the Organizations box copy to be cleaner and more professional:
+- Heading: "Organizations & DV Shelters"
+- Subheading:
+  "Custom pricing for domestic violence shelters, legal aid, and advocacy groups."
+- Add one short grant line (no promises):
+  "We’re actively pursuing grant and sponsor partnerships to help subsidize access where possible."
+- Keep the “Contact Us” button once (only once).
+- Remove/avoid repeating “Contact us” inside the same small card body.
+
+- Keep the “pill/chip” items (custom onboarding, privacy-first configs, non-profit pricing, bulk access).
+
+────────────────────────────────────────────────────────────
+D) FEATURE COMPARISON TABLE (Trial should show what it includes; keep the 4 tiers)
+FILE: client/src/pages/Plans.tsx (Feature Comparison section)
+
+8) Adjust the Feature Comparison so:
+- The Trial column shows ✓ for what Trial actually includes:
+  ✓ One family law case
+  ✓ Evidence upload (documents)
+  ✓ Timeline (read-only is fine, still show ✓)
+  ✓ Pattern insights (limited is fine, still show ✓)
+  ✓ Lexi education (✓)
+  ✓ Educational document creator (✓)  ← Trial can try once, no download
+  ✓ Exhibits (✓) ONLY if your current Trial truly lets them “try once” (watermarked). If Trial cannot access exhibits at all, keep X.
+- Trial must be X for:
+  X Audio uploads
+  X Video uploads
+  X Downloadable documents (or “Downloads”)  (Trial should be X; watermark/no download)
+
+9) Keep the “features listed by where they start” approach:
+- Make the first block the “✓ in all plans” features (Trial included).
+- Then “Starts in Core”, then “Starts in Pro”, then “Starts in Premium”.
+- Within each block, order the features from most important to least.
+
+(If you need to add a tiny footnote under the table, keep it to ONE line max):
+"Trial includes watermarked samples for select tools; downloads are disabled."
+
+────────────────────────────────────────────────────────────
+E) FAQ SECTION (Fix upgrade billing + refunds policy)
+FILE: client/src/pages/Plans.tsx OR wherever FAQs are defined for /plans
+
+10) Update/ensure FAQs include:
+- Upgrades:
+  Q: "What happens when I upgrade?"
+  A: "Upgrades start immediately. You’re charged a prorated difference today, and your new billing date becomes the day you upgrade."
+
+- Refunds (must match our policy; remove any “case-by-case within 14 days” language):
+  Q: "Do you offer refunds?"
+  A: "Subscriptions are non-refundable. Limited exceptions apply for duplicate charges, billing errors, or extended access issues."
+
+────────────────────────────────────────────────────────────
+F) STRIPE: HOW TO CHARGE PRORATED DIFFERENCE + RESET BILLING DATE ON UPGRADE
+(Implement backend support if it doesn’t exist yet.)
+
+SERVER FILE: server/routes/billing.ts (or wherever Stripe subscription updates happen)
+
+- When upgrading/downgrading a subscription:
+  - Set `billing_cycle_anchor` to "now" so the upgrade date becomes the new billing date.
+  - Use `proration_behavior: "always_invoice"` to immediately invoice the prorated difference today.
+  - Update the subscription item to the new price.
+
+Example (Node/TS):
+
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
+
+export async function upgradeSubscriptionNow(subscriptionId: string, subscriptionItemId: string, newPriceId: string) {
+  return await stripe.subscriptions.update(subscriptionId, {
+    billing_cycle_anchor: "now",
+    proration_behavior: "always_invoice",
+    items: [{ id: subscriptionItemId, price: newPriceId }],
+  });
+}
+
+- If you use Stripe Customer Portal instead of custom code:
+  - Enable plan changes in the Portal settings
+  - Turn on “Prorate subscription updates”
+  - Choose “Update immediately”
+
+Make sure the frontend /plans “Select Core/Pro/Premium” buttons call your existing billing flow (Checkout or upgrade endpoint) without breaking current behavior.
+
+END.
