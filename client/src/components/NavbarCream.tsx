@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, HelpCircle, FileText, Lock, Mail, LogIn, Target, Users, BookOpen, Accessibility, ScrollText, MessageCircle } from "lucide-react";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
 
 const menuSections = [
@@ -29,16 +29,16 @@ const menuSections = [
     links: [
       { label: "Safety & Support", href: "/safety-support", icon: Heart },
       { label: "Legal & Compliance", href: "/legal-compliance", icon: FileText },
-      { label: "Accessibility", href: "/accessibility", icon: Lock },
+      { label: "Accessibility", href: "/accessibility", icon: Accessibility },
     ]
   },
   {
     header: "Support",
-    icon: Heart,
+    icon: MessageCircle,
     links: [
       { label: "Contact", href: "/contact", icon: Mail },
       { label: "Privacy Policy", href: "/privacy-policy", icon: Lock },
-      { label: "Terms of Service", href: "/terms", icon: FileText },
+      { label: "Terms of Service", href: "/terms", icon: ScrollText },
     ],
     comingSoon: [
       { label: "FAQ" },
