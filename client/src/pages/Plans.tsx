@@ -520,7 +520,8 @@ function PricingCardsSection() {
               Choose Your Plan
             </h2>
             <p className="mt-2 max-w-xl text-base text-neutral-900/75">
-              Educational, research, and organization tools for family law cases, powered by information you enter. Not legal advice.
+              Educational, research, and organization tools for family law cases,<br />
+              powered by information you enter.
             </p>
 
             <button
