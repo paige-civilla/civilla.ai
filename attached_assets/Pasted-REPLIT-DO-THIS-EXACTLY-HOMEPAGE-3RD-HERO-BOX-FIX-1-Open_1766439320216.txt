@@ -1,3 +1,13 @@
+REPLIT — DO THIS EXACTLY (HOMEPAGE • 3RD HERO BOX FIX)
+
+1) Open: client/src/components/ClaritySection.tsx
+2) REPLACE THE ENTIRE FILE CONTENTS with the code below.
+3) Save. The Home page “Step One / Two / Three” section will be restored:
+   - Desktop: “Step One/Two/Three” spelled out + underlined
+   - Mobile: 1 / 2 / 3 sits to the LEFT of its paragraph (not above), stacked vertically
+   - Keeps the asterisk disclaimer line at the bottom
+
+--- BEGIN FILE: client/src/components/ClaritySection.tsx ---
 import React from "react";
 
 export function ClaritySection() {
@@ -62,3 +72,4 @@ export function ClaritySection() {
 }
 
 export default ClaritySection;
+--- END FILE ---
