@@ -657,52 +657,47 @@ function PricingCardsSection() {
       </div>
 
       {/* Organizations hero box */}
-      <div className="mt-10 rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 md:p-10">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:items-start">
-          <div className="md:col-span-7 min-w-0">
-            <h3 className="text-3xl font-black text-neutral-900">Organizations & DV Shelters</h3>
-            <p className="mt-2 text-base text-neutral-900/75">
-              Custom pricing for domestic violence shelters, legal aid, and advocacy groups.
-            </p>
-            <p className="mt-2 text-sm text-neutral-900/60 italic">
-              We're actively pursuing grant and sponsor partnerships to help subsidize access where possible.
-            </p>
+      <div className="mt-12 rounded-[24px] border border-neutral-900/20 bg-white/40 p-6 md:p-10">
+        <h3 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">
+          Organizations &amp; DV Shelters
+        </h3>
 
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {["Custom onboarding", "Privacy-first configurations", "Non-profit pricing", "Bulk access options"].map(
-                (t) => (
-                  <div
-                    key={t}
-                    className="rounded-2xl border border-neutral-900/15 bg-white/60 p-4 text-sm font-semibold text-neutral-900/80"
-                  >
-                    {t}
-                  </div>
-                )
-              )}
-            </div>
-          </div>
+        <p className="mt-2 text-neutral-900/70 max-w-3xl">
+          Custom pricing for domestic violence shelters, legal aid, and advocacy groups.
+        </p>
 
-          <div className="md:col-span-5 min-w-0">
-            <div className="rounded-[24px] border border-neutral-900/15 bg-white/60 p-6">
-              <div className="text-sm font-semibold text-neutral-900">Custom pricing</div>
-              <div className="mt-2 text-sm text-neutral-900/75">
-                Dedicated onboarding and privacy-first configuration options.
-              </div>
+        <p className="mt-4 italic text-neutral-900/70 max-w-3xl">
+          We're actively pursuing grant and sponsor partnerships to help subsidize access where possible.
+        </p>
 
-              <button
-                type="button"
-                className="mt-5 w-full rounded-full bg-[#0F3B2E] px-5 py-3 text-center text-sm font-semibold text-white hover:opacity-95"
-                onClick={() => (window.location.href = "/contact")}
-                data-testid="button-contact-org"
-              >
-                Contact Us
-              </button>
+        <div className="mt-6">
+          <ul className="grid gap-3 md:grid-cols-2 max-w-3xl">
+            {[
+              "Custom onboarding",
+              "Privacy-first configurations",
+              "Non-profit pricing",
+              "Bulk access options",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-3 text-neutral-900/80">
+                <span className="mt-[2px] font-semibold text-emerald-900">✓</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-              <div className="mt-4 text-xs text-neutral-900/60">
-                <BrandMark /> is educational and organizational only. Not legal advice.
-              </div>
-            </div>
-          </div>
+        <div className="mt-8">
+          <a
+            href="/contact"
+            className="inline-flex items-center justify-center rounded-full bg-emerald-950 px-8 py-3 font-semibold text-white shadow-sm hover:bg-emerald-900 transition"
+            data-testid="button-contact-org"
+          >
+            Contact us
+          </a>
+
+          <p className="mt-4 text-sm italic text-neutral-900/70">
+            *Educational, research, and organizational support — not legal advice or representation.*
+          </p>
         </div>
       </div>
 
