@@ -1,0 +1,116 @@
+REPLIT INSTRUCTIONS — Reword “How Civilla Works” Page Copy (UPL-SAFE + Rebuild-Plan Tone)
+
+RULES FOR THIS EDIT:
+- DO NOT touch Navbar.tsx, NavbarCream.tsx, or Footer.tsx.
+- Keep ALL brand mentions using <BrandMark /> where possible (so civilla / civilla.ai stays styled consistently).
+- Keep language EDUCATIONAL + ORGANIZATIONAL only (no “tell you what to file,” no outcome promises).
+
+FILE TO EDIT:
+client/src/pages/HowCivillaWorks.tsx
+
+
+1) HERO (TOP OF PAGE)
+Find the H1 + subhead in the first hero and replace with:
+
+H1:
+“How <BrandMark /> Works”
+
+Subhead (add period):
+“A calm, step-by-step overview of what <BrandMark /> can help you understand and organize — without legal advice.”
+
+(If you want “civilla.ai” specifically here, use: <BrandMark text="civilla.ai" />)
+
+
+2) SECTION TITLE UNDER HERO
+Find:
+“Your case, step by step”
+Replace with Title Case:
+“Your Case, Step By Step”
+
+Find the sentence under it (“See how family law cases typically move…”)
+Replace with:
+“See the stages many family-law cases often move through — and what people typically prepare along the way.”
+
+
+3) STEP CARDS (THE BOXES)
+For each step card, replace the title + supporting text with the following:
+
+STEP ONE
+Title:
+“Understand Your Case Type And Timeline”
+Supporting text:
+“Choose your state and case type to view plain-language education and common stages people often see.”
+
+STEP TWO
+Title:
+“Gather And Organize Your Information”
+Supporting text:
+“Add documents, messages, and key events. <BrandMark /> organizes what you provide into a clear, reviewable timeline.”
+
+STEP THREE
+Title:
+“Learn What’s Typical (Not What To Do)”
+Supporting text:
+“Review statutes, court rules, and educational resources. <BrandMark /> does not tell you what to file, when to file, or what will happen.”
+
+STEP FOUR
+Title:
+“Prepare With Clarity”
+Supporting text:
+“Use summaries, checklists, and organized notes to stay grounded, ask better questions, and bring your materials to your attorney or court.”
+
+(Keep any images as-is. Keep buttons/“Explore >” removed.)
+
+
+4) “WHAT YOU GET INSIDE” LIST (THE BIG STACKED BOX LIST)
+Replace the list labels with consistent Title Case + “Your” framing:
+
+- “Your Case Journey”
+- “Evidence Map”
+- “Research Guide”
+- “Document Prep”
+- “Timeline View”
+- “Safety Tools”
+
+If any of these are plain strings, just replace them.
+If any include the word “civilla”, convert to <BrandMark />.
+
+
+5) GREEN “CLARITY” SECTION (NO OUTCOME PROMISES)
+Replace the headings/body copy in that green section with this safer tone:
+
+Section Heading:
+“What Changes When You Understand The Process”
+
+Body:
+“When the steps feel clearer, the overwhelm can ease. <BrandMark /> is built to help you learn what’s typical, track what matters, and stay organized.”
+
+Then each mini-heading + line can be updated to:
+
+Mini 1:
+“The Stress Of Not Knowing What Comes Next”
+“You move from guessing to informed preparation — one step at a time.”
+
+Mini 2:
+“What Your Options Actually Are”
+“Education helps you evaluate choices with more context — without advice or promises.”
+
+Mini 3:
+“Your Sense Of Agency In Your Own Case”
+“You can feel more steady when your information is organized and your questions are clearer.”
+
+
+6) ANY TESTIMONIAL / QUOTE ON THIS PAGE
+If there’s a quote that currently implies results, replace with:
+
+“<BrandMark /> helped me feel less overwhelmed by what was happening — because I could finally see everything in one place.”
+
+(Keep attribution generic and non-identifying.)
+
+
+7) FINAL PASS
+- Add periods to any full-sentence subheads that currently have none.
+- Make sure “Works” is capitalized wherever it appears as a heading.
+- Make sure every “civilla / civilla.ai / www.civilla.ai” uses <BrandMark ... /> (or matches the brand styling rule).
+
+SAVE FILE.

@@ -19,10 +19,10 @@ function HeaderSection() {
         <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
             <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
-              How{" "}<BrandMark variant="civilla" />{" "}works
+              How{" "}<BrandMark variant="civilla" />{" "}Works
             </h1>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              A calm, step-by-step guide to understanding your case and taking control
+              A calm, step-by-step overview of what{" "}<BrandMark variant="civilla" />{" "}can help you understand and organize — without legal advice.
             </p>
           </div>
         </div>
@@ -38,10 +38,10 @@ function JourneySection() {
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] w-full">
-              Your case, step by step
+              Your Case, Step By Step
             </h2>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              See how family law cases typically move through the courts
+              See the stages many family-law cases often move through — and what people typically prepare along the way.
             </p>
           </div>
         </div>
@@ -56,10 +56,10 @@ function JourneySection() {
                   </span>
                   <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
                     <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                      Understand your case type and timeline
+                      Understand Your Case Type And Timeline
                     </h3>
                     <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                      Learn what happens when
+                      Choose your state and case type to view plain-language education and common stages people often see.
                     </p>
                   </div>
                 </div>
@@ -78,10 +78,10 @@ function JourneySection() {
                     </span>
                     <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full">
                       <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                        Gather and organize your documents
+                        Gather And Organize Your Information
                       </h3>
                       <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                        Upload evidence, messages, photos, and timelines in one place
+                        Add documents, messages, and key events.{" "}<BrandMark variant="civilla" />{" "}organizes what you provide into a clear, reviewable timeline.
                       </p>
                     </div>
                   </div>
@@ -100,10 +100,10 @@ function JourneySection() {
                       </div>
                       <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                         <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                          Step three
+                          Learn What's Typical (Not What To Do)
                         </h3>
                         <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                          Research the laws and rules that apply to you
+                          Review statutes, court rules, and educational resources.{" "}<BrandMark variant="civilla" />{" "}does not tell you what to file, when to file, or what will happen.
                         </p>
                       </div>
                     </div>
@@ -118,10 +118,10 @@ function JourneySection() {
                       </div>
                       <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                         <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                          Step four
+                          Prepare With Clarity
                         </h3>
                         <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                          Prepare yourself with knowledge and clarity
+                          Use summaries, checklists, and organized notes to stay grounded, ask better questions, and bring your materials to your attorney or court.
                         </p>
                       </div>
                     </div>
@@ -143,10 +143,10 @@ function ClaritySection() {
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full">
             <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] w-full">
-              What changes when you understand the process
+              What Changes When You Understand The Process
             </h2>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              Overwhelm fades when you see the path ahead. Knowledge replaces fear, and you move from feeling lost to feeling grounded in what comes next.
+              When the steps feel clearer, the overwhelm can ease.{" "}<BrandMark variant="civilla" />{" "}is built to help you learn what's typical, track what matters, and stay organized.
             </p>
           </div>
         </div>
@@ -158,10 +158,10 @@ function ClaritySection() {
             </div>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
               <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                The stress of not knowing what comes next
+                The Stress Of Not Knowing What Comes Next
               </h3>
               <p className="cv-p font-sans text-sm md:text-body-regular w-full">
-                You move from confusion to clarity. From isolated to supported. From powerless to informed.
+                You move from guessing to informed preparation — one step at a time.
               </p>
             </div>
           </div>
@@ -172,10 +172,10 @@ function ClaritySection() {
             </div>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
               <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                What your options actually are
+                What Your Options Actually Are
               </h3>
               <p className="cv-p font-sans text-sm md:text-body-regular w-full">
-                When you understand the process, fear loses its grip. You see the path ahead.
+                Education helps you evaluate choices with more context — without advice or promises.
               </p>
             </div>
           </div>
@@ -186,10 +186,10 @@ function ClaritySection() {
             </div>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
               <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                Your sense of agency in your own case
+                Your Sense Of Agency In Your Own Case
               </h3>
               <p className="cv-p font-sans text-sm md:text-body-regular w-full">
-                Education is power. We explain how family law works so you can make decisions that fit your situation.
+                You can feel more steady when your information is organized and your questions are clearer.
               </p>
             </div>
           </div>
@@ -201,12 +201,12 @@ function ClaritySection() {
 
 function ToolsSection() {
   const tabs = [
-    { id: "case-journey", label: "Case journey" },
-    { id: "evidence-map", label: "Evidence map" },
-    { id: "research-guide", label: "Research guide" },
-    { id: "document-prep", label: "document prep" },
-    { id: "timeline-view", label: "Timeline view" },
-    { id: "safety-tools", label: "Safety tools" },
+    { id: "case-journey", label: "Your Case Journey" },
+    { id: "evidence-map", label: "Evidence Map" },
+    { id: "research-guide", label: "Research Guide" },
+    { id: "document-prep", label: "Document Prep" },
+    { id: "timeline-view", label: "Timeline View" },
+    { id: "safety-tools", label: "Safety Tools" },
   ];
 
   return (
@@ -215,7 +215,7 @@ function ToolsSection() {
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
             <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] w-full">
-              What you get inside
+              What You Get Inside
             </h2>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
               Each tool is built to help you understand your case and stay organized. Nothing is hidden or complicated.
@@ -256,7 +256,7 @@ function TestimonialSection() {
             <img src={imgStars} alt="" className="w-full h-full" />
           </div>
           <p className="cv-p font-sans text-lg md:text-[24px] text-neutral-darkest text-center leading-[1.6] w-full">
-            "<BrandMark variant="civilla" /> helped me understand what was happening in my case for the first time. I finally felt like I could breathe."
+            "<BrandMark variant="civilla" /> helped me feel less overwhelmed by what was happening — because I could finally see everything in one place."
           </p>
           <div className="flex flex-col gap-2 items-center">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
@@ -281,7 +281,7 @@ function CTASection() {
           <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start min-w-0">
             <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
               <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-                Start your journey today
+                Start Your Journey Today
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 Whether you're just beginning or deep in the process,{" "}<BrandMark variant="civilla" />{" "}meets you where you are.
