@@ -1,0 +1,72 @@
+REPLIT AI — MAKE 2 CHANGES (HOMEPAGE + PLANS FEATURES)
+
+DO NOT CHANGE ANYTHING ELSE (navbars, footer, other homepage sections, layouts). Only do what’s requested below.
+
+========================================================
+A) HOMEPAGE — ADD NEW DROPDOWN ITEM IN THIS HERO BOX
+========================================================
+
+1) Find the component for the homepage hero section in the screenshot by searching these exact strings:
+- "Your Case Journey"
+- "Your Evidence Timeline"
+- "Your Pattern Analysis"
+- "Your Research Assistant"
+- "Your Document Builder"
+
+Use ripgrep:
+rg -n "Your Case Journey|Your Evidence Timeline|Your Pattern Analysis|Your Research Assistant|Your Document Builder" client/src
+
+2) Open the file where those strings live. You’ll see either:
+- an array of accordion items (preferred), OR
+- hardcoded <AccordionItem> blocks.
+
+3) Add a NEW accordion item directly after “Your Pattern Analysis” (or anywhere that fits visually):
+
+TITLE:
+Your Child Support Estimator
+
+BODY (match the tone/length of the others):
+Get an educational estimate range using guideline-style equations and the information you enter. This is not court-accurate and not legal advice.
+
+If the accordion is driven by an array like:
+const items = [{ title: "...", body: "..." }, ...]
+
+Add this object:
+{
+  title: "Your Child Support Estimator",
+  body: "Get an educational estimate range using guideline-style equations and the information you enter. This is not court-accurate and not legal advice."
+}
+
+If it’s hardcoded AccordionItem blocks, add a block that matches the existing structure, e.g.:
+<AccordionItem value="child-support-estimator">
+  <AccordionTrigger>Your Child Support Estimator</AccordionTrigger>
+  <AccordionContent>
+    Get an educational estimate range using guideline-style equations and the information you enter. This is not court-accurate and not legal advice.
+  </AccordionContent>
+</AccordionItem>
+
+========================================================
+B) PLANS & PRICING — ADD “CHILD SUPPORT ESTIMATOR” TO ALL TIERS
+(Trial, Core, Pro, Premium)
+========================================================
+
+4) Find the plan tier definitions and feature comparison data:
+rg -n "Trial|Core|Pro|Premium|Full Feature Comparison|feature comparison|planTiers|tiers" client/src/pages/Plans.tsx client/src/pages/plans.tsx client/src/pages/Plans.ts client/src/pages/plans.ts
+
+5) Add the feature label to EACH plan card’s 6 highlights list (Trial/Core/Pro/Premium).
+Use this exact highlight text (NO parentheses):
+Child support estimate range
+
+6) Add the same feature to the Full Feature Comparison section:
+- If you still have a Trial column in the table: mark it ✓ for Trial/Core/Pro/Premium.
+- If you REMOVED the Trial column (as discussed earlier): add this to the “Trial callout” block above the table, in the list of what the trial includes.
+
+Trial callout line to add (no parentheses):
+Includes child support estimate range using the information you enter. Not court-accurate. Not legal advice.
+
+7) Save and verify:
+- Homepage accordion now has “Your Child Support Estimator” with the disclaimer language.
+- Plans page: all 4 plan cards show “Child support estimate range” in highlights.
+- Feature comparison area reflects the feature as included for all tiers (and trial callout if trial column isn’t shown).
+
+END.

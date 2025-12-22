@@ -21,6 +21,7 @@ export const PRICING_PLANS = [
       "Basic document storage",
       "Learning Hub (education-only resources)",
       "Safety & Support hub access",
+      "Child support estimate range",
     ],
     finePrint: "No credit card required.",
   },
@@ -40,6 +41,7 @@ export const PRICING_PLANS = [
       "Document uploads + organization",
       "Readiness / preparation checklists",
       "Schedule templates",
+      "Child support estimate range",
     ],
     finePrint: "Cancel anytime.",
   },
@@ -59,6 +61,7 @@ export const PRICING_PLANS = [
       "PDF + DOCX export with watermark/disclaimer enforcement",
       "Lexi in-app guidance (context + navigation help)",
       "Quick wins + case health insights",
+      "Child support estimate range",
     ],
     finePrint: "Cancel anytime. Education-only tools — not legal advice.",
   },
@@ -76,6 +79,7 @@ export const PRICING_PLANS = [
       "Onboarding help (setup + best practices)",
       "Nonprofit / shelter pricing options",
       "Team enablement (for approved org use)",
+      "Child support estimate range",
     ],
     finePrint: "Contact us for org onboarding details.",
   },
@@ -715,6 +719,10 @@ function PricingCardsSection() {
             <li className="flex gap-2">
               <span className="mt-[2px]">✓</span>
               <span>Access to Premium-level features to explore the workflow.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-[2px]">✓</span>
+              <span>Includes child support estimate range using the information you enter. Not court-accurate. Not legal advice.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-[2px]">×</span>

@@ -19,6 +19,11 @@ const FEATURES = [
       "civilla highlights patterns in the information you log (themes, frequency, dates, categories) to help you stay organized and notice what you may want to document.",
   },
   {
+    title: "Your Child Support Estimator",
+    desc:
+      "Get an educational estimate range using guideline-style equations and the information you enter. This is not court-accurate and not legal advice.",
+  },
+  {
     title: "Your Research Assistant",
     desc:
       "Ask Lexi questions and explore educational, plain-language explanations. Lexi supports research and understanding — it does not provide legal advice.",
