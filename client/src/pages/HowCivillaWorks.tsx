@@ -95,7 +95,7 @@ function JourneySection() {
                       </div>
                       <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                         <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                          Learn What's Typical (Solely Based on Information & Guidelines Available to the Public)
+                          Information & Guidelines Available to the Public
                         </h3>
                         <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
                           Review statutes, court rules, and educational resources.{" "}<BrandMark text="civilla" />{" "}does not tell you what to file, when to file, or what will happen.
