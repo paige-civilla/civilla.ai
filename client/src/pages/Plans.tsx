@@ -179,9 +179,6 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
                   {billingPeriod === "monthly" ? `$${proPlan.monthly}` : `$${proPlan.yearly}`}
                   <span className="price-period">{billingPeriod === "monthly" ? "/mo" : "/yr"}</span>
                 </span>
-                <span className="font-sans text-sm md:text-[18px] leading-[1.6]">
-                  {billingPeriod === "monthly" ? "billed monthly" : "billed yearly"}
-                </span>
               </div>
               <p className="mt-4 text-sm sm:text-base max-w-xl mx-auto opacity-90">
                 {proPlan.tagline}
@@ -503,9 +500,6 @@ function PricingCardsSection() {
               <div className="text-lg font-black text-neutral-900">{plan.name}</div>
               <div className="mt-4">
                 <PriceLine plan={plan} />
-                <div className="mt-2 text-xs font-semibold text-neutral-900/60">
-                  {plan.priceNote}
-                </div>
               </div>
 
               <div className="my-5 h-px w-full bg-neutral-900/10" />
