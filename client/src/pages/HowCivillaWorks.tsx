@@ -44,82 +44,57 @@ function JourneySection() {
           </div>
         </div>
 
-        <div className="flex flex-col items-start w-full">
-          <div className="flex flex-col md:flex-row gap-8 items-start w-full">
-            <div className="cv-isolate bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 min-w-0">
-              <div className="cv-split">
-                <div className="cv-split-text p-6 md:p-8 flex flex-col gap-2 justify-center">
-                  <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest leading-[1.5]">
-                    Step one
-                  </span>
-                  <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px]">
-                    Understand Your Case Type And Timeline
-                  </h3>
-                  <p className="mt-2 font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest">
-                    Choose your state and case type to view plain-language education and common stages people often see.
-                  </p>
+        <div className="flex flex-col gap-8 items-start w-full min-w-0">
+          <div className="cv-isolate bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden w-full min-w-0">
+            <div className="cv-split">
+              <div className="cv-split-text p-6 md:p-8 flex flex-col gap-3 justify-center">
+                <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px]">
+                  Gather And Organize Your Information
+                </h3>
+                <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest">
+                  Add documents, messages, and key events. <BrandMark text="civilla" /> organizes what you provide into a clear, reviewable timeline.
+                </p>
+              </div>
+              <div className="cv-split-media">
+                <div className="h-56 w-full md:h-full">
+                  <img src={imgPlaceholderImage1} alt="" />
                 </div>
-                <div className="cv-split-media">
-                  <div className="h-56 w-full md:h-full">
-                    <img src={imgPlaceholderImage} alt="" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-8 items-start w-full min-w-0">
+            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
+              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
+                <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
+                    <img src={imgRuleIcon} alt="" className="w-full h-full" />
+                  </div>
+                  <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
+                    <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
+                      Information & Guidelines Available to the Public
+                    </h3>
+                    <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
+                      Review statutes, court rules, and educational resources.{" "}<BrandMark text="civilla" />{" "}does not tell you what to file, when to file, or what will happen.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-8 items-start w-full md:w-[864px] min-w-0">
-              <div className="cv-isolate bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 w-full min-w-0">
-                <div className="cv-split">
-                  <div className="cv-split-text p-6 md:p-8 flex flex-col gap-3 justify-center">
-                    <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px]">
-                      Gather And Organize Your Information
+            <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
+              <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
+                <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
+                    <img src={imgExploreIcon} alt="" className="w-full h-full" />
+                  </div>
+                  <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
+                    <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
+                      Prepare With Clarity
                     </h3>
-                    <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest">
-                      Add documents, messages, and key events. <BrandMark text="civilla" /> organizes what you provide into a clear, reviewable timeline.
+                    <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
+                      Use summaries, checklists, and organized notes to stay grounded, ask better questions, and bring your materials to your attorney or court.
                     </p>
-                  </div>
-                  <div className="cv-split-media">
-                    <div className="h-56 w-full md:h-full">
-                      <img src={imgPlaceholderImage1} alt="" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row gap-8 items-start w-full min-w-0">
-                <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
-                  <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
-                    <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
-                      <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                        <img src={imgRuleIcon} alt="" className="w-full h-full" />
-                      </div>
-                      <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
-                        <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                          Information & Guidelines Available to the Public
-                        </h3>
-                        <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                          Review statutes, court rules, and educational resources.{" "}<BrandMark text="civilla" />{" "}does not tell you what to file, when to file, or what will happen.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
-                  <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
-                    <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
-                      <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                        <img src={imgExploreIcon} alt="" className="w-full h-full" />
-                      </div>
-                      <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
-                        <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
-                          Prepare With Clarity
-                        </h3>
-                        <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] w-full">
-                          Use summaries, checklists, and organized notes to stay grounded, ask better questions, and bring your materials to your attorney or court.
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
