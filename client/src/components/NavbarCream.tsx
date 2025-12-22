@@ -160,11 +160,11 @@ export default function NavbarCream() {
             </button>
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 bg-gradient-to-r from-bush to-bush-dark rounded-md"
+              className="ml-2 p-1.5 bg-white rounded-md"
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
-              <LogOut className="w-4 h-4 text-white" />
+              <LogOut className="w-4 h-4 text-neutral-darkest" />
             </button>
           </div>
         </div>
