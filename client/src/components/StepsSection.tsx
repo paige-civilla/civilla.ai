@@ -40,7 +40,11 @@ export default function StepsSection() {
                     <div className="w-px bg-black/15" />
                   </div>
                   <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest">
-                    {step.description}
+                    {step.description.split(/(civilla)/g).map((part, i) => 
+                      part === "civilla" 
+                        ? <span key={i} className="italic font-medium">civilla</span>
+                        : part
+                    )}
                   </p>
                 </div>
                 {idx !== steps.length - 1 && (
@@ -69,7 +73,11 @@ export default function StepsSection() {
                 key={`${step.id}-desc`}
                 className="font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest text-center"
               >
-                {step.description}
+                {step.description.split(/(civilla)/g).map((part, i) => 
+                  part === "civilla" 
+                    ? <span key={i} className="italic font-medium">civilla</span>
+                    : part
+                )}
               </p>
             ))}
           </div>

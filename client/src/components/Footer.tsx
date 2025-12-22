@@ -41,7 +41,13 @@ export default function Footer() {
                     className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    {link.label}
+                    {link.label.includes("civilla") 
+                      ? link.label.split("civilla").map((part, i, arr) => 
+                          i < arr.length - 1 
+                            ? <span key={i}>{part}<span className="italic font-medium">civilla</span></span>
+                            : part
+                        )
+                      : link.label}
                   </Link>
                 ))}
               </div>

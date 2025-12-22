@@ -77,7 +77,11 @@ export default function ToolsSection() {
                     >
                       {isOpen && (
                         <p className="text-white/85 leading-relaxed text-sm md:text-base text-center">
-                          {item.desc}
+                          {item.desc.split(/(civilla)/g).map((part, i) => 
+                            part === "civilla" 
+                              ? <span key={i} className="italic font-medium">civilla</span>
+                              : part
+                          )}
                         </p>
                       )}
                     </div>

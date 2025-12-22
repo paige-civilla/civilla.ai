@@ -85,7 +85,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
           <div className="bg-cream border-2 border-neutral-darkest rounded-2xl p-6 md:p-8 flex flex-col gap-6 md:gap-8 items-center w-full">
             <div className="flex flex-col gap-2 items-center text-neutral-darkest text-center w-full">
               <span className="font-heading font-bold text-[22px] md:text-[26px] tracking-[0.22px] md:tracking-[0.26px] leading-[1.2]">
-                civilla pro
+                <span className="italic font-medium">civilla</span> pro
               </span>
               <div className="flex flex-col gap-1 items-center">
                 <span className="pricing-display font-heading font-bold tracking-[0.48px] md:tracking-[0.84px] leading-[1.1]" style={{ fontSize: 'clamp(48px, 6vw, 84px)' }}>
@@ -253,7 +253,13 @@ function PricingCardsSection({ billingPeriod, setBillingPeriod }: { billingPerio
             >
               <div className="flex flex-col gap-1 text-neutral-darkest pricing-card-header">
                 <h3 className="cv-h font-heading font-bold text-[18px] md:text-[20px] tracking-[0.18px] md:tracking-[0.2px] leading-[1.2]">
-                  {plan.name}
+                  {plan.name.includes("civilla") 
+                    ? plan.name.split("civilla").map((part, i, arr) => 
+                        i < arr.length - 1 
+                          ? <span key={i}>{part}<span className="italic font-medium">civilla</span></span>
+                          : part
+                      )
+                    : plan.name}
                 </h3>
                 <p className="cv-panel-body font-sans text-[13px] md:text-[14px] leading-[1.5]">
                   {plan.subtitle}
@@ -428,7 +434,11 @@ function FAQSection() {
               {openItems.includes(faq.id) && (
                 <div className="flex items-start pb-6 w-full">
                   <p className="flex-1 font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-neutral-darkest">
-                    {faq.answer}
+                    {faq.answer.split(/(civilla)/g).map((part, i) => 
+                      part === "civilla" 
+                        ? <span key={i} className="italic font-medium">civilla</span>
+                        : part
+                    )}
                   </p>
                 </div>
               )}
