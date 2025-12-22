@@ -57,25 +57,19 @@ export function FaqSection({
       ),
     },
     {
-      q: "Can I switch plans?",
+      q: "What happens when I upgrade?",
       a: (
         <p>
-          Yes. You can upgrade or downgrade at any time. Changes take effect at the start of your next billing cycle.
+          Upgrades start immediately. You're charged a prorated difference today, and your new billing date becomes the day you upgrade.
         </p>
       ),
     },
     {
       q: "Do you offer refunds?",
       a: (
-        <div className="space-y-2">
-          <p>No refunds on monthly or yearly subscriptions.</p>
-          <p className="font-medium">Limited exceptions (review required):</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Duplicate charge</li>
-            <li>Billing error</li>
-            <li>Technical failure preventing access for an extended period</li>
-          </ul>
-        </div>
+        <p>
+          Subscriptions are non-refundable. Limited exceptions apply for duplicate charges, billing errors, or extended access issues.
+        </p>
       ),
     },
   ];

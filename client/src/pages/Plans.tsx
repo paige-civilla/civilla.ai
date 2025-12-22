@@ -342,7 +342,7 @@ function PricingCardsSection() {
       title: "Included In Every Plan",
       rows: [
         { label: "One Family Law Case", trial: true, core: true, pro: true, premium: true },
-        { label: "Evidence Upload", trial: true, core: true, pro: true, premium: true },
+        { label: "Evidence Upload (Documents)", trial: true, core: true, pro: true, premium: true },
         { label: "Timeline", trial: true, core: true, pro: true, premium: true },
         { label: "Pattern Insights", trial: true, core: true, pro: true, premium: true },
         { label: "Lexi Education", trial: true, core: true, pro: true, premium: true },
@@ -353,7 +353,7 @@ function PricingCardsSection() {
       title: "Starts In Core",
       rows: [
         { label: "One Active Family Law Case", trial: false, core: true, pro: true, premium: true },
-        { label: "Storage", trial: false, core: true, pro: true, premium: true },
+        { label: "Storage (30 GB+)", trial: false, core: true, pro: true, premium: true },
         { label: "Unlimited Document Uploads", trial: false, core: true, pro: true, premium: true },
         { label: "Interactive Timeline", trial: false, core: true, pro: true, premium: true },
         { label: "Lexi Research With Citations", trial: false, core: true, pro: true, premium: true },
@@ -407,11 +407,14 @@ function PricingCardsSection() {
     const suffix =
       plan.id === "trial" ? "" : billingPeriod === "yearly" ? "/yr" : "/mo";
     return (
-      <div className="flex items-end gap-2">
-        <div className="text-4xl font-black leading-none text-neutral-900">
-          {price}
+      <div>
+        <div className="flex items-end gap-2">
+          <div className="text-4xl font-black leading-none text-neutral-900">
+            {price}
+          </div>
+          <div className="pb-1 text-sm font-semibold text-neutral-900/70">{suffix}</div>
         </div>
-        <div className="pb-1 text-sm font-semibold text-neutral-900/70">{suffix}</div>
+        <p className="mt-2 text-sm text-neutral-900/70">{plan.tagline}</p>
       </div>
     );
   };
@@ -566,6 +569,9 @@ function PricingCardsSection() {
               >
                 <div className="text-lg font-black text-neutral-900">{a.title}</div>
                 <div className="mt-2 text-sm font-semibold text-neutral-900/70">{a.price}</div>
+                {a.description ? (
+                  <p className="mt-2 text-sm text-neutral-900/75">{a.description}</p>
+                ) : null}
                 <ul className="mt-4 space-y-2 text-sm text-neutral-900/80">
                   {a.bullets.map((t) => (
                     <li key={t} className="flex gap-2">
@@ -589,7 +595,10 @@ function PricingCardsSection() {
           <div className="md:col-span-7 min-w-0">
             <h3 className="text-3xl font-black text-neutral-900">Organizations & DV Shelters</h3>
             <p className="mt-2 text-base text-neutral-900/75">
-              Custom pricing for domestic violence shelters, legal aid organizations, and advocacy groups.
+              Custom pricing for domestic violence shelters, legal aid, and advocacy groups.
+            </p>
+            <p className="mt-2 text-sm text-neutral-900/60 italic">
+              We're actively pursuing grant and sponsor partnerships to help subsidize access where possible.
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -610,7 +619,7 @@ function PricingCardsSection() {
             <div className="rounded-[24px] border border-neutral-900/15 bg-white/60 p-6">
               <div className="text-sm font-semibold text-neutral-900">Custom pricing</div>
               <div className="mt-2 text-sm text-neutral-900/75">
-                Contact us for onboarding and privacy-first configuration options.
+                Dedicated onboarding and privacy-first configuration options.
               </div>
 
               <button
