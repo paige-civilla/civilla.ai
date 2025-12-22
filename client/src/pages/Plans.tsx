@@ -1,519 +1,597 @@
 import { useMemo, useState } from "react";
+import { Check } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { BrandText } from "@/components/Brand";
 
-type BillingMode = "monthly" | "yearly";
+type Billing = "monthly" | "yearly";
 
 type Plan = {
-  id: "starter" | "core" | "pro" | "premium";
+  id: "free" | "core" | "pro" | "premium";
   name: string;
-  purpose: string;
-  monthly?: number;
-  yearly?: number;
-  fixedPriceLabel?: string;
-  fixedPriceSub?: string;
-  cta: string;
-  included: string[];
+  tagline: string;
+  monthlyPrice: number | null;
+  yearlyPrice: number | null;
+  badge?: string;
+  highlights: string[];
+  includedFull: string[];
   notIncluded?: string[];
-  finePrint: string;
-};
-
-type AddOn = {
-  id: string;
-  name: string;
-  price: string;
-  purpose: string;
-  includes: string[];
+  ctaLabel: string;
   footnote?: string;
 };
 
-const YEARLY_SAVINGS_PERCENT = 17;
-
-const SHARED_PRINCIPLES: string[] = [
-  "civilla is educational and organizational only",
-  "civilla is not a law firm and does not provide legal advice",
-  "All document tools require affirmative acknowledgment, disclaimers, and release before download",
-  "No refunds on subscriptions (with clearly stated, narrow exceptions)",
-  "All plans support interstate family law cases",
-  "All plans support self-represented (pro se) users",
-  "All plans support Idaho and other U.S. jurisdictions (state selected during onboarding)",
-];
-
-const PLANS: Plan[] = [
-  {
-    id: "starter",
-    name: "Free Starter (3-Day Trial)",
-    purpose:
-      "Let users understand what civilla is, how it thinks, and whether it helps — without exposing you to heavy processing costs or misuse.",
-    fixedPriceLabel: "$0",
-    fixedPriceSub: "for 3 days",
-    cta: "Start Free Starter",
-    included: [
-      "1 family law case (view-only, no additional cases)",
-      "Pattern analysis (read-only)",
-      "Evidence upload (documents only)",
-      "Evidence timeline (read-only)",
-      "Case journey overview (read-only)",
-      "Lexi research & education (text + talk-to-text only)",
-      "Plain-language explanations (pro se vs self-represented, common terms, what filings generally mean)",
-      "Create 1 sample document (cannot download; permanent large civilla watermark; cannot be removed)",
-      "Kid profiles (basic)",
-      "Journaling / notes (not analyzed)",
-      "Dark mode & accessibility settings",
-    ],
-    notIncluded: [
-      "No document downloads",
-      "No exhibits",
-      "No transcription",
-      "No video uploads",
-      "No audio uploads",
-      "No AI deadline extraction",
-      "No reminders",
-      "No certificates of service",
-      "No notices of service",
-      "No parenting plan builder",
-      "No child support estimator",
-      "No exhibits builder",
-      "No co-parent communication tools",
-      "No additional storage purchases",
-    ],
-    finePrint: "Free Starter is $0 for 3 days. Educational use only. Not legal advice.",
-  },
-  {
-    id: "core",
-    name: "civilla core",
-    purpose: "For one user actively organizing one family law case, with full tools and downloads.",
-    monthly: 19.99,
-    yearly: 199,
-    cta: "Select Core",
-    included: [
-      "Everything in Free, plus:",
-      "1 active family law case",
-      "30 GB storage",
-      "Unlimited document uploads (reasonable use enforced internally)",
-      "Evidence timeline (fully interactive)",
-      "Pattern analysis (full)",
-      "Lexi research engine (statutes, case law, court rules) with citations + sources shown",
-      "AI document analysis",
-      "AI deadline extraction (user confirmation required)",
-      "Task & deadline tracking",
-      "Reminders (email or text — opt-in per type, confirm before activation)",
-      "Document creator (responses, counter-petitions, motions: dismiss/compel/enforce/amend/limine, etc.)",
-      "Downloadable documents with mandatory disclaimers + acknowledgment",
-      "civilla educational footnotes included",
-      "Notices of service",
-      "Certificates of service",
-      "Parenting plan builder",
-      "Child support estimator (not calculator)",
-      "Exhibit builder (basic)",
-      "Audio uploads + transcription",
-      "Large document accommodation (e.g., OFW exports)",
-      "Kid profiles with evidence linking",
-    ],
-    notIncluded: [
-      "Co-parent communication (CivillaConnect)",
-      "Advanced exhibits",
-      "Video uploads",
-    ],
-    finePrint: "No refunds on monthly or yearly subscriptions (limited exceptions apply).",
-  },
-  {
-    id: "pro",
-    name: "civilla pro",
-    purpose: "For one user who needs advanced exhibits, deeper workflows, and priority processing.",
-    monthly: 29.99,
-    yearly: 299,
-    cta: "Select Pro",
-    included: [
-      "Everything in Core, plus:",
-      "50 GB storage",
-      "Advanced exhibits builder",
-      "Video uploads",
-      "Dual OCR verification (cross-checked)",
-      "Advanced pattern reporting (narrative building; timeline → evidence → claim mapping)",
-      "Parenting plan 'age-up' scenarios",
-      "High-conflict case support tools",
-      "Mediation & pre-trial preparation workflows",
-      "Hearing and trial prep organization",
-      "Draft trial binder structure",
-      "Evidence tagging by issue, child, and claim",
-      "Enhanced Lexi research depth",
-      "Priority processing",
-    ],
-    finePrint: "Educational and organizational only. Not legal advice.",
-  },
-  {
-    id: "premium",
-    name: "civilla premium",
-    purpose: "For one user with complex needs: deeper analytics, discovery tracking, and priority support.",
-    monthly: 49.99,
-    yearly: 499,
-    cta: "Select Premium",
-    included: [
-      "Everything in Pro, plus:",
-      "100 GB storage",
-      "Advanced narrative reports (court-ready organization, still educational)",
-      "Full exhibits management",
-      "Multi-child, multi-issue analytics",
-      "Advanced reminders & escalation tracking",
-      "Complex discovery tracking",
-      "Post-judgment workflows (enforcement, modification)",
-      "Appeals awareness (education only)",
-      "Priority support",
-      "Early access to new features",
-    ],
-    finePrint: "Educational and organizational only. Not legal advice.",
-  },
-];
-
-const ADD_ONS: AddOn[] = [
-  {
-    id: "case-slot",
-    name: "Additional Case Slot",
-    price: "$9.99/month per additional case",
-    purpose: "Designed for multiple co-parents / multiple cases.",
-    includes: ["+30 GB storage per case", "Full feature parity with your current plan"],
-  },
-  {
-    id: "evidence-only",
-    name: "Evidence-Only Storage (No Analysis)",
-    price: "$4.99/month",
-    purpose: "Upload and organize evidence without triggering AI processing costs.",
-    includes: [
-      "Evidence uploads",
-      "Journaling",
-      "Timeline storage",
-      "No analysis until upgraded",
-      "Once upgraded, initial backlog analysis is included (no retroactive penalty)",
-    ],
-  },
-  {
-    id: "over-limit",
-    name: "Over-Limit Processing (Rare / Extreme Use)",
-    price: "Internal enforcement only",
-    purpose: "Soft limits are enforced internally. If exceeded, you'll see a one-time upgrade offer.",
-    includes: ["One-time upgrade offer", "Includes additional analysis credits", "No automatic overage charges"],
-  },
-];
-
-const ORGS = {
-  title: "Organizations & DV Shelters",
-  price: "Custom pricing — Contact us",
-  for: ["Domestic violence shelters", "Legal aid organizations", "Advocacy groups"],
-  includes: ["Custom onboarding", "Privacy-first configurations", "Non-profit pricing", "Bulk access options"],
+type AddOn = {
+  title: string;
+  priceLine: string;
+  description: string;
+  bullets: string[];
 };
-
-const REFUNDS = {
-  headline: "Refund policy",
-  body: "No refunds on monthly or yearly subscriptions.",
-  exceptions: ["Duplicate charge", "Technical failure preventing access for an extended period", "Billing error"],
-  footnote: "All exceptions require review.",
-};
-
-function money(n: number) {
-  return n.toFixed(2);
-}
-
-function Toggle({
-  billingMode,
-  setBillingMode,
-}: {
-  billingMode: BillingMode;
-  setBillingMode: (m: BillingMode) => void;
-}) {
-  return (
-    <div className="inline-flex items-center rounded-full border border-black/20 bg-white p-1">
-      <button
-        type="button"
-        onClick={() => setBillingMode("monthly")}
-        className={[
-          "rounded-full px-5 py-2 text-sm font-semibold transition",
-          billingMode === "monthly"
-            ? "bg-black text-white shadow-sm"
-            : "text-black/70 hover:text-black",
-        ].join(" ")}
-        data-testid="button-monthly"
-      >
-        Monthly
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setBillingMode("yearly")}
-        className={[
-          "ml-1 flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition",
-          billingMode === "yearly"
-            ? "bg-black text-white shadow-sm"
-            : "text-black/70 hover:text-black",
-        ].join(" ")}
-        data-testid="button-yearly"
-      >
-        Yearly
-        {billingMode === "yearly" ? (
-          <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
-            Save {YEARLY_SAVINGS_PERCENT}%
-          </span>
-        ) : (
-          <span className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black">
-            Save {YEARLY_SAVINGS_PERCENT}%
-          </span>
-        )}
-      </button>
-    </div>
-  );
-}
-
-function FeatureList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <details className="mt-4 rounded-xl border border-neutral-900/15 bg-white/5 p-4">
-      <summary className="cursor-pointer select-none text-sm font-semibold">{title}</summary>
-      <ul className="mt-3 space-y-2 text-sm text-neutral-900/90">
-        {items.map((it) => (
-          <li key={it} className="flex gap-2">
-            <span className="mt-[2px]">✓</span>
-            <span className="leading-snug">{it}</span>
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-}
-
-function AddOnMini({ addon }: { addon: AddOn }) {
-  return (
-    <div className="rounded-xl border border-neutral-900/20 bg-white/10 p-4">
-      <div className="text-sm font-semibold">{addon.name}</div>
-      <div className="mt-1 text-sm text-neutral-900/80">{addon.price}</div>
-      <div className="mt-2 text-xs text-neutral-900/70">{addon.purpose}</div>
-    </div>
-  );
-}
-
-function AddOnCard({ addon }: { addon: AddOn }) {
-  return (
-    <div className="h-full rounded-2xl border border-neutral-900/30 bg-white/5 p-6">
-      <div className="text-lg font-semibold">{addon.name}</div>
-      <div className="mt-1 text-sm text-neutral-800/80">{addon.price}</div>
-      <div className="mt-4 text-sm text-neutral-900/90">{addon.purpose}</div>
-      <div className="my-5 h-px w-full bg-neutral-900/15" />
-      <ul className="space-y-2 text-sm text-neutral-900/90">
-        {addon.includes.map((it) => (
-          <li key={it} className="flex gap-2">
-            <span className="mt-[2px]">✓</span>
-            <span className="leading-snug">{it}</span>
-          </li>
-        ))}
-      </ul>
-      {addon.footnote ? <p className="mt-4 text-xs text-neutral-800/70">{addon.footnote}</p> : null}
-    </div>
-  );
-}
-
-function PlanPrice({ plan, billingMode }: { plan: Plan; billingMode: BillingMode }) {
-  if (plan.id === "starter") {
-    return (
-      <>
-        <div className="flex items-end gap-2">
-          <div className="text-5xl font-black">{plan.fixedPriceLabel}</div>
-          <div className="pb-2 text-sm text-neutral-800/70">{plan.fixedPriceSub}</div>
-        </div>
-        <div className="mt-1 text-sm text-neutral-800/70">Then choose a plan.</div>
-      </>
-    );
-  }
-  const amount = billingMode === "yearly" ? plan.yearly! : plan.monthly!;
-  return (
-    <>
-      <div className="flex items-end gap-2">
-        <div className="text-5xl font-black">${money(amount)}</div>
-        <div className="pb-2 text-sm text-neutral-800/70">{billingMode === "yearly" ? "/yr" : "/mo"}</div>
-      </div>
-      <div className="mt-1 text-sm text-neutral-800/70">Per user</div>
-    </>
-  );
-}
 
 export default function Plans() {
-  const [billingMode, setBillingMode] = useState<BillingMode>("monthly");
-  const plans = useMemo(() => PLANS, []);
+  const [billing, setBilling] = useState<Billing>("monthly");
+
+  const plans: Plan[] = useMemo(
+    () => [
+      {
+        id: "free",
+        name: "Free Starter (3-Day Trial)",
+        tagline:
+          "Try civilla and see how it organizes a family-law case — without downloads or heavy processing.",
+        monthlyPrice: 0,
+        yearlyPrice: 0,
+        highlights: [
+          "1 family law case (view-only)",
+          "Pattern analysis (read-only)",
+          "Evidence uploads (documents only)",
+          "Timeline + case journey (read-only)",
+          "Lexi research & education (text + talk-to-text)",
+          "Create 1 sample document (no download, large watermark)",
+        ],
+        includedFull: [
+          "1 family law case (view-only, no additional cases)",
+          "Pattern analysis (read-only)",
+          "Evidence upload (documents only)",
+          "Evidence timeline (read-only)",
+          "Case journey overview (read-only)",
+          "Lexi research & education (text + talk-to-text only)",
+          "Plain-language explanations of common family-law terms and what filings generally mean",
+          "Create 1 sample document (cannot download; permanent large civilla watermark)",
+          "Kid profiles (basic)",
+          "Journaling / notes (not analyzed)",
+          "Dark mode & accessibility settings",
+        ],
+        notIncluded: [
+          "No document downloads",
+          "No exhibits / exhibit builder",
+          "No transcription",
+          "No video uploads",
+          "No audio uploads (and transcription)",
+          "No AI deadline extraction",
+          "No reminders",
+          "No certificates of service / notices of service",
+          "No parenting plan builder",
+          "No child support estimator",
+          "No co-parent communication tools (CivillaConnect)",
+          "No additional storage purchases",
+        ],
+        ctaLabel: "Start Free Starter",
+        footnote:
+          "Educational and organizational only. Not legal advice. Free Starter is $0 for 3 days.",
+      },
+
+      {
+        id: "core",
+        name: "civilla core",
+        tagline:
+          "For one user actively organizing one family-law case — with full tools and downloads.",
+        monthlyPrice: 19.99,
+        yearlyPrice: 199,
+        badge: "Most popular",
+        highlights: [
+          "1 active family law case",
+          "30 GB storage",
+          "Interactive timeline + evidence tools",
+          "Lexi research with citations",
+          "AI deadline extraction (confirm required)",
+          "Downloads + service docs (with required acknowledgments)",
+        ],
+        includedFull: [
+          "Everything in Free, plus:",
+          "1 active family law case",
+          "30 GB storage",
+          "Unlimited document uploads (reasonable use enforced internally)",
+          "Evidence timeline (fully interactive)",
+          "Pattern analysis (full)",
+          "Lexi research engine (statutes, case law, court rules) with citations + sources shown",
+          "AI document analysis",
+          "AI deadline extraction (user confirmation required)",
+          "Task & deadline tracking",
+          "Reminders (email or text — opt-in per type, confirm before activation)",
+          "Document creator (responses, counter-petitions, motions: dismiss/compel/enforce/amend/limine, etc.)",
+          "Downloadable documents with mandatory disclaimers + acknowledgment and civilla educational footnotes",
+          "Notices of service + certificates of service",
+          "Parenting plan builder",
+          "Child support estimator (not a calculator)",
+          "Exhibit builder (basic)",
+          "Audio uploads + transcription",
+          "Large document accommodation (e.g., OFW exports)",
+          "Kid profiles with evidence linking",
+        ],
+        notIncluded: [
+          "No co-parent communication (CivillaConnect)",
+          "No advanced exhibits",
+          "No video uploads",
+        ],
+        ctaLabel: "Select Core",
+        footnote:
+          "No refunds on monthly or yearly subscriptions (limited exceptions apply).",
+      },
+
+      {
+        id: "pro",
+        name: "civilla pro",
+        tagline:
+          "For advanced exhibits, deeper workflows, and priority processing — still education-only.",
+        monthlyPrice: 29.99,
+        yearlyPrice: 299,
+        highlights: [
+          "50 GB storage",
+          "Advanced exhibits builder",
+          "Video uploads",
+          "Dual OCR verification (cross-checked)",
+          "Narrative + claim mapping tools",
+          "Priority processing",
+        ],
+        includedFull: [
+          "Everything in Core, plus:",
+          "50 GB storage",
+          "Advanced exhibits builder",
+          "Video uploads",
+          "Dual OCR verification (OpenAI OCR + Google OCR cross-checked)",
+          "Advanced pattern reporting (narrative building; timeline → evidence → claim mapping)",
+          "Parenting plan 'age-up' scenarios",
+          "High-conflict case support tools",
+          "Mediation & pre-trial preparation workflows",
+          "Hearing and trial prep organization",
+          "Draft trial binder structure",
+          "Evidence tagging by issue, child, and claim",
+          "Enhanced Lexi research depth",
+          "Priority processing",
+        ],
+        ctaLabel: "Select Pro",
+        footnote: "Educational and organizational only. Not legal advice.",
+      },
+
+      {
+        id: "premium",
+        name: "civilla premium",
+        tagline:
+          "For complex cases and deeper organization: analytics, discovery tracking, and priority support.",
+        monthlyPrice: 49.99,
+        yearlyPrice: 499,
+        highlights: [
+          "100 GB storage",
+          "Full exhibits management",
+          "Multi-child / multi-issue analytics",
+          "Discovery + post-judgment workflows",
+          "Advanced reminders + escalation tracking",
+          "Priority support + early access",
+        ],
+        includedFull: [
+          "Everything in Pro, plus:",
+          "100 GB storage",
+          "Advanced narrative reports (court-ready organization, still educational)",
+          "Full exhibits management",
+          "Multi-child, multi-issue analytics",
+          "Advanced reminders & escalation tracking",
+          "Complex discovery tracking",
+          "Post-judgment workflows (enforcement, modification)",
+          "Appeals awareness (education only)",
+          "Priority support",
+          "Early access to new features",
+        ],
+        ctaLabel: "Select Premium",
+        footnote: "Educational and organizational only. Not legal advice.",
+      },
+    ],
+    []
+  );
+
+  const addOns: AddOn[] = useMemo(
+    () => [
+      {
+        title: "Additional Case Slot",
+        priceLine: "$9.99/month per additional case",
+        description: "Designed for multiple co-parents / multiple cases.",
+        bullets: [
+          "+30 GB storage per case",
+          "Full feature parity with your current plan",
+        ],
+      },
+      {
+        title: "Evidence-Only Storage (No Analysis)",
+        priceLine: "$4.99/month",
+        description:
+          "Upload and organize evidence without triggering AI processing costs.",
+        bullets: [
+          "Evidence uploads",
+          "Journaling",
+          "Timeline storage",
+          "No analysis until upgraded",
+          "Once upgraded, initial backlog analysis is included (no retroactive penalty)",
+        ],
+      },
+    ],
+    []
+  );
 
   return (
-    <div className="min-h-screen bg-[#e7ebea] flex flex-col">
+    <div className="min-h-screen bg-[#E7ECE8] flex flex-col">
       <NavbarCream />
       
       <main className="flex-1">
-        <section className="mx-auto w-full max-w-6xl px-4 pt-20 pb-14" data-testid="section-header">
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-start">
-            <div>
-              <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-neutral-darkest">
-                Plans & Pricing
-              </h1>
-              <p className="mt-5 max-w-xl text-base text-neutral-900/80">
-                Family law only. Built for self-represented users across U.S. jurisdictions — educational and organizational
-                tools, not legal advice.
-              </p>
-
-              <div className="mt-8 rounded-2xl border border-neutral-900/30 bg-white/10 p-6">
-                <div className="text-sm font-semibold text-neutral-900">Shared principles (all plans)</div>
-                <ul className="mt-3 space-y-2 text-sm text-neutral-900/90">
-                  {SHARED_PRINCIPLES.map((it) => (
-                    <li key={it} className="flex gap-2">
-                      <span className="mt-[2px]">✓</span>
-                      <span className="leading-snug"><BrandText>{it}</BrandText></span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div>
-              <div className="rounded-2xl border border-neutral-900/30 bg-white/10 p-6">
-                <div className="text-sm font-semibold text-neutral-900">Add-ons (optional)</div>
-                <p className="mt-2 text-sm text-neutral-900/80">
-                  Add extra capacity without changing your base plan.
+        <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 md:px-6">
+          <section className="rounded-[28px] border border-neutral-900/15 bg-[#EEF2EE] p-6 md:p-10" data-testid="section-hero">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-10">
+              <div className="md:col-span-7">
+                <h1 className="text-4xl font-black tracking-tight text-neutral-900 md:text-6xl">
+                  Plans & Pricing
+                </h1>
+                <p className="mt-4 max-w-xl text-base leading-relaxed text-neutral-800 md:text-lg">
+                  Family law only. Built for self-represented users across U.S.
+                  jurisdictions — educational and organizational tools, not legal advice.
                 </p>
 
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <AddOnMini addon={ADD_ONS[0]} />
-                  <AddOnMini addon={ADD_ONS[1]} />
+                <div className="mt-6 rounded-2xl border border-neutral-900/10 bg-white/55 p-5">
+                  <div className="text-sm font-semibold text-neutral-900">
+                    Shared principles (all plans)
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+                    {[
+                      "Educational and organizational only",
+                      "Not a law firm • no legal advice",
+                      "Downloads require affirmative acknowledgment + release",
+                      "No refunds (narrow exceptions listed below)",
+                      "Supports interstate family law cases",
+                    ].map((t) => (
+                      <li key={t} className="flex gap-2">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/70" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="md:col-span-5">
+                <div className="rounded-2xl border border-neutral-900/10 bg-white/55 p-5">
+                  <div className="text-sm font-semibold text-neutral-900">
+                    Who these prices are for
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-800">
+                    Individual plans are <span className="font-semibold">per user</span>.
+                    Organizations and DV shelters are custom pricing.
+                  </p>
                 </div>
 
-                <div className="mt-4 text-xs text-neutral-900/70">
-                  Over-limit processing is handled internally (no automatic overage charges).
+                <div className="mt-4 rounded-2xl border border-neutral-900/10 bg-white/55 p-5">
+                  <div className="text-sm font-semibold text-neutral-900">
+                    Billing
+                  </div>
+
+                  <div className="mt-3 inline-flex w-full items-center justify-between gap-2 rounded-full border border-neutral-900/15 bg-white/70 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setBilling("monthly")}
+                      aria-pressed={billing === "monthly"}
+                      className={[
+                        "flex-1 rounded-full px-4 py-2 text-sm font-semibold transition",
+                        billing === "monthly"
+                          ? "bg-neutral-900 text-white"
+                          : "text-neutral-900/80 hover:bg-white",
+                      ].join(" ")}
+                      data-testid="button-monthly"
+                    >
+                      Monthly
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setBilling("yearly")}
+                      aria-pressed={billing === "yearly"}
+                      className={[
+                        "flex-1 rounded-full px-4 py-2 text-sm font-semibold transition",
+                        billing === "yearly"
+                          ? "bg-neutral-900 text-white"
+                          : "text-neutral-900/80 hover:bg-white",
+                      ].join(" ")}
+                      data-testid="button-yearly"
+                    >
+                      Yearly
+                    </button>
+
+                    <span className="shrink-0 rounded-full border border-neutral-900/15 bg-white px-3 py-1 text-xs font-semibold text-neutral-900">
+                      Save 17%
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-xs text-neutral-700">
+                    Yearly is billed upfront. No refunds.
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="mx-auto w-full max-w-6xl px-4 pb-16" data-testid="section-plans">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-4xl font-black text-neutral-900">Choose what fits</h2>
-              <p className="mt-2 text-sm text-neutral-900/70">
-                Individual plans are per user. Organizations and DV shelters are custom pricing.
+          <section className="mt-10" data-testid="section-plans">
+            <div className="mb-6">
+              <h2 className="text-4xl font-black tracking-tight text-neutral-900">
+                Choose what fits
+              </h2>
+              <p className="mt-2 max-w-2xl text-base text-neutral-800">
+                Clear tiers, real feature differences — all education-only.
               </p>
             </div>
 
-            <Toggle billingMode={billingMode} setBillingMode={setBillingMode} />
-          </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {plans.map((plan) => (
+                <PlanCard key={plan.id} plan={plan} billing={billing} />
+              ))}
+            </div>
+          </section>
 
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
-            {plans.map((plan) => (
-              <div key={plan.id} className="h-full rounded-2xl border border-neutral-900/30 bg-white/5 p-6 flex flex-col" data-testid={`pricing-card-${plan.id}`}>
-                <div>
-                  <div className="text-lg font-semibold"><BrandText>{plan.name}</BrandText></div>
-                  <p className="mt-1 text-sm text-neutral-900/75">{plan.purpose}</p>
+          <section className="mt-12 rounded-[28px] border border-neutral-900/15 bg-[#EEF2EE] p-6 md:p-10" data-testid="section-addons">
+            <h3 className="text-3xl font-black tracking-tight text-neutral-900">
+              Add-ons
+            </h3>
+            <p className="mt-2 text-base text-neutral-800">
+              Optional upgrades you can add without changing your base plan.
+            </p>
 
-                  <div className="my-5 h-px w-full bg-neutral-900/15" />
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+              {addOns.map((a) => (
+                <div
+                  key={a.title}
+                  className="rounded-2xl border border-neutral-900/10 bg-white/60 p-6"
+                >
+                  <div className="text-xl font-black text-neutral-900">
+                    {a.title}
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-neutral-900/80">
+                    {a.priceLine}
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-neutral-800">
+                    {a.description}
+                  </p>
+                  <ul className="mt-4 space-y-2 text-sm text-neutral-800">
+                    {a.bullets.map((t) => (
+                      <li key={t} className="flex gap-2">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/70" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
 
-                  <PlanPrice plan={plan} billingMode={billingMode} />
+            <p className="mt-6 text-sm text-neutral-700">
+              Over-limit processing is handled internally (no automatic overage charges).
+            </p>
+          </section>
 
-                  <div className="my-5 h-px w-full bg-neutral-900/15" />
+          <section className="mt-12 rounded-[28px] border border-neutral-900/15 bg-[#EEF2EE] p-6 md:p-10" data-testid="section-organizations">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+              <div className="md:col-span-7">
+                <h3 className="text-3xl font-black tracking-tight text-neutral-900">
+                  Organizations & DV Shelters
+                </h3>
+                <p className="mt-2 text-base text-neutral-800">
+                  Custom pricing — contact us.
+                </p>
 
-                  <div className="text-sm font-semibold text-neutral-900">Highlights</div>
-                  <ul className="mt-3 space-y-2 text-sm text-neutral-900/90">
-                    {plan.included.slice(0, 6).map((it) => (
-                      <li key={it} className="flex gap-2">
-                        <span className="mt-[2px]">✓</span>
-                        <span className="leading-snug"><BrandText>{it}</BrandText></span>
+                <div className="mt-5 rounded-2xl border border-neutral-900/10 bg-white/60 p-6">
+                  <div className="text-sm font-semibold text-neutral-900">For</div>
+                  <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+                    {[
+                      "Domestic violence shelters",
+                      "Legal aid organizations",
+                      "Advocacy groups",
+                    ].map((t) => (
+                      <li key={t} className="flex gap-2">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/70" />
+                        <span>{t}</span>
                       </li>
                     ))}
                   </ul>
 
-                  <FeatureList title="See everything included" items={plan.included} />
-                  {plan.notIncluded?.length ? <FeatureList title="Not included" items={plan.notIncluded} /> : null}
+                  <div className="mt-6 text-sm font-semibold text-neutral-900">
+                    Includes
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+                    {[
+                      "Custom onboarding",
+                      "Privacy-first configurations",
+                      "Non-profit pricing",
+                      "Bulk access options",
+                    ].map((t) => (
+                      <li key={t} className="flex gap-2">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/70" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <a
+                    href="/contact"
+                    className="mt-6 block w-full rounded-full bg-bush px-5 py-3 text-center text-sm font-semibold text-white shadow-sm hover:opacity-95"
+                    data-testid="button-contact-us"
+                  >
+                    Contact us
+                  </a>
+
+                  <p className="mt-3 text-xs text-neutral-700">
+                    We'll help set up privacy-first configurations and onboarding for your team.
+                  </p>
                 </div>
+              </div>
 
-                <div className="mt-auto pt-6">
-                  <button className="w-full rounded-full bg-bush py-3 text-sm font-semibold text-white" data-testid={`button-${plan.cta.toLowerCase().replace(/\s+/g, '-')}`}>
-                    {plan.cta}
-                  </button>
-                  <p className="mt-3 text-xs text-neutral-900/70">{plan.finePrint}</p>
+              <div className="md:col-span-5">
+                <div className="rounded-2xl border border-neutral-900/10 bg-white/60 p-6">
+                  <div className="text-sm font-semibold text-neutral-900">
+                    Refund policy
+                  </div>
+                  <p className="mt-2 text-sm text-neutral-800">
+                    No refunds on monthly or yearly subscriptions.
+                  </p>
+                  <div className="mt-4 text-sm font-semibold text-neutral-900">
+                    Limited exceptions
+                  </div>
+                  <ul className="mt-2 space-y-2 text-sm text-neutral-800">
+                    {[
+                      "Duplicate charge",
+                      "Technical failure preventing access for an extended period",
+                      "Billing error",
+                    ].map((t) => (
+                      <li key={t} className="flex gap-2">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/70" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-4 text-xs text-neutral-700">
+                    All exceptions require review.
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-6xl px-4 pb-16" data-testid="section-addons">
-          <h3 className="text-3xl font-black text-neutral-900">Add-ons</h3>
-          <p className="mt-2 text-sm text-neutral-900/70">
-            Optional upgrades you can add without changing your base plan.
-          </p>
-
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3 items-stretch">
-            {ADD_ONS.map((a) => (
-              <AddOnCard key={a.id} addon={a} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-6xl px-4 pb-16" data-testid="section-organizations">
-          <div className="rounded-2xl border border-neutral-900/30 bg-white/10 p-8">
-            <div className="text-2xl font-black text-neutral-900">{ORGS.title}</div>
-            <div className="mt-1 text-sm text-neutral-900/75">{ORGS.price}</div>
-
-            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <div className="text-sm font-semibold">For</div>
-                <ul className="mt-3 space-y-2 text-sm text-neutral-900/90">
-                  {ORGS.for.map((it) => (
-                    <li key={it} className="flex gap-2">
-                      <span className="mt-[2px]">✓</span>
-                      <span>{it}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <div className="text-sm font-semibold">Includes</div>
-                <ul className="mt-3 space-y-2 text-sm text-neutral-900/90">
-                  {ORGS.includes.map((it) => (
-                    <li key={it} className="flex gap-2">
-                      <span className="mt-[2px]">✓</span>
-                      <span>{it}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </div>
+          </section>
 
-            <div className="mt-8">
-              <a
-                href="/contact"
-                className="inline-flex w-full items-center justify-center rounded-full bg-bush py-3 text-sm font-semibold text-white"
-                data-testid="button-contact-us"
-              >
-                Contact us
-              </a>
-              <p className="mt-3 text-xs text-neutral-900/70">
-                We'll help set up privacy-first configurations and onboarding for your team.
-              </p>
-            </div>
+          <div className="mt-10 text-center text-xs text-neutral-700">
+            <BrandText>civilla</BrandText> is educational and organizational only. Not legal advice.
           </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-6xl px-4 pb-24" data-testid="section-refunds">
-          <div className="text-center text-sm text-neutral-900/70">
-            <div className="font-semibold text-neutral-900">{REFUNDS.headline}</div>
-            <div className="mt-2">{REFUNDS.body}</div>
-
-            <div className="mt-3">Limited exceptions:</div>
-            <div className="mt-2 flex flex-col items-center gap-1">
-              {REFUNDS.exceptions.map((it) => (
-                <div key={it}>• {it}</div>
-              ))}
-            </div>
-
-            <div className="mt-3">{REFUNDS.footnote}</div>
-          </div>
-        </section>
+        </div>
       </main>
 
       <Footer />
     </div>
+  );
+}
+
+function PlanCard({ plan, billing }: { plan: Plan; billing: Billing }) {
+  const isYearly = billing === "yearly";
+  const showYearly = isYearly && plan.yearlyPrice != null && plan.id !== "free";
+
+  const priceMain = (() => {
+    if (plan.id === "free") return "$0";
+    if (showYearly) return `$${plan.yearlyPrice!.toFixed(0)}`;
+    return `$${plan.monthlyPrice!.toFixed(2)}`;
+  })();
+
+  const priceSuffix = (() => {
+    if (plan.id === "free") return "for 3 days";
+    if (showYearly) return "/yr";
+    return "/mo";
+  })();
+
+  const yearlySub = (() => {
+    if (!showYearly) return null;
+    const perMonth = (plan.yearlyPrice! / 12).toFixed(2);
+    return `$${perMonth}/mo billed yearly`;
+  })();
+
+  return (
+    <article
+      className={[
+        "relative flex h-full flex-col rounded-[28px] border bg-[#EEF2EE] p-6",
+        "border-neutral-900/15",
+        plan.badge ? "ring-1 ring-neutral-900/20" : "",
+      ].join(" ")}
+      data-testid={`pricing-card-${plan.id}`}
+    >
+      {plan.badge ? (
+        <div className="absolute -top-3 left-6 rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
+          {plan.badge}
+        </div>
+      ) : null}
+
+      <div className="text-xl font-black text-neutral-900"><BrandText>{plan.name}</BrandText></div>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-800"><BrandText>{plan.tagline}</BrandText></p>
+
+      <div className="mt-5 rounded-2xl border border-neutral-900/10 bg-white/60 p-5">
+        <div className="flex items-end justify-between gap-3">
+          <div className="text-4xl font-black tracking-tight text-neutral-900">
+            {priceMain}
+            <span className="ml-2 text-sm font-semibold text-neutral-900/80">
+              {priceSuffix}
+            </span>
+          </div>
+        </div>
+
+        {yearlySub ? (
+          <div className="mt-2 text-xs font-semibold text-neutral-800">
+            {yearlySub}
+          </div>
+        ) : null}
+
+        <div className="mt-4">
+          <div className="text-sm font-semibold text-neutral-900">Highlights</div>
+          <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+            {plan.highlights.slice(0, 6).map((t) => (
+              <li key={t} className="flex gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/70" />
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <details className="rounded-2xl border border-neutral-900/10 bg-white/50 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
+              See everything included
+            </summary>
+            <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+              {plan.includedFull.map((t) => (
+                <li key={t} className="flex gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900/60" />
+                  <span><BrandText>{t}</BrandText></span>
+                </li>
+              ))}
+            </ul>
+          </details>
+
+          {plan.notIncluded?.length ? (
+            <details className="rounded-2xl border border-neutral-900/10 bg-white/50 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
+                Not included
+              </summary>
+              <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+                {plan.notIncluded.map((t) => (
+                  <li key={t} className="flex gap-2">
+                    <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-neutral-900/20 text-[10px] font-bold text-neutral-900/70">
+                      —
+                    </span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          className="mt-5 w-full rounded-full bg-bush px-5 py-3 text-center text-sm font-semibold text-white shadow-sm hover:opacity-95"
+          data-testid={`button-${plan.ctaLabel.toLowerCase().replace(/\s+/g, '-')}`}
+        >
+          {plan.ctaLabel}
+        </button>
+
+        {plan.footnote ? (
+          <p className="mt-3 text-xs text-neutral-700">{plan.footnote}</p>
+        ) : null}
+      </div>
+    </article>
   );
 }
