@@ -1,4 +1,4 @@
-import { Phone, AlertTriangle, Check, LogOut } from "lucide-react";
+import { Phone, Check, LogOut } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
@@ -215,7 +215,7 @@ export default function SafetySupport() {
             </div>
             <div className="flex flex-col gap-4 py-2">
               <div className="flex gap-4 items-center">
-                <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
+                <Phone className="w-6 h-6 text-white flex-shrink-0" />
                 <span className="font-arimo text-lg leading-[1.6] text-white">
                   Call 911 for emergencies
                 </span>
