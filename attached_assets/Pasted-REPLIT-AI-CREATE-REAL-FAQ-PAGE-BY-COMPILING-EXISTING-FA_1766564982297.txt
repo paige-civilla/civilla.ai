@@ -1,0 +1,182 @@
+REPLIT AI — CREATE REAL /FAQ PAGE BY COMPILING EXISTING FAQs + ENABLE ROUTING + ENABLE NAV LINK
+
+ANSWER (placement):
+Put **FAQs** under the **Support** column. That’s where users look for help content, and it avoids cluttering “Get Started” (which is Home / Plans & Pricing / Login).
+
+HARD RULES:
+- Do NOT rewrite or invent new FAQ answers.
+- Only **copy** existing Q/A text from the current site pages/components into the new FAQ page.
+- Navbars are otherwise locked (only edit them to add/enable the FAQ link).
+- Footer unchanged unless explicitly required for routing.
+
+====================================================
+1) FIND ALL EXISTING FAQ SOURCES (READ-ONLY FIRST)
+====================================================
+
+Run:
+rg -n "FAQ|FAQs|Frequently Asked" client/src
+
+Open every file that contains actual FAQ Q/A content and identify:
+- the question strings
+- the answer strings
+Common likely sources:
+- client/src/components/FAQSection.tsx (Home FAQs)
+- client/src/pages/Plans.tsx (Plans page FAQ accordion, if present)
+- any other page with Q/A accordions
+
+DO NOT change those source files yet.
+
+====================================================
+2) CREATE A NEW FAQ PAGE (COMING SOON → REAL PAGE)
+====================================================
+
+Create file:
+client/src/pages/FAQ.tsx
+
+Paste this component (structure only — you will fill the arrays by copying from existing sources):
+
+import NavbarCream from "@/components/NavbarCream";
+import Footer from "@/components/Footer";
+import { useMemo } from "react";
+import { ChevronDown } from "lucide-react";
+
+type FAQItem = { q: string; a: string; section: string };
+
+function FAQAccordion({ items }: { items: FAQItem[] }) {
+  const sections = useMemo(() => {
+    const map = new Map<string, FAQItem[]>();
+    for (const item of items) {
+      const list = map.get(item.section) ?? [];
+      list.push(item);
+      map.set(item.section, list);
+    }
+    return Array.from(map.entries());
+  }, [items]);
+
+  return (
+    <div className="space-y-10">
+      {sections.map(([sectionTitle, sectionItems]) => (
+        <div key={sectionTitle} className="space-y-3">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900">
+            {sectionTitle}
+          </h2>
+
+          <div className="divide-y divide-neutral-900/10 rounded-2xl border border-neutral-900/15 bg-white/40">
+            {sectionItems.map((item) => (
+              <details key={item.q} className="group p-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+                  <span className="text-base sm:text-lg font-semibold text-neutral-900">
+                    {item.q}
+                  </span>
+                  <ChevronDown className="h-5 w-5 opacity-70 transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="mt-3 text-sm sm:text-base leading-relaxed text-neutral-900/80">
+                  {item.a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function FAQPage() {
+  // IMPORTANT:
+  // Populate this by COPYING existing FAQs from current pages/components.
+  // Do not create new answers here.
+  const items: FAQItem[] = [
+    // Example format:
+    // { section: "General", q: "Question text", a: "Answer text" },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <NavbarCream />
+
+      <main className="flex-1">
+        <section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-12 pb-16">
+          <div className="rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 sm:p-10">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-neutral-900">
+              FAQs
+            </h1>
+            <p className="mt-4 text-base sm:text-lg leading-relaxed text-neutral-900/80 max-w-3xl">
+              Quick answers about what civilla.ai does, and what it doesn’t.
+            </p>
+          </div>
+
+          <div className="mt-8">
+            <FAQAccordion items={items} />
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+====================================================
+3) POPULATE THE FAQ PAGE WITH COPIED CONTENT (NO NEW WRITING)
+====================================================
+
+From each existing FAQ source you found in Step 1:
+- COPY each existing Q/A pair exactly
+- Paste into the `items` array in client/src/pages/FAQ.tsx
+- Group them into sections like:
+  - "General"
+  - "Plans & Billing" (if the Plans page has billing/trial/upgrade questions)
+  - "Privacy & Safety"
+  - "Using Civilla"
+
+Example (you will replace with real copied Q/A):
+{ section: "General", q: "…", a: "…" },
+
+NOTE:
+If the Plans page has FAQ content currently embedded in its own component/accordion, copy the literal strings into this page. Do not delete the Plans FAQ.
+
+====================================================
+4) ADD ROUTING FOR /FAQ
+====================================================
+
+Edit:
+client/src/App.tsx
+
+- Add import:
+import FAQPage from "@/pages/FAQ";
+
+- Add route (match existing routing style):
+<Route path="/faq" component={FAQPage} />
+
+====================================================
+5) ENABLE FAQ IN BOTH NAVBARS (REMOVE “COMING SOON”)
+====================================================
+
+Edit BOTH:
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+
+Find where FAQ is currently rendered as disabled / “Coming soon”.
+Change it to a real link:
+
+Label: FAQs
+Href: /faq
+Disabled: false (or remove the disabled flag entirely)
+
+Placement:
+Add “FAQs” under the **Support** column (same column as Contact/Privacy/Terms/Login).
+
+Do NOT change anything else about nav styling/layout—only enable this link.
+
+====================================================
+6) VERIFY
+====================================================
+
+- Navbar dropdown → Support → FAQs navigates to /faq
+- /faq loads with NavbarCream + Footer
+- FAQ page contains ALL copied Q/A from existing sources
+- No “coming soon” label remains for FAQs
+- No other pages changed (besides App route + nav link enable)
+
+END.

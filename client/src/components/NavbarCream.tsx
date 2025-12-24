@@ -78,9 +78,7 @@ const menuSections = [
       { label: "Contact", href: "/contact", icon: Mail },
       { label: "Privacy Policy", href: "/privacy-policy", icon: Lock },
       { label: "Terms of Service", href: "/terms", icon: ScrollText },
-    ],
-    comingSoon: [
-      { label: "FAQ", icon: CircleHelp },
+      { label: "FAQs", href: "/faq", icon: CircleHelp },
     ]
   }
 ];
