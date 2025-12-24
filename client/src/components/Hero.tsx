@@ -2,7 +2,12 @@ import { ArrowDown } from "lucide-react";
 
 const heroImageUrl = "https://www.figma.com/api/mcp/asset/85ca7531-1d25-422f-a53e-dda981af7a47";
 
-export default function Hero() {
+interface HeroProps {
+  titleMaxWidthClass?: string;
+  subtitleMaxWidthClass?: string;
+}
+
+export default function Hero({ titleMaxWidthClass, subtitleMaxWidthClass }: HeroProps) {
   return (
     <section 
       className="relative w-full h-[812px] md:h-[900px] flex items-start justify-center px-5 md:px-16 py-16 md:py-28"
@@ -16,12 +21,12 @@ export default function Hero() {
       <div className="relative flex flex-col flex-1 h-full items-start max-w-container min-w-0">
         <div className="flex flex-1 items-start w-full min-w-0">
           <div className="flex flex-1 flex-col gap-6 md:gap-8 h-full items-start justify-center min-w-0">
-            <div className="inline-block max-w-full align-top">
-              <h1 className="font-heading font-bold text-white text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] whitespace-pre-wrap">
+            <div>
+              <h1 className={`font-heading font-bold text-white text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] whitespace-pre-wrap ${titleMaxWidthClass ?? ""}`}>
                 <span className="block">Family Law,</span>
                 <span className="block">Translated.</span>
               </h1>
-              <p className="mt-6 text-base text-white/80 md:text-lg w-full leading-relaxed">
+              <p className={`mt-6 text-base text-white/80 md:text-lg leading-relaxed ${subtitleMaxWidthClass ?? ""}`}>
                 Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
               </p>
             </div>

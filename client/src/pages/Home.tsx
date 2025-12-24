@@ -12,7 +12,10 @@ export default function Home() {
   return (
     <div className="flex flex-col items-start w-full min-h-screen" data-testid="page-home">
       <Navbar />
-      <Hero />
+      <Hero 
+        titleMaxWidthClass="max-w-[14ch] sm:max-w-[16ch] lg:max-w-[18ch]"
+        subtitleMaxWidthClass="max-w-[14ch] sm:max-w-[16ch] lg:max-w-[18ch]"
+      />
       <ToolsSection />
       <StepsSection />
       <CTASection />
