@@ -44,25 +44,14 @@ export default function SafetySupport() {
       {/* Leave in a Click Section */}
       <section className="bg-cream py-28 px-4 md:px-16" data-testid="section-leave-in-click">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col gap-20 items-center">
-            <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
-              <div className="flex flex-col gap-6 items-center w-full">
-                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
-                  Leave In A Click
-                </h2>
-                <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  If you need to exit <span className="italic font-medium">civilla</span> quickly, use the Quick Exit button at the top of every page.
-                </p>
-              </div>
-            </div>
-
+          <div className="flex flex-col items-center">
             {/* Quick Exit Card */}
             <div className="w-full max-w-3xl border-2 border-neutral-darkest rounded-2xl p-8 md:p-12">
               <div className="flex flex-col gap-8 items-center text-center">
                 <div className="flex flex-col gap-6">
-                  <h3 className="font-figtree font-bold text-[clamp(32px,4vw,48px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                    How Quick Exit Works
-                  </h3>
+                  <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                    Leave In A Click
+                  </h2>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
                     Use Quick Exit in the top bar to immediately leave <span className="italic font-medium">civilla</span> and open a neutral website. For extra privacy, consider using private browsing and clearing your history after use.
                   </p>
