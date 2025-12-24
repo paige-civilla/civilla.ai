@@ -83,7 +83,7 @@ function FoundersSection() {
                   All of us deserve steadiness, understanding, and a sense of direction, especially when life is pulling you in every possible direction at once.
                 </p>
                 <p>
-                  Go kick some bureaucratic ass, kindly, strategically, and with receipts.<br />
+                  Go kick ass. Bring receipts.<br />
                   — P.
                 </p>
                 <p className="text-white/70 italic text-sm">
