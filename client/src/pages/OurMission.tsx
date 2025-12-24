@@ -23,7 +23,7 @@ function MissionHeroSection() {
 
         <div className="mt-8 rounded-2xl border border-neutral-darkest/15 bg-[#e7ebea] p-6 md:p-10">
           <h2 className="cv-h font-heading text-heading-2-mobile md:text-[32px] tracking-[0.32px] text-neutral-darkest">
-            Our mission, in full
+            The Mission
           </h2>
 
           <div className="mt-4 space-y-5 font-sans text-sm md:text-lg leading-relaxed text-neutral-darkest/80 max-w-4xl">
