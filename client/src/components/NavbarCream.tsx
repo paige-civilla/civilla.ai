@@ -54,8 +54,8 @@ const menuSections = [
     header: "About civilla",
     icon: Info,
     links: [
-      { label: "Our Mission", href: "/about#mission", icon: Target },
-      { label: "Meet The Founders", href: "/about#founders", icon: Users },
+      { label: "Our Mission", href: "/our-mission", icon: Target },
+      { label: "Meet The Founders", href: "/meet-the-founders", icon: Users },
       { label: "How We Started", href: "/how-we-started", icon: BookOpen },
     ]
   },
