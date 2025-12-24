@@ -36,7 +36,7 @@ function MissionHeroSection() {
             </p>
 
             <p>
-              We're here to reduce overwhelm, replace guesswork with plain language, and help you stay organized, one step, one document, one decision at a time. And when I say I built <span className="italic font-medium">civilla</span>… I really mean <span className="font-bold">we</span> did.
+              We're here to reduce overwhelm, replace guesswork with plain language, and help you stay organized, one step, one document, one decision at a time. <span className="italic font-medium">civilla</span> wasn't built in a boardroom. It was built with lived experience, and shaped by the people it's meant to serve.
             </p>
 
             <p>
