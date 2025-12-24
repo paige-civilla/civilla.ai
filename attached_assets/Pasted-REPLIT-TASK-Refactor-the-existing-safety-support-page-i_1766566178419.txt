@@ -1,0 +1,87 @@
+REPLIT TASK: Refactor the existing **/safety-support** page into a cleaner single page called **“Safety, Support & Resources”**.
+
+IMPORTANT CONSTRAINTS
+- ONLY edit the Safety & Support page (the page routed at `/safety-support`) and any tiny shared components you *must* add to support it (e.g., a small local accordion helper). Do NOT edit Home, How Civilla Works, Plans/Pricing, Footer, Green Navbar, Cream Navbar, or any other pages/components.
+- Keep ALL the same images that are currently on the Safety & Support page. Do not remove or replace them. You may move them into new sections/layouts.
+- Remove “button-happy” UI. This page should have at most ONE primary CTA button (“Email support” / “Contact support”). Everything else should be headings, text, lists, and accordions.
+
+GOAL
+The page should read like a single, clear resource hub:
+1) Safety tools inside civilla
+2) Quick Exit explanation (accurate)
+3) Privacy/discretion guidance (calm)
+4) Emotional safety (supportive)
+5) Emergency resources (prominent + clear)
+
+STEP 1 — FIND THE FILE
+- Locate the route `/safety-support` in the router (likely `client/src/App.tsx` or `client/src/router.tsx`).
+- Open the page component used for this route (likely something like `client/src/pages/SafetySupport.tsx` or similar). ALL edits happen here.
+
+STEP 2 — RENAME THE PAGE TITLE + HERO (NO BUTTONS)
+Replace the current hero with:
+- H1: “Safety, Support & Resources”
+- Subhead: “Tools and guidance designed to help you stay safe, supported, and in control—online and offline.”
+- Remove the “Learn” and “Resources” buttons from the hero entirely.
+- Keep styling consistent with the site’s existing hero styles (same spacing, font scale, and container width used elsewhere).
+
+STEP 3 — QUICK EXIT SECTION (KEEP YOUR QUICK EXIT IMAGE(S); FIX UNSAFE CLAIMS)
+Create a section titled:
+- “Leave in a click”
+Body copy must NOT claim civilla clears browsing history or guarantees no record remains.
+Use accurate copy like:
+- “Use Quick Exit in the top bar to immediately leave civilla and open a neutral website. For extra privacy, consider using private browsing and clearing your history after use.”
+Keep and display the existing “Quick exit” imagery already present on the page.
+
+STEP 4 — DESIGNED FOR DISCRETION (KEEP YOUR DISCRETION IMAGE(S); REMOVE BUTTONS)
+Create a section titled:
+- “Designed for discretion”
+Short body:
+- “civilla is built to feel calm and unobtrusive—no flashing alerts, no surprise pop-ups, and no attention-grabbing visuals.”
+Keep the existing discretion-related image(s) where they already exist in the page (just reposition into this section).
+Remove any “Help” / “Learn more” buttons attached to these cards/images.
+
+STEP 5 — SAFETY TOOLS INSIDE CIVILLA (TURN BUTTON-CARDS INTO A CLEAN CHECKLIST)
+Replace the current “Additional safety tools” button-cards with a clean checklist/grid (NO buttons):
+- ✅ Neutral username option — Use a non-identifying account name
+- ✅ Customized notifications — Control when and how civilla contacts you
+- ✅ Private browsing tips — Guidance for safer browsing habits
+If there is currently a “Help” link inside each card, remove it.
+If you want expandable details, use `<details><summary>…</summary>…</details>` (native HTML) instead of buttons.
+
+STEP 6 — EMOTIONAL SAFETY (KEEP NATURE IMAGE; CLEAN LAYOUT)
+Create a section titled:
+- “Your emotional safety matters”
+Body:
+- “Family court can feel overwhelming or frightening. civilla is here to help you feel informed, steady, and organized—without pressure or judgment.”
+Keep the existing nature image.
+Below it, format the “You are heard / You are in control / You are supported” content as:
+- Desktop: 3 columns
+- Mobile: stacked cards/rows
+No buttons.
+
+STEP 7 — EMERGENCY SECTION (KEEP THE DARK GREEN EMERGENCY IMAGE; MAKE IT CLEAR)
+Near the bottom, include the existing emergency block/image with the title:
+- “Important: civilla is not an emergency service”
+Keep the hotline list, but remove any extra CTA buttons except ONE optional “Email support” button for non-emergency help.
+
+STEP 8 — REMOVE REDUNDANT CONTACT BOXES / DUPLICATE “CONTACT US”
+If the page currently repeats “Contact us” in multiple places:
+- Consolidate to ONE support CTA near the bottom:
+  - Button text: “Email support”
+  - `href="mailto:support@civilla.ai"` (or whatever support email is already used in the project—reuse the existing one if present)
+
+STEP 9 — VISUAL / UX REQUIREMENTS
+- Reduce visual noise: no extra buttons on cards, no repeated “Help >” links.
+- Consistent spacing: use the same section padding and max-width container used on other pages.
+- Each section should have a clear title and 1–3 short paragraphs max.
+- Keep the same overall brand look (colors, rounded corners, borders) already used in the app.
+
+ACCEPTANCE CHECKLIST (MUST PASS)
+- /safety-support renders with the new title “Safety, Support & Resources”.
+- All existing images from the current Safety & Support page still appear somewhere on the page.
+- “Learn” and “Resources” hero buttons are gone.
+- No text claims civilla clears browser history.
+- Page has at most one primary CTA button (“Email support”).
+- The page feels like one unified hub (not multiple competing pages).
+
+Now implement these changes directly in the `/safety-support` page component.
