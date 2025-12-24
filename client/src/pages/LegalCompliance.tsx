@@ -35,7 +35,7 @@ const legalFaqs = [
 function HeroSection() {
   const jumpLinks = [
     { label: "Education only", href: "#education" },
-    { label: "What we can / can't do", href: "#boundaries" },
+    { label: "What we can and can't do", href: "#boundaries" },
     { label: "Privacy basics", href: "#privacy" },
     { label: "Documents & court use", href: "#documents" },
     { label: "FAQ", href: "#faq" }
@@ -107,15 +107,17 @@ function EducationSection() {
 
 function BoundariesSection() {
   const canItems = [
-    "We can explain legal terms and typical court processes in plain language.",
-    "We can help you organize information, documents, timelines, and notes you provide.",
-    "We can surface general educational information and options to consider."
+    "Explain legal terms in plain language",
+    "Show how the court process typically works",
+    "Help you organize documents, dates, and evidence",
+    "Share general information and options to consider"
   ];
 
   const cannotItems = [
-    "We cannot tell you what you should do in your specific case.",
-    "We cannot tell you what to file, when to file it, or how to argue it.",
-    "We cannot predict outcomes, guarantee results, or communicate with the court for you."
+    "Tell you what to file, when to file, or what to say in court",
+    "Recommend a specific legal strategy for your situation",
+    "Predict outcomes or guarantee results",
+    "Act as your lawyer or contact the court for you"
   ];
 
   return (
@@ -130,13 +132,14 @@ function BoundariesSection() {
             <div className="flex flex-col gap-6 items-start w-full">
               <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
-                  What We Can And Cannot Do For You
+                  What we can and can't do
                 </h2>
                 <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
-                  Understanding these limits helps you use <span className="italic font-medium">civilla</span> safely—especially when rules vary by state, county, and judge.
+                  <span className="italic font-medium">civilla</span> helps you understand and organize your case. We do not give legal advice or tell you what to do in your specific situation.
                 </p>
               </div>
-              <div className="flex flex-col gap-3 py-2 w-full">
+              <div className="flex flex-col gap-4 py-2 w-full">
+                <span className="font-arimo text-base md:text-lg font-semibold text-white">We can:</span>
                 {canItems.map((item, index) => (
                   <div key={index} className="flex gap-4 items-start w-full">
                     <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -147,6 +150,7 @@ function BoundariesSection() {
                     </span>
                   </div>
                 ))}
+                <span className="font-arimo text-base md:text-lg font-semibold text-white mt-2">We can't:</span>
                 {cannotItems.map((item, index) => (
                   <div key={`cannot-${index}`} className="flex gap-4 items-start w-full">
                     <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -158,6 +162,9 @@ function BoundariesSection() {
                   </div>
                 ))}
               </div>
+              <p className="font-arimo text-sm leading-[1.6] text-white/70 italic">
+                *Education and organization only — not legal advice or representation.
+              </p>
             </div>
           </div>
           <div className="flex-1 w-full aspect-[600/640] rounded-2xl overflow-hidden">
