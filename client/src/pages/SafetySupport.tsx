@@ -3,7 +3,6 @@ import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
 
-const imgPrivateBrowser = "https://www.figma.com/api/mcp/asset/a44db474-56ed-4b20-a4be-61f3fa8be1ed";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
 const safetyTools = [
   {
@@ -154,16 +153,6 @@ export default function SafetySupport() {
               </div>
             </div>
 
-            {/* Private Browser Image */}
-            <div className="w-full max-w-3xl">
-              <div className="rounded-2xl overflow-hidden">
-                <img 
-                  src={imgPrivateBrowser} 
-                  alt="Laptop showing private browsing" 
-                  className="w-full h-64 object-cover object-[center_75%]"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </section>
