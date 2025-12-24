@@ -5,8 +5,6 @@ import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894
 
 const imgPrivateBrowser = "https://www.figma.com/api/mcp/asset/a44db474-56ed-4b20-a4be-61f3fa8be1ed";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
-const imgPlaceholderImage3 = "https://www.figma.com/api/mcp/asset/86d7b009-7a1d-4335-8b7c-21b12690b64e";
-
 const safetyTools = [
   {
     title: "Neutral username option",
@@ -228,52 +226,43 @@ export default function SafetySupport() {
       {/* Emergency Service Section */}
       <section className="bg-[#0c2f24] py-28 px-4 md:px-16" data-testid="section-emergency">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col md:flex-row gap-20 items-center">
-            <div className="flex-1 flex flex-col gap-8">
-              <div className="flex flex-col gap-6">
-                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
-                  <span className="italic font-medium">civilla</span> Is Not An Emergency Service
-                </h2>
-                <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                  If you are in immediate danger, please contact emergency services.
-                </p>
+          <div className="flex flex-col gap-8 items-center text-center max-w-3xl mx-auto">
+            <div className="flex flex-col gap-6">
+              <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
+                <span className="italic font-medium">civilla</span> Is Not An Emergency Service
+              </h2>
+              <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
+                If you are in immediate danger, please contact emergency services.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4 py-2">
+              <div className="flex gap-4 items-center">
+                <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
+                <span className="font-arimo text-lg leading-[1.6] text-white">
+                  Call 911 for emergencies
+                </span>
               </div>
-              <div className="flex flex-col gap-4 py-2">
-                <div className="flex gap-4 items-center">
-                  <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
-                  <span className="font-arimo text-lg leading-[1.6] text-white">
-                    Call 911 for emergencies
-                  </span>
-                </div>
-                <div className="flex gap-4 items-center">
-                  <Phone className="w-6 h-6 text-white flex-shrink-0" />
-                  <span className="font-arimo text-lg leading-[1.6] text-white">
-                    Call or text 988 for crisis support (24/7)
-                  </span>
-                </div>
-                <div className="flex gap-4 items-center">
-                  <Phone className="w-6 h-6 text-white flex-shrink-0" />
-                  <span className="font-arimo text-lg leading-[1.6] text-white">
-                    National DV Hotline: 1-800-799-7233 or text START to 88788
-                  </span>
-                </div>
+              <div className="flex gap-4 items-center">
+                <Phone className="w-6 h-6 text-white flex-shrink-0" />
+                <span className="font-arimo text-lg leading-[1.6] text-white">
+                  Call or text 988 for crisis support (24/7)
+                </span>
               </div>
-              <div className="pt-4">
-                <a 
-                  href="mailto:support@civilla.ai"
-                  className="inline-block bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl"
-                  data-testid="button-email-support"
-                >
-                  Email Support
-                </a>
+              <div className="flex gap-4 items-center">
+                <Phone className="w-6 h-6 text-white flex-shrink-0" />
+                <span className="font-arimo text-lg leading-[1.6] text-white">
+                  National DV Hotline: 1-800-799-7233 or text START to 88788
+                </span>
               </div>
             </div>
-            <div className="flex-1">
-              <img 
-                src={imgPlaceholderImage3} 
-                alt="Support resources" 
-                className="w-full aspect-[600/640] object-cover rounded-2xl"
-              />
+            <div className="pt-4">
+              <a 
+                href="mailto:support@civilla.ai"
+                className="inline-block bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl"
+                data-testid="button-email-support"
+              >
+                Email Support
+              </a>
             </div>
           </div>
         </div>
