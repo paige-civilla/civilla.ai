@@ -4,6 +4,21 @@ import { Link } from "wouter";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
+function StyledCivilla({ text }: { text: string }) {
+  const parts = text.split(/(civilla(?:'s)?)/gi);
+  return (
+    <>
+      {parts.map((part, i) => 
+        /^civilla('s)?$/i.test(part) ? (
+          <span key={i} className="italic font-medium">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 const legalFaqs = [
   {
     id: 0,
@@ -288,7 +303,7 @@ function FAQSection() {
                 data-testid={`button-faq-${faq.id}`}
               >
                 <span className="flex-1 font-arimo font-bold text-lg leading-[1.6] text-neutral-darkest">
-                  {faq.question}
+                  <StyledCivilla text={faq.question} />
                 </span>
                 {openItems.includes(faq.id) ? (
                   <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />
@@ -299,7 +314,7 @@ function FAQSection() {
               {openItems.includes(faq.id) && (
                 <div className="flex items-start pb-6 w-full">
                   <p className="flex-1 font-arimo text-base leading-[1.6] text-neutral-darkest">
-                    {faq.answer}
+                    <StyledCivilla text={faq.answer} />
                   </p>
                 </div>
               )}
