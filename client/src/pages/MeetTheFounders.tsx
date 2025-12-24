@@ -108,7 +108,7 @@ function FoundersSection() {
               
               <div className="flex flex-col gap-4 font-sans text-sm md:text-[16px] text-white/90 leading-[1.6]">
                 <p>
-                  A few years ago, I went through one of the hardest things a person can face: divorce. It tested my strength, my patience, and my sense of fairness. I learned that real strength isn't loud or aggressive. It's steady, grounded, and focused on what matters most: my child, and the relationship I want to build and protect with them.
+                  A few years ago, I went through one of the hardest things a person can face: divorce. It tested my strength, my patience, and my sense of fairness. I learned that real strength isn't loud or aggressive. It's steady, grounded, and focused on what matters most: my child, and the relationship I want to protect and build with them.
                 </p>
                 <p>
                   Like a lot of fathers, I discovered how confusing, costly, and one-sided the process can feel. But as I moved through it, I also began to understand experiences that weren't like my own. Divorce hits everyone differently. There are two sides to every ending, and most people, no matter which side they're on, are just trying to hold themselves together while navigating something they never imagined they'd be in.
