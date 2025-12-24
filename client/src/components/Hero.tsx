@@ -22,7 +22,7 @@ export default function Hero() {
                 <span className="block">Translated.</span>
               </h1>
               <p className="mt-6 text-base text-white/80 md:text-lg leading-relaxed max-w-[30ch]">
-                Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
+                Bring your case into one clear place, so you can understand what you are seeing, stay organized, and prepare with less stress.
               </p>
             </div>
             <div className="mt-6 flex items-center gap-6">
