@@ -4,13 +4,14 @@ import { BrandText, Brand } from "./Brand";
 const footerLinks = {
   startHere: [
     { label: "Home", href: "/" },
-    { label: "How civilla Works", href: "/how-civilla-works" },
     { label: "Plans & Pricing", href: "/plans" },
     { label: "Login", href: "/login" },
   ],
   aboutCivilla: [
+    { label: "How civilla Works", href: "/how-civilla-works" },
     { label: "Our Mission", href: "/our-mission" },
     { label: "Meet The Founders", href: "/meet-the-founders" },
+    { label: "Wall Of Wins", href: "/wall-of-wins" },
   ],
   trustSafety: [
     { label: "Safety & Support", href: "/safety-support" },

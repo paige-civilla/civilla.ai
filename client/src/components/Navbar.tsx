@@ -45,7 +45,6 @@ const menuSections = [
     icon: Sparkles,
     links: [
       { label: "Home", href: "/", icon: Home },
-      { label: "How civilla Works", href: "/how-civilla-works", icon: Compass },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
       { label: "Login", href: "/login", icon: LogIn },
     ]
@@ -54,6 +53,7 @@ const menuSections = [
     header: "About civilla",
     icon: Info,
     links: [
+      { label: "How civilla Works", href: "/how-civilla-works", icon: Compass },
       { label: "Our Mission", href: "/our-mission", icon: Target },
       { label: "Meet The Founders", href: "/meet-the-founders", icon: Users },
       { label: "Wall Of Wins", href: "/wall-of-wins", icon: Trophy },
