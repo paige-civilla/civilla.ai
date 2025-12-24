@@ -90,7 +90,7 @@ function FoundersSection() {
                   (Single mom. Survivor. Self-represented. Builder of things that should've existed long ago.)
                 </p>
                 <p>
-                  P.S. When I say "I built it," I really mean <span className="font-bold">we</span> built this. I had the idea, and B. believed in me, and the idea.
+                  P.S. When I say "I built it," I really mean <span className="font-bold">we</span> built this. I had the idea, and B. saw the vision and believed in me.
                 </p>
               </div>
             </div>
