@@ -13,7 +13,8 @@ const termsContent = [
   {
     id: "education-only",
     title: "2. Education Only — Not Legal Advice",
-    content: `civilla.ai provides general educational information and tools to help you understand family-court processes and organize your materials. We do not provide legal advice, legal representation, or attorney services. Using the Service does not create an attorney-client relationship.`
+    content: `civilla.ai provides general educational information and tools to help you understand family-court processes and organize your materials. We do not provide legal advice, legal representation, or attorney services. Using the Service does not create an attorney-client relationship.`,
+    footer: `civilla.ai is not affiliated with, endorsed by, or connected to any court, judge, government agency, or legal authority. Court rules, procedures, and outcomes vary by jurisdiction and may change.`
   },
   {
     id: "who-for",
