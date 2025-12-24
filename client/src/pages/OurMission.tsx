@@ -1,40 +1,47 @@
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
-function HeaderSection() {
+function MissionHeroSection() {
   return (
-    <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-header">
-      <div className="flex flex-col items-center max-w-container w-full">
-        <div className="flex flex-col items-center max-w-[768px] w-full">
-          <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] text-neutral-darkest text-center w-full">
-            Our Mission Statement
-          </h1>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function MissionContentSection() {
-  return (
-    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-mission-content">
-      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
-          <div className="flex flex-col gap-4 items-center w-full">
-            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
-              <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-                Making family law accessible
-              </h2>
-              <div className="cv-p font-sans text-sm md:text-[20px] w-full flex flex-col gap-4 md:gap-5">
-                <p>Our mission is to make family court survivable, and easier to follow, for people who are doing it without a lawyer.</p>
-                <p>We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human.</p>
-                <p>Family court wasn't built for unrepresented people, and it often feels like the rules are written in a language you were never taught.</p>
-                <p><span className="italic font-medium">civilla</span> exists to help you regain clarity, organization, and steadier footing when the process feels stacked against you.</p>
-                <p>We're here to make the system less overwhelming and less confusing, one person at a time.</p>
-                <p>And when I say I built <span className="italic font-medium">civilla</span>, I really mean <span className="font-bold">we</span> did.</p>
-                <p>This mission is shared, lived, and built with people who have lived the reality of family court and decided we all deserve better.</p>
-              </div>
+    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16" data-testid="section-mission-hero">
+      <div className="w-full max-w-container">
+        <div className="rounded-2xl border border-neutral-darkest/15 bg-white/40 p-6 md:p-10">
+          <div className="grid gap-6 md:grid-cols-2 items-start">
+            <div className="min-w-0">
+              <h1 className="cv-h font-heading text-heading-1-mobile md:text-[60px] tracking-[0.48px] md:tracking-[0.6px] text-neutral-darkest">
+                Our Mission
+              </h1>
             </div>
+
+            <div className="min-w-0">
+              <p className="cv-p font-sans text-sm md:text-lg leading-relaxed text-neutral-darkest/80">
+                This started as a passion project for a single parent, showing up to family court scared, exhausted, confused, and determined to keep going, with no clear place to start or even who to ask. Now it's for everyone in family court who deserves tools that feel clear, calm, and human.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-neutral-darkest/15 bg-white/40 p-6 md:p-10">
+          <h2 className="cv-h font-heading text-heading-2-mobile md:text-[32px] tracking-[0.32px] text-neutral-darkest">
+            Our mission, in full
+          </h2>
+
+          <div className="mt-4 space-y-5 font-sans text-sm md:text-lg leading-relaxed text-neutral-darkest/80 max-w-4xl">
+            <p>
+              Our mission is to make family court easier to understand and easier to move through for people doing it without a lawyer. We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human.
+            </p>
+
+            <p>
+              Family court wasn't built for people without legal teams, and the process can feel confusing, time-consuming, and isolating. <span className="italic font-medium">civilla</span> exists to bring clarity back to the people who often have the least margin for error.
+            </p>
+
+            <p>
+              We're here to reduce overwhelm, replace guesswork with plain language, and help you stay organized, one step, one document, one decision at a time. And when I say I built <span className="italic font-medium">civilla</span>… I really mean <span className="font-bold">we</span> did.
+            </p>
+
+            <p>
+              This mission is shared, lived, and built alongside the people who know this system firsthand and who believe we all deserve better.
+            </p>
           </div>
         </div>
       </div>
@@ -47,8 +54,7 @@ export default function OurMission() {
     <div className="min-h-screen flex flex-col">
       <NavbarCream />
       <main className="flex-1">
-        <HeaderSection />
-        <MissionContentSection />
+        <MissionHeroSection />
       </main>
       <Footer />
     </div>

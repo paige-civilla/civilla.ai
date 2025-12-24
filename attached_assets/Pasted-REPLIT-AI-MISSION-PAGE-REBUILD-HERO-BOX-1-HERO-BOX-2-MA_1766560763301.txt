@@ -1,0 +1,106 @@
+REPLIT AI — MISSION PAGE: REBUILD HERO BOX 1 + HERO BOX 2 (MAGAZINE VIBE)
+
+DO NOT EDIT:
+- Navbar.tsx
+- NavbarCream.tsx
+- Footer.tsx
+- Any other pages/components
+
+GOAL:
+On the Mission page, create TWO hero boxes at the top of the page:
+
+HERO BOX 1 (Magazine layout):
+- LEFT: Title = "Our Mission"
+- RIGHT: One statement (exact copy below)
+
+HERO BOX 2 (Full mission statement):
+- The full mission statement text (exact copy below), readable and not “salesy”
+
+COPY (EXACT):
+
+Hero Box 1 right-side statement:
+"This started as a passion project for a single parent, showing up to family court scared, exhausted, confused, and determined to keep going, with no clear place to start or even who to ask. Now it’s for everyone in family court who deserves tools that feel clear, calm, and human."
+
+Hero Box 2 full mission statement:
+"Our mission is to make family court easier to understand and easier to move through for people doing it without a lawyer. We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human.
+
+Family court wasn’t built for people without legal teams — and the process can feel confusing, time-consuming, and isolating. Civilla exists to bring clarity back to the people who often have the least margin for error.
+
+We’re here to reduce overwhelm, replace guesswork with plain language, and help you stay organized — one step, one document, one decision at a time. And when I say I built Civilla… I really mean we did.
+
+This mission is shared, lived, and built alongside the people who know this system firsthand — and who believe we all deserve better."
+
+IMPLEMENTATION STEPS:
+
+1) Find the Mission page file:
+- Search for the route in client/src/App.tsx that renders the Mission page, then open that page component.
+- If you don’t see a “Mission” page, search for the existing text "Our Mission Statement" in the repo:
+  rg -n "Our Mission Statement|mission statement" client/src
+
+2) In that page component, locate the current top hero/intro section and REPLACE it with the JSX BELOW.
+
+PASTE THIS JSX (replace the existing hero content with this):
+
+<section className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 pb-12">
+  {/* HERO BOX 1 — Magazine layout */}
+  <div className="rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 sm:p-10">
+    <div className="grid gap-6 md:grid-cols-2 items-start">
+      {/* Left title */}
+      <div className="min-w-0">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-neutral-900">
+          Our Mission
+        </h1>
+      </div>
+
+      {/* Right statement */}
+      <div className="min-w-0">
+        <p className="text-base sm:text-lg leading-relaxed text-neutral-900/80">
+          This started as a passion project for a single parent, showing up to family court scared,
+          exhausted, confused, and determined to keep going, with no clear place to start or even
+          who to ask. Now it’s for everyone in family court who deserves tools that feel clear,
+          calm, and human.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* HERO BOX 2 — Full mission statement */}
+  <div className="mt-8 rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 sm:p-10">
+    <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900">
+      Our mission, in full
+    </h2>
+
+    <div className="mt-4 space-y-5 text-base sm:text-lg leading-relaxed text-neutral-900/80 max-w-4xl">
+      <p>
+        Our mission is to make family court easier to understand and easier to move through for
+        people doing it without a lawyer. We believe every parent, survivor, and self-represented
+        person deserves tools that are clear, calm, accurate, and human.
+      </p>
+
+      <p>
+        Family court wasn’t built for people without legal teams — and the process can feel
+        confusing, time-consuming, and isolating. Civilla exists to bring clarity back to the
+        people who often have the least margin for error.
+      </p>
+
+      <p>
+        We’re here to reduce overwhelm, replace guesswork with plain language, and help you stay
+        organized — one step, one document, one decision at a time. And when I say I built Civilla…
+        I really mean we did.
+      </p>
+
+      <p>
+        This mission is shared, lived, and built alongside the people who know this system firsthand
+        — and who believe we all deserve better.
+      </p>
+    </div>
+  </div>
+</section>
+
+3) Save, refresh, and confirm:
+- Box 1 shows: “Our Mission” on the left and the love-letter statement on the right
+- Box 2 shows the full mission statement in readable paragraphs
+- No buttons added
+- Navbars/footer unchanged
+
+END.
