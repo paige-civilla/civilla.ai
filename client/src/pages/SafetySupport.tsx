@@ -90,15 +90,15 @@ export default function SafetySupport() {
       {/* Designed for Discretion Section */}
       <section className="bg-[#0c2f24] py-28 px-4 md:px-16" data-testid="section-discretion">
         <div className="max-w-container mx-auto">
-          <div className="flex flex-col md:flex-row gap-20 items-center">
-            <div className="flex-1">
+          <div className="flex flex-col gap-12 items-center max-w-3xl mx-auto">
+            <div className="w-full">
               <img 
                 src={foggyLandscape} 
                 alt="Foggy landscape reflected in lake" 
-                className="w-full aspect-[600/640] object-cover rounded-2xl"
+                className="w-full aspect-[16/9] object-cover rounded-2xl"
               />
             </div>
-            <div className="flex-1 flex flex-col gap-6">
+            <div className="flex flex-col gap-6 text-center">
               <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
                 Designed For Discretion
               </h2>
@@ -243,15 +243,6 @@ export default function SafetySupport() {
                   National DV Hotline: 1-800-799-7233 or text START to 88788
                 </span>
               </div>
-            </div>
-            <div className="pt-4">
-              <a 
-                href="mailto:support@civilla.ai"
-                className="inline-block bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl"
-                data-testid="button-email-support"
-              >
-                Email Support
-              </a>
             </div>
           </div>
         </div>
