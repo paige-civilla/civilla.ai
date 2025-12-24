@@ -61,7 +61,7 @@ export default function Accessibility() {
               className="flex items-center gap-2 font-arimo font-bold text-base md:text-lg text-neutral-darkest underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
               data-testid="link-report-issue"
             >
-              Report an accessibility issue
+              Report An Accessibility Issue
               <ChevronRight className="w-5 h-5" />
             </a>
           </div>
