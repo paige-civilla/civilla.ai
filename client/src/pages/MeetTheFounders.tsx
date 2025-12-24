@@ -1,7 +1,7 @@
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-import founderImage1 from "@assets/bubba11_1766551770096.jpg";
-import founderImage2 from "@assets/IMG_6122_1766551785069.JPG";
+import founderImage1 from "@assets/IMG_6122_1766551785069.JPG";
+import founderImage2 from "@assets/bubba11_1766551770096.jpg";
 
 function HeaderSection() {
   return (
