@@ -16,6 +16,8 @@ import Accessibility from "@/pages/Accessibility";
 import Contact from "@/pages/Contact";
 import TermsOfService from "@/pages/TermsOfService";
 import Login from "@/pages/Login";
+import AdminLogin from "@/pages/AdminLogin";
+import Careers from "@/pages/Careers";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +37,8 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/login" component={Login} />
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/careers" component={Careers} />
       <Route component={NotFound} />
     </Switch>
   );
