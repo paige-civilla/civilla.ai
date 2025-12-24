@@ -1,0 +1,56 @@
+TASK: Fix Civilla favicon + social preview using the NEW green Civilla logo file Paige provides.
+
+A) You will receive from Paige:
+- One logo file (preferred: SVG). If not, use PNG with transparent background.
+
+B) Create favicon + preview assets from the logo
+1) If the logo is SVG:
+- Save it as: client/public/brand/civilla-logo.svg
+
+2) Generate these PNGs (export from Figma/Canva or any favicon generator) using the SAME green mark:
+- 16x16 PNG  → client/public/favicon-16x16.png
+- 32x32 PNG  → client/public/favicon-32x32.png
+- 180x180 PNG → client/public/apple-touch-icon.png
+- 1200x630 PNG (social preview) → client/public/og-image.png
+- favicon.ico (multi-size .ico containing at least 16 + 32) → client/public/favicon.ico
+
+(If Paige only gives a PNG, keep it too:)
+- Save original as: client/public/brand/civilla-logo.png
+
+C) Add/Update head tags (find the HTML file that contains <head> — usually client/index.html or index.html)
+Inside <head> add/replace with:
+
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#0F3D2E" />
+
+<!-- Social preview -->
+<meta property="og:image" content="https://civilla.ai/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://civilla.ai/og-image.png" />
+
+D) Add webmanifest (client/public/site.webmanifest)
+{
+  "name": "civilla.ai",
+  "short_name": "civilla",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/favicon-16x16.png", "sizes": "16x16", "type": "image/png" }
+  ],
+  "theme_color": "#0F3D2E",
+  "background_color": "#FFFFFF",
+  "display": "standalone"
+}
+
+E) Verify after deploy (important: favicons cache hard)
+- Open:
+  https://civilla.ai/favicon.ico
+  https://civilla.ai/favicon-32x32.png
+  https://civilla.ai/apple-touch-icon.png
+- Hard refresh (Cmd+Shift+R) and test in a Private window.
