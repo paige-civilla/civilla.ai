@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen, Trophy } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 import BrandMark from "@/components/BrandMark";
 
@@ -56,6 +56,7 @@ const menuSections = [
     links: [
       { label: "Our Mission", href: "/our-mission", icon: Target },
       { label: "Meet The Founders", href: "/meet-the-founders", icon: Users },
+      { label: "Wall Of Wins", href: "/wall-of-wins", icon: Trophy },
     ]
   },
   {

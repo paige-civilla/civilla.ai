@@ -18,6 +18,7 @@ import TermsOfService from "@/pages/TermsOfService";
 import Login from "@/pages/Login";
 import AdminLogin from "@/pages/AdminLogin";
 import Careers from "@/pages/Careers";
+import WallOfWins from "@/pages/WallOfWins";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/careers" component={Careers} />
+      <Route path="/wall-of-wins" component={WallOfWins} />
       <Route component={NotFound} />
     </Switch>
   );
