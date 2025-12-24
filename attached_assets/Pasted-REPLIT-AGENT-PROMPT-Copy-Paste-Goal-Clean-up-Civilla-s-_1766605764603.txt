@@ -1,0 +1,376 @@
+REPLIT AGENT PROMPT (Copy/Paste)
+
+Goal: Clean up Civilla’s “Trust / Safety / Support” informational pages so they are:
+1) Not button-heavy (max 1 primary CTA per hero; avoid CTA buttons inside every section)
+2) Clear, calm, and consistent (Title Case for hero titles + button labels)
+3) Legally safer (clear “education only / not a law firm / no attorney-client relationship / not emergency” language)
+4) DRY with FAQ (all FAQs live in ONE shared source and are rendered both on the page AND on /faq)
+
+Pages in scope:
+- /safety-support
+- /legal-compliance
+- /accessibility
+- /contact
+- /privacy-policy
+- /faq (currently “Coming Soon” — make it real)
+
+Non-negotiables:
+- Keep the existing images currently used on the Safety & Support page (do not remove them).
+- Remove “Resources” as a separate “Coming Soon” destination. Make “Resources” an anchored section inside /safety-support instead.
+- Ensure every hero/title is Title Case (first letter of each word capitalized).
+- Reduce buttons. Prefer text links (inline) + a single CTA at the bottom of a page when needed.
+- Copy must NOT claim things we can’t prove (ex: don’t say “WCAG compliant” unless we truly are). Use “we strive/aim/are working toward” where appropriate.
+
+-------------------------------------------------------------------------------
+STEP 1 — Create A Shared FAQ Source (single source of truth)
+-------------------------------------------------------------------------------
+Create: client/src/content/faqs.ts (or similar)
+Export arrays by topic AND a combined array:
+
+export type FaqItem = { id: string; q: string; a: string; tags?: string[] };
+
+export const FAQ_LEGAL: FaqItem[] = [
+  {
+    id: "legal-advice",
+    q: "Can Civilla Give Me Legal Advice?",
+    a: "No. Civilla is an educational platform. We explain general legal concepts and typical court processes, and we help you organize your information. We do not tell you what to file, what strategy to use, or what decision you should make. If you need legal advice, talk to a licensed attorney in your state."
+  },
+  {
+    id: "attorney-client",
+    q: "Does Using Civilla Create An Attorney-Client Relationship?",
+    a: "No. Using Civilla, reading content, or contacting support does not create an attorney-client relationship."
+  },
+  {
+    id: "documents-court",
+    q: "Can I Use Civilla’s Documents In Court?",
+    a: "Civilla’s documents are educational drafts to help you get organized. You are responsible for reviewing and ensuring anything you file meets your local court’s rules, forms, and requirements. When in doubt, check your court’s website or consult an attorney."
+  },
+  {
+    id: "who-decides",
+    q: "Who Decides What I Do With My Case?",
+    a: "You do. Civilla provides information and organization tools. You make the decisions."
+  }
+];
+
+export const FAQ_PRIVACY: FaqItem[] = [
+  {
+    id: "is-private",
+    q: "Is My Information Private?",
+    a: "We treat your information as sensitive. We use security controls to protect it and we do not sell your personal information. For details, see the Privacy Policy."
+  },
+  {
+    id: "sharing",
+    q: "Do You Share My Data With Courts Or The Other Party?",
+    a: "No. Civilla does not send your information to courts, opposing parties, or anyone else. You control what you download, share, or file."
+  }
+];
+
+export const FAQ_SAFETY: FaqItem[] = [
+  {
+    id: "quick-exit",
+    q: "What Is Quick Exit?",
+    a: "Quick Exit is a safety feature designed to help you leave the site quickly. It redirects you to a neutral website. For additional safety, consider using a private browsing window and clearing history if needed."
+  },
+  {
+    id: "not-emergency",
+    q: "Is Civilla An Emergency Service?",
+    a: "No. If you are in immediate danger, call your local emergency number (911 in the U.S.). If you are in crisis, contact your local crisis hotline (988 in the U.S.)."
+  }
+];
+
+export const FAQ_ACCESSIBILITY: FaqItem[] = [
+  {
+    id: "a11y-help",
+    q: "How Do I Request Accessibility Help Or Report A Barrier?",
+    a: "Email us and tell us what you’re trying to do, what device/browser you’re using, and what went wrong. We’ll respond with care and work on a fix."
+  }
+];
+
+export const FAQ_ALL: FaqItem[] = [
+  ...FAQ_LEGAL,
+  ...FAQ_PRIVACY,
+  ...FAQ_SAFETY,
+  ...FAQ_ACCESSIBILITY
+];
+
+Then update all pages that currently render FAQs to import from this file.
+Also update /faq to render FAQ_ALL (grouped by tags or by the source arrays).
+
+-------------------------------------------------------------------------------
+STEP 2 — Build /faq Page And Turn Off “Coming Soon”
+-------------------------------------------------------------------------------
+Create or update: client/src/pages/Faq.tsx
+- Page hero:
+  Title: “Frequently Asked Questions”
+  Subtitle: “Clear answers about what Civilla does, what it cannot do, and how we protect you.”
+- Render accordions using FAQ_ALL, grouped by section headings:
+  “Using Civilla”, “Legal Boundaries”, “Privacy”, “Safety”, “Accessibility”
+- No buttons in the hero. Add a single text link near the bottom: “Still Have A Question? Contact Us” -> /contact
+
+Routing:
+- Ensure router has route path="/faq" element={<Faq />}.
+
+Navbar:
+- Remove the disabled “Coming soon” state for FAQ.
+- Put FAQ under the “Support” / “Trust & Safety” column (choose whichever exists; prefer “Support” if present).
+
+-------------------------------------------------------------------------------
+STEP 3 — Safety & Support Page: Make It One Strong Page (Resources live here)
+-------------------------------------------------------------------------------
+Update: client/src/pages/SafetySupport.tsx (or the actual file used by /safety-support)
+Goal: remove button spam, keep all existing images, and use anchored sections.
+
+Hero:
+- Title: “Safety And Support”
+- Subtitle: “Tools and guidance designed to help you stay safe, steady, and in control.”
+- No hero buttons.
+
+Add a small “On this page” text nav (NOT buttons):
+- Quick Exit
+- Privacy And Data
+- Designed For Discretion
+- Emotional Safety
+- Not An Emergency Service
+- Resources
+
+Section copy (use concise headings + short bullets; no “Learn/Help” buttons per card):
+
+1) Quick Exit
+Title: “Quick Exit”
+Body:
+“Need to leave quickly? Use Quick Exit at the top of any page to jump to a neutral site.”
+Bullets:
+- “For extra safety, consider private browsing.”
+- “If you share a device, clear history when it’s safe to do so.”
+
+2) Privacy And Data
+Title: “Privacy And Data”
+Body:
+“Your information is sensitive. We minimize access and protect it with security controls.”
+Bullets:
+- “You control what you download or share.”
+- “We do not sell personal information.”
+
+3) Designed For Discretion
+Title: “Designed For Discretion”
+Body:
+“Civilla is built to feel calm and unobtrusive.”
+Bullets:
+- “No flashing alerts”
+- “No surprise pop-ups”
+- “No noisy notifications by default”
+
+4) Emotional Safety
+Title: “Your Emotional Safety Matters”
+Body:
+“Family court can feel overwhelming. Civilla is designed to reduce chaos and help you stay oriented.”
+
+5) Not An Emergency Service
+Title: “Not An Emergency Service”
+Body:
+“If you are in immediate danger, call 911 (U.S.). If you are in crisis, call or text 988 (U.S.).”
+Also list DV Hotline as currently shown (keep).
+Do NOT add buttons here; use plain text + tel: links.
+
+6) Resources (this replaces a separate Resources page)
+Title: “Resources”
+Body:
+“A starting point for safety planning and support services. If you need help right now, use the emergency resources above.”
+Include 3–6 bullet links (plain links) to reputable resources (no marketing tone).
+
+At bottom: render FAQ_SAFETY accordion (from shared faqs.ts).
+Single CTA at bottom (optional): “Contact Support” -> /contact
+
+Navbar:
+- Keep “Resources” menu item but link it to /safety-support#resources (not a separate page).
+
+-------------------------------------------------------------------------------
+STEP 4 — Legal & Compliance Page: Clear, Calm, Legally Safer Language
+-------------------------------------------------------------------------------
+Update: client/src/pages/LegalCompliance.tsx (route /legal-compliance)
+
+Hero:
+Title: “Education Only, Never Legal Advice”
+Subtitle:
+“Civilla explains and organizes. It does not replace a lawyer.”
+
+Remove hero buttons.
+
+Section: “What Civilla Can Do”
+(keep it short; no wordy paragraphs)
+Bullets:
+- “Explain common legal terms in plain language”
+- “Show typical court steps and timelines”
+- “Help you organize documents, notes, and evidence”
+- “Help you prepare questions to ask a lawyer”
+
+Section: “What Civilla Cannot Do”
+Bullets:
+- “Tell you what to file, when to file, or what to say in court”
+- “Apply the law to your specific facts”
+- “Contact the court or the other party for you”
+- “Guarantee outcomes”
+
+Section: “No Attorney-Client Relationship”
+Body:
+“Using Civilla or contacting support does not create an attorney-client relationship.”
+
+Section: “Using Draft Documents”
+Body:
+“Drafts are educational and must be reviewed for your court’s local rules and requirements.”
+
+Then render FAQ_LEGAL accordion (from faqs.ts).
+
+Bottom: one text link: “Need Help Finding A Lawyer? Start With Your State Bar Or Local Legal Aid.” (no guarantees)
+
+-------------------------------------------------------------------------------
+STEP 5 — Accessibility Page: Fewer Buttons + Honest Commitments + Practical Testing
+-------------------------------------------------------------------------------
+Update: client/src/pages/Accessibility.tsx (route /accessibility)
+
+Hero:
+Title: “Everyone Deserves Access”
+Subtitle:
+“Civilla is built with accessibility in mind, and we are committed to ongoing improvements.”
+Remove hero buttons.
+
+Section:
+Title: “Accessibility Is Not Optional For Us”
+Body (be honest):
+“We strive to meet WCAG 2.1 AA guidelines and we continuously improve based on user feedback.”
+
+Bullets (only list what we actually support; otherwise phrase as goals):
+- “Keyboard-friendly navigation (where supported)”
+- “Screen reader considerations (where supported)”
+- “Readable typography and contrast choices”
+
+Section:
+Title: “Request Accommodations”
+Body:
+“If something isn’t working for you, tell us what you need. We will do our best to help.”
+Single CTA button (allowed): “Request Accessibility Help” -> /contact?reason=accessibility
+NO second button.
+
+Section:
+Title: “Report A Barrier”
+Body:
+“Email us with: page URL, device, browser, and what you expected to happen.”
+(Use mailto link: hello@civilla.ai with subject “Accessibility Issue”)
+
+Engineering follow-through (add these so the page isn’t just words):
+- Add eslint-plugin-jsx-a11y if not present
+- Add @axe-core/react in development builds (guarded so it only runs in dev)
+- Add at least one CI script or npm script: “npm run a11y” (can be a placeholder that runs eslint + basic checks)
+Document this briefly in a README note so it’s real.
+
+Then render FAQ_ACCESSIBILITY accordion.
+
+-------------------------------------------------------------------------------
+STEP 6 — Contact Page: Clean Form, Real Contact Details, Title Case
+-------------------------------------------------------------------------------
+Update: client/src/pages/Contact.tsx (route /contact)
+
+Hero:
+Title: “We’re Here To Help”
+Subtitle:
+“Reach out with questions, feedback, or accessibility needs. We reply with care.”
+Remove the two hero buttons.
+
+Replace the confusing category blurbs with correct matching copy:
+- “General Support” -> “Questions about your account or using the platform.”
+- “Feedback And Ideas” -> “Tell us what’s working and what needs improvement.”
+- “Accessibility Help” -> “Report a barrier or request an accommodation.”
+- “Organizations And Nonprofits” -> “Partnerships, referrals, or program collaboration.”
+
+Form:
+- Name (required)
+- Email (required)
+- Phone (optional)
+- Reason dropdown (required): General Support / Accessibility Help / Feedback / Organization / Other
+- Message textarea (required)
+- Checkbox (required): “I Understand This Is Not Legal Advice And Does Not Create An Attorney-Client Relationship.”
+- Submit button label: “Send Message” (Title Case)
+
+Replace placeholder contact info with real:
+- hello@civilla.ai
+- +1 (844) 248-4552
+- Oakland, California, United States
+Do not show “Get directions” as a button; make it a plain link if included.
+
+-------------------------------------------------------------------------------
+STEP 7 — Privacy Policy: Remove Buttons + Expand Policy + Keep It Accurate
+-------------------------------------------------------------------------------
+Update: client/src/pages/PrivacyPolicy.tsx (route /privacy-policy)
+
+Hero:
+Title: “Your Privacy Matters”
+Subtitle:
+“We protect your information with care, and we keep this policy clear and readable.”
+Remove hero buttons.
+
+Policy sections (use headings + short paragraphs + bullets; no duplicate paragraphs):
+1) “What We Collect”
+- Account info (email, name if provided)
+- Content you add (documents, notes, messages, timelines)
+- Technical data (IP address, device/browser info, logs)
+- Cookies/local storage (only if true; if unsure, say “may” and confirm in code)
+
+2) “How We Use Information”
+Bullets:
+- Provide and maintain the service
+- Security and fraud prevention
+- Support requests
+- Improve features (aggregated/limited access)
+
+3) “How We Share Information”
+State clearly:
+- “We do not sell your personal information.”
+- “We do not share your case content with courts or opposing parties.”
+- Share only with service providers (hosting, email, analytics if used) under confidentiality, and only as needed.
+
+4) “Data Retention”
+- Keep while account is active
+- Allow deletion requests
+- Limited retention for legal/security reasons
+
+5) “Security”
+- Access controls, encryption in transit, and best-effort protections
+- Honest disclaimer: “No system is 100% secure.”
+
+6) “Your Choices And Rights”
+Include a general rights list that applies broadly:
+- Access, correction, deletion, export
+- Opt-out of certain processing where applicable
+Provide a single contact: privacy@civilla.ai (or hello@civilla.ai if privacy@ doesn’t exist yet — but if we add privacy@ alias later, update)
+
+7) “U.S. State Privacy Notices”
+Add a short section: “Some states provide additional privacy rights. Contact us to exercise your rights.”
+(Do not name specific statutes unless we are prepared to fully comply; keep it general but respectful.)
+
+8) “Children’s Privacy”
+- Not directed to children under 13
+- If we learn we collected info, we delete it
+
+9) “Changes”
+- Effective date line at top
+- Notify users of material changes
+
+Bottom:
+- One text link: “Questions? Contact Us” -> /contact
+No buttons.
+
+-------------------------------------------------------------------------------
+STEP 8 — Global Cleanup And Consistency
+-------------------------------------------------------------------------------
+- Ensure all hero titles + section titles are Title Case.
+- Ensure all button labels are Title Case.
+- Remove duplicate/placeholder content (example.com, fake addresses).
+- Verify routes work on mobile.
+- Run build/lint.
+- Make sure /faq is linked and no longer disabled in nav.
+
+Deliverables:
+- Updated pages
+- Shared FAQ source
+- FAQ page live and routed
+- Navbar updates (FAQ enabled; Resources becomes anchor link into /safety-support)
