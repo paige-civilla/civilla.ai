@@ -6,6 +6,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Health check endpoint for monitoring and routing verification
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true, timestamp: new Date().toISOString() });
+  });
+
   // put application routes here
   // prefix all routes with /api
 

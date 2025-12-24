@@ -1,0 +1,96 @@
+REPLIT + CLOUDFLARE DOMAIN + ROUTING AUDIT (DO THIS IN ORDER)
+
+A) DOMAIN / DNS (works now even if registrar transfer must wait 60 days)
+1) In Replit:
+   - Open the Deployment for the website.
+   - Go to Settings → Custom Domains.
+   - Add BOTH:
+     - civilla.ai
+     - www.civilla.ai
+   - Replit will show:
+     - an A record target (an IP)
+     - a TXT record for verification (host/name + value)
+
+   NOTE: Replit custom domains use ONLY A records (not CNAME), require the TXT verification,
+         and do NOT support AAAA records.  [oai_citation:1‡Replit Docs](https://docs.replit.com/cloud-services/deployments/custom-domains)
+
+2) In Cloudflare DNS (for the zone civilla.ai):
+   - Create/confirm these DNS records:
+     a) A    @      → <REPLIT_IP_FROM_CUSTOM_DOMAIN_SCREEN>   (Proxy OFF / DNS only / grey cloud)
+     b) A    www    → <REPLIT_IP_FROM_CUSTOM_DOMAIN_SCREEN>   (Proxy OFF / DNS only / grey cloud)
+     c) TXT  <whatever Replit says> → <whatever Replit says>   (Proxy doesn’t apply to TXT)
+
+   IMPORTANT:
+   - If Cloudflare is proxying (orange cloud), Replit warns SSL/cert renewals can fail.
+     Keep these records DNS-only.  [oai_citation:2‡Replit Docs](https://docs.replit.com/cloud-services/deployments/custom-domains)
+   - Remove any AAAA records for @ or www (Replit does not support AAAA).  [oai_citation:3‡Replit Docs](https://docs.replit.com/cloud-services/deployments/custom-domains)
+
+3) Canonical domain (pick one):
+   - Choose ONE as canonical: either https://civilla.ai OR https://www.civilla.ai
+   - In Cloudflare: add a Redirect Rule to 301 the non-canonical to canonical:
+     - if you pick www: redirect civilla.ai/* → https://www.civilla.ai/$1
+     - if you pick apex: redirect www.civilla.ai/* → https://civilla.ai/$1
+
+B) MAKE “PATHWAYS EXIST” (NO MORE /route 404s ON HARD REFRESH)
+Goal: any public page like /legal-compliance, /privacy-policy, /contact, /accessibility must load
+even if the user lands there directly from Google.
+
+1) In the server (Express) that serves the frontend:
+   - Ensure static assets are served
+   - Ensure SPA fallback exists AFTER all API routes:
+
+   Example (adjust paths to your build output):
+   ------------------------------------------------
+   // API routes first
+   app.use("/api", apiRouter);
+
+   // Frontend static
+   app.use(express.static(path.join(__dirname, "../client/dist")));
+
+   // SPA fallback (MUST be last)
+   app.get("*", (req, res) => {
+     res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+   });
+   ------------------------------------------------
+
+2) Verify that /api/* still returns API responses, and everything else returns index.html (200).
+
+C) QUICK ROUTE AUDIT (FRONTEND “IS EVERYTHING WIRED?”)
+1) Confirm the site routes exist in ONE source of truth:
+   - Search the codebase for: createBrowserRouter, Routes, Route, or your routes config.
+   - Make a list of public routes you expect:
+     /, /how-civilla-works, /plans, /legal-compliance, /privacy-policy, /terms, /accessibility, /contact, /faq, etc.
+
+2) Run this manual smoke test (in browser + mobile):
+   For EACH route:
+   - open it normally (clicking from nav)
+   - then hard refresh on that page (pull-to-refresh / Cmd+R)
+   - confirm it still loads (no 404)
+
+3) If ANY route 404s on refresh:
+   - The SPA fallback in section B is missing or not last.
+
+D) COPY/STYLE FIXES YOU ASKED FOR (FAST)
+1) Headings + button text:
+   - Set hero headings to Title Case (Each Word Capitalized)
+   - Button labels Title Case too
+   - Remove duplicate CTAs per hero:
+     - Keep ONE primary action per hero (or ONE primary + ONE text link max)
+     - Everything else becomes inline links further down the page
+
+2) “CAN / CANNOT” sections (less wordy):
+   Replace with:
+   - "What We Can Do"
+     • Explain how family court generally works
+     • Define legal terms in plain language
+     • Help you organize information and documents
+     • Show common options and what they usually require
+   - "What We Can’t Do"
+     • Tell you what to file, when to file, or what to say in court
+     • Give case-specific recommendations
+     • Contact the court or the other party for you
+     • Represent you or act as your lawyer
+
+E) 60-DAY TRANSFER NOTE (SO YOU DON’T WORRY)
+- You can keep the domain at GoDaddy and use Cloudflare DNS + Replit today.
+- The “60 days” restriction is about transferring the domain to a different registrar soon after registration/transfer/registrant-change.  [oai_citation:4‡The Cloudflare Blog](https://blog.cloudflare.com/a-step-by-step-guide-to-transferring-domains-to-cloudflare/?utm_source=chatgpt.com)
