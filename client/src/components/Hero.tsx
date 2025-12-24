@@ -15,7 +15,7 @@ export default function Hero() {
       />
       <div className="relative flex flex-col flex-1 h-full items-start max-w-container min-w-0">
         <div className="flex flex-1 items-start w-full min-w-0">
-          <div className="flex flex-1 flex-col gap-6 md:gap-8 h-full items-center justify-center min-w-0 text-center">
+          <div className="flex flex-1 flex-col gap-6 md:gap-8 h-full items-start justify-center min-w-0">
             <h1 className="font-heading font-bold text-white text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] whitespace-pre-wrap">
               <span className="block">Family Law,</span>
               <span className="block">Translated.</span>
