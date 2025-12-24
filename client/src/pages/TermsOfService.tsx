@@ -1,39 +1,150 @@
 import { Link } from "wouter";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-import termsImage from "@assets/casey-horner-4rDCa5hBlCs-unsplash_1766291139825.jpg";
 
-const tableOfContents = [
-  { label: "Heading 2", level: 1, active: true },
-  { label: "Heading 3", level: 2, active: false },
-  { label: "Heading 4", level: 3, active: false },
-  { label: "Heading 5", level: 4, active: false },
-  { label: "Heading 6", level: 5, active: false },
+const LAST_UPDATED = "December 24, 2025";
+
+const termsContent = [
+  {
+    id: "agreement",
+    title: "1. Agreement To These Terms",
+    content: `By accessing or using civilla.ai (the "Service"), you agree to these Terms Of Service ("Terms"). If you do not agree, do not use the Service.`
+  },
+  {
+    id: "education-only",
+    title: "2. Education Only — Not Legal Advice",
+    content: `civilla.ai provides general educational information and tools to help you understand family-court processes and organize your materials. We do not provide legal advice, legal representation, or attorney services. Using the Service does not create an attorney-client relationship.`
+  },
+  {
+    id: "who-for",
+    title: "3. Who The Service Is For",
+    content: `The Service is intended for adults who can form a binding contract. If you use the Service on behalf of someone else, you represent you are authorized to do so.`
+  },
+  {
+    id: "responsibilities",
+    title: "4. Your Responsibilities",
+    content: `You agree to:`,
+    bullets: [
+      "Provide accurate information you submit to the Service",
+      "Use your own judgment for decisions and filings",
+      "Confirm court rules, deadlines, and requirements with your local court",
+      "Keep your login credentials secure"
+    ],
+    footer: "You are responsible for any action taken under your account."
+  },
+  {
+    id: "accounts",
+    title: "5. Accounts And Security",
+    content: `Some features require an account. You must not share your account in ways that compromise security. Notify us if you believe your account has been accessed without permission.`
+  },
+  {
+    id: "acceptable-use",
+    title: "6. Acceptable Use",
+    content: `You agree not to:`,
+    bullets: [
+      "Use the Service for unlawful purposes",
+      "Upload malware or attempt to disrupt the Service",
+      "Attempt to access other users' data",
+      "Harass, threaten, or abuse others",
+      "Misrepresent civilla.ai as a law firm or legal representative"
+    ],
+    footer: "We may restrict or suspend access if we believe these Terms are violated."
+  },
+  {
+    id: "your-content",
+    title: "7. Your Content And Materials",
+    content: `You may upload or enter content (for example: notes, documents, timelines, evidence logs). You retain ownership of your content. You grant civilla.ai a limited license to host, process, and display your content only to operate and improve the Service. Do not upload content you do not have the right to use.`
+  },
+  {
+    id: "ai-outputs",
+    title: "8. AI And Generated Outputs",
+    content: `Some features may generate summaries, drafts, or suggestions. Outputs may be incomplete or inaccurate. You are responsible for reviewing, editing, and verifying anything you rely on or submit to a court or third party.`
+  },
+  {
+    id: "payments",
+    title: "9. Payments, Subscriptions, And Trials",
+    content: `If you purchase a paid plan:`,
+    bullets: [
+      "Prices and billing terms will be shown at checkout",
+      "Subscriptions renew unless you cancel",
+      "Taxes may apply depending on your location"
+    ],
+    footer: "If you believe you were billed in error, contact support."
+  },
+  {
+    id: "third-party",
+    title: "10. Third-Party Services",
+    content: `The Service may rely on third-party providers (for example: hosting, analytics, email, payments). We are not responsible for third-party services we do not control.`
+  },
+  {
+    id: "ip",
+    title: "11. Intellectual Property",
+    content: `The Service, including the design, text, branding, and software, is owned by civilla.ai and its licensors and is protected by law. You may not copy, reverse engineer, or resell the Service except as permitted by law.`
+  },
+  {
+    id: "disclaimers",
+    title: "12. Disclaimers",
+    content: `THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE." To the maximum extent permitted by law, civilla.ai disclaims warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.`
+  },
+  {
+    id: "liability",
+    title: "13. Limitations Of Liability",
+    content: `To the maximum extent permitted by law:`,
+    bullets: [
+      "civilla.ai will not be liable for indirect, incidental, special, consequential, or punitive damages",
+      "civilla.ai will not be liable for losses resulting from reliance on educational information, generated content, or court outcomes"
+    ],
+    footer: "If liability cannot be excluded, it is limited to the amount you paid to use the Service in the 12 months before the event giving rise to the claim (or $100 if you have not paid)."
+  },
+  {
+    id: "indemnification",
+    title: "14. Indemnification",
+    content: `You agree to defend and indemnify civilla.ai from claims arising out of your content, your use of the Service, or your violation of these Terms.`
+  },
+  {
+    id: "termination",
+    title: "15. Suspension And Termination",
+    content: `You may stop using the Service at any time. We may suspend or terminate access if required by law, for security reasons, or for violations of these Terms.`
+  },
+  {
+    id: "changes",
+    title: "16. Changes To These Terms",
+    content: `We may update these Terms from time to time. If changes are material, we will provide notice (for example, via email or within the Service). Continued use means you accept the updated Terms.`
+  },
+  {
+    id: "contact",
+    title: "17. Contact",
+    content: `Questions about these Terms? Contact us at hello@civilla.ai or through the Contact page.`,
+    hasContactLink: true
+  }
 ];
 
 export default function TermsOfService() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen" data-testid="page-terms">
       <NavbarCream />
       
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] px-5 md:px-16 py-16 md:py-28">
-        <div className="max-w-[1280px] mx-auto">
+      <section className="bg-[#e7ebea] px-5 md:px-16 py-16 md:py-28" data-testid="section-hero">
+        <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] mx-auto">
             <div className="flex flex-col gap-4 items-center w-full">
               <div className="flex flex-col gap-4 md:gap-6 items-center w-full text-neutral-darkest text-center">
                 <h1 
-                  className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] w-full"
+                  className="font-figtree font-bold text-heading-1-mobile md:text-[84px] leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] w-full"
                   style={{ textWrap: "balance" }}
                   data-testid="text-terms-title"
                 >
-                  Terms of service
+                  Terms Of Service
                 </h1>
-                <p className="font-sans font-normal text-xs md:text-sm leading-[1.6] text-neutral-darkest/70">
-                  Civilla LLC DBA <span className="italic font-medium">civilla.ai</span> & www.<span className="italic font-medium">civilla.ai</span>
+                <p className="font-arimo font-normal text-sm md:text-base leading-[1.6] text-neutral-darkest/70">
+                  Civilla LLC (DBA <span className="italic font-medium">civilla.ai</span>)
+                </p>
+                <p className="font-arimo font-normal text-sm md:text-base leading-[1.6] text-neutral-darkest/70">
+                  Last Updated: {LAST_UPDATED}
                 </p>
                 <p 
-                  className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full"
+                  className="font-arimo font-normal text-base md:text-xl leading-[1.6] w-full mt-2"
                   style={{ textWrap: "pretty" }}
                   data-testid="text-terms-description"
                 >
@@ -41,213 +152,75 @@ export default function TermsOfService() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-4 items-start">
+            <Link href="/contact">
               <button 
-                className="bg-bush text-white font-sans font-bold text-sm md:text-body leading-[1.6] px-6 py-2.5 rounded-xl shadow-[0px_1px_2px_0px_rgba(7,5,3,0.05)] relative overflow-hidden"
-                data-testid="button-read"
+                className="bg-bush text-white font-arimo font-bold text-base md:text-lg leading-[1.6] px-6 py-3 rounded-xl"
+                data-testid="button-contact-support"
               >
-                Read
-                <div className="absolute inset-0 pointer-events-none shadow-[inset_0px_32px_24px_0px_rgba(255,255,255,0.05),inset_0px_2px_1px_0px_rgba(255,255,255,0.25),inset_0px_0px_0px_1px_rgba(7,5,3,0.15),inset_0px_-2px_1px_0px_rgba(0,0,0,0.2)] rounded-xl" />
+                Contact Support
               </button>
-              <Link href="/">
-                <button 
-                  className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-sans font-bold text-sm md:text-body leading-[1.6] px-[22px] py-2 rounded-xl"
-                  data-testid="button-back"
-                >
-                  Back
-                </button>
-              </Link>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Content Section */}
-      <section className="bg-[#f2f2f2] px-5 md:px-16 py-16 md:py-28">
-        <div className="max-w-[1280px] mx-auto">
-          <div className="flex flex-col md:flex-row items-start justify-between w-full gap-8 md:gap-8">
-            {/* Rich Text Content */}
-            <div className="flex-1 flex flex-col items-start max-w-[768px] order-2 md:order-1">
-              {/* Overview */}
-              <div className="pb-4 w-full">
-                <h2 
-                  className="font-heading font-bold text-heading-2-mobile md:text-heading-2 leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest"
-                  style={{ textWrap: "balance" }}
-                  data-testid="text-overview-title"
-                >
-                  Overview
-                </h2>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-bold text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-overview-bold"
-                >
-                  Dolor enim eu tortor urna sed duis nulla. Aliquam vestibulum, nulla odio nisl vitae. In aliquet pellentesque aenean hac vestibulum turpis mi bibendum diam. Tempor integer aliquam in vitae malesuada fringilla.
-                </p>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-overview-paragraph"
-                >
-                  Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.
-                </p>
-              </div>
-
-              {/* What civilla.ai is */}
-              <div className="py-4 md:py-6 w-full">
-                <h3 
-                  className="font-heading font-bold text-heading-3-mobile md:text-heading-3 leading-[1.2] tracking-[0.32px] md:tracking-[0.48px] text-neutral-darkest"
-                  style={{ textWrap: "balance" }}
-                  data-testid="text-what-civilla-title"
-                >
-                  What <span className="italic font-medium">civilla.ai</span> is
-                </h3>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-what-civilla-p1"
-                >
-                  Eget quis mi enim, leo lacinia pharetra, semper. Eget in volutpat mollis at volutpat lectus velit, sed auctor. Porttitor fames arcu quis fusce augue enim. Quis at habitant diam at. Suscipit tristique risus, at donec. In turpis vel et quam imperdiet. Ipsum molestie aliquet sodales id est ac volutpat.
-                </p>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-what-civilla-p2"
-                >
-                  Tristique odio senectus nam posuere ornare leo metus, ultricies. Blandit duis ultricies vulputate morbi feugiat cras placerat elit. Aliquam tellus lorem sed ac. Montes, sed mattis pellentesque suscipit accumsan. Cursus viverra aenean magna risus elementum faucibus molestie pellentesque. Arcu ultricies sed mauris vestibulum.
-                </p>
-              </div>
-
-              {/* Your responsibilities */}
-              <div className="pt-4 md:pt-6 pb-4 md:pb-5 w-full">
-                <h4 
-                  className="font-heading font-bold text-[28px] md:text-heading-4 leading-[1.2] tracking-[0.28px] md:tracking-[0.4px] text-neutral-darkest"
-                  style={{ textWrap: "balance" }}
-                  data-testid="text-responsibilities-title"
-                >
-                  Your responsibilities
-                </h4>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-responsibilities-paragraph"
-                >
-                  Morbi sed imperdiet in ipsum, adipiscing elit dui lectus. Tellus id scelerisque est ultricies ultricies. Duis est sit sed leo nisl, blandit elit sagittis. Quisque tristique consequat quam sed. Nisl at scelerisque amet nulla purus habitasse.
-                </p>
-              </div>
-
-              {/* Image */}
-              <div className="py-8 md:py-12 w-full">
-                <div className="aspect-[768/480] w-full rounded-2xl overflow-hidden">
-                  <img 
-                    src={termsImage} 
-                    alt="Terms of service illustration" 
-                    className="w-full h-full object-cover"
-                    data-testid="img-terms-illustration"
-                  />
-                </div>
-              </div>
-
-              {/* Educational materials */}
-              <div className="pt-4 md:pt-5 pb-4 w-full">
-                <h5 
-                  className="font-heading font-bold text-[24px] md:text-heading-5 leading-[1.2] tracking-[0.24px] md:tracking-[0.32px] text-neutral-darkest"
-                  style={{ textWrap: "balance" }}
-                  data-testid="text-educational-title"
-                >
-                  Educational materials
-                </h5>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-educational-paragraph"
-                >
-                  Morbi sed imperdiet in ipsum, adipiscing elit dui lectus. Tellus id scelerisque est ultricies ultricies. Duis est sit sed leo nisl, blandit elit sagittis. Quisque tristique consequat quam sed. Nisl at scelerisque amet nulla purus habitasse.
-                </p>
-              </div>
-
-              {/* Blockquote */}
-              <div className="py-6 md:py-9 w-full">
-                <div className="flex gap-4 md:gap-5 items-start pl-0 pr-4 md:pr-5">
-                  <div className="w-0.5 self-stretch bg-neutral-darkest" />
-                  <p 
-                    className="flex-1 font-sans font-normal italic text-base md:text-xl leading-6 md:leading-7 text-neutral-darkest"
-                    data-testid="text-blockquote"
+      <section className="bg-cream px-5 md:px-16 py-16 md:py-28" data-testid="section-content">
+        <div className="max-w-container mx-auto">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex flex-col gap-8 md:gap-10">
+              {termsContent.map((section) => (
+                <div key={section.id} id={section.id} className="flex flex-col gap-3 scroll-mt-20">
+                  <h2 
+                    className="font-figtree font-bold text-xl md:text-2xl leading-[1.2] tracking-[0.01em] text-neutral-darkest"
+                    data-testid={`text-${section.id}-title`}
                   >
-                    "Ipsum sit mattis nulla quam nulla. Gravida id gravida ac enim mauris id. Non pellentesque congue eget consectetur turpis. Sapien, dictum molestie sem tempor. Diam elit, orci, tincidunt aenean tempus."
+                    {section.title}
+                  </h2>
+                  <p 
+                    className="font-arimo font-normal text-base md:text-lg leading-[1.6] text-neutral-darkest"
+                    style={{ textWrap: "pretty" }}
+                  >
+                    {section.id === "contact" ? (
+                      <>
+                        Questions about these Terms? Contact us at{" "}
+                        <a 
+                          href="mailto:hello@civilla.ai" 
+                          className="underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+                        >
+                          hello@civilla.ai
+                        </a>{" "}
+                        or through the{" "}
+                        <Link 
+                          href="/contact" 
+                          className="underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+                        >
+                          Contact page
+                        </Link>.
+                      </>
+                    ) : (
+                      section.content
+                    )}
                   </p>
+                  {section.bullets && (
+                    <ul className="flex flex-col gap-2 pl-1 mt-1">
+                      {section.bullets.map((bullet, index) => (
+                        <li key={index} className="flex gap-3 items-start">
+                          <span className="text-neutral-darkest/60 mt-0.5">•</span>
+                          <span className="font-arimo text-base md:text-lg leading-[1.6] text-neutral-darkest">
+                            {bullet}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {section.footer && (
+                    <p className="font-arimo font-normal text-base md:text-lg leading-[1.6] text-neutral-darkest mt-2">
+                      {section.footer}
+                    </p>
+                  )}
                 </div>
-              </div>
-
-              {/* Limitations of liability */}
-              <div className="pt-4 md:pt-5 pb-4 w-full">
-                <h6 
-                  className="font-heading font-bold text-[22px] md:text-heading-6 leading-[1.2] tracking-[0.22px] md:tracking-[0.26px] text-neutral-darkest"
-                  style={{ textWrap: "balance" }}
-                  data-testid="text-limitations-title"
-                >
-                  Limitations of liability
-                </h6>
-              </div>
-              <div className="pb-4 w-full">
-                <p 
-                  className="font-sans font-normal text-sm md:text-body leading-[1.6] text-neutral-darkest"
-                  style={{ textWrap: "pretty" }}
-                  data-testid="text-limitations-paragraph"
-                >
-                  Nunc sed faucibus bibendum feugiat sed interdum. Ipsum egestas condimentum mi massa. In tincidunt pharetra consectetur sed duis facilisis metus. Etiam egestas in nec sed et. Quis lobortis at sit dictum eget nibh tortor commodo cursus.
-                </p>
-              </div>
-            </div>
-
-            {/* Table of Contents Sidebar */}
-            <div className="flex flex-col gap-4 md:gap-6 items-start w-full md:w-[320px] shrink-0 order-1 md:order-2">
-              <h3 
-                className="font-heading font-bold text-[24px] md:text-heading-5 leading-[1.2] tracking-[0.24px] md:tracking-[0.32px] text-neutral-darkest"
-                data-testid="text-toc-title"
-              >
-                Contents
-              </h3>
-              <div className="flex flex-col items-start w-full">
-                {tableOfContents.map((item, index) => {
-                  const paddingLeft = item.level === 1 ? "px-3 md:px-4" : 
-                                      item.level === 2 ? "px-6 md:px-8" : 
-                                      item.level === 3 ? "px-9 md:px-12" : 
-                                      item.level === 4 ? "px-12 md:px-16" : "px-15 md:px-20";
-                  
-                  return (
-                    <button
-                      key={index}
-                      className={`flex items-start py-2 md:py-3 w-full text-left ${paddingLeft} ${
-                        item.active 
-                          ? "bg-[#f2f2f2] border border-neutral-darkest font-bold" 
-                          : "font-normal"
-                      }`}
-                      data-testid={`button-toc-${index}`}
-                    >
-                      <span 
-                        className={`flex-1 font-sans text-sm md:text-body-medium leading-[1.6] text-neutral-darkest ${
-                          item.active ? "font-bold" : "font-normal"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              ))}
             </div>
           </div>
         </div>

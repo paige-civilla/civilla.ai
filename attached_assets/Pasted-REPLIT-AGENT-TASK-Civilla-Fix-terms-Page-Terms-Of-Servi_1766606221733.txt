@@ -1,0 +1,160 @@
+REPLIT AGENT TASK (Civilla) — Fix `/terms` Page (Terms Of Service)
+
+Goal:
+Replace the current placeholder/lorem ipsum Terms page with a real, legally-safe Terms Of Service page for civilla.ai. Remove unnecessary buttons, ensure headings + button labels use Title Case (First Letter Capitalized), and keep the page clean + readable on mobile.
+
+Do NOT re-architect. Edit only what’s needed.
+
+---
+
+1) FIND THE CURRENT TERMS PAGE + ROUTE
+- Search for the route/path: `/terms`
+- Identify the page component that renders it (likely something like:
+  - `client/src/pages/Terms.tsx`
+  - `client/src/pages/TermsOfService.tsx`
+  - or a “policy/markdown” template page)
+
+Acceptance:
+- `/terms` loads a real Terms Of Service page (no “Heading 2 / Heading 3” or lorem ipsum anywhere).
+
+---
+
+2) REMOVE EXTRA HERO BUTTONS
+Current hero shows two buttons like “Read” + “Back”.
+
+Update hero CTA behavior to:
+- Keep ONLY ONE primary button: **Contact Support**
+  - Link it to `/contact`
+- Remove “Back” entirely (users can use browser back + site nav)
+- No secondary CTA in the hero
+
+Acceptance:
+- Exactly one button in the hero area on `/terms`.
+
+---
+
+3) TERMS OF SERVICE CONTENT (REPLACE EVERYTHING BELOW HERO)
+Implement the following sections in this order, with clear headings and short paragraphs/bullets.
+Use Title Case for headings (ex: “Terms Of Service”, “Limitations Of Liability”).
+
+Include at top (under title):
+- “Civilla LLC (DBA civilla.ai)”
+- “Last Updated: December 24, 2025” (as a constant so we can update easily later)
+
+CONTENT TO INSERT:
+
+## Terms Of Service
+
+**Civilla LLC (DBA civilla.ai)**  
+**Last Updated:** December 24, 2025
+
+### 1. Agreement To These Terms
+By accessing or using civilla.ai (the “Service”), you agree to these Terms Of Service (“Terms”). If you do not agree, do not use the Service.
+
+### 2. Education Only — Not Legal Advice
+civilla.ai provides general educational information and tools to help you understand family-court processes and organize your materials.  
+**We do not provide legal advice, legal representation, or attorney services.** Using the Service does **not** create an attorney-client relationship.
+
+### 3. Who The Service Is For
+The Service is intended for adults who can form a binding contract. If you use the Service on behalf of someone else, you represent you are authorized to do so.
+
+### 4. Your Responsibilities
+You agree to:
+- Provide accurate information you submit to the Service
+- Use your own judgment for decisions and filings
+- Confirm court rules, deadlines, and requirements with your local court
+- Keep your login credentials secure
+
+You are responsible for any action taken under your account.
+
+### 5. Accounts And Security
+Some features require an account. You must not share your account in ways that compromise security. Notify us if you believe your account has been accessed without permission.
+
+### 6. Acceptable Use
+You agree not to:
+- Use the Service for unlawful purposes
+- Upload malware or attempt to disrupt the Service
+- Attempt to access other users’ data
+- Harass, threaten, or abuse others
+- Misrepresent civilla.ai as a law firm or legal representative
+
+We may restrict or suspend access if we believe these Terms are violated.
+
+### 7. Your Content And Materials
+You may upload or enter content (for example: notes, documents, timelines, evidence logs). You retain ownership of your content.  
+You grant civilla.ai a limited license to host, process, and display your content **only** to operate and improve the Service.
+
+Do not upload content you do not have the right to use.
+
+### 8. AI And Generated Outputs
+Some features may generate summaries, drafts, or suggestions. Outputs may be incomplete or inaccurate.  
+You are responsible for reviewing, editing, and verifying anything you rely on or submit to a court or third party.
+
+### 9. Payments, Subscriptions, And Trials (If Applicable)
+If you purchase a paid plan:
+- Prices and billing terms will be shown at checkout
+- Subscriptions renew unless you cancel
+- Taxes may apply depending on your location
+
+If you believe you were billed in error, contact support.
+
+### 10. Third-Party Services
+The Service may rely on third-party providers (for example: hosting, analytics, email, payments). We are not responsible for third-party services we do not control.
+
+### 11. Intellectual Property
+The Service, including the design, text, branding, and software, is owned by civilla.ai and its licensors and is protected by law.  
+You may not copy, reverse engineer, or resell the Service except as permitted by law.
+
+### 12. Disclaimers
+THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE.”  
+To the maximum extent permitted by law, civilla.ai disclaims warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
+
+### 13. Limitations Of Liability
+To the maximum extent permitted by law:
+- civilla.ai will not be liable for indirect, incidental, special, consequential, or punitive damages
+- civilla.ai will not be liable for losses resulting from reliance on educational information, generated content, or court outcomes
+
+If liability cannot be excluded, it is limited to the amount you paid to use the Service in the 12 months before the event giving rise to the claim (or $100 if you have not paid).
+
+### 14. Indemnification
+You agree to defend and indemnify civilla.ai from claims arising out of your content, your use of the Service, or your violation of these Terms.
+
+### 15. Suspension And Termination
+You may stop using the Service at any time. We may suspend or terminate access if required by law, for security reasons, or for violations of these Terms.
+
+### 16. Changes To These Terms
+We may update these Terms from time to time. If changes are material, we will provide notice (for example, via email or within the Service). Continued use means you accept the updated Terms.
+
+### 17. Contact
+Questions about these Terms? Contact us at **hello@civilla.ai** or through the **Contact** page.
+
+---
+
+4) TABLE OF CONTENTS (OPTIONAL, BUT CLEAN)
+If the page currently has a “Contents” section:
+- Keep it only if it auto-links to the real headings above
+- Otherwise remove it entirely (no fake “Heading 2/3/4” entries)
+
+Acceptance:
+- No placeholder ToC items. If a ToC exists, every item works and matches real headings.
+
+---
+
+5) TITLE CASE REQUIREMENTS
+- Page title: “Terms Of Service”
+- Section headings: Title Case
+- Hero button: “Contact Support”
+
+Acceptance:
+- All headings and primary button labels follow the capitalization rule.
+
+---
+
+6) VERIFY
+- Check `/terms` on mobile width
+- Confirm there is no lorem ipsum anywhere
+- Confirm only one hero button exists
+- Confirm links work: `/contact` and mailto:hello@civilla.ai (if used)
+
+Deliverable:
+- Commit the changes to the Terms page component (and any small supporting edits required).
