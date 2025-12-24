@@ -24,13 +24,13 @@ function MissionHeroSection() {
 
         <div className="mt-8 rounded-2xl border border-neutral-darkest/15 bg-[#e7ebea] p-6 md:p-10">
           <h2 className="cv-h font-heading text-heading-2-mobile md:text-[32px] tracking-[0.32px] text-neutral-darkest inline-flex items-center gap-2">
-            The Mission
+            The Heart Of It
             <Heart className="h-5 w-5 opacity-70" aria-hidden="true" />
           </h2>
 
           <div className="mt-4 space-y-5 font-sans text-sm md:text-lg leading-relaxed text-neutral-darkest/80 max-w-4xl">
             <p>
-              Our mission is to make family court easier to understand and easier to move through for people doing it without a lawyer. We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human.
+              At the heart of <span className="italic font-medium">civilla</span> is a simple goal: to make family court easier to understand and easier to move through for people doing it without a lawyer. We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human.
             </p>
 
             <p>
