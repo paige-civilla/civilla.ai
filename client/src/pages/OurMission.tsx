@@ -21,9 +21,6 @@ function MissionContentSection() {
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
           <div className="flex flex-col gap-4 items-center w-full">
-            <span className="font-sans font-bold text-sm md:text-[16px] text-neutral-darkest text-center leading-[1.5]">
-              Our Mission
-            </span>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
               <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                 Making family law accessible
