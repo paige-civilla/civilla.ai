@@ -143,10 +143,10 @@ function CTASection() {
           <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
             <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
               <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-                We want to hear your story
+                We Want To Hear Your Story
               </h2>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                Your experience matters. Tell us what you need, what's working, and what isn't.
+                We'd love to hear your stories of triumph. Share yours with us.
               </p>
             </div>
             <div className="flex gap-4 items-start">
@@ -155,12 +155,6 @@ function CTASection() {
                 data-testid="button-share"
               >
                 Share
-              </button>
-              <button 
-                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
-                data-testid="button-cta-contact"
-              >
-                Contact
               </button>
             </div>
           </div>
