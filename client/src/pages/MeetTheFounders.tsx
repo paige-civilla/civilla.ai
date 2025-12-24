@@ -11,7 +11,7 @@ function HeaderSection() {
           <div className="flex flex-col gap-4 items-center w-full">
             <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
               <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] w-full">
-                Meet the founders
+                Meet The Founders
               </h1>
               <p className="cv-p font-sans text-sm md:text-[20px] w-full">
                 The people behind <span className="italic font-medium">civilla</span> and why they chose to build it.
