@@ -20,7 +20,7 @@ export default function Hero() {
               <span className="block">Family Law,</span>
               <span className="block">Translated.</span>
             </h1>
-            <p className="mt-3 max-w-md text-base text-white/80 md:text-lg">
+            <p className="mt-3 max-w-[42ch] text-base text-white/80 md:text-lg" style={{ textWrap: 'pretty' }}>
               Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
             </p>
             <div className="mt-6 flex items-center gap-6">
