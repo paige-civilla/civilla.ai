@@ -18,6 +18,12 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
+- 2024-12-24: Adjusted logo size to match quick exit button visually in both navbars
+- 2024-12-24: Added Admin Login and Careers pages (footer only)
+- 2024-12-24: Restructured footer to 4 columns matching navbar menu organization
+- 2024-12-24: Removed How We Started page and routes
+- 2024-12-24: Created Meet The Founders and Our Mission pages with proper routing
+- 2024-12-24: Added polaroid-style frames with tilt animation to founder images
 - 2024-12-22: Locked Home and How Civilla Works pages per user request
 - 2024-12-22: Updated StepsSection with Step One/Two/Three layout
 - 2024-12-22: Updated Plans page with new pricing copy, taglines, add-ons, and FAQ updates
