@@ -38,7 +38,7 @@ function HeroSection() {
     { label: "What we can / can't do", href: "#boundaries" },
     { label: "Privacy basics", href: "#privacy" },
     { label: "Documents & court use", href: "#documents" },
-    { label: "Common questions", href: "#faq" }
+    { label: "FAQ", href: "#faq" }
   ];
 
   return (
@@ -265,7 +265,7 @@ function FAQSection() {
       <div className="flex flex-col gap-12 md:gap-16 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] text-neutral-darkest text-center w-full">
           <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
-            Common Questions
+            FAQ
           </h2>
           <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
             Answers about how <span className="italic font-medium">civilla</span> works and what it cannot do.
