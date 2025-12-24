@@ -5,7 +5,7 @@ function MissionHeroSection() {
   return (
     <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16" data-testid="section-mission-hero">
       <div className="w-full max-w-container">
-        <div className="rounded-2xl border border-neutral-darkest/15 bg-white/40 p-6 md:p-10">
+        <div className="rounded-2xl border border-neutral-darkest/15 bg-[#e7ebea] p-6 md:p-10">
           <div className="grid gap-6 md:grid-cols-2 items-start">
             <div className="min-w-0">
               <h1 className="cv-h font-heading text-heading-1-mobile md:text-[60px] tracking-[0.48px] md:tracking-[0.6px] text-neutral-darkest">
@@ -21,7 +21,7 @@ function MissionHeroSection() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-neutral-darkest/15 bg-white/40 p-6 md:p-10">
+        <div className="mt-8 rounded-2xl border border-neutral-darkest/15 bg-[#e7ebea] p-6 md:p-10">
           <h2 className="cv-h font-heading text-heading-2-mobile md:text-[32px] tracking-[0.32px] text-neutral-darkest">
             Our mission, in full
           </h2>
