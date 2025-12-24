@@ -2,22 +2,25 @@ import { Link } from "wouter";
 import { BrandText, Brand } from "./Brand";
 
 const footerLinks = {
-  explore: [
+  startHere: [
     { label: "Home", href: "/" },
-    { label: "Plans & Pricing", href: "/plans" },
     { label: "How civilla Works", href: "/how-civilla-works" },
-    { label: "About Us", href: "/about" },
+    { label: "Plans & Pricing", href: "/plans" },
+    { label: "Login", href: "/login" },
+  ],
+  aboutCivilla: [
+    { label: "Our Mission", href: "/our-mission" },
+    { label: "Meet The Founders", href: "/meet-the-founders" },
   ],
   trustSafety: [
     { label: "Safety & Support", href: "/safety-support" },
     { label: "Legal & Compliance", href: "/legal-compliance" },
-    { label: "Accessibility", href: "/accessibility" }
+    { label: "Accessibility", href: "/accessibility" },
   ],
-  help: [
+  support: [
     { label: "Contact", href: "/contact" },
     { label: "Privacy Policy", href: "/privacy-policy" },
     { label: "Terms of Service", href: "/terms" },
-    { label: "Login", href: "/login" }
   ]
 };
 
@@ -29,13 +32,13 @@ export default function Footer() {
     >
       <div className="flex flex-col gap-12 md:gap-16 items-start max-w-container w-full">
         <div className="w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-16 max-w-content-large mx-auto">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-12 max-w-content-large mx-auto">
             <div className="flex flex-col gap-3 items-start">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Explore
+                Start Here
               </span>
               <div className="flex flex-col items-start w-full">
-                {footerLinks.explore.map((link) => (
+                {footerLinks.startHere.map((link) => (
                   <Link
                     key={link.label}
                     href={link.href}
@@ -43,6 +46,24 @@ export default function Footer() {
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     <BrandText>{link.label}</BrandText>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 items-start">
+              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+                About <span className="italic font-medium">civilla</span>
+              </span>
+              <div className="flex flex-col items-start w-full">
+                {footerLinks.aboutCivilla.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
+                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    {link.label}
                   </Link>
                 ))}
               </div>
@@ -68,10 +89,10 @@ export default function Footer() {
 
             <div className="flex flex-col gap-3 items-start">
               <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
-                Help
+                Support
               </span>
               <div className="flex flex-col items-start w-full">
-                {footerLinks.help.map((link) => (
+                {footerLinks.support.map((link) => (
                   <Link
                     key={link.label}
                     href={link.href}
