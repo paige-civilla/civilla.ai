@@ -1,381 +1,319 @@
-import { useState } from "react";
-import { ChevronRight, Mail, Phone, MapPin, ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
-const timelineItems = [
-  {
-    title: "General support",
-    description: "Your thoughts help us build a better tool. We'd love to hear what's working and what could improve."
-  },
-  {
-    title: "Accessibility needs",
-    description: "If you represent a shelter, nonprofit, or organization, we have options to discuss with you."
-  },
-  {
-    title: "Feedback and ideas",
-    description: "Questions about how civilla works or need help navigating the platform"
-  },
-  {
-    title: "Organizations and nonprofits",
-    description: "Accessibility concerns, feature requests, or suggestions to make civilla better"
-  }
-];
+const SUPPORT_EMAIL = "hello@civilla.ai";
+const SUPPORT_PHONE_DISPLAY = "+1 (844) 248-4552";
+const SUPPORT_PHONE_TEL = "+18442484552";
+const SUPPORT_LOCATION = "Oakland, California, United States";
+
+type Reason =
+  | "General Support"
+  | "Accessibility Request"
+  | "Feedback & Ideas"
+  | "Organizations & Nonprofits";
 
 export default function Contact() {
-  const [selectedOption, setSelectedOption] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
-  const [agreedDisclaimer, setAgreedDisclaimer] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [reason, setReason] = useState<Reason>("General Support");
+  const [message, setMessage] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sent">("idle");
+
+  const mailtoHref = useMemo(() => {
+    const subject = encodeURIComponent(`civilla — ${reason}`);
+    const body = encodeURIComponent(
+      [
+        `Name: ${name || "(not provided)"}`,
+        `Email: ${email || "(not provided)"}`,
+        `Phone: ${phone || "(not provided)"}`,
+        `Reason: ${reason}`,
+        "",
+        message || "(no message)",
+        "",
+        "—",
+        "Note: civilla is educational and organizational only. This message does not create an attorney-client relationship.",
+      ].join("\n")
+    );
+
+    return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  }, [name, email, phone, reason, message]);
+
+  const canSend = acknowledged && (email.trim().length > 0 || message.trim().length > 0);
+
+  const onSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSend) return;
+    window.location.href = mailtoHref;
+    setStatus("sent");
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fcfbf9]">
+    <div className="min-h-screen flex flex-col" data-testid="page-contact">
       <NavbarCream />
-      
+
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] px-5 md:px-16 py-16 md:py-28">
-        <div className="max-w-[1280px] mx-auto">
-          <div className="flex flex-col items-center max-w-[768px] mx-auto gap-6 md:gap-8">
-            <div className="flex flex-col items-center gap-4 w-full">
-              <div className="flex flex-col items-center gap-4 md:gap-6 text-center text-neutral-darkest w-full">
-                <h1 className="font-figtree font-bold text-heading-1-mobile md:text-[84px] leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] w-full" style={{ textWrap: "balance" }}>
-                  We're here to help
-                </h1>
-                <p className="font-arimo font-normal text-sm md:text-xl leading-[1.6] w-full" style={{ textWrap: "pretty" }}>
-                  <span className="italic font-medium">civilla</span> is committed to supporting you with compassion, privacy, and respect. Reach out anytime.
-                </p>
+      <section className="bg-[#e7ebea] px-5 md:px-16 py-16 md:py-28" data-testid="section-hero">
+        <div className="max-w-container mx-auto">
+          <div className="flex flex-col gap-6 md:gap-8 items-center text-center max-w-[768px] mx-auto">
+            <div className="flex flex-col gap-4 md:gap-6 items-center w-full">
+              <h1 className="font-figtree font-bold text-heading-1-mobile md:text-[84px] leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                We're Here To Help
+              </h1>
+              <p className="font-arimo text-lg md:text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
+                Reach out anytime. We'll respond with care, respect, and privacy in mind.
+              </p>
+            </div>
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className="bg-bush text-white font-arimo font-bold text-base md:text-lg px-6 py-3 rounded-xl"
+              data-testid="button-email-us"
+            >
+              Email Us
+            </a>
+          </div>
+
+          {/* Contact Info Cards */}
+          <div className="mt-12 grid gap-4 md:grid-cols-3 max-w-4xl mx-auto">
+            <div className="bg-cream rounded-2xl p-6 flex flex-col gap-3">
+              <Mail className="w-6 h-6 text-neutral-darkest" />
+              <div className="flex flex-col gap-1">
+                <span className="font-arimo text-xs font-semibold uppercase tracking-wide text-neutral-darkest/60">
+                  Email
+                </span>
+                <a 
+                  href={`mailto:${SUPPORT_EMAIL}`} 
+                  className="font-arimo text-base md:text-lg font-medium text-neutral-darkest underline underline-offset-4"
+                  data-testid="link-email"
+                >
+                  {SUPPORT_EMAIL}
+                </a>
               </div>
             </div>
-            <div className="flex gap-4">
-              <button 
-                className="bg-[#0f3b2e] text-white font-arimo font-bold text-sm md:text-lg leading-[1.6] px-6 py-2.5 rounded-xl relative"
-                style={{
-                  boxShadow: "0px 1px 2px 0px rgba(7,5,3,0.05), inset 0px 32px 24px 0px rgba(255,255,255,0.05), inset 0px 2px 1px 0px rgba(255,255,255,0.25), inset 0px 0px 0px 1px rgba(7,5,3,0.15), inset 0px -2px 1px 0px rgba(0,0,0,0.2)"
-                }}
-                data-testid="button-contact"
-              >
-                Contact
-              </button>
-              <button 
-                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg leading-[1.6] px-[22px] py-2 rounded-xl"
-                data-testid="button-learn-more"
-              >
-                Learn More
-              </button>
+
+            <div className="bg-cream rounded-2xl p-6 flex flex-col gap-3">
+              <Phone className="w-6 h-6 text-neutral-darkest" />
+              <div className="flex flex-col gap-1">
+                <span className="font-arimo text-xs font-semibold uppercase tracking-wide text-neutral-darkest/60">
+                  Phone
+                </span>
+                <a 
+                  href={`tel:${SUPPORT_PHONE_TEL}`} 
+                  className="font-arimo text-base md:text-lg font-medium text-neutral-darkest underline underline-offset-4"
+                  data-testid="link-phone"
+                >
+                  {SUPPORT_PHONE_DISPLAY}
+                </a>
+              </div>
+            </div>
+
+            <div className="bg-cream rounded-2xl p-6 flex flex-col gap-3">
+              <MapPin className="w-6 h-6 text-neutral-darkest" />
+              <div className="flex flex-col gap-1">
+                <span className="font-arimo text-xs font-semibold uppercase tracking-wide text-neutral-darkest/60">
+                  Location
+                </span>
+                <span className="font-arimo text-base md:text-lg font-medium text-neutral-darkest">
+                  {SUPPORT_LOCATION}
+                </span>
+              </div>
             </div>
           </div>
+
+          <p className="mt-8 max-w-3xl mx-auto text-center font-arimo text-sm leading-[1.6] text-neutral-darkest/60">
+            <span className="italic font-medium">civilla</span> is educational and organizational only. We do not provide legal advice, and contacting us does not create an attorney-client relationship. If you are in immediate danger, call 911.
+          </p>
         </div>
       </section>
 
       {/* How We Can Help Section */}
-      <section className="bg-[#fcfbf9] px-5 md:px-16 py-16 md:py-28">
-        <div className="max-w-[1280px] mx-auto">
-          <div className="flex flex-col md:flex-row gap-12 md:gap-20">
-            {/* Left Column */}
-            <div className="flex-1 flex flex-col gap-6 md:gap-8">
-              <div className="flex flex-col gap-4">
-                <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest" style={{ textWrap: "balance" }}>
-                  How we can help you
-                </h2>
-              </div>
-              <div className="flex items-center gap-6">
-                <button 
-                  className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-arimo font-bold text-sm md:text-lg leading-[1.6] px-[22px] py-2 rounded-xl"
-                  data-testid="button-explore"
-                >
-                  Explore
-                </button>
-                <button 
-                  className="flex items-center gap-2 font-arimo font-bold text-sm md:text-lg leading-[1.6] text-neutral-darkest rounded-xl"
-                  data-testid="button-arrow"
-                >
-                  Arrow
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column - Timeline */}
-            <div className="flex-1 flex flex-col gap-4">
-              {timelineItems.map((item, index) => (
-                <div key={index} className="flex gap-6 md:gap-10">
-                  {/* Icon and Line */}
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-                      <svg width="36" height="40" viewBox="0 0 36 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 0L35.3205 10V30L18 40L0.679491 30V10L18 0Z" fill="#070503"/>
-                      </svg>
-                    </div>
-                    {index < timelineItems.length - 1 && (
-                      <div className="w-0 h-[60px] md:h-[100px] border-l border-neutral-darkest" />
-                    )}
-                  </div>
-                  {/* Content */}
-                  <div className="flex-1 flex flex-col gap-3 md:gap-4 text-neutral-darkest">
-                    <h3 className="font-figtree font-bold text-xl md:text-[26px] leading-[1.2] tracking-[0.01em]">
-                      {item.title}
-                    </h3>
-                    <p className="font-arimo font-normal text-sm md:text-lg leading-[1.6]" style={{ textWrap: "pretty" }}>
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <section className="bg-cream px-5 md:px-16 py-16 md:py-28" data-testid="section-how-we-help">
+        <div className="max-w-container mx-auto">
+          <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest mb-8 md:mb-12" style={{ textWrap: "balance" }}>
+            How We Can Help You
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <InfoCard
+              title="General Support"
+              body="Questions about the platform, accounts, billing, or getting unstuck."
+            />
+            <InfoCard
+              title="Accessibility Requests"
+              body="If something is hard to use, tell us what you need and what device you're on."
+            />
+            <InfoCard
+              title="Feedback & Ideas"
+              body="What's working, what's missing, and what would make civilla feel safer or clearer."
+            />
+            <InfoCard
+              title="Organizations & Nonprofits"
+              body="Shelters, legal aid, or advocacy groups—ask about privacy-first setups and access options."
+            />
           </div>
         </div>
       </section>
 
-      {/* Contact Form Section */}
-      <section className="bg-[#f2f2f2] px-5 md:px-16 py-16 md:py-28">
-        <div className="max-w-[1280px] mx-auto">
-          <div className="flex flex-col md:flex-row gap-12 md:gap-20">
-            {/* Left Column - Contact Info */}
-            <div className="flex-1 flex flex-col gap-6 md:gap-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4 md:gap-6 text-neutral-darkest">
-                  <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px]" style={{ textWrap: "balance" }}>
-                    Send us a message
-                  </h2>
-                  <p className="font-arimo font-normal text-sm md:text-xl leading-[1.6]" style={{ textWrap: "pretty" }}>
-                    Tell us what's on your mind. We read every message and respond with care.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 md:gap-4 py-2">
-                <div className="flex items-start gap-3 md:gap-4">
-                  <Mail className="w-5 h-5 md:w-6 md:h-6 text-neutral-darkest" />
-                  <a href="mailto:email@example.com" className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest underline">
-                    email@example.com
-                  </a>
-                </div>
-                <div className="flex items-start gap-3 md:gap-4">
-                  <Phone className="w-5 h-5 md:w-6 md:h-6 text-neutral-darkest" />
-                  <a href="tel:+15550000000" className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest underline">
-                    +1 (555) 000-0000
-                  </a>
-                </div>
-                <div className="flex items-start gap-3 md:gap-4">
-                  <MapPin className="w-5 h-5 md:w-6 md:h-6 text-neutral-darkest" />
-                  <p className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                    123 Sample St, Sydney NSW 2000 AU
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Send Us A Message Section */}
+      <section className="bg-[#f2f2f2] px-5 md:px-16 py-16 md:py-28" data-testid="section-form">
+        <div className="max-w-container mx-auto">
+          <div className="max-w-2xl">
+            <h2 className="font-figtree font-bold text-heading-2-mobile md:text-[60px] leading-[1.2] tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest" style={{ textWrap: "balance" }}>
+              Send Us A Message
+            </h2>
+            <p className="mt-4 font-arimo text-base md:text-xl leading-[1.6] text-neutral-darkest">
+              This form opens your email app with a prefilled message (so nothing gets lost).
+            </p>
 
-            {/* Right Column - Form */}
-            <div className="flex-1 flex flex-col gap-4 md:gap-6">
-              {/* Name and Email Row */}
-              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-                <div className="flex-1 flex flex-col gap-2">
-                  <label className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                    Name
-                  </label>
-                  <input 
-                    type="text"
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg"
-                    data-testid="input-name"
-                  />
-                </div>
-                <div className="flex-1 flex flex-col gap-2">
-                  <label className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                    Email
-                  </label>
-                  <input 
-                    type="email"
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg"
-                    data-testid="input-email"
-                  />
-                </div>
+            <form onSubmit={onSend} className="mt-8 flex flex-col gap-5 md:gap-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field 
+                  id="contact-name"
+                  label="Name" 
+                  value={name} 
+                  onChange={setName} 
+                  placeholder="Your name" 
+                />
+                <Field 
+                  id="contact-email"
+                  label="Email" 
+                  value={email} 
+                  onChange={setEmail} 
+                  placeholder="you@email.com" 
+                />
               </div>
 
-              {/* Message and Phone Row */}
-              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-                <div className="flex-1 flex flex-col gap-2">
-                  <label className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                    Message
-                  </label>
-                  <input 
-                    type="text"
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg"
-                    data-testid="input-message-short"
-                  />
-                </div>
-                <div className="flex-1 flex flex-col gap-2">
-                  <label className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                    Phone number
-                  </label>
-                  <input 
-                    type="tel"
-                    className="bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg"
-                    data-testid="input-phone"
-                  />
-                </div>
-              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field
+                  id="contact-phone"
+                  label="Phone (Optional)"
+                  value={phone}
+                  onChange={setPhone}
+                  placeholder={SUPPORT_PHONE_DISPLAY}
+                />
 
-              {/* Select Dropdown */}
-              <div className="flex flex-col gap-2">
-                <label className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                  What brings you here?
-                </label>
-                <div className="relative">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="contact-reason" className="font-arimo text-sm md:text-base font-medium leading-[1.6] text-neutral-darkest">
+                    Reason
+                  </label>
                   <select
-                    value={selectedOption}
-                    onChange={(e) => setSelectedOption(e.target.value)}
-                    className="w-full bg-transparent border-2 border-neutral-darkest rounded-xl px-3 py-2 font-arimo text-sm md:text-lg appearance-none cursor-pointer"
+                    id="contact-reason"
+                    className="bg-white border-2 border-neutral-darkest/20 focus:border-neutral-darkest rounded-xl px-4 py-3 font-arimo text-base md:text-lg text-neutral-darkest outline-none transition-colors"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value as Reason)}
                     data-testid="select-reason"
                   >
-                    <option value="">Select one...</option>
-                    <option value="general">General inquiry</option>
-                    <option value="support">Technical support</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="partnership">Partnership</option>
+                    <option value="General Support">General Support</option>
+                    <option value="Accessibility Request">Accessibility Request</option>
+                    <option value="Feedback & Ideas">Feedback & Ideas</option>
+                    <option value="Organizations & Nonprofits">Organizations & Nonprofits</option>
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-neutral-darkest pointer-events-none" />
                 </div>
               </div>
 
-              {/* Radio Buttons */}
-              <div className="flex flex-col gap-3 md:gap-4 py-3 md:py-4">
-                <p className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                  How would you describe yourself?
-                </p>
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col md:flex-row gap-3 md:gap-6">
-                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="self-represented"
-                        checked={selectedRole === "self-represented"}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
-                        data-testid="radio-self-represented"
-                      />
-                      <span className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                        Self-represented parent
-                      </span>
-                    </label>
-                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="nonprofit"
-                        checked={selectedRole === "nonprofit"}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
-                        data-testid="radio-nonprofit"
-                      />
-                      <span className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                        Nonprofit or shelter
-                      </span>
-                    </label>
-                  </div>
-                  <div className="flex flex-col md:flex-row gap-3 md:gap-6">
-                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="researcher"
-                        checked={selectedRole === "researcher"}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
-                        data-testid="radio-researcher"
-                      />
-                      <span className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                        Researcher or educator
-                      </span>
-                    </label>
-                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="legal"
-                        checked={selectedRole === "legal"}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
-                        data-testid="radio-legal"
-                      />
-                      <span className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                        Legal professional
-                      </span>
-                    </label>
-                  </div>
-                  <div className="flex flex-col md:flex-row gap-3 md:gap-6">
-                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="community"
-                        checked={selectedRole === "community"}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
-                        data-testid="radio-community"
-                      />
-                      <span className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                        Community partner
-                      </span>
-                    </label>
-                    <label className="flex-1 flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="other"
-                        checked={selectedRole === "other"}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded-full appearance-none checked:bg-neutral-darkest"
-                        data-testid="radio-other"
-                      />
-                      <span className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
-                        Other
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Message Textarea */}
               <div className="flex flex-col gap-2">
-                <label className="font-arimo font-normal text-sm md:text-lg leading-[1.6] text-neutral-darkest">
+                <label htmlFor="contact-message" className="font-arimo text-sm md:text-base font-medium leading-[1.6] text-neutral-darkest">
                   Message
                 </label>
-                <textarea 
-                  placeholder="Share what's on your mind. We read and respond to every message with care and respect. Your privacy matters to us, and reaching out does not create an attorney-client relationship."
-                  className="bg-transparent border-2 border-neutral-darkest rounded-xl p-3 font-arimo text-sm md:text-lg h-[140px] md:h-[180px] resize-none placeholder:text-neutral-darkest/60"
+                <textarea
+                  id="contact-message"
+                  className="bg-white border-2 border-neutral-darkest/20 focus:border-neutral-darkest rounded-xl px-4 py-3 font-arimo text-base md:text-lg text-neutral-darkest outline-none transition-colors min-h-[140px] md:min-h-[180px] resize-y placeholder:text-neutral-darkest/40"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="What's going on? What do you need? What device are you using?"
                   data-testid="textarea-message"
                 />
               </div>
 
-              {/* Checkbox */}
-              <div className="flex items-center gap-2 pb-3 md:pb-4">
-                <input 
+              <div className="flex items-start gap-3">
+                <input
+                  id="contact-ack"
                   type="checkbox"
-                  checked={agreedDisclaimer}
-                  onChange={(e) => setAgreedDisclaimer(e.target.checked)}
-                  className="w-[18px] h-[18px] border-2 border-neutral-darkest rounded appearance-none checked:bg-neutral-darkest cursor-pointer"
-                  data-testid="checkbox-disclaimer"
+                  checked={acknowledged}
+                  onChange={(e) => setAcknowledged(e.target.checked)}
+                  className="mt-1 w-5 h-5 border-2 border-neutral-darkest/20 rounded cursor-pointer"
+                  data-testid="checkbox-acknowledge"
                 />
-                <span className="font-arimo font-normal text-sm md:text-base leading-[1.6] text-neutral-darkest">
-                  I understand this is not legal advice
-                </span>
+                <label htmlFor="contact-ack" className="font-arimo text-sm md:text-base leading-[1.6] text-neutral-darkest cursor-pointer">
+                  I understand <span className="italic font-medium">civilla</span> does not provide legal advice.
+                </label>
               </div>
 
-              {/* Submit Button */}
-              <button 
-                className="bg-[#0f3b2e] text-white font-arimo font-bold text-sm md:text-lg leading-[1.6] px-6 py-2.5 rounded-xl relative self-start"
-                style={{
-                  boxShadow: "0px 1px 2px 0px rgba(7,5,3,0.05), inset 0px 32px 24px 0px rgba(255,255,255,0.05), inset 0px 2px 1px 0px rgba(255,255,255,0.25), inset 0px 0px 0px 1px rgba(7,5,3,0.15), inset 0px -2px 1px 0px rgba(0,0,0,0.2)"
-                }}
-                data-testid="button-send"
-              >
-                Send
-              </button>
-            </div>
+              <div className="flex flex-wrap items-center gap-4 mt-2">
+                <button
+                  type="submit"
+                  disabled={!canSend}
+                  className="bg-bush text-white font-arimo font-bold text-base md:text-lg px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-bush/90 transition-colors focus:outline-none focus:ring-2 focus:ring-bush focus:ring-offset-2"
+                  data-testid="button-send"
+                >
+                  Send
+                </button>
+
+                <a
+                  href={mailtoHref}
+                  className="font-arimo font-bold text-base md:text-lg text-neutral-darkest underline underline-offset-4"
+                  data-testid="link-open-email"
+                >
+                  Open In Email Instead
+                </a>
+
+                {status === "sent" && (
+                  <span className="font-arimo text-sm text-neutral-darkest/60">
+                    Email draft opened.
+                  </span>
+                )}
+              </div>
+            </form>
           </div>
         </div>
       </section>
 
       <Footer />
+    </div>
+  );
+}
+
+function InfoCard({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="bg-[#f2f2f2] rounded-2xl p-6 md:p-8">
+      <h3 className="font-figtree font-bold text-xl md:text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+        {title}
+      </h3>
+      <p className="mt-3 font-arimo text-base md:text-lg leading-[1.6] text-neutral-darkest/70">
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="font-arimo text-sm md:text-base font-medium leading-[1.6] text-neutral-darkest">
+        {label}
+      </label>
+      <input
+        id={id}
+        className="bg-white border-2 border-neutral-darkest/20 focus:border-neutral-darkest rounded-xl px-4 py-3 font-arimo text-base md:text-lg text-neutral-darkest outline-none transition-colors placeholder:text-neutral-darkest/40"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        data-testid={`input-${id.replace('contact-', '')}`}
+      />
     </div>
   );
 }

@@ -1,0 +1,249 @@
+import React, { useMemo, useState } from "react";
+
+const SUPPORT_EMAIL = "hello@civilla.ai";
+const SUPPORT_PHONE_DISPLAY = "+1 (844) 248-4552";
+const SUPPORT_PHONE_TEL = "+18442484552";
+const SUPPORT_LOCATION = "Oakland, California, United States";
+
+type Reason =
+  | "General Support"
+  | "Accessibility Request"
+  | "Feedback & Ideas"
+  | "Organizations & Nonprofits";
+
+export default function Contact() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [reason, setReason] = useState<Reason>("General Support");
+  const [message, setMessage] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sent">("idle");
+
+  const mailtoHref = useMemo(() => {
+    const subject = encodeURIComponent(`Civilla — ${reason}`);
+    const body = encodeURIComponent(
+      [
+        `Name: ${name || "(not provided)"}`,
+        `Email: ${email || "(not provided)"}`,
+        `Phone: ${phone || "(not provided)"}`,
+        `Reason: ${reason}`,
+        "",
+        message || "(no message)",
+        "",
+        "—",
+        "Note: Civilla is educational and organizational only. This message does not create an attorney-client relationship.",
+      ].join("\n")
+    );
+
+    return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  }, [name, email, phone, reason, message]);
+
+  const canSend = acknowledged && (email.trim().length > 0 || message.trim().length > 0);
+
+  const onSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSend) return;
+
+    // Opens the user’s email client with a prefilled message (simple + reliable).
+    window.location.href = mailtoHref;
+    setStatus("sent");
+  };
+
+  return (
+    <main className="mx-auto w-full max-w-5xl px-6 py-12">
+      {/* HERO */}
+      <section className="rounded-3xl border border-black/10 bg-neutral-50 p-8 md:p-10">
+        <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
+          We&apos;re Here To Help
+        </h1>
+
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-black/70 md:text-lg">
+          Reach out anytime. We&apos;ll respond with care, respect, and privacy in mind.
+        </p>
+
+        {/* Single primary CTA (less button-happy) */}
+        <div className="mt-6">
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="inline-flex items-center justify-center rounded-full border border-black/15 bg-emerald-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-emerald-900/30"
+          >
+            Email Us
+          </a>
+        </div>
+
+        {/* Contact details as links (not extra buttons) */}
+        <div className="mt-6 grid gap-3 text-sm text-black/70 md:grid-cols-3">
+          <div className="rounded-2xl border border-black/10 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-black/50">
+              Email
+            </div>
+            <a className="mt-1 block font-medium text-black underline" href={`mailto:${SUPPORT_EMAIL}`}>
+              {SUPPORT_EMAIL}
+            </a>
+          </div>
+
+          <div className="rounded-2xl border border-black/10 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-black/50">
+              Phone
+            </div>
+            <a className="mt-1 block font-medium text-black underline" href={`tel:${SUPPORT_PHONE_TEL}`}>
+              {SUPPORT_PHONE_DISPLAY}
+            </a>
+          </div>
+
+          <div className="rounded-2xl border border-black/10 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-black/50">
+              Location
+            </div>
+            <div className="mt-1 font-medium text-black">{SUPPORT_LOCATION}</div>
+          </div>
+        </div>
+
+        {/* Small legal-safe note */}
+        <p className="mt-6 max-w-3xl text-xs leading-relaxed text-black/55">
+          Civilla is educational and organizational only. We do not provide legal advice, and contacting us
+          does not create an attorney-client relationship. If you are in immediate danger, call 911.
+        </p>
+      </section>
+
+      {/* HOW WE HELP (no extra “Explore” button) */}
+      <section className="mt-14">
+        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">How We Can Help You</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <InfoCard
+            title="General Support"
+            body="Questions about the platform, accounts, billing, or getting unstuck."
+          />
+          <InfoCard
+            title="Accessibility Requests"
+            body="If something is hard to use, tell us what you need and what device you’re on."
+          />
+          <InfoCard
+            title="Feedback & Ideas"
+            body="What’s working, what’s missing, and what would make Civilla feel safer or clearer."
+          />
+          <InfoCard
+            title="Organizations & Nonprofits"
+            body="Shelters, legal aid, or advocacy groups—ask about privacy-first setups and access options."
+          />
+        </div>
+      </section>
+
+      {/* EMAIL-FORM (simple, one form, one send) */}
+      <section className="mt-14">
+        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Send Us A Message</h2>
+        <p className="mt-3 max-w-2xl text-base leading-relaxed text-black/70">
+          This form opens your email app with a prefilled message (so nothing gets lost).
+        </p>
+
+        <form onSubmit={onSend} className="mt-8 rounded-3xl border border-black/10 bg-white p-6 md:p-8">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Name" value={name} onChange={setName} placeholder="Your name" />
+            <Field label="Email" value={email} onChange={setEmail} placeholder="you@email.com" />
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field
+              label="Phone (Optional)"
+              value={phone}
+              onChange={setPhone}
+              placeholder={SUPPORT_PHONE_DISPLAY}
+            />
+
+            <div>
+              <label className="block text-sm font-semibold text-black">Reason</label>
+              <select
+                className="mt-2 w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-900/20"
+                value={reason}
+                onChange={(e) => setReason(e.target.value as Reason)}
+              >
+                <option>General Support</option>
+                <option>Accessibility Request</option>
+                <option>Feedback & Ideas</option>
+                <option>Organizations & Nonprofits</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-black">Message</label>
+            <textarea
+              className="mt-2 min-h-[140px] w-full resize-y rounded-2xl border border-black/15 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-900/20"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="What’s going on? What do you need? What device are you using?"
+            />
+          </div>
+
+          <div className="mt-5 flex items-start gap-3">
+            <input
+              id="ack"
+              type="checkbox"
+              checked={acknowledged}
+              onChange={(e) => setAcknowledged(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-black/20"
+            />
+            <label htmlFor="ack" className="text-sm text-black/70">
+              I understand Civilla does not provide legal advice.
+            </label>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={!canSend}
+              className="inline-flex items-center justify-center rounded-full border border-black/15 bg-emerald-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-900/30"
+            >
+              Send
+            </button>
+
+            <a
+              href={mailtoHref}
+              className="text-sm font-semibold text-black underline underline-offset-4"
+            >
+              Open In Email Instead
+            </a>
+
+            {status === "sent" ? (
+              <span className="text-sm text-black/60">Email Draft Opened.</span>
+            ) : null}
+          </div>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function InfoCard({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-3xl border border-black/10 bg-neutral-50 p-6">
+      <div className="text-lg font-semibold text-black">{title}</div>
+      <div className="mt-2 text-sm leading-relaxed text-black/70">{body}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-black">{label}</label>
+      <input
+        className="mt-2 w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-900/20"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
