@@ -41,7 +41,7 @@ function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
 
 const menuSections = [
   {
-    header: "Start Here",
+    header: "Get Started",
     icon: Sparkles,
     links: [
       { label: "Home", href: "/", icon: Home },
