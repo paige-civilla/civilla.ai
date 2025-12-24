@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { ChevronUp, ChevronDown, Check, X, Phone } from "lucide-react";
+import { ChevronDown, Check, X, Phone } from "lucide-react";
 import { Link } from "wouter";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import { FAQ_LEGAL, type FaqItem } from "@/content/faqs";
 
 function StyledCivilla({ text }: { text: string }) {
   const parts = text.split(/(civilla(?:'s)?)/gi);
@@ -18,34 +18,6 @@ function StyledCivilla({ text }: { text: string }) {
     </>
   );
 }
-
-const legalFaqs = [
-  {
-    id: 0,
-    question: "Can civilla give me legal advice?",
-    answer: "No. civilla is for education and organization. We do not provide legal advice or representation, and we do not tell you what decisions to make in your case."
-  },
-  {
-    id: 1,
-    question: "Is my information private?",
-    answer: "We limit access to your information to operate civilla. We do not sell your personal information. See our Privacy Policy for details."
-  },
-  {
-    id: 2,
-    question: "What if I need a real lawyer?",
-    answer: "civilla does not replace a lawyer. If you need legal advice or representation, consult a licensed attorney in your jurisdiction. civilla can help you organize materials you may share with a lawyer."
-  },
-  {
-    id: 3,
-    question: "Can I use civilla's documents in court?",
-    answer: "civilla's documents are educational drafts. You are responsible for ensuring anything you file meets your court's rules and requirements."
-  },
-  {
-    id: 4,
-    question: "Who decides what I do with my case?",
-    answer: "You do. civilla provides information and organization tools; you remain in control of your decisions."
-  }
-];
 
 function HeroSection() {
   const jumpLinks = [
@@ -265,17 +237,27 @@ function EmergencySection() {
   );
 }
 
+function FAQAccordion({ items }: { items: FaqItem[] }) {
+  return (
+    <div className="divide-y divide-neutral-darkest/10 rounded-2xl border border-neutral-darkest/15 bg-white/40">
+      {items.map((item) => (
+        <details key={item.id} className="group p-5">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+            <span className="font-arimo text-base sm:text-lg font-semibold text-neutral-darkest">
+              <StyledCivilla text={item.q} />
+            </span>
+            <ChevronDown className="h-5 w-5 opacity-70 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="mt-3 font-arimo text-sm sm:text-base leading-relaxed text-neutral-darkest/80">
+            <StyledCivilla text={item.a} />
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
 function FAQSection() {
-  const [openItems, setOpenItems] = useState<number[]>([0]);
-
-  const toggleItem = (id: number) => {
-    setOpenItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
-    );
-  };
-
   return (
     <section 
       id="faq"
@@ -292,33 +274,21 @@ function FAQSection() {
           </p>
         </div>
 
-        <div className="flex flex-col items-start max-w-3xl w-full border-b-2 border-neutral-darkest">
-          {legalFaqs.map((faq) => (
-            <div key={faq.id} className="flex flex-col items-start w-full">
-              <button
-                onClick={() => toggleItem(faq.id)}
-                className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
-                data-testid={`button-faq-${faq.id}`}
-              >
-                <span className="flex-1 font-arimo font-bold text-lg leading-[1.6] text-neutral-darkest">
-                  <StyledCivilla text={faq.question} />
-                </span>
-                {openItems.includes(faq.id) ? (
-                  <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />
-                ) : (
-                  <ChevronDown className="w-8 h-8 text-neutral-darkest shrink-0" />
-                )}
-              </button>
-              {openItems.includes(faq.id) && (
-                <div className="flex items-start pb-6 w-full">
-                  <p className="flex-1 font-arimo text-base leading-[1.6] text-neutral-darkest">
-                    <StyledCivilla text={faq.answer} />
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="max-w-3xl w-full">
+          <FAQAccordion items={FAQ_LEGAL} />
         </div>
+        
+        <p className="font-arimo text-base md:text-lg leading-[1.6] text-neutral-darkest/70 text-center max-w-2xl">
+          Need help finding a lawyer?{" "}
+          <a 
+            href="https://www.americanbar.org/groups/legal_services/flh-home/flh-bar-directories-and-lawyer-finders/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+          >
+            Start with your state bar or local legal aid.
+          </a>
+        </p>
       </div>
     </section>
   );

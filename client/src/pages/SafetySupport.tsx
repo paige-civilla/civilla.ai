@@ -1,9 +1,12 @@
-import { Phone, Check, LogOut } from "lucide-react";
+import { Phone, Check, LogOut, ChevronDown } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import { FAQ_SAFETY, type FaqItem } from "@/content/faqs";
+import { Link } from "wouter";
 import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
 
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
+
 const safetyTools = [
   {
     title: "Neutral username option",
@@ -22,9 +25,61 @@ const safetyTools = [
   }
 ];
 
-export default function SafetySupport() {
+const resourceLinks = [
+  { name: "National Domestic Violence Hotline", url: "https://www.thehotline.org/", description: "24/7 support for survivors of domestic violence" },
+  { name: "RAINN (Rape, Abuse & Incest National Network)", url: "https://www.rainn.org/", description: "Support for survivors of sexual violence" },
+  { name: "National Suicide Prevention Lifeline", url: "https://988lifeline.org/", description: "24/7 crisis support (call or text 988)" },
+  { name: "LawHelp.org", url: "https://www.lawhelp.org/", description: "Free legal help by state" },
+  { name: "WomensLaw.org", url: "https://www.womenslaw.org/", description: "Legal resources for survivors of abuse" }
+];
+
+function StyledCivilla({ text }: { text: string }) {
+  const parts = text.split(/(civilla(?:'s)?)/gi);
   return (
-    <div className="min-h-screen bg-cream flex flex-col">
+    <>
+      {parts.map((part, i) => 
+        /^civilla('s)?$/i.test(part) ? (
+          <span key={i} className="italic font-medium">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
+function FAQAccordion({ items }: { items: FaqItem[] }) {
+  return (
+    <div className="divide-y divide-neutral-darkest/10 rounded-2xl border border-neutral-darkest/15 bg-white/40">
+      {items.map((item) => (
+        <details key={item.id} className="group p-5">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+            <span className="font-arimo text-base sm:text-lg font-semibold text-neutral-darkest">
+              <StyledCivilla text={item.q} />
+            </span>
+            <ChevronDown className="h-5 w-5 opacity-70 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="mt-3 font-arimo text-sm sm:text-base leading-relaxed text-neutral-darkest/80">
+            <StyledCivilla text={item.a} />
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+export default function SafetySupport() {
+  const jumpLinks = [
+    { label: "Quick Exit", href: "#quick-exit" },
+    { label: "Privacy And Data", href: "#privacy" },
+    { label: "Designed For Discretion", href: "#discretion" },
+    { label: "Emotional Safety", href: "#emotional" },
+    { label: "Not An Emergency Service", href: "#emergency" },
+    { label: "Resources", href: "#resources" }
+  ];
+
+  return (
+    <div className="min-h-screen bg-cream flex flex-col" data-testid="page-safety-support">
       <NavbarCream />
       
       {/* Hero Section */}
@@ -32,32 +87,54 @@ export default function SafetySupport() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col items-center text-center max-w-[768px] mx-auto gap-6">
             <h1 className="font-figtree font-bold text-[clamp(48px,6vw,84px)] leading-[1.1] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
-              Safety, Support & Resources
+              Safety And Support
             </h1>
             <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-              Tools and guidance designed to help you stay safe, supported, and in control, online and offline.
+              Tools and guidance designed to help you stay safe, steady, and in control.
             </p>
+            
+            {/* Jump links nav */}
+            <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 pt-4" aria-label="On this page">
+              {jumpLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="font-arimo text-base text-neutral-darkest underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+                  data-testid={`link-jump-${link.href.slice(1)}`}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
           </div>
         </div>
       </section>
 
-      {/* Leave in a Click Section */}
-      <section className="bg-cream py-28 px-4 md:px-16" data-testid="section-leave-in-click">
+      {/* Quick Exit Section */}
+      <section id="quick-exit" className="bg-cream py-28 px-4 md:px-16 scroll-mt-20" data-testid="section-quick-exit">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col items-center">
-            {/* Quick Exit Card */}
             <div className="w-full max-w-3xl border-2 border-neutral-darkest rounded-2xl p-8 md:p-12">
               <div className="flex flex-col gap-8 items-center text-center">
                 <div className="flex flex-col gap-6">
                   <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
-                    Leave In A Click
+                    Quick Exit
                   </h2>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
-                    Use Quick Exit in the top bar to immediately leave <span className="italic font-medium">civilla</span> and open a neutral website. For extra privacy, consider using private browsing and clearing your history after use.
+                    Need to leave quickly? Use Quick Exit at the top of any page to jump to a neutral site.
                   </p>
+                  <ul className="flex flex-col gap-2 text-left mx-auto">
+                    <li className="font-arimo text-base leading-[1.6] text-neutral-darkest/80 flex items-start gap-2">
+                      <span className="text-neutral-darkest/60">•</span>
+                      For extra safety, consider private browsing.
+                    </li>
+                    <li className="font-arimo text-base leading-[1.6] text-neutral-darkest/80 flex items-start gap-2">
+                      <span className="text-neutral-darkest/60">•</span>
+                      If you share a device, clear history when it's safe to do so.
+                    </li>
+                  </ul>
                 </div>
                 
-                {/* Enlarged Quick Exit Button Display */}
                 <div className="flex flex-col items-center gap-4 pt-4">
                   <div 
                     className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
@@ -76,8 +153,36 @@ export default function SafetySupport() {
         </div>
       </section>
 
+      {/* Privacy And Data Section */}
+      <section id="privacy" className="bg-[#f2f2f2] py-28 px-4 md:px-16 scroll-mt-20" data-testid="section-privacy">
+        <div className="max-w-container mx-auto">
+          <div className="flex flex-col gap-6 items-center text-center max-w-3xl mx-auto">
+            <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+              Privacy And Data
+            </h2>
+            <p className="font-arimo text-lg md:text-xl leading-[1.6] text-neutral-darkest">
+              Your information is sensitive. We minimize access and protect it with security controls.
+            </p>
+            <ul className="flex flex-col gap-2 text-left w-full max-w-md mx-auto mt-4">
+              <li className="font-arimo text-base md:text-lg leading-[1.6] text-neutral-darkest flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-bush/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-bush" />
+                </div>
+                You control what you download or share.
+              </li>
+              <li className="font-arimo text-base md:text-lg leading-[1.6] text-neutral-darkest flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-bush/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-bush" />
+                </div>
+                We do not sell personal information.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Designed for Discretion Section */}
-      <section className="bg-[#0c2f24] py-28 px-4 md:px-16" data-testid="section-discretion">
+      <section id="discretion" className="bg-[#0c2f24] py-28 px-4 md:px-16 scroll-mt-20" data-testid="section-discretion">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-12 items-center max-w-3xl mx-auto">
             <div className="w-full">
@@ -92,8 +197,22 @@ export default function SafetySupport() {
                 Designed For Discretion
               </h2>
               <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                <span className="italic font-medium">civilla</span> is built to feel calm and unobtrusive. No flashing alerts, no surprise pop-ups, and no attention-grabbing visuals.
+                <span className="italic font-medium">civilla</span> is built to feel calm and unobtrusive.
               </p>
+              <ul className="flex flex-col gap-2 text-left w-full max-w-md mx-auto">
+                <li className="font-arimo text-base md:text-lg leading-[1.6] text-white flex items-start gap-3">
+                  <span className="text-white/60">•</span>
+                  No flashing alerts
+                </li>
+                <li className="font-arimo text-base md:text-lg leading-[1.6] text-white flex items-start gap-3">
+                  <span className="text-white/60">•</span>
+                  No surprise pop-ups
+                </li>
+                <li className="font-arimo text-base md:text-lg leading-[1.6] text-white flex items-start gap-3">
+                  <span className="text-white/60">•</span>
+                  No noisy notifications by default
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -114,7 +233,6 @@ export default function SafetySupport() {
               </div>
             </div>
 
-            {/* Safety Tools Checklist */}
             <div className="w-full max-w-3xl">
               <div className="flex flex-col gap-4">
                 {safetyTools.map((tool) => (
@@ -147,7 +265,7 @@ export default function SafetySupport() {
       </section>
 
       {/* Your Emotional Safety Matters Section */}
-      <section className="bg-[#f2f2f2] py-28 px-4 md:px-16" data-testid="section-emotional-safety">
+      <section id="emotional" className="bg-[#f2f2f2] py-28 px-4 md:px-16 scroll-mt-20" data-testid="section-emotional-safety">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-20 items-center">
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
@@ -156,7 +274,7 @@ export default function SafetySupport() {
                   Your Emotional Safety Matters
                 </h2>
                 <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  Family court can feel overwhelming or frightening. <span className="italic font-medium">civilla</span> is here to help you feel informed, steady, and organized. No pressure, no judgment.
+                  Family court can feel overwhelming. <span className="italic font-medium">civilla</span> is designed to reduce chaos and help you stay oriented.
                 </p>
               </div>
             </div>
@@ -202,36 +320,99 @@ export default function SafetySupport() {
       </section>
 
       {/* Emergency Service Section */}
-      <section className="bg-[#0c2f24] py-28 px-4 md:px-16" data-testid="section-emergency">
+      <section id="emergency" className="bg-[#0c2f24] py-28 px-4 md:px-16 scroll-mt-20" data-testid="section-emergency">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-8 items-center text-center max-w-3xl mx-auto">
             <div className="flex flex-col gap-6">
               <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
-                <span className="italic font-medium">civilla</span> Is Not An Emergency Service
+                Not An Emergency Service
               </h2>
               <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                If you are in immediate danger, please contact emergency services.
+                If you are in immediate danger, call 911 (U.S.). If you are in crisis, call or text 988 (U.S.).
               </p>
             </div>
             <div className="flex flex-col gap-4 py-2">
-              <div className="flex gap-4 items-center">
+              <a href="tel:911" className="flex gap-4 items-center group">
                 <Phone className="w-6 h-6 text-white flex-shrink-0" />
-                <span className="font-arimo text-lg leading-[1.6] text-white">
+                <span className="font-arimo text-lg leading-[1.6] text-white underline underline-offset-4 decoration-white/40 group-hover:decoration-white transition-colors">
                   Call 911 for emergencies
                 </span>
-              </div>
-              <div className="flex gap-4 items-center">
+              </a>
+              <a href="tel:988" className="flex gap-4 items-center group">
                 <Phone className="w-6 h-6 text-white flex-shrink-0" />
-                <span className="font-arimo text-lg leading-[1.6] text-white">
+                <span className="font-arimo text-lg leading-[1.6] text-white underline underline-offset-4 decoration-white/40 group-hover:decoration-white transition-colors">
                   Call or text 988 for crisis support (24/7)
                 </span>
-              </div>
-              <div className="flex gap-4 items-center">
+              </a>
+              <a href="tel:18007997233" className="flex gap-4 items-center group">
                 <Phone className="w-6 h-6 text-white flex-shrink-0" />
-                <span className="font-arimo text-lg leading-[1.6] text-white">
+                <span className="font-arimo text-lg leading-[1.6] text-white underline underline-offset-4 decoration-white/40 group-hover:decoration-white transition-colors">
                   National DV Hotline: 1-800-799-7233 or text START to 88788
                 </span>
-              </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Resources Section */}
+      <section id="resources" className="bg-cream py-28 px-4 md:px-16 scroll-mt-20" data-testid="section-resources">
+        <div className="max-w-container mx-auto">
+          <div className="flex flex-col gap-8 max-w-3xl mx-auto">
+            <div className="flex flex-col gap-6 text-center">
+              <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                Resources
+              </h2>
+              <p className="font-arimo text-lg md:text-xl leading-[1.6] text-neutral-darkest">
+                A starting point for safety planning and support services. If you need help right now, use the emergency resources above.
+              </p>
+            </div>
+            
+            <ul className="flex flex-col gap-4 mt-4">
+              {resourceLinks.map((resource) => (
+                <li key={resource.name} className="flex flex-col gap-1">
+                  <a 
+                    href={resource.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="font-arimo text-base md:text-lg font-semibold text-neutral-darkest underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+                    data-testid={`link-resource-${resource.name.toLowerCase().replace(/\s/g, '-')}`}
+                  >
+                    {resource.name}
+                  </a>
+                  <span className="font-arimo text-sm md:text-base text-neutral-darkest/70">
+                    {resource.description}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Safety FAQ Section */}
+      <section className="bg-[#e7ebea] py-28 px-4 md:px-16" data-testid="section-faq">
+        <div className="max-w-container mx-auto">
+          <div className="flex flex-col gap-12 max-w-3xl mx-auto">
+            <div className="flex flex-col gap-4 text-center">
+              <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+                Safety FAQ
+              </h2>
+              <p className="font-arimo text-lg md:text-xl leading-[1.6] text-neutral-darkest">
+                Common questions about staying safe with <span className="italic font-medium">civilla</span>.
+              </p>
+            </div>
+            
+            <FAQAccordion items={FAQ_SAFETY} />
+            
+            <div className="text-center pt-4">
+              <Link 
+                href="/contact" 
+                className="font-arimo font-bold text-base md:text-lg text-neutral-darkest underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+                data-testid="link-contact-support"
+              >
+                Contact Support
+              </Link>
             </div>
           </div>
         </div>

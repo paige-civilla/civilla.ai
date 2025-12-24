@@ -10,9 +10,10 @@ const SUPPORT_LOCATION = "Oakland, California, United States";
 
 type Reason =
   | "General Support"
-  | "Accessibility Request"
-  | "Feedback & Ideas"
-  | "Organizations & Nonprofits";
+  | "Accessibility Help"
+  | "Feedback And Ideas"
+  | "Organizations And Nonprofits"
+  | "Other";
 
 export default function Contact() {
   const [name, setName] = useState("");
@@ -138,19 +139,19 @@ export default function Contact() {
           <div className="grid gap-4 md:grid-cols-2">
             <InfoCard
               title="General Support"
-              body="Questions about the platform, accounts, billing, or getting unstuck."
+              body="Questions about your account or using the platform."
             />
             <InfoCard
-              title="Accessibility Requests"
-              body="If something is hard to use, tell us what you need and what device you're on."
+              title="Accessibility Help"
+              body="Report a barrier or request an accommodation."
             />
             <InfoCard
-              title="Feedback & Ideas"
-              body="What's working, what's missing, and what would make civilla feel safer or clearer."
+              title="Feedback And Ideas"
+              body="Tell us what's working and what needs improvement."
             />
             <InfoCard
-              title="Organizations & Nonprofits"
-              body="Shelters, legal aid, or advocacy groups—ask about privacy-first setups and access options."
+              title="Organizations And Nonprofits"
+              body="Partnerships, referrals, or program collaboration."
             />
           </div>
         </div>
@@ -206,9 +207,10 @@ export default function Contact() {
                     data-testid="select-reason"
                   >
                     <option value="General Support">General Support</option>
-                    <option value="Accessibility Request">Accessibility Request</option>
-                    <option value="Feedback & Ideas">Feedback & Ideas</option>
-                    <option value="Organizations & Nonprofits">Organizations & Nonprofits</option>
+                    <option value="Accessibility Help">Accessibility Help</option>
+                    <option value="Feedback And Ideas">Feedback And Ideas</option>
+                    <option value="Organizations And Nonprofits">Organizations And Nonprofits</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
