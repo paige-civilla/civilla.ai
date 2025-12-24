@@ -1,8 +1,7 @@
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-
-const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/26166652-168b-426b-9744-1082df316ceb";
-const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/702bb028-ef73-4469-8a54-d4dd3bdeff03";
+import founderImage1 from "@assets/bubba11_1766551770096.jpg";
+import founderImage2 from "@assets/IMG_6122_1766551785069.JPG";
 
 function HeaderSection() {
   return (
@@ -25,17 +24,41 @@ function HeaderSection() {
   );
 }
 
+function PolaroidImage({ src, alt, tiltDirection = "left" }: { src: string; alt: string; tiltDirection?: "left" | "right" }) {
+  const initialRotate = tiltDirection === "left" ? "-rotate-2" : "rotate-2";
+  const hoverRotate = tiltDirection === "left" ? "hover:rotate-1" : "hover:-rotate-1";
+  
+  return (
+    <div 
+      className={`
+        bg-white p-3 md:p-4 pb-12 md:pb-16 
+        shadow-lg 
+        ${initialRotate} ${hoverRotate}
+        transition-transform duration-300 ease-out
+        hover:shadow-xl
+        hover:scale-[1.02]
+      `}
+    >
+      <div className="w-full aspect-square overflow-hidden">
+        <img 
+          src={src} 
+          alt={alt} 
+          className="w-full h-full object-cover"
+        />
+      </div>
+    </div>
+  );
+}
+
 function TeamSection1() {
   return (
     <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-team-1">
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-start w-full">
-          <div className="flex-1 w-full aspect-square rounded-2xl overflow-hidden">
-            <img 
-              src={imgPlaceholderImage} 
-              alt="Team" 
-              className="w-full h-full object-cover"
-            />
+        <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-center w-full">
+          <div className="flex-1 w-full flex justify-center">
+            <div className="w-full max-w-[400px]">
+              <PolaroidImage src={founderImage1} alt="Founder" tiltDirection="left" />
+            </div>
           </div>
           <div className="flex-1 flex flex-col gap-4 md:gap-6">
             <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-white">
@@ -63,7 +86,7 @@ function TeamSection2() {
   return (
     <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-team-2">
       <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex flex-col-reverse md:flex-row gap-12 md:gap-20 items-start w-full">
+        <div className="flex flex-col-reverse md:flex-row gap-12 md:gap-20 items-center w-full">
           <div className="flex-1 flex flex-col gap-4 md:gap-6">
             <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-white">
               Our team
@@ -77,12 +100,10 @@ function TeamSection2() {
               </p>
             </div>
           </div>
-          <div className="flex-1 w-full aspect-square rounded-2xl overflow-hidden">
-            <img 
-              src={imgPlaceholderImage1} 
-              alt="Team" 
-              className="w-full h-full object-cover"
-            />
+          <div className="flex-1 w-full flex justify-center">
+            <div className="w-full max-w-[400px]">
+              <PolaroidImage src={founderImage2} alt="Founder family" tiltDirection="right" />
+            </div>
           </div>
         </div>
       </div>
