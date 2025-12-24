@@ -1,12 +1,83 @@
 import { useState } from "react";
-import { ChevronRight, ChevronUp, ChevronDown, Check, Ban, BarChart3 } from "lucide-react";
+import { ChevronUp, ChevronDown, Check, X, Phone } from "lucide-react";
+import { Link } from "wouter";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+
+const legalFaqs = [
+  {
+    id: 0,
+    question: "Can civilla give me legal advice?",
+    answer: "No. civilla is for education and organization. We do not provide legal advice or representation, and we do not tell you what decisions to make in your case."
+  },
+  {
+    id: 1,
+    question: "Is my information private?",
+    answer: "We limit access to your information to operate civilla. We do not sell your personal information. See our Privacy Policy for details."
+  },
+  {
+    id: 2,
+    question: "What if I need a real lawyer?",
+    answer: "civilla does not replace a lawyer. If you need legal advice or representation, consult a licensed attorney in your jurisdiction. civilla can help you organize materials you may share with a lawyer."
+  },
+  {
+    id: 3,
+    question: "Can I use civilla's documents in court?",
+    answer: "civilla's documents are educational drafts. You are responsible for ensuring anything you file meets your court's rules and requirements."
+  },
+  {
+    id: 4,
+    question: "Who decides what I do with my case?",
+    answer: "You do. civilla provides information and organization tools; you remain in control of your decisions."
+  }
+];
+
+function HeroSection() {
+  const jumpLinks = [
+    { label: "Education only", href: "#education" },
+    { label: "What we can / can't do", href: "#boundaries" },
+    { label: "Privacy basics", href: "#privacy" },
+    { label: "Documents & court use", href: "#documents" },
+    { label: "Common questions", href: "#faq" }
+  ];
+
+  return (
+    <section 
+      className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      data-testid="section-hero"
+    >
+      <div className="flex flex-col gap-8 items-center max-w-container w-full">
+        <div className="flex flex-col gap-6 items-center text-center max-w-[768px]">
+          <h1 className="font-figtree font-bold text-[clamp(48px,6vw,84px)] leading-[1.1] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+            Legal & Compliance
+          </h1>
+          <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
+            Clear boundaries, plain language, and what <span className="italic font-medium">civilla</span> can—and cannot—do.
+          </p>
+        </div>
+        
+        <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 pt-4" aria-label="On this page">
+          {jumpLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="font-arimo text-base text-neutral-darkest underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
+              data-testid={`link-jump-${link.href.slice(1)}`}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </section>
+  );
+}
 
 function EducationSection() {
   return (
     <section 
-      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      id="education"
+      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28 scroll-mt-20"
       data-testid="section-education"
     >
       <div className="flex flex-col items-start max-w-container w-full">
@@ -18,31 +89,14 @@ function EducationSection() {
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start">
-            <div className="flex flex-col gap-4 md:gap-6 items-start w-full">
-              <div className="flex flex-col gap-4 md:gap-6 items-start text-neutral-darkest w-full">
-                <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-                  Education only, never legal advice
-                </h2>
-                <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-                  Everything on <span className="italic font-medium">civilla</span> is designed to inform and explain. We do not provide legal advice, and nothing here replaces an attorney.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-6 items-center">
-              <button 
-                className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
-                data-testid="button-learn-more"
-              >
-                Learn
-              </button>
-              <button 
-                className="flex gap-2 items-center text-neutral-darkest font-bold text-sm md:text-[18px] leading-[1.6]"
-                data-testid="button-read"
-              >
-                Read
-                <ChevronRight className="w-6 h-6" />
-              </button>
+          <div className="flex-1 flex flex-col gap-6 items-start">
+            <div className="flex flex-col gap-4 md:gap-6 items-start text-neutral-darkest w-full">
+              <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
+                Education Only. Never Legal Advice.
+              </h2>
+              <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
+                <span className="italic font-medium">civilla</span> is an educational and organizational platform. We are not a law firm, we do not provide legal advice, and we do not represent you in court. Using <span className="italic font-medium">civilla</span> does not create an attorney–client relationship.
+              </p>
             </div>
           </div>
         </div>
@@ -52,68 +106,58 @@ function EducationSection() {
 }
 
 function BoundariesSection() {
-  const items = [
-    {
-      icon: Check,
-      text: "We can explain what service of process means",
-      type: "can"
-    },
-    {
-      icon: Ban,
-      text: "We cannot tell you when to file for custody",
-      type: "cannot"
-    },
-    {
-      icon: BarChart3,
-      text: "We can show you your state's custody factors",
-      type: "can"
-    }
+  const canItems = [
+    "We can explain legal terms and typical court processes in plain language.",
+    "We can help you organize information, documents, timelines, and notes you provide.",
+    "We can surface general educational information and options to consider."
+  ];
+
+  const cannotItems = [
+    "We cannot tell you what you should do in your specific case.",
+    "We cannot tell you what to file, when to file it, or how to argue it.",
+    "We cannot predict outcomes, guarantee results, or communicate with the court for you."
   ];
 
   return (
     <section 
-      className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      id="boundaries"
+      className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28 scroll-mt-20"
       data-testid="section-boundaries"
     >
       <div className="flex flex-col items-start max-w-container w-full">
         <div className="flex flex-col-reverse md:flex-row gap-8 md:gap-20 items-center w-full">
           <div className="flex-1 flex flex-col gap-6 md:gap-8 items-start">
-            <div className="flex flex-col gap-6 md:gap-8 items-start w-full">
-              <div className="flex flex-col gap-4 items-start w-full">
-                <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
-                  <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
-                    What we can and cannot do for you. Understanding these limits keeps you safe and informed.
-                  </h2>
-                  <p className="cv-p font-sans font-normal text-sm md:text-[20px] leading-[1.6] w-full">
-                    <span className="italic font-medium">civilla</span> answers educational questions. We explain legal terms, show how courts work, and help you organize evidence. We do not answer case-specific questions or tell you what decisions to make.
-                  </p>
-                </div>
+            <div className="flex flex-col gap-6 items-start w-full">
+              <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
+                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
+                  What We Can And Cannot Do For You
+                </h2>
+                <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
+                  Understanding these limits helps you use <span className="italic font-medium">civilla</span> safely—especially when rules vary by state, county, and judge.
+                </p>
               </div>
-              <div className="flex flex-col gap-4 items-start py-2 w-full">
-                {items.map((item, index) => (
-                  <div key={index} className="flex gap-4 items-center w-full">
-                    <item.icon className="w-4 h-4 text-white flex-shrink-0" />
-                    <span className="font-sans font-normal text-sm md:text-[18px] leading-[1.6] text-white">
-                      {item.text}
+              <div className="flex flex-col gap-3 py-2 w-full">
+                {canItems.map((item, index) => (
+                  <div key={index} className="flex gap-4 items-start w-full">
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-arimo text-base md:text-lg leading-[1.6] text-white">
+                      {item}
+                    </span>
+                  </div>
+                ))}
+                {cannotItems.map((item, index) => (
+                  <div key={`cannot-${index}`} className="flex gap-4 items-start w-full">
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <X className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-arimo text-base md:text-lg leading-[1.6] text-white">
+                      {item}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="flex gap-6 items-center">
-              <button 
-                className="bg-transparent border-2 border-white text-white font-bold text-sm md:text-[18px] leading-[1.6] px-[22px] py-2 rounded-xl"
-                data-testid="button-learn-boundaries"
-              >
-                Learn
-              </button>
-              <button 
-                className="flex gap-2 items-center text-white font-bold text-sm md:text-[18px] leading-[1.6]"
-                data-testid="button-read-boundaries"
-              >
-                Read
-                <ChevronRight className="w-6 h-6" />
-              </button>
             </div>
           </div>
           <div className="flex-1 w-full aspect-[600/640] rounded-2xl overflow-hidden">
@@ -129,36 +173,80 @@ function BoundariesSection() {
   );
 }
 
+function PrivacySection() {
+  return (
+    <section 
+      id="privacy"
+      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28 scroll-mt-20"
+      data-testid="section-privacy"
+    >
+      <div className="flex flex-col gap-6 items-center max-w-3xl w-full text-center">
+        <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+          Privacy Basics
+        </h2>
+        <p className="font-arimo text-lg md:text-xl leading-[1.6] text-neutral-darkest">
+          We treat your information with care and limit access to what's needed to operate <span className="italic font-medium">civilla</span>. We do not sell your personal information. For full details, refer to our <Link href="/privacy-policy" className="underline underline-offset-4">Privacy Policy</Link>.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function DocumentsSection() {
+  return (
+    <section 
+      id="documents"
+      className="bg-[#f2f2f2] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28 scroll-mt-20"
+      data-testid="section-documents"
+    >
+      <div className="flex flex-col gap-6 items-center max-w-3xl w-full text-center">
+        <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
+          Documents And Court Use
+        </h2>
+        <p className="font-arimo text-lg md:text-xl leading-[1.6] text-neutral-darkest">
+          Documents generated in <span className="italic font-medium">civilla</span> are educational drafts and may include disclaimers or watermarks. You are responsible for reviewing, editing, and confirming any document meets your local court's rules and filing requirements. If you can, consult a licensed attorney for legal advice.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function EmergencySection() {
+  return (
+    <section 
+      className="bg-[#0c2f24] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      data-testid="section-emergency"
+    >
+      <div className="flex flex-col gap-8 items-center max-w-3xl w-full text-center">
+        <div className="flex flex-col gap-6">
+          <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white">
+            <span className="italic font-medium">civilla</span> Is Not An Emergency Service
+          </h2>
+          <p className="font-arimo text-lg md:text-xl leading-[1.6] text-white">
+            If you are in immediate danger, call local emergency services. If you need crisis support, contact local hotlines available in your area.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 py-2">
+          <div className="flex gap-4 items-center justify-center">
+            <Phone className="w-6 h-6 text-white flex-shrink-0" />
+            <span className="font-arimo text-lg leading-[1.6] text-white">
+              Call 911 for emergencies
+            </span>
+          </div>
+          <div className="flex gap-4 items-center justify-center">
+            <Phone className="w-6 h-6 text-white flex-shrink-0" />
+            <span className="font-arimo text-lg leading-[1.6] text-white">
+              Call or text 988 for crisis support (24/7)
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FAQSection() {
   const [openItems, setOpenItems] = useState<number[]>([0]);
-
-  const faqs = [
-    {
-      id: 0,
-      question: "Can civilla give me legal advice?",
-      answer: "No. civilla is built for education only. We explain how family law works, help you organize your case, and show you what options exist. We never tell you what to file, when to file it, or how to argue your case. That requires a lawyer."
-    },
-    {
-      id: 1,
-      question: "Is my information private?",
-      answer: "Yes. Your documents, messages, and case details stay on civilla's secure servers. We do not share your information with courts, opposing parties, or third parties. See our Privacy Policy for full details."
-    },
-    {
-      id: 2,
-      question: "What if I need a real lawyer?",
-      answer: "civilla helps you prepare and understand your case, but it does not replace legal representation. If you can afford an attorney, we recommend consulting one. We can help you organize your materials to share with a lawyer."
-    },
-    {
-      id: 3,
-      question: "Can I use civilla's documents in court?",
-      answer: "civilla's documents come with clear disclaimers that they are educational drafts, not legal documents. You are responsible for ensuring any document you file meets your court's rules and requirements. Always verify with your local court."
-    },
-    {
-      id: 4,
-      question: "Who decides what I do with my case?",
-      answer: "You do. civilla gives you information and options. You make all decisions about your case. We support your choices by helping you understand the law and organize your evidence."
-    }
-  ];
 
   const toggleItem = (id: number) => {
     setOpenItems(prev => 
@@ -170,28 +258,29 @@ function FAQSection() {
 
   return (
     <section 
-      className="bg-neutral-lightest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      id="faq"
+      className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28 scroll-mt-20"
       data-testid="section-faq"
     >
-      <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
-          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-            Questions
+      <div className="flex flex-col gap-12 md:gap-16 items-center max-w-container w-full">
+        <div className="flex flex-col gap-4 items-center max-w-[768px] text-neutral-darkest text-center w-full">
+          <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
+            Common Questions
           </h2>
-          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            Find answers about how <span className="italic font-medium">civilla</span> works and what it cannot do.
+          <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
+            Answers about how <span className="italic font-medium">civilla</span> works and what it cannot do.
           </p>
         </div>
 
-        <div className="flex flex-col items-start max-w-content-large w-full border-b-2 border-neutral-darkest">
-          {faqs.map((faq) => (
+        <div className="flex flex-col items-start max-w-3xl w-full border-b-2 border-neutral-darkest">
+          {legalFaqs.map((faq) => (
             <div key={faq.id} className="flex flex-col items-start w-full">
               <button
                 onClick={() => toggleItem(faq.id)}
                 className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
                 data-testid={`button-faq-${faq.id}`}
               >
-                <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest">
+                <span className="flex-1 font-arimo font-bold text-lg leading-[1.6] text-neutral-darkest">
                   {faq.question}
                 </span>
                 {openItems.includes(faq.id) ? (
@@ -202,32 +291,13 @@ function FAQSection() {
               </button>
               {openItems.includes(faq.id) && (
                 <div className="flex items-start pb-6 w-full">
-                  <p className="flex-1 font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest">
+                  <p className="flex-1 font-arimo text-base leading-[1.6] text-neutral-darkest">
                     {faq.answer}
                   </p>
                 </div>
               )}
             </div>
           ))}
-        </div>
-
-        <div className="flex flex-col gap-6 items-center max-w-content-medium w-full">
-          <div className="flex flex-col gap-4 items-center text-neutral-darkest text-center w-full">
-            <h3 className="font-heading font-bold text-heading-4 tracking-[0.4px] w-full">
-              Common questions answered
-            </h3>
-            <p className="font-sans font-normal text-body-medium leading-[1.6] w-full">
-              Everything you need to know about <span className="italic font-medium">civilla</span>
-            </p>
-          </div>
-          <div className="flex items-center">
-            <button 
-              className="bg-transparent border-2 border-neutral-darkest text-neutral-darkest font-bold text-body-regular leading-[1.6] px-6 py-2.5 rounded-md"
-              data-testid="button-contact-faq"
-            >
-              Contact Us
-            </button>
-          </div>
         </div>
       </div>
     </section>
@@ -239,8 +309,12 @@ export default function LegalCompliance() {
     <div className="min-h-screen flex flex-col">
       <NavbarCream />
       <main className="flex-1">
+        <HeroSection />
         <EducationSection />
         <BoundariesSection />
+        <PrivacySection />
+        <DocumentsSection />
+        <EmergencySection />
         <FAQSection />
       </main>
       <Footer />

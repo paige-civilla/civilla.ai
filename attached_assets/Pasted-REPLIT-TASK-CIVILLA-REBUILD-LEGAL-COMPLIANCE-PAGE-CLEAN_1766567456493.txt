@@ -1,0 +1,140 @@
+REPLIT TASK (CIVILLA REBUILD) — LEGAL & COMPLIANCE PAGE CLEANUP + ADD TO GLOBAL FAQ PAGE
+IMPORTANT GUARDRAILS:
+- Do NOT edit: Home page, How Civilla Works page, Plans & Pricing page, Footer, Green Navbar, Cream Navbar styling/branding.
+- ONLY touch files required for:
+  (1) /legal-compliance page layout/content cleanup
+  (2) /faq page creation/enablement and FAQ compilation
+- Keep existing images on /legal-compliance exactly as they are (do not remove/replace assets), unless an image is currently broken.
+- Remove “button-happy” CTAs on /legal-compliance (no Learn/Read buttons). Replace with simple text links/jump links only.
+
+GOALS:
+A) Legal & Compliance page should feel like: “Legal & Compliance + What we do / don’t do + Privacy basics + Document draft disclaimers + Not emergency service”
+B) Make the language legally safe across *all* states/territories by being clear, general, and avoiding jurisdiction-specific promises.
+C) Any FAQs on /legal-compliance must also be included on the global /faq page.
+D) Enable the /faq page (remove “Coming soon” behavior for FAQ nav link). Resources can remain “Coming soon”.
+
+------------------------------------------------------------
+1) FIND/CONFIRM ROUTES + FILES
+- Search for route “/legal-compliance” and identify the page component file (likely: client/src/pages/LegalCompliance.tsx or similar).
+- Search for any existing FAQ page route or placeholder (likely: /faq).
+- Search for any existing accordion component used on plans/support/legal pages (Radix Accordion, shadcn/ui accordion, or custom).
+
+------------------------------------------------------------
+2) LEGAL & COMPLIANCE PAGE — RESTRUCTURE (NO MORE EXTRA BUTTONS)
+In the /legal-compliance page component:
+- Keep the existing hero image sections (same images/visuals), but remove the “Learn / Read” style buttons entirely.
+- Replace buttons with:
+  - A simple “On this page” jump-link row (plain text links, not buttons) that scrolls to sections:
+    • Education only
+    • What we can / can’t do
+    • Privacy basics
+    • Documents & court use
+    • Common questions
+
+PAGE COPY (use this exact wording unless you must adjust for component constraints):
+
+SECTION 1 (Hero / top):
+Title: “Legal & compliance”
+Subtitle: “Clear boundaries, plain language, and what civilla can—and cannot—do.”
+
+SECTION 2 (Education only):
+Title: “Education only. Never legal advice.”
+Body:
+“civilla is an educational and organizational platform. We are not a law firm, we do not provide legal advice, and we do not represent you in court. Using civilla does not create an attorney–client relationship.”
+
+SECTION 3 (What we can / cannot do):
+Title: “What we can and cannot do for you”
+Body (short intro):
+“Understanding these limits helps you use civilla safely—especially when rules vary by state, county, and judge.”
+Bullets (use icons if you already have them, otherwise plain list):
+✅ We can explain legal terms and typical court processes in plain language.
+✅ We can help you organize information, documents, timelines, and notes you provide.
+✅ We can surface general educational information and options to consider.
+🚫 We cannot tell you what you should do in your specific case.
+🚫 We cannot tell you what to file, when to file it, or how to argue it.
+🚫 We cannot predict outcomes, guarantee results, or communicate with the court for you.
+
+SECTION 4 (Privacy basics):
+Title: “Privacy basics”
+Body:
+“We treat your information with care and limit access to what’s needed to operate civilla. We do not sell your personal information. For full details, refer to our Privacy Policy.”
+NOTE: Do NOT claim “history is cleared” or “no record remains” unless that is truly implemented and verified.
+
+SECTION 5 (Documents & court use):
+Title: “Documents and court use”
+Body:
+“Documents generated in civilla are educational drafts and may include disclaimers/watermarks. You are responsible for reviewing, editing, and confirming any document meets your local court’s rules and filing requirements. If you can, consult a licensed attorney for legal advice.”
+
+SECTION 6 (Not an emergency service — if already present on this page, keep but tighten copy):
+Title: “civilla is not an emergency service”
+Body:
+“If you are in immediate danger, call local emergency services. If you need crisis support, contact local hotlines available in your area.”
+
+SECTION 7 (FAQ accordion on this page):
+- Keep FAQ accordion style, but:
+  - Remove redundant headings like “Questions” + “Common questions answered” (pick ONE).
+  - Keep it clean: one heading + one sentence + accordion.
+Use this heading:
+Title: “Common questions”
+Subtitle: “Answers about how civilla works and what it cannot do.”
+
+LEGAL-SAFE FAQ ITEMS (add these if missing; keep existing if already matches):
+1) “Can civilla give me legal advice?”
+Answer:
+“No. civilla is for education and organization. We do not provide legal advice or representation, and we do not tell you what decisions to make in your case.”
+2) “Is my information private?”
+Answer:
+“We limit access to your information to operate civilla. We do not sell your personal information. See our Privacy Policy for details.”
+3) “What if I need a real lawyer?”
+Answer:
+“civilla does not replace a lawyer. If you need legal advice or representation, consult a licensed attorney in your jurisdiction. civilla can help you organize materials you may share with a lawyer.”
+4) “Can I use civilla’s documents in court?”
+Answer:
+“civilla’s documents are educational drafts. You are responsible for ensuring anything you file meets your court’s rules and requirements.”
+5) “Who decides what I do with my case?”
+Answer:
+“You do. civilla provides information and organization tools; you remain in control of your decisions.”
+
+------------------------------------------------------------
+3) GLOBAL /FAQ PAGE — ENABLE + COMPILE ALL FAQs
+Create (or finalize) a dedicated FAQ page at route: /faq
+
+Implementation approach:
+- Create a single source of truth for FAQs:
+  - Add file: client/src/content/faqs.ts (or /data/faqs.ts)
+  - Export sections as arrays:
+    - legalComplianceFaqs
+    - plansPricingFaqs (pull from the Plans page FAQ accordion)
+    - safetySupportFaqs (pull from Safety/Support page accordion if it has Q/A items)
+- On /faq page, render:
+  - Page title: “FAQs”
+  - Subtitle: “Quick answers about what civilla does—and what it doesn’t.”
+  - Section headings for each group (Legal & compliance, Plans & pricing, Safety & support)
+  - Accordion UI for each section
+- IMPORTANT: do not duplicate identical questions—dedupe by question string.
+
+Also:
+- After you update the /legal-compliance FAQs, ensure they are included in legalComplianceFaqs so they appear on /faq automatically.
+
+------------------------------------------------------------
+4) NAVBAR — MAKE FAQ LIVE (BUT DO NOT CHANGE NAV STYLING)
+- Locate NavbarCream.tsx and Navbar.tsx menu definitions where FAQ is currently disabled “Coming soon”.
+- Change FAQ item to an active link to “/faq” and remove disabled/coming soon UI for FAQ only.
+- Leave “Resources” as disabled/coming soon.
+
+------------------------------------------------------------
+5) STYLE RULES (KEEP THE CIVILLA LOOK)
+- Do NOT introduce frosted/transparent navbar styling.
+- Keep typography, spacing, and line dividers consistent with existing marketing pages.
+- Replace “Learn/Read” buttons on /legal-compliance with simple text jump links and clean section spacing.
+
+------------------------------------------------------------
+6) DELIVERABLES
+After changes, output:
+- Files changed list
+- New routes added/confirmed
+- Screenshot notes (what sections exist and where jump links go)
+- Confirm:
+  ✅ /legal-compliance has no extra CTA buttons
+  ✅ /faq page exists and aggregates FAQs
+  ✅ Navbar FAQ is clickable and no longer “coming soon”
