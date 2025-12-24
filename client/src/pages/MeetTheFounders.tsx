@@ -31,7 +31,7 @@ function PolaroidImage({ src, alt, tiltDirection = "left", objectPosition = "cen
   return (
     <div 
       className={`
-        bg-white p-3 md:p-4 pb-12 md:pb-16 
+        bg-white p-2 md:p-3 pb-8 md:pb-10 
         shadow-lg 
         ${initialRotate} ${hoverRotate}
         transition-transform duration-300 ease-out
@@ -51,88 +51,82 @@ function PolaroidImage({ src, alt, tiltDirection = "left", objectPosition = "cen
   );
 }
 
-function FounderSection() {
+function FoundersSection() {
   return (
-    <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-founder">
-      <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex flex-col md:flex-row gap-12 md:gap-20 items-center w-full">
-          <div className="flex-1 w-full flex justify-center">
-            <div className="w-full max-w-[400px]">
-              <PolaroidImage src={founderImage1} alt="Paige - Founder" tiltDirection="left" />
+    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16" data-testid="section-founders">
+      <div className="w-full max-w-container">
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="rounded-2xl border border-white/20 bg-bush p-6 md:p-8">
+            <div className="flex flex-col gap-6">
+              <div className="w-full max-w-[280px] mx-auto">
+                <PolaroidImage src={founderImage1} alt="Paige - Founder" tiltDirection="left" />
+              </div>
+              
+              <h2 className="cv-h font-heading font-bold text-heading-3-mobile md:text-[28px] tracking-[0.28px] leading-[1.2] text-white">
+                A Note from Our Founder
+              </h2>
+              
+              <div className="flex flex-col gap-4 font-sans text-sm md:text-[16px] text-white/90 leading-[1.6]">
+                <p>
+                  Family court wasn't built for people like us. People who can't afford a lawyer at the rate of a used Honda every week (no offense, attorneys). People juggling work, kids, healing, and maybe three hours of sleep. People trying to raise their kids in peace while the system keeps getting pulled back into conflict.
+                </p>
+                <p>
+                  I know this world too well.
+                </p>
+                <p>
+                  I've lived the divorce, the aftermath, and the endless paperwork that feels like a thousand tiny cuts. I've done the late-night, cry-in-the-car sessions after holding it together all day. I've been in that foggy place where you're trying to parent, survive, grow, and defend yourself in the same week, while wishing someone, anyone, could explain what is actually happening.
+                </p>
+                <p>
+                  The truth is, I didn't create <span className="italic font-medium">civilla</span>.ai because I'm a tech founder who spotted a "market opportunity." I created it because I was a parent who felt overwhelmed, under-resourced, and expected to somehow understand a system that speaks in riddles. I needed clarity, calm, and a place to land when everything felt like too much. And I knew I wasn't the only one.
+                </p>
+                <p>
+                  All of us deserve steadiness, understanding, and a sense of direction, especially when life is pulling you in every possible direction at once.
+                </p>
+                <p>
+                  Go kick some bureaucratic ass, kindly, strategically, and with receipts.<br />
+                  — P.
+                </p>
+                <p className="text-white/70 italic text-sm">
+                  (Single mom. Survivor. Self-represented. Builder of things that should've existed long ago.)
+                </p>
+                <p>
+                  P.S. When I say "I built it," I really mean <span className="font-bold">we</span> built this. I had the idea, and B. believed in me, and the idea.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex-1 flex flex-col gap-4 md:gap-6">
-            <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-white">
-              A Note from Our Founder
-            </h2>
-            <div className="flex flex-col gap-4">
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                Family court wasn't built for people like us. People who can't afford a lawyer at the rate of a used Honda every week (no offense, attorneys). People juggling work, kids, healing, and maybe three hours of sleep. People trying to raise their kids in peace while the system keeps getting pulled back into conflict.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                I know this world too well.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                I've lived the divorce, the aftermath, and the endless paperwork that feels like a thousand tiny cuts. I've done the late-night, cry-in-the-car sessions after holding it together all day. I've been in that foggy place where you're trying to parent, survive, grow, and defend yourself in the same week, while wishing someone, anyone, could explain what is actually happening.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                The truth is, I didn't create <span className="italic font-medium">civilla</span>.ai because I'm a tech founder who spotted a "market opportunity." I created it because I was a parent who felt overwhelmed, under-resourced, and expected to somehow understand a system that speaks in riddles. I needed clarity, calm, and a place to land when everything felt like too much. And I knew I wasn't the only one.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                All of us deserve steadiness, understanding, and a sense of direction, especially when life is pulling you in every possible direction at once.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                Go kick some bureaucratic ass, kindly, strategically, and with receipts.<br />
-                — P.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[16px] text-white/80 leading-[1.6] italic">
-                (Single mom. Survivor. Self-represented. Builder of things that should've existed long ago.)
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                P.S. When I say "I built it," I really mean <span className="font-bold">we</span> built this. I had the idea, and B. believed in me, and the idea.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
-function CoFounderSection() {
-  return (
-    <section className="bg-bush w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-cofounder">
-      <div className="flex flex-col items-start max-w-container w-full">
-        <div className="flex flex-col-reverse md:flex-row gap-12 md:gap-20 items-center w-full">
-          <div className="flex-1 flex flex-col gap-4 md:gap-6">
-            <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] text-white">
-              A Note from Our Co-Founder
-            </h2>
-            <div className="flex flex-col gap-4">
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                A few years ago, I went through one of the hardest things a person can face: divorce. It tested my strength, my patience, and my sense of fairness. I learned that real strength isn't loud or aggressive. It's steady, grounded, and focused on what matters most: my child, and the relationship I want to build and protect with them.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                Like a lot of fathers, I discovered how confusing, costly, and one-sided the process can feel. But as I moved through it, I also began to understand experiences that weren't like my own. Divorce hits everyone differently. There are two sides to every ending, and most people, no matter which side they're on, are just trying to hold themselves together while navigating something they never imagined they'd be in.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                That's why we turned this idea into reality. So fathers, mothers, and families could finally have a tool that brings clarity, organization, and calm to a process that often feels impossible. Something that helps you stay steady and advocate for yourself and your kids when everything feels uncertain.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                I came out of that chapter stronger, calmer, and more grounded, not just for myself, but for my son.<br />
-                — B.
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[16px] text-white/80 leading-[1.6] italic">
-                (Dad. Rebuilder. Divorce survivor who once believed Google Docs could solve custody, adorable, I know. 10/10 do not recommend.)
-              </p>
-              <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                P.S. Yeah, yeah, I know, P.
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 w-full flex justify-center">
-            <div className="w-full max-w-[400px]">
-              <PolaroidImage src={founderImage2} alt="Bryan - Co-Founder" tiltDirection="right" objectPosition="center 30%" />
+          <div className="rounded-2xl border border-white/20 bg-bush p-6 md:p-8">
+            <div className="flex flex-col gap-6">
+              <div className="w-full max-w-[280px] mx-auto">
+                <PolaroidImage src={founderImage2} alt="Bryan - Co-Founder" tiltDirection="right" objectPosition="center 30%" />
+              </div>
+              
+              <h2 className="cv-h font-heading font-bold text-heading-3-mobile md:text-[28px] tracking-[0.28px] leading-[1.2] text-white">
+                A Note from Our Co-Founder
+              </h2>
+              
+              <div className="flex flex-col gap-4 font-sans text-sm md:text-[16px] text-white/90 leading-[1.6]">
+                <p>
+                  A few years ago, I went through one of the hardest things a person can face: divorce. It tested my strength, my patience, and my sense of fairness. I learned that real strength isn't loud or aggressive. It's steady, grounded, and focused on what matters most: my child, and the relationship I want to build and protect with them.
+                </p>
+                <p>
+                  Like a lot of fathers, I discovered how confusing, costly, and one-sided the process can feel. But as I moved through it, I also began to understand experiences that weren't like my own. Divorce hits everyone differently. There are two sides to every ending, and most people, no matter which side they're on, are just trying to hold themselves together while navigating something they never imagined they'd be in.
+                </p>
+                <p>
+                  That's why we turned this idea into reality. So fathers, mothers, and families could finally have a tool that brings clarity, organization, and calm to a process that often feels impossible. Something that helps you stay steady and advocate for yourself and your kids when everything feels uncertain.
+                </p>
+                <p>
+                  I came out of that chapter stronger, calmer, and more grounded, not just for myself, but for my son.<br />
+                  — B.
+                </p>
+                <p className="text-white/70 italic text-sm">
+                  (Dad. Rebuilder. Divorce survivor who once believed Google Docs could solve custody, adorable, I know. 10/10 do not recommend.)
+                </p>
+                <p>
+                  P.S. Yeah, yeah, I know, P.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -182,8 +176,7 @@ export default function MeetTheFounders() {
       <NavbarCream />
       <main className="flex-1">
         <HeaderSection />
-        <FounderSection />
-        <CoFounderSection />
+        <FoundersSection />
         <CTASection />
       </main>
       <Footer />
