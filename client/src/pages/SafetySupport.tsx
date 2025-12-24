@@ -1,9 +1,8 @@
-import { Phone, AlertTriangle, Check } from "lucide-react";
+import { Phone, AlertTriangle, Check, LogOut } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
 
-const imgQuickExit = "https://www.figma.com/api/mcp/asset/c4115cfe-8611-4c8d-bb5f-5b41cb30f9fd";
 const imgPrivateBrowser = "https://www.figma.com/api/mcp/asset/a44db474-56ed-4b20-a4be-61f3fa8be1ed";
 const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
 const imgPlaceholderImage3 = "https://www.figma.com/api/mcp/asset/86d7b009-7a1d-4335-8b7c-21b12690b64e";
@@ -61,8 +60,8 @@ export default function SafetySupport() {
             </div>
 
             {/* Quick Exit Card */}
-            <div className="w-full border-2 border-neutral-darkest rounded-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[640px]">
-              <div className="flex-1 flex flex-col justify-center p-12 gap-8">
+            <div className="w-full max-w-3xl border-2 border-neutral-darkest rounded-2xl p-8 md:p-12">
+              <div className="flex flex-col gap-8 items-center text-center">
                 <div className="flex flex-col gap-6">
                   <h3 className="font-figtree font-bold text-[clamp(32px,4vw,48px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
                     How Quick Exit Works
@@ -71,13 +70,20 @@ export default function SafetySupport() {
                     Use Quick Exit in the top bar to immediately leave <span className="italic font-medium">civilla</span> and open a neutral website. For extra privacy, consider using private browsing and clearing your history after use.
                   </p>
                 </div>
-              </div>
-              <div className="flex-1 h-64 md:h-full">
-                <img 
-                  src={imgQuickExit} 
-                  alt="Quick exit feature demonstration" 
-                  className="w-full h-full object-cover"
-                />
+                
+                {/* Enlarged Quick Exit Button Display */}
+                <div className="flex flex-col items-center gap-4 pt-4">
+                  <div 
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
+                    style={{ background: 'linear-gradient(to right, #3d7a6a, #2a5c4e)' }}
+                    aria-hidden="true"
+                  >
+                    <LogOut className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="font-arimo text-sm text-neutral-darkest/70">
+                    Look for this button in the top-right corner
+                  </p>
+                </div>
               </div>
             </div>
           </div>
