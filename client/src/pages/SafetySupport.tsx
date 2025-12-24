@@ -100,15 +100,15 @@ export default function SafetySupport() {
       </section>
 
       {/* Safety Tools Section */}
-      <section className="bg-[#0c2f24] py-28 px-4 md:px-16" data-testid="section-safety-tools">
+      <section className="bg-[#e7ebea] py-28 px-4 md:px-16" data-testid="section-safety-tools">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-16 items-center">
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
               <div className="flex flex-col gap-6 items-center w-full">
-                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
-                  Safety tools inside <span className="italic font-medium">civilla</span>
+                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
+                  Safety Tools Inside <span className="italic font-medium">civilla</span>
                 </h2>
-                <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
+                <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
                   Features designed to help you stay safe and in control.
                 </p>
               </div>
@@ -118,22 +118,22 @@ export default function SafetySupport() {
             <div className="w-full max-w-3xl">
               <div className="flex flex-col gap-4">
                 {safetyTools.map((tool) => (
-                  <details key={tool.title} className="group border-2 border-white/30 rounded-2xl overflow-hidden">
+                  <details key={tool.title} className="group border-2 border-neutral-darkest/30 rounded-2xl overflow-hidden bg-white/40">
                     <summary className="flex items-center gap-4 p-6 cursor-pointer list-none">
-                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-5 h-5 text-white" />
+                      <div className="w-8 h-8 rounded-full bg-bush/20 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-5 h-5 text-bush" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-figtree font-bold text-xl leading-[1.2] text-white">
+                        <h3 className="font-figtree font-bold text-xl leading-[1.2] text-neutral-darkest">
                           {tool.title}
                         </h3>
-                        <p className="font-arimo text-base leading-[1.6] text-white/80 mt-1">
+                        <p className="font-arimo text-base leading-[1.6] text-neutral-darkest/80 mt-1">
                           {tool.description}
                         </p>
                       </div>
                     </summary>
                     <div className="px-6 pb-6 pt-0 pl-[72px]">
-                      <p className="font-arimo text-base leading-[1.6] text-white/70">
+                      <p className="font-arimo text-base leading-[1.6] text-neutral-darkest/70">
                         {tool.details}
                       </p>
                     </div>
