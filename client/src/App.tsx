@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ScrollToTop from "@/components/ScrollToTop";
 import Home from "@/pages/Home";
 import HowCivillaWorks from "@/pages/HowCivillaWorks";
-import AboutCivilla from "@/pages/AboutCivilla";
 import MeetTheFounders from "@/pages/MeetTheFounders";
 import OurMission from "@/pages/OurMission";
 import Plans from "@/pages/Plans";
@@ -24,9 +23,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/how-civilla-works" component={HowCivillaWorks} />
-      <Route path="/about-civilla" component={AboutCivilla} />
-      <Route path="/about" component={AboutCivilla} />
-      <Route path="/how-we-started" component={AboutCivilla} />
       <Route path="/meet-the-founders" component={MeetTheFounders} />
       <Route path="/founders" component={MeetTheFounders} />
       <Route path="/our-mission" component={OurMission} />
