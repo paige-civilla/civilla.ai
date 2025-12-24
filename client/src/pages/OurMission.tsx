@@ -7,7 +7,7 @@ function HeaderSection() {
       <div className="flex flex-col items-center max-w-container w-full">
         <div className="flex flex-col items-center max-w-[768px] w-full">
           <h1 className="cv-h font-heading text-heading-1-mobile md:text-[84px] tracking-[0.48px] md:tracking-[0.84px] text-neutral-darkest text-center w-full">
-            Our Mission
+            Our Mission Statement
           </h1>
         </div>
       </div>
