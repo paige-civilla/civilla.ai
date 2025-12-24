@@ -1,0 +1,55 @@
+GOAL
+On the Home hero, keep everything LEFT-aligned, but force the subtitle (“Bring your case…”) to never extend wider than the H1’s text block.
+
+WHY THE LAST TRY DIDN’T WORK
+A fixed max-width like 42ch won’t perfectly match the H1 width across screen sizes/font rendering.
+We need the subtitle’s width to be controlled by the H1 width.
+
+STEP-BY-STEP (NO FILE KNOWLEDGE NEEDED)
+
+1) Locate the Home hero text
+- In Replit: press Cmd/Ctrl + Shift + F (Search all files)
+- Search for EXACT text: Family Law,
+  (or search: Family Law, Translated)
+- Open the file where that string appears (likely Home page or a Hero component)
+
+2) Find the H1 and the subtitle paragraph under it
+You’re looking for markup shaped like:
+<h1>Family Law, ...</h1>
+<p>Bring your case into one clear place — ...</p>
+
+3) Wrap the H1 + P in a “fit-to-heading” wrapper
+- Add a wrapper div around the h1 and p
+- Make wrapper inline-block so its width becomes the width of the H1 text block
+- Make the paragraph w-full so it matches that wrapper width (therefore matching H1 width)
+
+IMPLEMENTATION (TAILWIND)
+
+BEFORE (example shape):
+<h1 className="...">Family Law, Translated.</h1>
+<p className="...">Bring your case into one clear place — ...</p>
+
+AFTER:
+<div className="inline-block max-w-full align-top">
+  <h1 className="...">Family Law, Translated.</h1>
+  <p className="mt-6 text-lg text-white/90 w-full text-pretty">
+    Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
+  </p>
+</div>
+
+IMPORTANT NOTES
+- Do NOT add text-center anywhere.
+- Keep the existing left alignment and spacing.
+- If the paragraph already has max-w-[xx], REMOVE that max-w so w-full can take over.
+
+4) Verify in Preview
+- The subtitle should now wrap exactly under the H1 block and never extend farther right than the “Family Law,” line.
+- If it still overflows, add: "break-words" to the paragraph className.
+
+OPTIONAL (IF text-pretty isn’t supported)
+Replace text-pretty with:
+"leading-relaxed"
+(or just remove it)
+
+DONE
+Commit/save and refresh Preview.

@@ -16,13 +16,15 @@ export default function Hero() {
       <div className="relative flex flex-col flex-1 h-full items-start max-w-container min-w-0">
         <div className="flex flex-1 items-start w-full min-w-0">
           <div className="flex flex-1 flex-col gap-6 md:gap-8 h-full items-start justify-center min-w-0">
-            <h1 className="font-heading font-bold text-white text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] whitespace-pre-wrap">
-              <span className="block">Family Law,</span>
-              <span className="block">Translated.</span>
-            </h1>
-            <p className="mt-3 max-w-[42ch] text-base text-white/80 md:text-lg" style={{ textWrap: 'pretty' }}>
-              Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
-            </p>
+            <div className="inline-block max-w-full align-top">
+              <h1 className="font-heading font-bold text-white text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.48px] md:tracking-[0.84px] whitespace-pre-wrap">
+                <span className="block">Family Law,</span>
+                <span className="block">Translated.</span>
+              </h1>
+              <p className="mt-6 text-base text-white/80 md:text-lg w-full leading-relaxed">
+                Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
+              </p>
+            </div>
             <div className="mt-6 flex items-center gap-6">
               <a
                 href="/plans"
