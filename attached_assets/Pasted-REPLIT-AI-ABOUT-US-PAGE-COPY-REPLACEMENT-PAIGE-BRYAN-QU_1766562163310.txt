@@ -1,0 +1,61 @@
+REPLIT AI — ABOUT US PAGE COPY REPLACEMENT (PAIGE + BRYAN)
+
+QUESTION (answer with a quick yes/no before you apply copy):
+Should we keep “Hey y’all!” at the top?
+- Recommendation: YES if you want warm + approachable. NO if you want more neutral/professional.
+Default if unclear: KEEP IT.
+
+DO NOT CHANGE:
+- Photos
+- Layout / spacing
+- Navbars
+- Footer
+Only replace the text content for Paige’s section and Bryan’s section.
+
+========================================
+PASTE THIS COPY INTO THE ABOUT US PAGE
+========================================
+
+Hey y’all! We’re truly glad you’re here, and we hope civilla.ai supports you in the ways you need.
+
+---
+
+## A Note from Our Founder
+
+Family court wasn’t built for people like us. People who can’t afford a lawyer at the rate of a used Honda every week (no offense, attorneys). People juggling work, kids, healing, and maybe three hours of sleep. People trying to raise their kids in peace while the system keeps getting pulled back into conflict.
+
+I know this world too well.
+
+I’ve lived the divorce, the aftermath, and the endless paperwork that feels like a thousand tiny cuts. I’ve done the late-night, cry-in-the-car sessions after holding it together all day. I’ve been in that foggy place where you’re trying to parent, survive, grow, and defend yourself in the same week, while wishing someone—anyone—could explain what is actually happening.
+
+The truth is, I didn’t create civilla.ai because I’m a tech founder who spotted a “market opportunity.” I created it because I was a parent who felt overwhelmed, under-resourced, and expected to somehow understand a system that speaks in riddles. I needed clarity, calm, and a place to land when everything felt like too much. And I knew I wasn’t the only one.
+
+All of us deserve steadiness, understanding, and a sense of direction—especially when life is pulling you in every possible direction at once.
+
+Go kick some bureaucratic ass—kindly, strategically, and with receipts.  
+— P.
+
+*(Single mom. Survivor. Self-represented/pro se/litigant/whatever-its-called. Builder of things that should’ve existed long ago, because no one should have to figure this out alone.)*
+
+P.S. When I say “I built it,” I really mean **we** built this. I had the idea, and Bryan believed in me—and the idea.
+
+---
+
+## A Note from Our Co-Founder
+
+A few years ago, I went through one of the hardest things a person can face—divorce. It tested my strength, my patience, and my sense of fairness. I learned that real strength isn’t loud or aggressive. It’s steady, grounded, and focused on what matters most: my child, and the relationship I want to build and protect with them.
+
+Like a lot of fathers, I discovered how confusing, costly, and one-sided the process can feel. But as I moved through it, I also began to understand experiences that weren’t like my own. Divorce hits everyone differently. There are two sides to every ending, and most people—no matter which side they’re on—are just trying to hold themselves together while navigating something they never imagined they’d be in.
+
+That’s why we turned this idea into reality. So fathers, mothers, and families could finally have a tool that brings clarity, organization, and calm to a process that often feels impossible. Something that helps you stay steady and advocate for yourself and your kids when everything feels uncertain.
+
+I came out of that chapter stronger, calmer, and more grounded—not just for myself, but for my son.  
+— B.
+
+*(Dad. Rebuilder. Divorce survivor who once believed Google Docs could solve custody—adorable, I know. 10/10 do not recommend.)*
+
+P.S. Yeah, yeah—I know, P.
+
+========================================
+END COPY
+========================================
