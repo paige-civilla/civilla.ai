@@ -39,7 +39,7 @@ export default function SafetySupport() {
               Safety, Support & Resources
             </h1>
             <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-              Tools and guidance designed to help you stay safe, supported, and in control—online and offline.
+              Tools and guidance designed to help you stay safe, supported, and in control, online and offline.
             </p>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function SafetySupport() {
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
               <div className="flex flex-col gap-6 items-center w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
-                  Leave in a click
+                  Leave In A Click
                 </h2>
                 <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
                   If you need to exit <span className="italic font-medium">civilla</span> quickly, use the Quick Exit button at the top of every page.
@@ -65,7 +65,7 @@ export default function SafetySupport() {
               <div className="flex-1 flex flex-col justify-center p-12 gap-8">
                 <div className="flex flex-col gap-6">
                   <h3 className="font-figtree font-bold text-[clamp(32px,4vw,48px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                    How Quick Exit works
+                    How Quick Exit Works
                   </h3>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
                     Use Quick Exit in the top bar to immediately leave <span className="italic font-medium">civilla</span> and open a neutral website. For extra privacy, consider using private browsing and clearing your history after use.
@@ -97,10 +97,10 @@ export default function SafetySupport() {
             </div>
             <div className="flex-1 flex flex-col gap-6">
               <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
-                Designed for discretion
+                Designed For Discretion
               </h2>
               <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                <span className="italic font-medium">civilla</span> is built to feel calm and unobtrusive—no flashing alerts, no surprise pop-ups, and no attention-grabbing visuals.
+                <span className="italic font-medium">civilla</span> is built to feel calm and unobtrusive. No flashing alerts, no surprise pop-ups, and no attention-grabbing visuals.
               </p>
             </div>
           </div>
@@ -171,10 +171,10 @@ export default function SafetySupport() {
             <div className="flex flex-col gap-4 items-center text-center max-w-[768px]">
               <div className="flex flex-col gap-6 items-center w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>
-                  Your emotional safety matters
+                  Your Emotional Safety Matters
                 </h2>
                 <p className="font-arimo text-xl leading-[1.6] text-neutral-darkest" style={{ textWrap: "pretty" }}>
-                  Family court can feel overwhelming or frightening. <span className="italic font-medium">civilla</span> is here to help you feel informed, steady, and organized—without pressure or judgment.
+                  Family court can feel overwhelming or frightening. <span className="italic font-medium">civilla</span> is here to help you feel informed, steady, and organized. No pressure, no judgment.
                 </p>
               </div>
             </div>
@@ -224,18 +224,13 @@ export default function SafetySupport() {
         <div className="max-w-container mx-auto">
           <div className="flex flex-col md:flex-row gap-20 items-center">
             <div className="flex-1 flex flex-col gap-8">
-              <div className="flex flex-col gap-4">
-                <p className="font-arimo font-bold text-base text-white">
-                  Important
+              <div className="flex flex-col gap-6">
+                <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
+                  <span className="italic font-medium">civilla</span> Is Not An Emergency Service
+                </h2>
+                <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
+                  If you are in immediate danger, please contact emergency services.
                 </p>
-                <div className="flex flex-col gap-6">
-                  <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] text-white" style={{ textWrap: "balance" }}>
-                    <span className="italic font-medium">civilla</span> is not an emergency service
-                  </h2>
-                  <p className="font-arimo text-xl leading-[1.6] text-white" style={{ textWrap: "pretty" }}>
-                    If you are in immediate danger, please contact emergency services.
-                  </p>
-                </div>
               </div>
               <div className="flex flex-col gap-4 py-2">
                 <div className="flex gap-4 items-center">
@@ -263,7 +258,7 @@ export default function SafetySupport() {
                   className="inline-block bg-transparent border-2 border-white text-white font-arimo font-bold text-lg px-6 py-2.5 rounded-xl"
                   data-testid="button-email-support"
                 >
-                  Email support
+                  Email Support
                 </a>
               </div>
             </div>
