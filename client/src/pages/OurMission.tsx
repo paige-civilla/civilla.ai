@@ -50,9 +50,15 @@ function MissionContentSection() {
               <h2 className="cv-h font-heading text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
                 Making family law accessible
               </h2>
-              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-                We believe every parent deserves to understand what's happening in their case. <span className="italic font-medium">civilla</span> exists to bring clarity, organization, and support to families navigating the legal system.
-              </p>
+              <div className="cv-p font-sans text-sm md:text-[20px] w-full flex flex-col gap-4 md:gap-5">
+                <p>Our mission is to make family court survivable — and easier to follow — for people who are doing it without a lawyer.</p>
+                <p>We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human.</p>
+                <p>Family court wasn't built for unrepresented people, and it often feels like the rules are written in a language you were never taught.</p>
+                <p><span className="italic font-medium">civilla</span> exists to help you regain clarity, organization, and steadier footing when the process feels stacked against you.</p>
+                <p>We're here to make the system less overwhelming and less confusing — one person at a time.</p>
+                <p>And when I say I built <span className="italic font-medium">civilla</span>, I really mean we did.</p>
+                <p>This mission is shared, lived, and built with people who have lived the reality of family court — and decided we all deserve better.</p>
+              </div>
             </div>
           </div>
           <div className="flex gap-6 items-center">
