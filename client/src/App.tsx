@@ -7,6 +7,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import Home from "@/pages/Home";
 import HowCivillaWorks from "@/pages/HowCivillaWorks";
 import AboutCivilla from "@/pages/AboutCivilla";
+import MeetTheFounders from "@/pages/MeetTheFounders";
+import OurMission from "@/pages/OurMission";
 import Plans from "@/pages/Plans";
 import LegalCompliance from "@/pages/LegalCompliance";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
@@ -25,6 +27,10 @@ function Router() {
       <Route path="/about-civilla" component={AboutCivilla} />
       <Route path="/about" component={AboutCivilla} />
       <Route path="/how-we-started" component={AboutCivilla} />
+      <Route path="/meet-the-founders" component={MeetTheFounders} />
+      <Route path="/founders" component={MeetTheFounders} />
+      <Route path="/our-mission" component={OurMission} />
+      <Route path="/mission" component={OurMission} />
       <Route path="/plans" component={Plans} />
       <Route path="/legal-compliance" component={LegalCompliance} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
