@@ -24,7 +24,7 @@ function HeaderSection() {
   );
 }
 
-function PolaroidImage({ src, alt, tiltDirection = "left" }: { src: string; alt: string; tiltDirection?: "left" | "right" }) {
+function PolaroidImage({ src, alt, tiltDirection = "left", objectPosition = "center" }: { src: string; alt: string; tiltDirection?: "left" | "right"; objectPosition?: string }) {
   const initialRotate = tiltDirection === "left" ? "-rotate-2" : "rotate-2";
   const hoverRotate = tiltDirection === "left" ? "hover:rotate-1" : "hover:-rotate-1";
   
@@ -44,6 +44,7 @@ function PolaroidImage({ src, alt, tiltDirection = "left" }: { src: string; alt:
           src={src} 
           alt={alt} 
           className="w-full h-full object-cover"
+          style={{ objectPosition }}
         />
       </div>
     </div>
@@ -131,7 +132,7 @@ function CoFounderSection() {
           </div>
           <div className="flex-1 w-full flex justify-center">
             <div className="w-full max-w-[400px]">
-              <PolaroidImage src={founderImage2} alt="Bryan - Co-Founder" tiltDirection="right" />
+              <PolaroidImage src={founderImage2} alt="Bryan - Co-Founder" tiltDirection="right" objectPosition="center 30%" />
             </div>
           </div>
         </div>
