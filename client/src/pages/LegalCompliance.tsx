@@ -49,10 +49,10 @@ const legalFaqs = [
 
 function HeroSection() {
   const jumpLinks = [
-    { label: "Education only", href: "#education" },
-    { label: "What we can and can't do", href: "#boundaries" },
-    { label: "Privacy basics", href: "#privacy" },
-    { label: "Documents & court use", href: "#documents" },
+    { label: "Education Only", href: "#education" },
+    { label: "What We Can And Can't Do", href: "#boundaries" },
+    { label: "Privacy Basics", href: "#privacy" },
+    { label: "Documents & Court Use", href: "#documents" },
     { label: "FAQ", href: "#faq" }
   ];
 
@@ -147,7 +147,7 @@ function BoundariesSection() {
             <div className="flex flex-col gap-6 items-start w-full">
               <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
-                  What we can and can't do
+                  What We Can And Can't Do
                 </h2>
                 <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
                   <span className="italic font-medium">civilla</span> helps you understand and organize your case. We do not give legal advice or tell you what to do in your specific situation.
