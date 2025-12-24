@@ -21,7 +21,7 @@ export default function Hero() {
                 <span className="block">Family Law,</span>
                 <span className="block">Translated.</span>
               </h1>
-              <p className="mt-6 text-base text-white/80 md:text-lg leading-relaxed w-full max-w-none">
+              <p className="mt-6 text-base text-white/80 md:text-lg leading-relaxed max-w-[30ch]">
                 Bring your case into one clear place — so you can understand what you're seeing, stay organized, and prepare with less stress.
               </p>
             </div>
