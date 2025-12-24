@@ -51,12 +51,43 @@ function MissionHeroSection() {
   );
 }
 
+function WinsCtaSection() {
+  return (
+    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 pb-10 md:pb-16" data-testid="section-wins-cta">
+      <div className="flex flex-col items-start max-w-container w-full">
+        <div className="bg-[#f2f2f2] border-2 border-neutral-darkest rounded-2xl p-6 md:p-16 flex flex-col items-center justify-center w-full">
+          <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
+            <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+              <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
+                Add To The Wall Of Wins
+              </h2>
+              <p className="cv-p font-sans text-sm md:text-[20px] w-full">
+                Big wins, tiny wins, survival wins—we'll take them all. If something went right, we'd love to hear about it.
+              </p>
+            </div>
+            <div className="flex gap-4 items-start">
+              <a 
+                href="mailto:support@civilla.ai?subject=My%20Win%20for%20the%20Wall%20of%20Wins"
+                className="bg-bush text-white font-bold text-sm md:text-body-regular leading-[1.6] px-6 py-2.5 rounded-md button-inset-shadow relative"
+                data-testid="button-email-us"
+              >
+                Email Us
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function OurMission() {
   return (
     <div className="min-h-screen flex flex-col">
       <NavbarCream />
       <main className="flex-1">
         <MissionHeroSection />
+        <WinsCtaSection />
       </main>
       <Footer />
     </div>
