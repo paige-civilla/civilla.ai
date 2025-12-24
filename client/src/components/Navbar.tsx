@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, FolderOpen, Trophy } from "lucide-react";
+import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, Trophy } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 import BrandMark from "@/components/BrandMark";
 
@@ -66,9 +66,6 @@ const menuSections = [
       { label: "Safety & Support", href: "/safety-support", icon: Heart },
       { label: "Legal & Compliance", href: "/legal-compliance", icon: FileText },
       { label: "Accessibility", href: "/accessibility", icon: Accessibility },
-    ],
-    comingSoon: [
-      { label: "Resources", icon: FolderOpen },
     ]
   },
   {
@@ -248,23 +245,6 @@ export default function Navbar() {
                           : link.label}
                       </Link>
                     ))}
-                    {section.comingSoon && (
-                      <div className="mt-3 pt-3 border-t border-black/10">
-                        {section.comingSoon.map((item) => (
-                          <span
-                            key={item.label}
-                            className="flex items-center justify-between py-2 text-[15px] text-neutral-900/50 cursor-not-allowed"
-                            aria-disabled="true"
-                          >
-                            <span className="flex items-center gap-3">
-                              <item.icon className="h-4 w-4 opacity-70" />
-                              {item.label}
-                            </span>
-                            <span className="text-[11px] opacity-60">Coming Soon</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
