@@ -1,0 +1,52 @@
+# REPLIT TASK: Reduce button clutter + tighten “Can / Cannot” copy + Title Case headings
+# IMPORTANT: Do NOT edit Home, How Civilla Works, Plans & Pricing, Footer, NavbarCream, or Navbar (green). Only edit:
+# - Legal Compliance page (route: /legal-compliance)
+# - Contact page (route: /contact)
+
+================================================================================
+PART A) LEGAL COMPLIANCE — make the “CAN / CANNOT” section shorter + less wordy
+================================================================================
+
+1) Open the Legal Compliance page file:
+- Look for one of these (use search):
+  - client/src/pages/LegalCompliance.tsx
+  - client/src/pages/LegalAndCompliance.tsx
+  - client/src/pages/legal-compliance.tsx
+  - or whichever file is wired to route "/legal-compliance"
+
+2) Find the section that currently renders “We can…” and “We cannot…”
+3) Replace ONLY that list content with the following (keep your existing layout/icons if you have them):
+
+--- REPLACE COPY WITH THIS ---
+
+Title (if you have one above the list):
+  "Helpful Examples"
+
+Bullets (shorter, still clear + legally safe):
+  ✅ "Explain legal terms and common court steps"
+  ✅ "Help you organize documents, timelines, and evidence"
+  ✅ "Show general info and options (not recommendations)"
+  🚫 "Tell you what to file, when to file, or what to say in court"
+  🚫 "Recommend a legal strategy or predict outcomes"
+  🚫 "Act as your attorney or contact the court for you"
+
+If there’s a one-sentence lead-in above the bullets, use:
+  "We provide education and organization support—so you can feel informed and prepared."
+
+(Leave the rest of the page intact.)
+
+================================================================================
+PART B) CONTACT PAGE — fewer buttons, clearer structure, Title Case headings
+================================================================================
+
+1) Open the Contact page file:
+- Look for one of these (use search):
+  - client/src/pages/Contact.tsx
+  - client/src/pages/contact.tsx
+  - or whichever file is wired to route "/contact"
+
+2) Replace the entire component with the code below.
+
+--------------------------------------------------------------------------------
+PASTE THIS WHOLE FILE CONTENT (replace the file completely)
+--------------------------------------------------------------------------------

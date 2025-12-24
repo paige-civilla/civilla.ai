@@ -50,7 +50,7 @@ const legalFaqs = [
 function HeroSection() {
   const jumpLinks = [
     { label: "Education Only", href: "#education" },
-    { label: "What We Can And Can't Do", href: "#boundaries" },
+    { label: "Helpful Examples", href: "#boundaries" },
     { label: "Privacy Basics", href: "#privacy" },
     { label: "Documents & Court Use", href: "#documents" },
     { label: "FAQ", href: "#faq" }
@@ -122,17 +122,15 @@ function EducationSection() {
 
 function BoundariesSection() {
   const canItems = [
-    "Explain legal terms in plain language",
-    "Show how the court process typically works",
-    "Help you organize documents, dates, and evidence",
-    "Share general information and options to consider"
+    "Explain legal terms and common court steps",
+    "Help you organize documents, timelines, and evidence",
+    "Show general info and options (not recommendations)"
   ];
 
   const cannotItems = [
     "Tell you what to file, when to file, or what to say in court",
-    "Recommend a specific legal strategy for your situation",
-    "Predict outcomes or guarantee results",
-    "Act as your lawyer or contact the court for you"
+    "Recommend a legal strategy or predict outcomes",
+    "Act as your attorney or contact the court for you"
   ];
 
   return (
@@ -147,10 +145,10 @@ function BoundariesSection() {
             <div className="flex flex-col gap-6 items-start w-full">
               <div className="flex flex-col gap-4 md:gap-6 items-start text-white w-full">
                 <h2 className="font-figtree font-bold text-[clamp(36px,5vw,60px)] leading-[1.2] tracking-[0.01em] w-full">
-                  What We Can And Can't Do
+                  Helpful Examples
                 </h2>
                 <p className="font-arimo text-lg md:text-xl leading-[1.6] w-full">
-                  <span className="italic font-medium">civilla</span> helps you understand and organize your case. We do not give legal advice or tell you what to do in your specific situation.
+                  We provide education and organization support—so you can feel informed and prepared.
                 </p>
               </div>
               <div className="flex flex-col gap-4 py-2 w-full">
