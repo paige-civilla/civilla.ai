@@ -63,7 +63,7 @@ function FoundersSection() {
               </div>
               
               <h2 className="cv-h font-heading font-bold text-heading-3-mobile md:text-[28px] tracking-[0.28px] leading-[1.2] text-white">
-                A Note from Our Founder
+                A Note From Our Founder
               </h2>
               
               <div className="flex flex-col gap-4 font-sans text-sm md:text-[16px] text-white/90 leading-[1.6]">
@@ -103,7 +103,7 @@ function FoundersSection() {
               </div>
               
               <h2 className="cv-h font-heading font-bold text-heading-3-mobile md:text-[28px] tracking-[0.28px] leading-[1.2] text-white">
-                A Note from Our Co-Founder
+                A Note From Our Co-Founder
               </h2>
               
               <div className="flex flex-col gap-4 font-sans text-sm md:text-[16px] text-white/90 leading-[1.6]">
