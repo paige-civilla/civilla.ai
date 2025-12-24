@@ -85,10 +85,10 @@ function FounderSection() {
                 — P.
               </p>
               <p className="cv-panel-body font-sans text-sm md:text-[16px] text-white/80 leading-[1.6] italic">
-                (Single mom. Survivor. Self-represented/pro se/litigant/whatever-its-called. Builder of things that should've existed long ago, because no one should have to figure this out alone.)
+                (Single mom. Survivor. Self-represented. Builder of things that should've existed long ago.)
               </p>
               <p className="cv-panel-body font-sans text-sm md:text-[18px] text-white leading-[1.6]">
-                P.S. When I say "I built it," I really mean <span className="font-bold">we</span> built this. I had the idea, and Bryan believed in me—and the idea.
+                P.S. When I say "I built it," I really mean <span className="font-bold">we</span> built this. I had the idea, and B. believed in me—and the idea.
               </p>
             </div>
           </div>
