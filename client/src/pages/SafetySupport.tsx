@@ -173,7 +173,7 @@ export default function SafetySupport() {
               <div className="w-full flex flex-col md:flex-row">
                 <div className="flex-1 border-t-2 border-bush px-6 py-4 flex flex-col gap-1 items-center text-center">
                   <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                    You are heard
+                    You Are Heard
                   </h3>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
                     <span className="italic font-medium">civilla</span> is non-judgmental and designed to validate your experience.
@@ -181,7 +181,7 @@ export default function SafetySupport() {
                 </div>
                 <div className="flex-1 px-6 py-4 flex flex-col gap-1 items-center text-center">
                   <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                    You are in control
+                    You Are In Control
                   </h3>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
                     Every feature is built around your choices and your pace.
@@ -189,7 +189,7 @@ export default function SafetySupport() {
                 </div>
                 <div className="flex-1 px-6 py-4 flex flex-col gap-1 items-center text-center">
                   <h3 className="font-figtree font-bold text-[26px] leading-[1.2] tracking-[0.01em] text-neutral-darkest">
-                    You are supported
+                    You Are Supported
                   </h3>
                   <p className="font-arimo text-lg leading-[1.6] text-neutral-darkest">
                     We provide education, resources, and a calm space to organize your case.
