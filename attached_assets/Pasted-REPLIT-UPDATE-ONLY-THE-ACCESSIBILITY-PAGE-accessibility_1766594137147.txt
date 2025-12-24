@@ -1,0 +1,98 @@
+REPLIT — UPDATE ONLY THE ACCESSIBILITY PAGE (/accessibility). 
+DO NOT edit: Home, How Civilla Works, Plans & Pricing, Footer, Navbar.tsx, NavbarCream.tsx, or any global nav styling. Keep existing site styling system (Tailwind/classes) intact.
+
+GOAL:
+This page should feel calm, simple, and trustworthy (not button-heavy), and it must NOT make risky claims like “WCAG compliant” unless we truly are. Use “we strive to meet WCAG 2.1 AA” / “designed with WCAG 2.1 AA in mind” language instead of guarantees.
+
+WHAT TO CHANGE (HIGH LEVEL):
+1) Replace the current “two-hero + lots of buttons” layout with:
+   - ONE clean hero section
+   - 3 clear sections below it:
+     A) “What we’re doing for accessibility” (short bullets)
+     B) “Request accommodations” (no extra CTA buttons; just a simple email link + optional small form)
+     C) “Report an accessibility issue” (a simple, accessible form)
+   - ONE primary CTA at the top is allowed, but it should scroll to the form (anchor link), not look like a big button cluster.
+   - Remove redundant “Learn More / Report / Contact / Request” button stacks.
+
+2) Keep content honest + specific:
+   - Say we *support* keyboard navigation, visible focus, screen-reader-friendly markup, readable typography, and reduced motion preferences.
+   - Do NOT say “we follow WCAG 2.1 AA standards” as a fact unless audited; use “we aim to follow / we strive to meet WCAG 2.1 AA”.
+
+3) Make sure the forms are accessible:
+   - Every input must have a visible <label> tied with htmlFor/id
+   - Use helpful hint text via aria-describedby
+   - Error states should be announced (aria-live) if you add validation
+   - Tab order must be natural, no custom div buttons
+   - Buttons must be actual <button> elements
+
+4) Submission behavior (NO new backend required):
+   - Use a mailto: link submission that opens the user’s email client with a prefilled subject/body.
+   - Subject examples:
+     - “Accessibility accommodation request”
+     - “Accessibility issue report”
+   - Body should include: name, email, page URL, device, browser, what happened, and what help they need.
+
+5) Optional but recommended (small, safe dev-only improvement):
+   - Add a short “Accessibility testing checklist” comment block at the bottom of the page (not user-facing), OR create a small markdown file in /docs explaining how we test:
+     - Keyboard-only navigation test
+     - VoiceOver (Mac/iOS) or NVDA (Windows) smoke test
+     - Lighthouse accessibility check
+     - Reduced motion test (prefers-reduced-motion)
+   - Do NOT add new UI buttons for this.
+
+IMPLEMENTATION DETAILS (DO THIS IN CODE):
+A) Locate the existing page component for /accessibility (likely client/src/pages/Accessibility.tsx or similar).
+   - Rewrite the JSX structure to match:
+
+   HERO:
+   Title: “Accessibility matters.”
+   Subtitle: “civilla is designed to be usable for as many people as possible—regardless of ability, device, or circumstance.”
+   Single link-style CTA (not a big button row): “Report an accessibility issue →” that anchors to #report
+
+   SECTION A — “What we’re doing”
+   Short paragraph:
+     “We design with accessibility in mind and continually improve based on real feedback.”
+   Bullets:
+     • Keyboard navigation support (tab, enter, escape where appropriate)
+     • Visible focus states
+     • Screen-reader-friendly structure (headings, labels, landmarks)
+     • Readable typography and contrast-aware styling
+     • Reduced-motion support when your device requests it
+   Add a small note:
+     “We strive to meet WCAG 2.1 AA guidelines. If something isn’t working for you, tell us—we’ll fix it.”
+
+   SECTION B — “Request accommodations”
+   Copy:
+     “If you need an accommodation to use civilla, email us and tell us what would help.”
+   Include ONE simple email link:
+     hello@civilla.ai (mailto with subject “Accessibility accommodation request”)
+   Optional: tiny 2–3 field form (Name, Email, What you need) that generates the mailto link on submit.
+
+   SECTION C — “Report an accessibility issue” (id="report")
+   Form fields:
+     - Name (optional)
+     - Email (required)
+     - Page you were on (optional; default to window.location.href if available)
+     - Device + browser (optional)
+     - What happened (required textarea)
+   Submit button text: “Email this report”
+   On submit: generate a mailto:hello@civilla.ai with a structured body.
+
+B) Remove these from the page UI:
+   - Extra “Learn More” buttons
+   - Duplicate “Contact” sections
+   - Any secondary CTA button rows that repeat the same action
+
+C) Style guidance:
+   - Keep existing Civilla aesthetic (same typography + spacing patterns used elsewhere)
+   - Use consistent section spacing, big readable headings, and calm whitespace
+   - Keep buttons minimal; prefer text links for secondary actions
+
+ACCEPTANCE CRITERIA (HOW I’LL VERIFY):
+- Only one obvious CTA near the top (link or single button) that jumps to the report form
+- No redundant button clusters
+- Forms are fully labeled + keyboard accessible
+- Language says “strive/aim” for WCAG 2.1 AA (not “we are compliant”)
+- No edits to navbars, footer, home, how-it-works, or plans pages
+
+Now implement these changes in the /accessibility page component and any small helper utilities you need (but keep scope limited to this page).
