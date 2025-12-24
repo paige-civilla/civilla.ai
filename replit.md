@@ -12,6 +12,9 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **Home page** (`client/src/pages/Home.tsx`) - LOCKED
 - **How Civilla Works page** (`client/src/pages/HowCivillaWorks.tsx`) - LOCKED
 - **Our Mission page** (`client/src/pages/OurMission.tsx`) - LOCKED
+- **Meet The Founders page** (`client/src/pages/MeetTheFounders.tsx`) - LOCKED
+- **Wall Of Wins page** (`client/src/pages/WallOfWins.tsx`) - LOCKED
+- **FAQ page** (`client/src/pages/FAQ.tsx`) - LOCKED
 
 ## Locked Components (NO EDITS ALLOWED)
 - **Footer** (`client/src/components/Footer.tsx`) - LOCKED
