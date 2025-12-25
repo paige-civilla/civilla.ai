@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual, createHash } from "crypto";
 import { promisify } from "util";
 
 const scryptAsync = promisify(scrypt);
@@ -25,8 +25,7 @@ export function generateToken(): string {
 }
 
 export function hashToken(token: string): string {
-  const crypto = require("crypto");
-  return crypto.createHash("sha256").update(token).digest("hex");
+  return createHash("sha256").update(token).digest("hex");
 }
 
 declare module "express-session" {
