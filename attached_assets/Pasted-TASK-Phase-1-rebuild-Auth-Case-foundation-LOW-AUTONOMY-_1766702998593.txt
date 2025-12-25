@@ -1,0 +1,44 @@
+TASK: Phase 1 rebuild — Auth + Case foundation (LOW AUTONOMY, NO UI REDESIGN)
+
+CONSTRAINTS:
+- Do NOT change any existing Figma-matched UI layout/styles/copy except adding minimal auth screens/components needed to function.
+- Do NOT add extra features (Lexi, uploads, timeline, tasks, payments) in this phase.
+- Backend + DB only: implement authentication + case creation/listing foundation.
+- Keep routing via wouter. Internal nav must use <Link>.
+- Produce working end-to-end flows with real persistence (Postgres).
+
+GOALS (deliverables):
+1) AUTH supports BOTH:
+   A) Email + Password login/registration
+   B) Magic link login (email link, token expires)
+2) USERS can create and view cases with enforcement:
+   - Default users.casesAllowed = 1
+   - cases table supports multiple cases per user
+   - Block case creation if user has reached limit
+3) Data model + migrations:
+   - users: id, email(unique), passwordHash(nullable), casesAllowed(int default 1), createdAt, updatedAt
+   - auth_magic_links: id, userId, tokenHash, expiresAt, usedAt, createdAt
+   - cases: id, userId, title, state, county (nullable), caseType (nullable), createdAt, updatedAt
+4) API:
+   - POST /api/auth/register (email + password)
+   - POST /api/auth/login (email + password)
+   - POST /api/auth/magic-link/request (email) -> sends link
+   - GET /api/auth/magic-link/verify?token=... -> creates session and redirects into app
+   - POST /api/auth/logout
+   - GET /api/auth/me
+   - GET /api/cases
+   - POST /api/cases (enforce casesAllowed)
+5) Sessions:
+   - Secure cookie-based session; httpOnly; sameSite=lax; secure in production.
+6) Email:
+   - Implement a provider-agnostic mail sender interface.
+   - If no provider env vars exist, use a safe DEV mode that logs the link to the server console ONLY.
+7) UI (minimal):
+   - Add /login and /register page (or a combined /login that includes magic link request + password login).
+   - After login, route to /app (or existing dashboard route if already present).
+   - Add a simple /app/cases screen to create and list cases.
+
+OUTPUT REQUIREMENTS:
+- List exactly which files you created/edited.
+- Provide any required env vars clearly.
+- Confirm flows manually: register, login, magic link, logout, create case, block 2nd case when limit=1.
