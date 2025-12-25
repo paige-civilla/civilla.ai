@@ -51,3 +51,43 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - Pro: $29.99/mo or $299/yr (Most Popular)
 - Premium: $49.99/mo or $499/yr
 - Yearly badge: "2 Mo. Free"
+
+## Backend Authentication System
+
+### Database Tables
+- `users`: User accounts with email, passwordHash (nullable for OAuth-only users), casesAllowed
+- `auth_magic_links`: Magic link tokens for passwordless login
+- `auth_identities`: OAuth provider identities (Google, Apple) linked to users
+- `cases`: User-owned cases with title, state, county, caseType
+
+### Auth Methods
+1. **Email/Password**: Traditional registration and login with scrypt hashing
+2. **Magic Links**: Passwordless login via email (DEV mode logs to console if SMTP not configured)
+3. **Google OAuth**: PKCE flow with state validation
+4. **Apple OAuth**: form_post response mode with id_token
+
+### Environment Variables
+Required:
+- `DATABASE_URL`: PostgreSQL connection string (auto-created)
+- `SESSION_SECRET`: Session signing secret
+
+Optional (for OAuth):
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL`
+- `APPLE_CLIENT_ID`, `APPLE_REDIRECT_URL`
+
+Optional (for real email):
+- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASS`, `MAIL_FROM`
+
+### API Routes
+- `POST /api/auth/register`: Email/password registration
+- `POST /api/auth/login`: Email/password login
+- `POST /api/auth/magic-link/request`: Request magic link
+- `GET /api/auth/magic-link/verify`: Verify magic link token
+- `GET /api/auth/google/start`: Start Google OAuth flow
+- `GET /api/auth/google/callback`: Google OAuth callback
+- `GET /api/auth/apple/start`: Start Apple OAuth flow
+- `POST /api/auth/apple/callback`: Apple OAuth callback (form_post)
+- `GET /api/auth/me`: Get current user
+- `POST /api/auth/logout`: End session
+- `GET /api/cases`: List user's cases
+- `POST /api/cases`: Create new case (respects casesAllowed limit)
