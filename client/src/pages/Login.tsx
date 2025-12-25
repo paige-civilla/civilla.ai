@@ -78,12 +78,17 @@ export default function Login() {
     <div className="flex flex-col min-h-screen bg-cream">
       <NavbarCream />
       
-      <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-20">
-        <div className="flex flex-col items-center max-w-container w-full">
-          <div className="flex flex-col gap-6 items-center max-w-[400px] w-full">
-            <h1 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 text-neutral-darkest text-center">
-              Login
-            </h1>
+      <section className="flex-1 w-full flex flex-col items-center justify-center px-5 py-10 md:py-16">
+        <div className="max-w-[420px] w-full">
+          <div className="rounded-2xl border border-neutral-darkest/15 bg-white/70 backdrop-blur-sm shadow-sm p-6 md:p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-[28px] md:text-[32px] font-figtree font-semibold tracking-tight text-neutral-darkest">
+                Login
+              </h1>
+              <p className="text-[14px] leading-6 text-neutral-darkest/70">
+                Welcome back to civilla
+              </p>
+            </div>
 
             <div className="flex gap-2 w-full">
               <button
@@ -129,7 +134,7 @@ export default function Login() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                    className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                     required
                     data-testid="input-email"
                   />
@@ -143,7 +148,7 @@ export default function Login() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                    className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                     required
                     data-testid="input-password"
                   />
@@ -151,7 +156,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="w-full bg-bush text-white font-bold text-sm py-3 rounded-md button-inset-shadow disabled:opacity-50"
+                  className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
                   data-testid="button-login"
                 >
                   {loginMutation.isPending ? "Logging in..." : "Login"}
@@ -176,7 +181,7 @@ export default function Login() {
                         type="email"
                         value={magicLinkEmail}
                         onChange={(e) => setMagicLinkEmail(e.target.value)}
-                        className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                        className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                         required
                         data-testid="input-magic-email"
                       />
@@ -184,7 +189,7 @@ export default function Login() {
                     <button
                       type="submit"
                       disabled={magicLinkMutation.isPending}
-                      className="w-full bg-bush text-white font-bold text-sm py-3 rounded-md button-inset-shadow disabled:opacity-50"
+                      className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
                       data-testid="button-magic-link"
                     >
                       {magicLinkMutation.isPending ? "Sending..." : "Send Magic Link"}
@@ -195,9 +200,9 @@ export default function Login() {
             )}
 
             <div className="w-full flex items-center gap-3">
-              <div className="flex-1 h-px bg-neutral-darkest/20" />
-              <span className="font-sans text-xs text-neutral-darkest/50">or</span>
-              <div className="flex-1 h-px bg-neutral-darkest/20" />
+              <div className="flex-1 h-px bg-neutral-darkest/15" />
+              <span className="text-[12px] uppercase tracking-wide text-neutral-darkest/50">or continue with</span>
+              <div className="flex-1 h-px bg-neutral-darkest/15" />
             </div>
 
             <div className="flex flex-col gap-3 w-full">
@@ -205,7 +210,7 @@ export default function Login() {
                 {oauthStatus?.google ? (
                   <a
                     href="/api/auth/google/start"
-                    className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/5 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm min-h-11 rounded-md hover:bg-neutral-darkest/5 transition-colors"
                     data-testid="button-google-login"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -220,7 +225,7 @@ export default function Login() {
                   <div className="flex flex-col gap-0.5">
                     <button
                       disabled
-                      className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest/40 font-sans font-medium text-sm py-2.5 rounded-md cursor-not-allowed opacity-50"
+                      className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest/40 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed opacity-50"
                       data-testid="button-google-login"
                     >
                       <svg className="w-5 h-5 opacity-50" viewBox="0 0 24 24">
@@ -239,7 +244,7 @@ export default function Login() {
                 {oauthStatus?.apple ? (
                   <a
                     href="/api/auth/apple/start"
-                    className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/90 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm min-h-11 rounded-md hover:bg-neutral-darkest/90 transition-colors"
                     data-testid="button-apple-login"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -251,7 +256,7 @@ export default function Login() {
                   <div className="flex flex-col gap-0.5">
                     <button
                       disabled
-                      className="w-full flex items-center justify-center gap-2 bg-neutral-darkest/50 text-white/70 font-sans font-medium text-sm py-2.5 rounded-md cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-2 bg-neutral-darkest/50 text-white/70 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed"
                       data-testid="button-apple-login"
                     >
                       <svg className="w-5 h-5 opacity-70" viewBox="0 0 24 24" fill="currentColor">
@@ -264,22 +269,22 @@ export default function Login() {
                 )}
               </div>
             </div>
-
-            <p className="font-sans text-sm text-neutral-darkest/70 text-center">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-bush font-medium underline" data-testid="link-register">
-                Register
-              </Link>
-            </p>
           </div>
+
+          <p className="font-sans text-sm text-neutral-darkest/70 text-center mt-6">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-bush hover:underline" data-testid="link-register">
+              Create account
+            </Link>
+          </p>
         </div>
       </section>
 
-      <main className="flex-1 flex items-center justify-center px-5 py-12">
+      <div className="flex items-center justify-center px-5 py-8">
         <p className="font-sans text-[10px] text-neutral-darkest/60 text-center italic">
           *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
         </p>
-      </main>
+      </div>
       
       <Footer />
     </div>

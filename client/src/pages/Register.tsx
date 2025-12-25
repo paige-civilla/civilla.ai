@@ -68,12 +68,17 @@ export default function Register() {
     <div className="flex flex-col min-h-screen bg-cream">
       <NavbarCream />
       
-      <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-20">
-        <div className="flex flex-col items-center max-w-container w-full">
-          <div className="flex flex-col gap-6 items-center max-w-[400px] w-full">
-            <h1 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 text-neutral-darkest text-center">
-              Create Account
-            </h1>
+      <section className="flex-1 w-full flex flex-col items-center justify-center px-5 py-10 md:py-16">
+        <div className="max-w-[420px] w-full">
+          <div className="rounded-2xl border border-neutral-darkest/15 bg-white/70 backdrop-blur-sm shadow-sm p-6 md:p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-[28px] md:text-[32px] font-figtree font-semibold tracking-tight text-neutral-darkest">
+                Create Account
+              </h1>
+              <p className="text-[14px] leading-6 text-neutral-darkest/70">
+                Join civilla today
+              </p>
+            </div>
 
             {error && (
               <div className="w-full p-4 bg-destructive/10 border border-destructive/30 rounded-md">
@@ -91,7 +96,7 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                   required
                   data-testid="input-email"
                 />
@@ -105,7 +110,7 @@ export default function Register() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                   required
                   minLength={8}
                   data-testid="input-password"
@@ -121,7 +126,7 @@ export default function Register() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                   required
                   data-testid="input-confirm-password"
                 />
@@ -129,7 +134,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={registerMutation.isPending}
-                className="w-full bg-bush text-white font-bold text-sm py-3 rounded-md button-inset-shadow disabled:opacity-50"
+                className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
                 data-testid="button-register"
               >
                 {registerMutation.isPending ? "Creating account..." : "Create Account"}
@@ -137,9 +142,9 @@ export default function Register() {
             </form>
 
             <div className="w-full flex items-center gap-3">
-              <div className="flex-1 h-px bg-neutral-darkest/20" />
-              <span className="font-sans text-xs text-neutral-darkest/50">or</span>
-              <div className="flex-1 h-px bg-neutral-darkest/20" />
+              <div className="flex-1 h-px bg-neutral-darkest/15" />
+              <span className="text-[12px] uppercase tracking-wide text-neutral-darkest/50">or continue with</span>
+              <div className="flex-1 h-px bg-neutral-darkest/15" />
             </div>
 
             <div className="flex flex-col gap-3 w-full">
@@ -147,7 +152,7 @@ export default function Register() {
                 {oauthStatus?.google ? (
                   <a
                     href="/api/auth/google/start"
-                    className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/5 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm min-h-11 rounded-md hover:bg-neutral-darkest/5 transition-colors"
                     data-testid="button-google-register"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -162,7 +167,7 @@ export default function Register() {
                   <div className="flex flex-col gap-0.5">
                     <button
                       disabled
-                      className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest/40 font-sans font-medium text-sm py-2.5 rounded-md cursor-not-allowed opacity-50"
+                      className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest/40 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed opacity-50"
                       data-testid="button-google-register"
                     >
                       <svg className="w-5 h-5 opacity-50" viewBox="0 0 24 24">
@@ -181,7 +186,7 @@ export default function Register() {
                 {oauthStatus?.apple ? (
                   <a
                     href="/api/auth/apple/start"
-                    className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/90 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm min-h-11 rounded-md hover:bg-neutral-darkest/90 transition-colors"
                     data-testid="button-apple-register"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -193,7 +198,7 @@ export default function Register() {
                   <div className="flex flex-col gap-0.5">
                     <button
                       disabled
-                      className="w-full flex items-center justify-center gap-2 bg-neutral-darkest/50 text-white/70 font-sans font-medium text-sm py-2.5 rounded-md cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-2 bg-neutral-darkest/50 text-white/70 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed"
                       data-testid="button-apple-register"
                     >
                       <svg className="w-5 h-5 opacity-70" viewBox="0 0 24 24" fill="currentColor">
@@ -206,22 +211,22 @@ export default function Register() {
                 )}
               </div>
             </div>
-
-            <p className="font-sans text-sm text-neutral-darkest/70 text-center">
-              Already have an account?{" "}
-              <Link href="/login" className="text-bush font-medium underline" data-testid="link-login">
-                Login
-              </Link>
-            </p>
           </div>
+
+          <p className="font-sans text-sm text-neutral-darkest/70 text-center mt-6">
+            Already have an account?{" "}
+            <Link href="/login" className="text-bush hover:underline" data-testid="link-login">
+              Login
+            </Link>
+          </p>
         </div>
       </section>
 
-      <main className="flex-1 flex items-center justify-center px-5 py-12">
+      <div className="flex items-center justify-center px-5 py-8">
         <p className="font-sans text-[10px] text-neutral-darkest/60 text-center italic">
           *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
         </p>
-      </main>
+      </div>
       
       <Footer />
     </div>
