@@ -16,10 +16,12 @@ import Accessibility from "@/pages/Accessibility";
 import Contact from "@/pages/Contact";
 import TermsOfService from "@/pages/TermsOfService";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import AdminLogin from "@/pages/AdminLogin";
 import Careers from "@/pages/Careers";
 import WallOfWins from "@/pages/WallOfWins";
 import FAQPage from "@/pages/FAQ";
+import AppCases from "@/pages/AppCases";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,10 +41,12 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/careers" component={Careers} />
       <Route path="/wall-of-wins" component={WallOfWins} />
       <Route path="/faq" component={FAQPage} />
+      <Route path="/app/cases" component={AppCases} />
       <Route component={NotFound} />
     </Switch>
   );
