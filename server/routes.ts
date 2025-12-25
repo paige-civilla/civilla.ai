@@ -1,21 +1,210 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { hashPassword, comparePasswords, generateToken, hashToken, requireAuth } from "./auth";
+import { mailProvider } from "./mail";
+import { insertCaseSchema } from "@shared/schema";
+import { z } from "zod";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Health check endpoint for monitoring and routing verification
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: new Date().toISOString() });
   });
 
-  // put application routes here
-  // prefix all routes with /api
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      const passwordHash = await hashPassword(password);
+      const user = await storage.createUser({ email, passwordHash });
+
+      req.session.userId = user.id;
+      
+      res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+    } catch (error) {
+      console.error("Register error:", error);
+      res.status(500).json({ error: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const isValid = await comparePasswords(password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      req.session.userId = user.id;
+
+      res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/magic-link/request", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      let user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        user = await storage.createUser({ email, passwordHash: null });
+      }
+
+      const token = generateToken();
+      const tokenHash = hashToken(token);
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await storage.createMagicLink({
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      });
+
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      await mailProvider.sendMagicLink(email, token, baseUrl);
+
+      res.json({ message: "Magic link sent to your email" });
+    } catch (error) {
+      console.error("Magic link request error:", error);
+      res.status(500).json({ error: "Failed to send magic link" });
+    }
+  });
+
+  app.get("/api/auth/magic-link/verify", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== "string") {
+        return res.status(400).json({ error: "Token is required" });
+      }
+
+      const tokenHash = hashToken(token);
+      const magicLink = await storage.getMagicLinkByTokenHash(tokenHash);
+
+      if (!magicLink) {
+        return res.status(400).json({ error: "Invalid or expired link" });
+      }
+
+      if (magicLink.usedAt) {
+        return res.status(400).json({ error: "Link has already been used" });
+      }
+
+      if (new Date() > magicLink.expiresAt) {
+        return res.status(400).json({ error: "Link has expired" });
+      }
+
+      await storage.markMagicLinkUsed(magicLink.id);
+
+      const user = await storage.getUser(magicLink.userId);
+      if (!user) {
+        return res.status(400).json({ error: "User not found" });
+      }
+
+      req.session.userId = user.id;
+
+      res.redirect("/app/cases");
+    } catch (error) {
+      console.error("Magic link verify error:", error);
+      res.status(500).json({ error: "Verification failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out" });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = await storage.getUser(req.session.userId);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+  });
+
+  app.get("/api/cases", requireAuth, async (req, res) => {
+    try {
+      const cases = await storage.getCasesByUserId(req.session.userId!);
+      res.json({ cases });
+    } catch (error) {
+      console.error("Get cases error:", error);
+      res.status(500).json({ error: "Failed to fetch cases" });
+    }
+  });
+
+  app.post("/api/cases", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const caseCount = await storage.getCaseCountByUserId(userId);
+      if (caseCount >= user.casesAllowed) {
+        return res.status(403).json({ 
+          error: "Case limit reached", 
+          message: `You can only create ${user.casesAllowed} case(s). Upgrade to create more.` 
+        });
+      }
+
+      const parseResult = insertCaseSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid case data", details: parseResult.error.errors });
+      }
+
+      const newCase = await storage.createCase(userId, parseResult.data);
+      res.status(201).json({ case: newCase });
+    } catch (error) {
+      console.error("Create case error:", error);
+      res.status(500).json({ error: "Failed to create case" });
+    }
+  });
 
   return httpServer;
 }

@@ -1,0 +1,67 @@
+ADD-ON SCOPE: Social login (Google + Apple) AFTER email/password + magic-link base auth is working.
+
+AUTONOMY: LOW
+Do not redesign any pages. Do not change Figma marketing pages.
+Only add minimal UI buttons on /login and /register and implement backend endpoints.
+
+GOOGLE OAUTH REQUIREMENTS
+- Use OAuth 2.0 Authorization Code flow (not implicit).
+- Create endpoints:
+  - GET  /api/auth/google/start
+  - GET  /api/auth/google/callback
+- On callback:
+  - Verify ID token (or exchange code for tokens and verify)
+  - Get stable provider user id (sub) + email
+  - Upsert user by email (if user exists) OR create new user
+  - Store provider link in DB (see below)
+  - Start session and redirect to /app/cases
+
+APPLE OAUTH REQUIREMENTS
+- Implement Sign in with Apple using authorization code flow.
+- Endpoints:
+  - GET  /api/auth/apple/start
+  - POST /api/auth/apple/callback (Apple often posts)
+- Verify identity token (JWT) using Apple keys
+- Capture stable provider user id (sub) + email (may be only on first consent)
+- Upsert user and start session then redirect to /app/cases
+
+DATABASE CHANGE (REQUIRED)
+Add a table:
+auth_identities:
+- id
+- userId (FK users)
+- provider ('google' | 'apple')
+- providerUserId (string)  // the provider “sub”
+- emailAtProvider (nullable)
+- createdAt
+Unique constraint: (provider, providerUserId)
+
+UI CHANGE (MINIMAL)
+On /login and /register:
+- Add two buttons: "Continue with Google" and "Continue with Apple"
+- Buttons only link to /api/auth/google/start and /api/auth/apple/start
+- No other UI changes.
+
+ENV VARS (LIST EXACTLY)
+Google:
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+- GOOGLE_REDIRECT_URL
+
+Apple:
+- APPLE_CLIENT_ID
+- APPLE_TEAM_ID
+- APPLE_KEY_ID
+- APPLE_PRIVATE_KEY  (or file path)
+- APPLE_REDIRECT_URL
+
+SECURITY
+- Use state parameter + PKCE where appropriate
+- Only allow redirect URLs we control
+- Do not trust email alone; always store providerUserId
+- If provider email matches an existing user, link identity to that user
+
+DELIVERABLE
+- Files changed list
+- Working manual test checklist for Google + Apple flows
+- Confirm no changes to marketing pages/layout
