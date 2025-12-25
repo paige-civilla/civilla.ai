@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import type { Case } from "@shared/schema";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,37 @@ export default function Login() {
   const [error, setError] = useState("");
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [activeTab, setActiveTab] = useState<"password" | "magic">("password");
+  const [redirecting, setRedirecting] = useState(false);
+
+  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+    queryKey: ["/api/auth/me"],
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (authData?.user && !redirecting) {
+      handlePostLoginRedirect();
+    }
+  }, [authData]);
+
+  const handlePostLoginRedirect = async () => {
+    setRedirecting(true);
+    try {
+      const res = await fetch("/api/cases", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.cases && data.cases.length > 0) {
+          setLocation("/app/dashboard");
+        } else {
+          setLocation("/app/cases");
+        }
+      } else {
+        setLocation("/app/cases");
+      }
+    } catch {
+      setLocation("/app/cases");
+    }
+  };
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
@@ -20,7 +52,8 @@ export default function Login() {
       return res.json();
     },
     onSuccess: () => {
-      setLocation("/app/cases");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      handlePostLoginRedirect();
     },
     onError: (err: Error) => {
       setError(err.message || "Login failed");
@@ -67,10 +100,10 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setActiveTab("password")}
-                className={`flex-1 py-2 text-sm font-medium rounded-md ${
+                className={`flex-1 py-2.5 font-sans text-sm font-medium rounded-md transition-colors ${
                   activeTab === "password"
                     ? "bg-bush text-white"
-                    : "bg-white text-neutral-darkest border border-neutral-darkest/20"
+                    : "bg-white text-neutral-darkest border border-neutral-darkest/20 hover:bg-neutral-darkest/5"
                 }`}
                 data-testid="tab-password"
               >
@@ -79,10 +112,10 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setActiveTab("magic")}
-                className={`flex-1 py-2 text-sm font-medium rounded-md ${
+                className={`flex-1 py-2.5 font-sans text-sm font-medium rounded-md transition-colors ${
                   activeTab === "magic"
                     ? "bg-bush text-white"
-                    : "bg-white text-neutral-darkest border border-neutral-darkest/20"
+                    : "bg-white text-neutral-darkest border border-neutral-darkest/20 hover:bg-neutral-darkest/5"
                 }`}
                 data-testid="tab-magic-link"
               >
@@ -91,15 +124,15 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="w-full p-3 bg-red-100 border border-red-300 rounded-md text-red-700 text-sm">
-                {error}
+              <div className="w-full p-4 bg-destructive/10 border border-destructive/30 rounded-md">
+                <p className="font-sans text-sm text-destructive">{error}</p>
               </div>
             )}
 
             {activeTab === "password" ? (
               <form onSubmit={handlePasswordLogin} className="flex flex-col gap-4 w-full">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="email" className="text-sm font-medium text-neutral-darkest">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="email" className="font-sans text-sm font-medium text-neutral-darkest">
                     Email
                   </label>
                   <input
@@ -107,13 +140,13 @@ export default function Login() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-darkest/20 rounded-md text-neutral-darkest"
+                    className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
                     required
                     data-testid="input-email"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="password" className="text-sm font-medium text-neutral-darkest">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="password" className="font-sans text-sm font-medium text-neutral-darkest">
                     Password
                   </label>
                   <input
@@ -121,7 +154,7 @@ export default function Login() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-darkest/20 rounded-md text-neutral-darkest"
+                    className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
                     required
                     data-testid="input-password"
                   />
@@ -129,7 +162,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="w-full bg-bush text-white font-bold text-sm py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
+                  className="w-full bg-bush text-white font-bold text-sm py-3 rounded-md button-inset-shadow disabled:opacity-50"
                   data-testid="button-login"
                 >
                   {loginMutation.isPending ? "Logging in..." : "Login"}
@@ -138,13 +171,15 @@ export default function Login() {
             ) : (
               <form onSubmit={handleMagicLink} className="flex flex-col gap-4 w-full">
                 {magicLinkSent ? (
-                  <div className="w-full p-4 bg-green-100 border border-green-300 rounded-md text-green-700 text-sm text-center">
-                    Check your email for a magic link to sign in.
+                  <div className="w-full p-4 bg-bush/10 border border-bush/30 rounded-md">
+                    <p className="font-sans text-sm text-bush text-center">
+                      Check your email for a magic link to sign in.
+                    </p>
                   </div>
                 ) : (
                   <>
-                    <div className="flex flex-col gap-1">
-                      <label htmlFor="magic-email" className="text-sm font-medium text-neutral-darkest">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="magic-email" className="font-sans text-sm font-medium text-neutral-darkest">
                         Email
                       </label>
                       <input
@@ -152,7 +187,7 @@ export default function Login() {
                         type="email"
                         value={magicLinkEmail}
                         onChange={(e) => setMagicLinkEmail(e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-darkest/20 rounded-md text-neutral-darkest"
+                        className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
                         required
                         data-testid="input-magic-email"
                       />
@@ -160,7 +195,7 @@ export default function Login() {
                     <button
                       type="submit"
                       disabled={magicLinkMutation.isPending}
-                      className="w-full bg-bush text-white font-bold text-sm py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
+                      className="w-full bg-bush text-white font-bold text-sm py-3 rounded-md button-inset-shadow disabled:opacity-50"
                       data-testid="button-magic-link"
                     >
                       {magicLinkMutation.isPending ? "Sending..." : "Send Magic Link"}
@@ -172,14 +207,14 @@ export default function Login() {
 
             <div className="w-full flex items-center gap-3">
               <div className="flex-1 h-px bg-neutral-darkest/20" />
-              <span className="text-xs text-neutral-darkest/50">or</span>
+              <span className="font-sans text-xs text-neutral-darkest/50">or</span>
               <div className="flex-1 h-px bg-neutral-darkest/20" />
             </div>
 
             <div className="flex flex-col gap-3 w-full">
               <a
                 href="/api/auth/google/start"
-                className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-medium text-sm py-2.5 rounded-md"
+                className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/5 transition-colors"
                 data-testid="button-google-login"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -192,7 +227,7 @@ export default function Login() {
               </a>
               <a
                 href="/api/auth/apple/start"
-                className="w-full flex items-center justify-center gap-2 bg-black text-white font-medium text-sm py-2.5 rounded-md"
+                className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/90 transition-colors"
                 data-testid="button-apple-login"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -202,7 +237,7 @@ export default function Login() {
               </a>
             </div>
 
-            <p className="text-sm text-neutral-darkest/70 text-center">
+            <p className="font-sans text-sm text-neutral-darkest/70 text-center">
               Don't have an account?{" "}
               <Link href="/register" className="text-bush font-medium underline" data-testid="link-register">
                 Register

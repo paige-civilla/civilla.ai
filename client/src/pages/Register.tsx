@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
@@ -11,6 +11,37 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [redirecting, setRedirecting] = useState(false);
+
+  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+    queryKey: ["/api/auth/me"],
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (authData?.user && !redirecting) {
+      handlePostLoginRedirect();
+    }
+  }, [authData]);
+
+  const handlePostLoginRedirect = async () => {
+    setRedirecting(true);
+    try {
+      const res = await fetch("/api/cases", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.cases && data.cases.length > 0) {
+          setLocation("/app/dashboard");
+        } else {
+          setLocation("/app/cases");
+        }
+      } else {
+        setLocation("/app/cases");
+      }
+    } catch {
+      setLocation("/app/cases");
+    }
+  };
 
   const registerMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
@@ -18,7 +49,8 @@ export default function Register() {
       return res.json();
     },
     onSuccess: () => {
-      setLocation("/app/cases");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      handlePostLoginRedirect();
     },
     onError: (err: Error) => {
       setError(err.message || "Registration failed");
@@ -54,14 +86,14 @@ export default function Register() {
             </h1>
 
             {error && (
-              <div className="w-full p-3 bg-red-100 border border-red-300 rounded-md text-red-700 text-sm">
-                {error}
+              <div className="w-full p-4 bg-destructive/10 border border-destructive/30 rounded-md">
+                <p className="font-sans text-sm text-destructive">{error}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
-              <div className="flex flex-col gap-1">
-                <label htmlFor="email" className="text-sm font-medium text-neutral-darkest">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="email" className="font-sans text-sm font-medium text-neutral-darkest">
                   Email
                 </label>
                 <input
@@ -69,13 +101,13 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-darkest/20 rounded-md text-neutral-darkest"
+                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
                   required
                   data-testid="input-email"
                 />
               </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor="password" className="text-sm font-medium text-neutral-darkest">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="password" className="font-sans text-sm font-medium text-neutral-darkest">
                   Password
                 </label>
                 <input
@@ -83,15 +115,15 @@ export default function Register() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-darkest/20 rounded-md text-neutral-darkest"
+                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
                   required
                   minLength={8}
                   data-testid="input-password"
                 />
-                <span className="text-xs text-neutral-darkest/60">At least 8 characters</span>
+                <span className="font-sans text-xs text-neutral-darkest/60">At least 8 characters</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor="confirm-password" className="text-sm font-medium text-neutral-darkest">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="confirm-password" className="font-sans text-sm font-medium text-neutral-darkest">
                   Confirm Password
                 </label>
                 <input
@@ -99,7 +131,7 @@ export default function Register() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-darkest/20 rounded-md text-neutral-darkest"
+                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
                   required
                   data-testid="input-confirm-password"
                 />
@@ -107,7 +139,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={registerMutation.isPending}
-                className="w-full bg-bush text-white font-bold text-sm py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
+                className="w-full bg-bush text-white font-bold text-sm py-3 rounded-md button-inset-shadow disabled:opacity-50"
                 data-testid="button-register"
               >
                 {registerMutation.isPending ? "Creating account..." : "Create Account"}
@@ -116,14 +148,14 @@ export default function Register() {
 
             <div className="w-full flex items-center gap-3">
               <div className="flex-1 h-px bg-neutral-darkest/20" />
-              <span className="text-xs text-neutral-darkest/50">or</span>
+              <span className="font-sans text-xs text-neutral-darkest/50">or</span>
               <div className="flex-1 h-px bg-neutral-darkest/20" />
             </div>
 
             <div className="flex flex-col gap-3 w-full">
               <a
                 href="/api/auth/google/start"
-                className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-medium text-sm py-2.5 rounded-md"
+                className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/5 transition-colors"
                 data-testid="button-google-register"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -136,7 +168,7 @@ export default function Register() {
               </a>
               <a
                 href="/api/auth/apple/start"
-                className="w-full flex items-center justify-center gap-2 bg-black text-white font-medium text-sm py-2.5 rounded-md"
+                className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm py-2.5 rounded-md hover:bg-neutral-darkest/90 transition-colors"
                 data-testid="button-apple-register"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -146,7 +178,7 @@ export default function Register() {
               </a>
             </div>
 
-            <p className="text-sm text-neutral-darkest/70 text-center">
+            <p className="font-sans text-sm text-neutral-darkest/70 text-center">
               Already have an account?{" "}
               <Link href="/login" className="text-bush font-medium underline" data-testid="link-login">
                 Login

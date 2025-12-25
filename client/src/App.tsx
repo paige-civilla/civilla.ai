@@ -22,6 +22,7 @@ import Careers from "@/pages/Careers";
 import WallOfWins from "@/pages/WallOfWins";
 import FAQPage from "@/pages/FAQ";
 import AppCases from "@/pages/AppCases";
+import AppDashboard from "@/pages/AppDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/wall-of-wins" component={WallOfWins} />
       <Route path="/faq" component={FAQPage} />
       <Route path="/app/cases" component={AppCases} />
+      <Route path="/app/dashboard" component={AppDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

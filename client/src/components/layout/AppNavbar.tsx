@@ -1,0 +1,227 @@
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "wouter";
+import { Menu, X, Moon, Sun, LogOut, Briefcase, LayoutDashboard, Settings, User } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import logoColor from "@assets/noBgColor-2_1766294100143.png";
+
+function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    document.body.setAttribute("data-civilla-fixed-nav", "true");
+
+    const applyHeightAndBg = () => {
+      const h = shell.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--civilla-nav-h", `${Math.ceil(h)}px`);
+
+      const innerNav = shell.querySelector("nav") as HTMLElement | null;
+      if (innerNav) {
+        const bg = window.getComputedStyle(innerNav).backgroundColor;
+        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+          shell.style.backgroundColor = bg;
+        } else {
+          shell.style.backgroundColor = "";
+        }
+      }
+    };
+
+    applyHeightAndBg();
+    const ro = new ResizeObserver(() => applyHeightAndBg());
+    ro.observe(shell);
+    window.addEventListener("resize", applyHeightAndBg);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", applyHeightAndBg);
+      document.body.removeAttribute("data-civilla-fixed-nav");
+    };
+  }, [shellRef]);
+}
+
+const menuLinks = [
+  { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { label: "Cases", href: "/app/cases", icon: Briefcase },
+  { label: "Settings", href: "/app/settings", icon: Settings },
+];
+
+export default function AppNavbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [location, setLocation] = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  useFixedNavShell(shellRef);
+
+  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+    queryKey: ["/api/auth/me"],
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout", {});
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      setLocation("/login");
+    },
+  });
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    if (!isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
+  const handleQuickExit = () => {
+    const safePages = [
+      "https://en.wikipedia.org/wiki/Coffee#Preparation",
+      "https://en.wikipedia.org/wiki/Tea#Preparation",
+      "https://en.wikipedia.org/wiki/Houseplant#Care",
+    ];
+    const destination = safePages[Math.floor(Math.random() * safePages.length)];
+    window.location.replace(destination);
+  };
+
+  return (
+    <div ref={shellRef} className="civilla-nav-shell">
+      <nav className="bg-cream w-full relative" data-testid="navbar-app">
+        <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
+          <div className="flex items-center justify-between gap-4 w-full max-w-container">
+            <div className="flex items-center">
+              <Link href="/app/dashboard" className="relative h-7 w-auto" data-testid="link-logo-app">
+                <img 
+                  src={logoColor} 
+                  alt="civilla.ai" 
+                  className="h-full w-auto object-contain"
+                />
+              </Link>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <button 
+                onClick={toggleDarkMode}
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
+                aria-label="Toggle dark mode"
+                data-testid="button-theme-toggle-app"
+              >
+                {isDarkMode ? (
+                  <Sun className="w-4 h-4 text-neutral-darkest" />
+                ) : (
+                  <Moon className="w-4 h-4 text-neutral-darkest" />
+                )}
+              </button>
+              <button 
+                ref={menuButtonRef}
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Open menu"
+                aria-expanded={isMenuOpen}
+                data-testid="button-menu-app"
+              >
+                <span className="flex items-center gap-1.5">
+                  {isMenuOpen ? (
+                    <X className="h-4 w-4 text-neutral-darkest" aria-hidden="true" />
+                  ) : (
+                    <Menu className="h-4 w-4 text-neutral-darkest" aria-hidden="true" />
+                  )}
+                  <span className="text-xs font-medium text-neutral-darkest">Menu</span>
+                </span>
+              </button>
+              <button 
+                onClick={handleQuickExit}
+                className="ml-2 p-1.5 rounded-md bg-bush"
+                aria-label="Quick exit"
+                data-testid="button-quick-exit-app"
+              >
+                <LogOut className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {isMenuOpen && (
+          <div 
+            ref={menuRef} 
+            className="fixed inset-x-3 top-[44px] md:absolute md:right-4 md:left-auto md:top-full md:mt-3 md:w-[280px] bg-[#e7ebea] border border-neutral-darkest/10 rounded-lg shadow-xl p-4 max-h-[75vh] overflow-auto z-50" 
+            data-testid="dropdown-menu-app"
+          >
+            {authData?.user && (
+              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-neutral-darkest/10">
+                <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-darkest truncate">{authData.user.email}</p>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-col">
+              {menuLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-neutral-darkest/90 hover:text-neutral-darkest hover:bg-neutral-darkest/5 ${
+                    location === link.href ? "font-medium bg-neutral-darkest/[0.06]" : ""
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                  data-testid={`menu-link-${link.label.toLowerCase()}`}
+                >
+                  <link.icon className="h-4 w-4 opacity-70" />
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-neutral-darkest/10">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  logoutMutation.mutate();
+                }}
+                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-neutral-darkest/70 hover:text-neutral-darkest hover:bg-neutral-darkest/5 w-full"
+                data-testid="button-logout-menu"
+              >
+                <LogOut className="h-4 w-4 opacity-70" />
+                Log out
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+    </div>
+  );
+}
