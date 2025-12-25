@@ -1,0 +1,58 @@
+TASK: Login/Register visual polish using existing Civilla tokens (NO layout redesign, just spacing + hierarchy polish)
+
+AUTONOMY: LOW
+
+GOAL
+Make /login and /register feel more visually refined while staying consistent with the Home/Figma token system:
+- better vertical rhythm
+- clearer hierarchy
+- calmer card framing
+- better button grouping and separators
+No new features, no new flows, no copy rewrites beyond tiny UI labels if needed.
+
+CONSTRAINTS
+- Use existing fonts (Figtree/Arimo) and existing token classes (bush/cream/neutral-darkest etc.)
+- Do NOT add new colors (no hardcoded hex)
+- Do NOT add new pages or change auth logic
+- Keep forms functional as-is
+
+IMPLEMENTATION
+1) Update both pages to use a consistent centered container:
+- outer: min-h-screen, bg-cream
+- inner: max-w-[420px], w-full, px-6, py-10
+- card: rounded-2xl, border border-neutral-darkest/15, bg-white/70, backdrop-blur (subtle), shadow-sm
+- add consistent gaps: space-y-6 or gap-5
+
+2) Improve page heading hierarchy:
+- Title: text-[28px] md:text-[32px] font-figtree font-semibold tracking-tight text-neutral-darkest
+- Subtext: text-[14px] leading-6 text-neutral-darkest/70
+
+3) Inputs:
+- Ensure each input is full width with consistent height (min-h-11)
+- Use border-neutral-darkest/20, focus:ring-bush/25, focus:border-bush
+- Add small helper text under password field for clarity if already present (do not add new claims)
+
+4) Buttons:
+- Primary button full width
+- Secondary buttons (Google/Apple) full width, stacked with gap-3
+- Add a subtle divider row between “Email” and “Or continue with”:
+  - flex items-center gap-3
+  - hr lines use border-neutral-darkest/15
+  - label uses text-[12px] uppercase tracking-wide text-neutral-darkest/50
+
+5) Link row:
+- Put “Create account” / “Already have an account” links as a single calm line under the card
+- Use text-bush hover:underline
+
+FILES
+- client/src/pages/Login.tsx
+- client/src/pages/Register.tsx
+
+DELIVERABLE
+Make the smallest set of className edits needed to achieve the above. Do not touch auth handlers.
+
+VALIDATE
+- 320px wide: no overflow
+- Tab order correct
+- Buttons align and don’t wrap awkwardly
+- No console warnings

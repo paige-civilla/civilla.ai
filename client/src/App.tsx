@@ -24,6 +24,7 @@ import FAQPage from "@/pages/FAQ";
 import AppCases from "@/pages/AppCases";
 import AppDashboard from "@/pages/AppDashboard";
 import AppCase from "@/pages/AppCase";
+import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -48,10 +49,12 @@ function Router() {
       <Route path="/careers" component={Careers} />
       <Route path="/wall-of-wins" component={WallOfWins} />
       <Route path="/faq" component={FAQPage} />
-      <Route path="/app" component={AppDashboard} />
       <Route path="/app/cases" component={AppCases} />
-      <Route path="/app/dashboard">{() => <Redirect to="/app" />}</Route>
+      <Route path="/app/dashboard/:caseId" component={AppDashboard} />
       <Route path="/app/case/:caseId" component={AppCase} />
+      <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
+      <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
+      <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />
     </Switch>
   );

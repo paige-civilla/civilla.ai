@@ -17,7 +17,7 @@ export default function AppCases() {
 
   const handleSelectCase = (caseId: string) => {
     localStorage.setItem("selectedCaseId", caseId);
-    setLocation("/app");
+    setLocation(`/app/dashboard/${caseId}`);
   };
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({

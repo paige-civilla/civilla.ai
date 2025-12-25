@@ -28,23 +28,9 @@ export default function Register() {
     }
   }, [authData]);
 
-  const handlePostLoginRedirect = async () => {
+  const handlePostLoginRedirect = () => {
     setRedirecting(true);
-    try {
-      const res = await fetch("/api/cases", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.cases && data.cases.length > 0) {
-          setLocation("/app");
-        } else {
-          setLocation("/app/cases");
-        }
-      } else {
-        setLocation("/app/cases");
-      }
-    } catch {
-      setLocation("/app/cases");
-    }
+    setLocation("/app");
   };
 
   const registerMutation = useMutation({

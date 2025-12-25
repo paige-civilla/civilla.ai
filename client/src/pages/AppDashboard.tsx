@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Briefcase, FileText, Calendar, MessageSquare, Users, Lock } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -38,26 +38,29 @@ const moduleCards = [
 
 export default function AppDashboard() {
   const [, setLocation] = useLocation();
+  const params = useParams<{ caseId: string }>();
+  const caseId = params.caseId;
 
-  const { data: casesData, isLoading: casesLoading } = useQuery<{ cases: Case[] }>({
-    queryKey: ["/api/cases"],
+  const { data: caseData, isLoading } = useQuery<{ case: Case }>({
+    queryKey: ["/api/cases", caseId],
+    enabled: !!caseId,
   });
 
-  const cases = casesData?.cases || [];
-  const selectedCaseId = localStorage.getItem("selectedCaseId");
-  const primaryCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
-
-  if (primaryCase && primaryCase.id !== selectedCaseId) {
-    localStorage.setItem("selectedCaseId", primaryCase.id);
-  }
+  const primaryCase = caseData?.case;
 
   useEffect(() => {
-    if (!casesLoading && cases.length === 0) {
+    if (primaryCase) {
+      localStorage.setItem("selectedCaseId", primaryCase.id);
+    }
+  }, [primaryCase]);
+
+  useEffect(() => {
+    if (!isLoading && !primaryCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [casesLoading, cases.length, setLocation]);
+  }, [isLoading, primaryCase, caseId, setLocation]);
 
-  if (casesLoading) {
+  if (isLoading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center py-20">

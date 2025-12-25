@@ -4,7 +4,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
-import type { Case } from "@shared/schema";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -31,23 +30,9 @@ export default function Login() {
     }
   }, [authData]);
 
-  const handlePostLoginRedirect = async () => {
+  const handlePostLoginRedirect = () => {
     setRedirecting(true);
-    try {
-      const res = await fetch("/api/cases", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.cases && data.cases.length > 0) {
-          setLocation("/app");
-        } else {
-          setLocation("/app/cases");
-        }
-      } else {
-        setLocation("/app/cases");
-      }
-    } catch {
-      setLocation("/app/cases");
-    }
+    setLocation("/app");
   };
 
   const loginMutation = useMutation({

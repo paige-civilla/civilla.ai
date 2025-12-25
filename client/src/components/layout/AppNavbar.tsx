@@ -40,8 +40,7 @@ function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   }, [shellRef]);
 }
 
-const staticMenuLinks = [
-  { label: "Dashboard", href: "/app", icon: LayoutDashboard },
+const getStaticMenuLinks = () => [
   { label: "Cases", href: "/app/cases", icon: Briefcase },
 ];
 
@@ -64,22 +63,29 @@ export default function AppNavbar() {
     enabled: !!authData?.user,
   });
 
-  const getCaseSettingsHref = () => {
+  const getSelectedCaseId = () => {
     const selectedCaseId = localStorage.getItem("selectedCaseId");
     const cases = casesData?.cases || [];
     if (selectedCaseId && cases.some((c) => c.id === selectedCaseId)) {
-      return `/app/case/${selectedCaseId}`;
+      return selectedCaseId;
     }
     if (cases.length > 0) {
-      return `/app/case/${cases[0].id}`;
+      return cases[0].id;
     }
-    return "/app/cases";
+    return null;
   };
 
-  const menuLinks = [
-    ...staticMenuLinks,
-    { label: "Case Settings", href: getCaseSettingsHref(), icon: Settings },
-  ];
+  const menuLinks = (() => {
+    const caseId = getSelectedCaseId();
+    const links = [
+      { label: "Dashboard", href: caseId ? `/app/dashboard/${caseId}` : "/app", icon: LayoutDashboard },
+      ...getStaticMenuLinks(),
+    ];
+    if (caseId) {
+      links.push({ label: "Case Settings", href: `/app/case/${caseId}`, icon: Settings });
+    }
+    return links;
+  })();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
