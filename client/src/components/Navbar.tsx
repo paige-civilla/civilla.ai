@@ -175,13 +175,14 @@ export default function Navbar() {
                 <Moon className="w-4 h-4 text-white" />
               )}
             </button>
-            <button 
+            <Link 
+              href="/login"
               className="inline-flex items-center justify-center rounded-md p-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="User login"
               data-testid="button-user-login"
             >
               <User className="w-4 h-4 text-white" />
-            </button>
+            </Link>
             <button 
               ref={menuButtonRef}
               className="inline-flex items-center justify-center rounded-md p-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"

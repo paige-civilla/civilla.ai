@@ -175,13 +175,14 @@ export default function NavbarCream() {
                 <Moon className="w-4 h-4 text-neutral-darkest" />
               )}
             </button>
-            <button 
+            <Link 
+              href="/login"
               className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
               aria-label="User login"
               data-testid="button-user-login"
             >
               <User className="w-4 h-4 text-neutral-darkest" />
-            </button>
+            </Link>
             <button 
               ref={menuButtonRef}
               className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
