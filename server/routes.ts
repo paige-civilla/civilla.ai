@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { hashPassword, comparePasswords, generateToken, hashToken, requireAuth } from "./auth";
 import { mailProvider } from "./mail";
+import oauthRouter from "./oauth";
 import { insertCaseSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -13,6 +14,8 @@ export async function registerRoutes(
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: new Date().toISOString() });
   });
+
+  app.use("/api/auth", oauthRouter);
 
   app.post("/api/auth/register", async (req, res) => {
     try {
