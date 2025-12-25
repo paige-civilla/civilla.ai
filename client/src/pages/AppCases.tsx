@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Plus, Briefcase } from "lucide-react";
@@ -7,12 +7,18 @@ import AppLayout from "@/components/layout/AppLayout";
 import type { Case } from "@shared/schema";
 
 export default function AppCases() {
+  const [, setLocation] = useLocation();
   const [title, setTitle] = useState("");
   const [state, setState] = useState("");
   const [county, setCounty] = useState("");
   const [caseType, setCaseType] = useState("");
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+
+  const handleSelectCase = (caseId: string) => {
+    localStorage.setItem("selectedCaseId", caseId);
+    setLocation("/app");
+  };
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -207,10 +213,10 @@ export default function AppCases() {
           ) : (
             <div className="w-full flex flex-col gap-4">
               {cases.map((c) => (
-                <Link
+                <button
                   key={c.id}
-                  href="/app/dashboard"
-                  className="block w-full bg-white border border-neutral-darkest/10 rounded-lg p-5 hover:border-neutral-darkest/20 transition-colors"
+                  onClick={() => handleSelectCase(c.id)}
+                  className="block w-full bg-white border border-neutral-darkest/10 rounded-lg p-5 hover:border-neutral-darkest/20 transition-colors text-left"
                   data-testid={`case-card-${c.id}`}
                 >
                   <div className="flex items-start gap-4">
@@ -229,7 +235,7 @@ export default function AppCases() {
                       </p>
                     </div>
                   </div>
-                </Link>
+                </button>
               ))}
             </div>
           )}

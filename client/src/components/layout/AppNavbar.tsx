@@ -41,9 +41,9 @@ function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
 }
 
 const menuLinks = [
-  { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/app", icon: LayoutDashboard },
   { label: "Cases", href: "/app/cases", icon: Briefcase },
-  { label: "Settings", href: "/app/settings", icon: Settings },
+  { label: "Case Settings", href: "/app/case", icon: Settings },
 ];
 
 export default function AppNavbar() {
@@ -124,7 +124,7 @@ export default function AppNavbar() {
         <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-4 w-full max-w-container">
             <div className="flex items-center">
-              <Link href="/app/dashboard" className="relative h-7 w-auto" data-testid="link-logo-app">
+              <Link href="/app" className="relative h-7 w-auto" data-testid="link-logo-app">
                 <img 
                   src={logoColor} 
                   alt="civilla.ai" 

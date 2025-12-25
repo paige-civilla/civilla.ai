@@ -44,7 +44,12 @@ export default function AppDashboard() {
   });
 
   const cases = casesData?.cases || [];
-  const primaryCase = cases[0];
+  const selectedCaseId = localStorage.getItem("selectedCaseId");
+  const primaryCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
+
+  if (primaryCase && primaryCase.id !== selectedCaseId) {
+    localStorage.setItem("selectedCaseId", primaryCase.id);
+  }
 
   useEffect(() => {
     if (!casesLoading && cases.length === 0) {

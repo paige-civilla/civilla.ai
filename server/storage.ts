@@ -26,7 +26,9 @@ export interface IStorage {
   
   getCasesByUserId(userId: string): Promise<Case[]>;
   getCaseCountByUserId(userId: string): Promise<number>;
+  getCase(caseId: string, userId: string): Promise<Case | undefined>;
   createCase(userId: string, caseData: InsertCase): Promise<Case>;
+  updateCase(caseId: string, userId: string, caseData: Partial<InsertCase>): Promise<Case | undefined>;
 
   getAuthIdentity(provider: string, providerUserId: string): Promise<AuthIdentity | undefined>;
   createAuthIdentity(identity: InsertAuthIdentity): Promise<AuthIdentity>;
@@ -87,6 +89,14 @@ export class DatabaseStorage implements IStorage {
     return userCases.length;
   }
 
+  async getCase(caseId: string, userId: string): Promise<Case | undefined> {
+    const [caseRecord] = await db
+      .select()
+      .from(cases)
+      .where(and(eq(cases.id, caseId), eq(cases.userId, userId)));
+    return caseRecord;
+  }
+
   async createCase(userId: string, caseData: InsertCase): Promise<Case> {
     const [newCase] = await db
       .insert(cases)
@@ -99,6 +109,25 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return newCase;
+  }
+
+  async updateCase(caseId: string, userId: string, caseData: Partial<InsertCase>): Promise<Case | undefined> {
+    const existingCase = await this.getCase(caseId, userId);
+    if (!existingCase) {
+      return undefined;
+    }
+    const [updatedCase] = await db
+      .update(cases)
+      .set({
+        title: caseData.title ?? existingCase.title,
+        state: caseData.state ?? existingCase.state,
+        county: caseData.county ?? existingCase.county,
+        caseType: caseData.caseType ?? existingCase.caseType,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(cases.id, caseId), eq(cases.userId, userId)))
+      .returning();
+    return updatedCase;
   }
 
   async getAuthIdentity(provider: string, providerUserId: string): Promise<AuthIdentity | undefined> {

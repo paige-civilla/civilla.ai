@@ -209,5 +209,35 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/cases/:caseId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const existingCase = await storage.getCase(caseId, userId);
+      if (!existingCase) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { title, state, county, caseType } = req.body;
+      
+      if (title !== undefined && typeof title !== "string") {
+        return res.status(400).json({ error: "Invalid title" });
+      }
+
+      const updatedCase = await storage.updateCase(caseId, userId, {
+        title: title || existingCase.title,
+        state,
+        county,
+        caseType,
+      });
+
+      res.json({ case: updatedCase });
+    } catch (error) {
+      console.error("Update case error:", error);
+      res.status(500).json({ error: "Failed to update case" });
+    }
+  });
+
   return httpServer;
 }
