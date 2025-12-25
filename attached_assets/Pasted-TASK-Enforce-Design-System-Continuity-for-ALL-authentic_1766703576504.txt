@@ -1,0 +1,54 @@
+TASK: Enforce Design System Continuity for ALL authenticated (post-login) app pages.
+
+AUTONOMY: LOW
+Do not redesign public marketing pages.
+Do not change copy on existing public pages.
+Do not introduce new colors, fonts, or UI patterns.
+
+GOAL
+Every logged-in page must visually match the existing Figma-based frontend:
+- Same fonts (Figtree for headings, Arimo for body)
+- Same color tokens (bush green, cream/off-white, neutral-darkest, etc.)
+- Same component styling (buttons/cards/inputs/layout spacing)
+No “default shadcn” look, no random Tailwind greens/blues, no new palettes.
+
+RULES (HARD)
+1) ALL colors must come from the token system already implemented (CSS variables + tailwind mapping). 
+   - Do NOT use bg-green-*, text-green-*, or hardcoded hex values.
+2) ALL typography must use the existing font setup and typography classes already used on Home.
+3) ALL buttons must use the existing shared Button component (or the existing design-locked button variant).
+4) ALL cards/containers must use the existing Card/container patterns from the Figma build.
+5) Logged-in layout must reuse the same Navbar/Footer style system (or a locked “AppNavbar” built from the same tokens).
+6) If any new component is needed (inputs, dropdowns, tabs), it must be built in the same design language:
+   - border radius matches Figma
+   - border color uses token
+   - focus ring uses token
+   - spacing matches the existing sections
+
+IMPLEMENTATION INSTRUCTIONS
+- Create ONE shared “App Layout” wrapper for authenticated routes:
+  - File: client/src/components/layout/AppLayout.tsx (or existing layout folder)
+  - Includes:
+    - AppNavbar (can be a variant of NavbarCream/Navbar) using the same tokens
+    - main content container with the same max-width and padding rules
+- Update authenticated pages to render inside AppLayout.
+- Build/adjust minimal UI components needed for auth pages (Login/Register/Magic Link/Cases):
+  - Use same tokens, fonts, and button styles as the Home page.
+  - Reuse existing components where possible.
+- Add a lint-like check (manual, not a library):
+  - Search for forbidden classes: bg-green-, text-green-, border-green-, blue-, purple-, etc.
+  - Replace with token-based classes.
+
+VALIDATION CHECKLIST (must confirm after changes)
+- Login/Register pages match Home typography + color palette
+- Authenticated navbar looks like it belongs to Civilla (not a template)
+- No hardcoded colors or Tailwind default palettes
+- No horizontal overflow on 320px
+- Buttons, inputs, cards match design language across pages
+
+DELIVERABLE
+- List of files changed
+- Confirmation that no marketing pages were modified
+- A short “design continuity audit” showing:
+  - 0 hardcoded hex colors added
+  - 0 Tailwind default palette classes added (green/blue/purple/etc.)

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -58,3 +58,24 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
 
 export type InsertCase = z.infer<typeof insertCaseSchema>;
 export type Case = typeof cases.$inferSelect;
+
+export const authIdentities = pgTable("auth_identities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: text("provider").notNull(),
+  providerUserId: text("provider_user_id").notNull(),
+  emailAtProvider: text("email_at_provider"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  providerUserIdx: uniqueIndex("provider_user_idx").on(table.provider, table.providerUserId),
+}));
+
+export const insertAuthIdentitySchema = createInsertSchema(authIdentities).pick({
+  userId: true,
+  provider: true,
+  providerUserId: true,
+  emailAtProvider: true,
+});
+
+export type InsertAuthIdentity = z.infer<typeof insertAuthIdentitySchema>;
+export type AuthIdentity = typeof authIdentities.$inferSelect;
