@@ -40,10 +40,9 @@ function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   }, [shellRef]);
 }
 
-const menuLinks = [
+const staticMenuLinks = [
   { label: "Dashboard", href: "/app", icon: LayoutDashboard },
   { label: "Cases", href: "/app/cases", icon: Briefcase },
-  { label: "Case Settings", href: "/app/case", icon: Settings },
 ];
 
 export default function AppNavbar() {
@@ -59,6 +58,28 @@ export default function AppNavbar() {
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
   });
+
+  const { data: casesData } = useQuery<{ cases: { id: string; title: string }[] }>({
+    queryKey: ["/api/cases"],
+    enabled: !!authData?.user,
+  });
+
+  const getCaseSettingsHref = () => {
+    const selectedCaseId = localStorage.getItem("selectedCaseId");
+    const cases = casesData?.cases || [];
+    if (selectedCaseId && cases.some((c) => c.id === selectedCaseId)) {
+      return `/app/case/${selectedCaseId}`;
+    }
+    if (cases.length > 0) {
+      return `/app/case/${cases[0].id}`;
+    }
+    return "/app/cases";
+  };
+
+  const menuLinks = [
+    ...staticMenuLinks,
+    { label: "Case Settings", href: getCaseSettingsHref(), icon: Settings },
+  ];
 
   const logoutMutation = useMutation({
     mutationFn: async () => {

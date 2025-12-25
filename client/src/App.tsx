@@ -51,7 +51,7 @@ function Router() {
       <Route path="/app" component={AppDashboard} />
       <Route path="/app/cases" component={AppCases} />
       <Route path="/app/dashboard">{() => <Redirect to="/app" />}</Route>
-      <Route path="/app/case" component={AppCase} />
+      <Route path="/app/case/:caseId" component={AppCase} />
       <Route component={NotFound} />
     </Switch>
   );

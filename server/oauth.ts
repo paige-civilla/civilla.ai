@@ -221,6 +221,24 @@ router.post("/apple/callback", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/oauth-status", (_req, res) => {
+  const googleConfigured = Boolean(
+    process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.GOOGLE_REDIRECT_URL
+  );
+  
+  const appleConfigured = Boolean(
+    process.env.APPLE_CLIENT_ID &&
+    process.env.APPLE_REDIRECT_URL
+  );
+
+  res.json({
+    google: googleConfigured,
+    apple: appleConfigured,
+  });
+});
+
 declare module "express-session" {
   interface SessionData {
     oauthState?: string;

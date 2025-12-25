@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Save } from "lucide-react";
@@ -8,6 +8,9 @@ import type { Case } from "@shared/schema";
 
 export default function AppCase() {
   const [, setLocation] = useLocation();
+  const params = useParams<{ caseId: string }>();
+  const caseId = params.caseId;
+  
   const [title, setTitle] = useState("");
   const [state, setState] = useState("");
   const [county, setCounty] = useState("");
@@ -15,20 +18,18 @@ export default function AppCase() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const selectedCaseId = localStorage.getItem("selectedCaseId");
-
-  const { data: casesData, isLoading } = useQuery<{ cases: Case[] }>({
-    queryKey: ["/api/cases"],
+  const { data: caseData, isLoading } = useQuery<{ case: Case }>({
+    queryKey: ["/api/cases", caseId],
+    enabled: !!caseId,
   });
 
-  const cases = casesData?.cases || [];
-  const currentCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
+  const currentCase = caseData?.case;
 
   useEffect(() => {
-    if (!isLoading && cases.length === 0) {
+    if (!isLoading && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [isLoading, cases.length, setLocation]);
+  }, [isLoading, currentCase, caseId, setLocation]);
 
   useEffect(() => {
     if (currentCase) {
@@ -36,16 +37,18 @@ export default function AppCase() {
       setState(currentCase.state || "");
       setCounty(currentCase.county || "");
       setCaseType(currentCase.caseType || "");
+      localStorage.setItem("selectedCaseId", currentCase.id);
     }
   }, [currentCase]);
 
   const updateCaseMutation = useMutation({
     mutationFn: async (data: { title: string; state?: string; county?: string; caseType?: string }) => {
-      const res = await apiRequest("PATCH", `/api/cases/${currentCase?.id}`, data);
+      const res = await apiRequest("PATCH", `/api/cases/${caseId}`, data);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId] });
       setSuccess("Case settings saved successfully");
       setError("");
       setTimeout(() => setSuccess(""), 3000);

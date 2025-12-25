@@ -1,0 +1,84 @@
+TASK: Convert case selection to URL-first routing (source of truth) + keep localStorage only as fallback.
+
+AUTONOMY: LOW
+
+CONTEXT
+We already have:
+- Auth working
+- /app shell pages
+- Case list page storing selectedCaseId in localStorage
+- AppDashboard reading selectedCaseId from localStorage and falling back to first case
+We are now planning for “1 case per user by default” with optional paid add-on for additional cases. We must avoid “wrong case opened” bugs and missing in-between wiring.
+
+GOAL
+Make the selected case ALWAYS explicit in the URL (URL-first). localStorage may only be used to pick a default case when landing on a generic route. The URL must be the single source of truth for which case is active.
+
+REQUIREMENTS
+1) ROUTE CHANGES (URL-first)
+- Add URL-param routes:
+  - /app/case/:caseId            (case settings/details)
+  - /app/dashboard/:caseId       (case workspace dashboard)
+  - (Optional if already exists) /app/documents/:caseId, /app/timeline/:caseId later — do NOT create these yet.
+- Keep existing routes for compatibility but make them redirect:
+  - /app/case       -> redirect to /app/case/:caseId using fallback selection logic
+  - /app/dashboard  -> redirect to /app/dashboard/:caseId using fallback selection logic
+  - /app            -> redirect to /app/dashboard/:caseId using fallback selection logic
+
+2) FALLBACK SELECTION LOGIC (ONLY for redirects)
+When a user lands on /app or /app/dashboard or /app/case WITHOUT a caseId:
+- Fetch cases (GET /api/cases)
+- If 0 cases -> redirect to /app/cases
+- If 1+ cases:
+  - Try localStorage.selectedCaseId
+  - Verify it exists in the fetched cases
+  - If valid, use it
+  - Else use the first case
+  - Redirect to the URL-first route using that caseId
+After redirecting, update localStorage.selectedCaseId to that chosen caseId.
+
+3) CASE PICKER BEHAVIOR
+In /app/cases:
+- Clicking a case should navigate to /app/dashboard/:caseId (or /app/case/:caseId if that’s your current “settings” flow)
+- Also set localStorage.selectedCaseId = caseId as convenience only
+
+4) PAGE DATA LOADING (URL-first)
+On pages that are case-specific (AppDashboard, Case settings page):
+- Read caseId from route params, not from localStorage
+- Fetch that case via:
+  - Prefer: GET /api/cases/:caseId (if it exists)
+  - If not present, use GET /api/cases and find matching case client-side (only if necessary)
+- If caseId not found or user doesn’t own it:
+  - redirect to /app/cases with an error toast/message (minimal)
+
+5) BACKEND (minimal)
+- If missing, add GET /api/cases/:caseId with ownership enforcement using existing storage.getCase(caseId, userId)
+- Keep PATCH /api/cases/:caseId as is
+- Do NOT add new case fields, new tables, or new features
+
+6) CONSTRAINTS
+- Do NOT redesign UI.
+- Do NOT add new features beyond routing + minimal API if missing.
+- Do NOT change copy except where required for routing/error messages.
+- Keep all design tokens and existing styling.
+
+DELIVERABLES
+- Update client/src/App.tsx routes to include /app/dashboard/:caseId and /app/case/:caseId and redirects for legacy routes.
+- Update:
+  - client/src/pages/AppDashboard.tsx to use route param caseId (no localStorage as source of truth)
+  - client/src/pages/AppCases.tsx to navigate to the URL-first route on selection
+  - client/src/pages/AppCase.tsx (or whatever case settings file is named) to use route param caseId
+- Add backend GET /api/cases/:caseId if missing (server/routes.ts + storage already has getCase)
+- Provide a short verification checklist:
+  - login -> /app redirects correctly
+  - 0 cases -> /app goes to /app/cases
+  - 1+ cases -> /app goes to /app/dashboard/:caseId
+  - selecting a case updates URL and persists selection
+  - refreshing page preserves correct case via URL
+  - opening in new tab with the URL works
+
+VALIDATE
+Run through:
+- User has 0 cases
+- User has 1 case
+- User has 2 cases
+Ensure no “wrong case” behavior occurs and all ownership checks remain enforced.

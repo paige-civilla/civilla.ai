@@ -209,6 +209,23 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/cases/:caseId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      res.json({ case: caseRecord });
+    } catch (error) {
+      console.error("Get case error:", error);
+      res.status(500).json({ error: "Failed to get case" });
+    }
+  });
+
   app.patch("/api/cases/:caseId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
