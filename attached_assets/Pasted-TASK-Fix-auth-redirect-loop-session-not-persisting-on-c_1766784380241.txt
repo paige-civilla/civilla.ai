@@ -1,0 +1,55 @@
+TASK: Fix auth redirect loop (session not persisting) on civilla.ai
+
+AUTONOMY: LOW
+GOAL:
+After POST /api/auth/register or POST /api/auth/login succeeds, the user must remain authenticated and be routed into /app (or the existing post-login redirect path). Currently it redirects back to /login because the session is not persisted.
+
+CONSTRAINTS:
+- Do NOT change marketing pages
+- Do NOT redesign UI
+- Only touch auth/session persistence + minimal client fetch config + logging
+- Keep existing routes and flows
+
+STEP 1 — OBSERVE (add minimal safe logging)
+1) In server auth routes for register/login:
+   - Log: "register/login success: userId=<id>, sessionID=<req.sessionID>, hasCookie=<boolean>"
+   - After setting req.session.userId, log req.session.userId and call req.session.save(...)
+2) Add GET /api/health/session that returns:
+   { sessionID, hasUserId: boolean }
+(No secrets)
+
+STEP 2 — FIX SESSION PERSISTENCE (most likely causes)
+A) Ensure session is explicitly saved before responding:
+- After req.session.userId = user.id;
+- await new Promise((res, rej) => req.session.save(err => err ? rej(err) : res(null)));
+
+B) Ensure express-session is configured correctly for Cloudflare/Replit deployment:
+- app.set("trust proxy", 1);
+- session cookie:
+  - httpOnly: true
+  - sameSite: "lax"
+  - secure: true in production
+  - DO NOT set cookie domain unless required (leave undefined)
+- If proxy is in front, keep proxy: true
+
+C) Ensure the session store works in deployment (not memory):
+- Use connect-pg-simple (or existing pg session store) with DATABASE_URL
+- Confirm the session table exists; create if missing
+
+STEP 3 — FIX CLIENT REQUESTS (cookie must be sent)
+Audit ALL client fetch calls to auth endpoints and /api/auth/me:
+- Ensure fetch uses credentials: "include"
+- Ensure API helper defaults to credentials: "include"
+If using a shared api client, fix it once centrally.
+
+STEP 4 — VALIDATE
+On civilla.ai (deployment):
+1) POST /api/auth/register returns 200 AND includes Set-Cookie header
+2) Immediately after, GET /api/auth/me returns the logged-in user
+3) Hard refresh still shows logged-in state
+4) Login works the same way
+5) /app does NOT bounce to /login after successful auth
+
+DELIVERABLE:
+- List exact files changed + line ranges
+- Confirm whether the issue was (a) cookie not set, (b) cookie not sent, or (c) session store not persisting

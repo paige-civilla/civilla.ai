@@ -25,6 +25,13 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/health/session", (req, res) => {
+    res.json({
+      sessionID: req.sessionID,
+      hasUserId: !!req.session.userId,
+    });
+  });
+
   app.use("/api/auth", oauthRouter);
 
   app.post("/api/auth/register", async (req, res) => {
@@ -54,6 +61,7 @@ export async function registerRoutes(
           console.error("Session save error:", err);
           return res.status(500).json({ error: "Registration failed" });
         }
+        console.log(`register success: userId=${user.id}, sessionID=${req.sessionID}, hasUserId=${!!req.session.userId}`);
         res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
       });
     } catch (error) {
@@ -87,6 +95,7 @@ export async function registerRoutes(
           console.error("Session save error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
+        console.log(`login success: userId=${user.id}, sessionID=${req.sessionID}, hasUserId=${!!req.session.userId}`);
         res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
       });
     } catch (error) {
