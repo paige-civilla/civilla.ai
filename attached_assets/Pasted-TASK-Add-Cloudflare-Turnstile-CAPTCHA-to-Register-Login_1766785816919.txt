@@ -1,0 +1,62 @@
+TASK: Add Cloudflare Turnstile CAPTCHA to Register + Login (production-safe)
+
+AUTONOMY: LOW
+
+GOAL
+Protect /api/auth/register and /api/auth/login from bots on civilla.ai using Cloudflare Turnstile.
+Must work on both the deployed domain and dev/preview.
+Do NOT change site layout, typography, or colors beyond inserting the widget area cleanly.
+
+CONSTRAINTS
+- Do NOT change marketing pages.
+- Do NOT add new auth methods.
+- Do NOT break existing login/register flows.
+- Use wouter routing; do not introduce full page reloads.
+
+REQUIRED SECRETS / ENV VARS
+- TURNSTILE_SITE_KEY (public)
+- TURNSTILE_SECRET_KEY (server)
+If missing in dev, the UI should still render and the backend should fail-soft (allow dev if NODE_ENV !== "production").
+
+IMPLEMENTATION
+1) Backend verification helper
+- Create server/turnstile.ts (or equivalent) with verifyTurnstile(token, ip?) that POSTs to:
+  https://challenges.cloudflare.com/turnstile/v0/siteverify
+- Return { ok: boolean, error?: string }.
+- Do NOT log secrets. Mask/avoid dumping request bodies.
+
+2) Enforce verification on auth routes (production only)
+- In server/routes.ts:
+  - For POST /api/auth/register: require a turnstile token from body (e.g. turnstileToken)
+  - For POST /api/auth/login: same
+  - If NODE_ENV === "production" and token missing/invalid -> return 400 with JSON:
+    { error: "captcha_required" } or { error: "captcha_failed" }
+  - If not production and secrets missing -> allow (dev bypass), but keep code path intact.
+
+3) Frontend: Login + Register pages
+- Add Turnstile widget using TURNSTILE_SITE_KEY.
+- Load Turnstile script once (client/index.html or a small React hook).
+- On successful challenge, store token in component state and include it in the POST payload:
+  - register payload includes turnstileToken
+  - login payload includes turnstileToken
+- If backend returns captcha_required/captcha_failed, show a friendly inline error and reset the widget.
+
+4) UX requirements
+- Keep the look consistent with Civilla tokens and spacing.
+- Place the Turnstile widget just above the submit button.
+- Ensure 320px mobile width has no overflow.
+
+5) Validation checklist (must confirm in summary)
+- On civilla.ai (published):
+  - register fails with captcha_required if not completed
+  - register succeeds when completed
+  - login fails with captcha_required if not completed
+  - login succeeds when completed
+- In dev/preview:
+  - forms still work even if secrets are not set (dev bypass)
+- No console errors.
+
+DELIVERABLE
+- List exact files changed + line ranges.
+- Confirm payload field name used (turnstileToken).
+- Confirm production behavior vs dev bypass behavior.

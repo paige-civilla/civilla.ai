@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useTurnstile } from "@/hooks/use-turnstile";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
@@ -14,6 +15,7 @@ export default function Login() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [activeTab, setActiveTab] = useState<"password" | "magic">("password");
   const [redirecting, setRedirecting] = useState(false);
+  const { token: turnstileToken, reset: resetTurnstile, hasSiteKey } = useTurnstile("turnstile-login");
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -36,7 +38,7 @@ export default function Login() {
   };
 
   const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
+    mutationFn: async (data: { email: string; password: string; turnstileToken: string | null }) => {
       const res = await apiRequest("POST", "/api/auth/login", data);
       return res.json();
     },
@@ -45,7 +47,15 @@ export default function Login() {
       handlePostLoginRedirect();
     },
     onError: (err: Error) => {
-      setError(err.message || "Login failed");
+      const message = err.message || "Login failed";
+      if (message.includes("captcha_required")) {
+        setError("Please complete the verification below");
+      } else if (message.includes("captcha_failed")) {
+        setError("Verification failed. Please try again.");
+        resetTurnstile();
+      } else {
+        setError(message);
+      }
     },
   });
 
@@ -65,7 +75,7 @@ export default function Login() {
   const handlePasswordLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    loginMutation.mutate({ email, password });
+    loginMutation.mutate({ email, password, turnstileToken });
   };
 
   const handleMagicLink = (e: React.FormEvent) => {
@@ -153,6 +163,9 @@ export default function Login() {
                     data-testid="input-password"
                   />
                 </div>
+                {hasSiteKey && (
+                  <div id="turnstile-login" className="flex justify-center" data-testid="turnstile-login" />
+                )}
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}

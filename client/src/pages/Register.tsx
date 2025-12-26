@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useTurnstile } from "@/hooks/use-turnstile";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
@@ -12,6 +13,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [redirecting, setRedirecting] = useState(false);
+  const { token: turnstileToken, reset: resetTurnstile, hasSiteKey } = useTurnstile("turnstile-register");
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -34,7 +36,7 @@ export default function Register() {
   };
 
   const registerMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
+    mutationFn: async (data: { email: string; password: string; turnstileToken: string | null }) => {
       const res = await apiRequest("POST", "/api/auth/register", data);
       return res.json();
     },
@@ -43,7 +45,15 @@ export default function Register() {
       handlePostLoginRedirect();
     },
     onError: (err: Error) => {
-      setError(err.message || "Registration failed");
+      const message = err.message || "Registration failed";
+      if (message.includes("captcha_required")) {
+        setError("Please complete the verification below");
+      } else if (message.includes("captcha_failed")) {
+        setError("Verification failed. Please try again.");
+        resetTurnstile();
+      } else {
+        setError(message);
+      }
     },
   });
 
@@ -61,7 +71,7 @@ export default function Register() {
       return;
     }
 
-    registerMutation.mutate({ email, password });
+    registerMutation.mutate({ email, password, turnstileToken });
   };
 
   return (
@@ -131,6 +141,9 @@ export default function Register() {
                   data-testid="input-confirm-password"
                 />
               </div>
+              {hasSiteKey && (
+                <div id="turnstile-register" className="flex justify-center" data-testid="turnstile-register" />
+              )}
               <button
                 type="submit"
                 disabled={registerMutation.isPending}
