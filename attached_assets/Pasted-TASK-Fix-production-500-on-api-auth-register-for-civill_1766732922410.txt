@@ -1,0 +1,45 @@
+TASK: Fix production 500 on /api/auth/register for civilla.ai deployment
+
+AUTONOMY: LOW
+GOAL:
+Registration (and login) must work on the published domain. Currently domain returns 500 "Registration failed".
+Dev URL works, but deployment fails.
+
+CONSTRAINTS:
+- Do NOT change UI styling or marketing pages
+- Only touch backend/config/observability needed to fix auth failing in production
+- Do NOT introduce new auth methods
+
+WHAT TO DO:
+1) Identify root cause from Deployment logs for POST /api/auth/register 500.
+   - Look for DNS errors like: getaddrinfo EAI_AGAIN 'helium'
+   - Confirm which downstream call is failing (likely DB connection in getUserByEmail).
+
+2) Add a fail-fast config check at server startup:
+   - If DATABASE_URL is missing, log a clear error and refuse to boot (or return a clear 500 on auth routes).
+   - Log ONLY the parsed hostname of DATABASE_URL (mask credentials completely). Example:
+     "DATABASE host: <hostname>".
+   - If hostname is 'helium' or otherwise not resolvable in deployment, log:
+     "DATABASE_URL points to internal host; deployment needs externally reachable Postgres".
+
+3) Ensure the Deployment environment has DATABASE_URL set correctly:
+   - If current DATABASE_URL is an internal workspace host (ex: helium), replace with an externally reachable Postgres connection string suitable for deployments.
+   - If Replit provides a deployment-safe Postgres add-on, use that; otherwise use an external managed Postgres.
+   - Confirm migrations/tables exist in the production DB (users, cases, auth tables). Apply migrations if needed.
+
+4) Add a minimal diagnostic endpoint:
+   GET /api/health/db
+   - returns 200 { ok: true } if DB query works
+   - returns 500 { ok:false, error:"..." } if not
+   (No secrets leaked)
+
+VALIDATION:
+- On published domain:
+  - POST /api/auth/register returns 200
+  - POST /api/auth/login returns 200
+  - GET /api/health/db returns ok:true
+- No more 'helium' DNS errors in deployment logs.
+
+DELIVERABLE:
+- Report exact file changes (file + line ranges).
+- Report what DATABASE_URL host issue was and how it was corrected (hostnames only, no secrets).
