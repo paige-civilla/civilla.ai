@@ -110,7 +110,12 @@ export async function registerRoutes(
       });
 
       const baseUrl = `${req.protocol}://${req.get("host")}`;
-      await mailProvider.sendMagicLink(email, token, baseUrl);
+      const mailResult = await mailProvider.sendMagicLink(email, token, baseUrl);
+
+      if (!mailResult.success) {
+        console.error("Magic link email failed:", mailResult.error);
+        return res.status(500).json({ error: "Unable to send email right now. Please try again later." });
+      }
 
       res.json({ message: "Magic link sent to your email" });
     } catch (error) {

@@ -1,0 +1,49 @@
+TASK: Fix production register/login 500 caused by SMTP host 'helium' DNS failure by making email sending non-fatal.
+
+AUTONOMY: LOW
+CONSTRAINTS:
+- Do NOT change routes, UI layout, colors, or copy.
+- Do NOT remove auth features.
+- Only adjust server-side mail behavior + error handling so register/login cannot 500 due to email issues.
+
+OBSERVED ERROR (DEPLOY LOGS):
+getaddrinfo EAI_AGAIN helium
+hostname: 'helium'
+Registration/login returning 500.
+
+GOALS:
+1) Register and login must succeed even if email sending fails.
+2) Magic link requests should not crash the server; if email fails, return a safe error message (or still return success but log).
+3) Mail sending must be "fail-soft" in production: log error, never throw up to route handler.
+
+IMPLEMENTATION:
+
+A) server/mail.ts (or wherever mail is implemented)
+- Ensure the mail sender NEVER throws uncaught exceptions.
+- Wrap transport creation and sendMail in try/catch.
+- If SMTP_* is missing OR transport fails, fall back to DEV mode: log the link/message to console and return.
+- If SMTP_* exists but sending fails (DNS, auth, timeout), console.error a sanitized message and return a failure result instead of throwing.
+
+B) server/routes.ts (or server/auth.ts depending on where routes live)
+- In POST /api/auth/register:
+  - Do NOT treat email sending as required.
+  - Create user first; establish session; respond success.
+  - If any optional email notification is attempted, wrap it so failure cannot cause 500.
+
+- In POST /api/auth/login:
+  - Same: email is not involved for password login, so ensure no mail call runs here.
+  - If there is any mail call (unexpected), remove it or make it fail-soft.
+
+- In magic link route:
+  - If mail fails, return a clear 500 with { error: "Unable to send email right now" } OR return 200 with a generic message but log the failure (choose the least disruptive behavior).
+  - Never crash the process.
+
+C) Add a tiny debug log when SMTP is configured:
+- On boot, log: "SMTP configured: yes/no" (do not print host value or credentials).
+
+DELIVERABLE:
+- List files changed + line ranges.
+- Confirm:
+  - /api/auth/register no longer 500s when SMTP fails
+  - /api/auth/login no longer 500s
+  - Magic link route fails gracefully without terminating server
