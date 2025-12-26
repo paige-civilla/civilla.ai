@@ -4,9 +4,17 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  console.error("FATAL: DATABASE_URL environment variable is required");
-  throw new Error("DATABASE_URL environment variable is required");
+// Use NEON_DATABASE_URL in production if available (for external Neon DB)
+// Fall back to DATABASE_URL for development
+const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error("FATAL: DATABASE_URL or NEON_DATABASE_URL environment variable is required");
+  throw new Error("DATABASE_URL or NEON_DATABASE_URL environment variable is required");
+}
+
+if (process.env.NEON_DATABASE_URL) {
+  console.log("Using NEON_DATABASE_URL for database connection");
 }
 
 function parseDbHost(connectionString: string): string {
@@ -18,7 +26,7 @@ function parseDbHost(connectionString: string): string {
   }
 }
 
-const dbHost = parseDbHost(process.env.DATABASE_URL);
+const dbHost = parseDbHost(connectionString);
 console.log(`DATABASE host: ${dbHost}`);
 
 const knownInternalHosts = ["helium", "localhost", "127.0.0.1"];
@@ -27,7 +35,7 @@ if (knownInternalHosts.some(h => dbHost.includes(h)) && process.env.NODE_ENV ===
 }
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString,
 });
 
 export const db = drizzle(pool, { schema });
