@@ -6,7 +6,15 @@ const { Pool } = pg;
 
 // Use NEON_DATABASE_URL in production if available (for external Neon DB)
 // Fall back to DATABASE_URL for development
-const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+function cleanConnectionString(str: string | undefined): string | undefined {
+  if (!str) return undefined;
+  // Remove any leading garbage before postgresql://
+  const match = str.match(/postgresql:\/\/.+/);
+  return match ? match[0].trim() : str.trim();
+}
+
+const rawConnectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+const connectionString = cleanConnectionString(rawConnectionString);
 
 if (!connectionString) {
   console.error("FATAL: DATABASE_URL or NEON_DATABASE_URL environment variable is required");
