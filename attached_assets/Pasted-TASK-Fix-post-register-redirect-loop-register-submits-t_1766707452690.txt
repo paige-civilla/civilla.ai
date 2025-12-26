@@ -1,0 +1,67 @@
+TASK: Fix post-register redirect loop (register submits then returns to /login)
+AUTONOMY: LOW
+
+GOAL
+When a user registers successfully, they should remain authenticated (session cookie set) and be routed into the app flow:
+- 0 cases -> /app/cases
+- 1+ cases -> /app/dashboard/:caseId (or current app landing)
+They must NOT be sent back to /login immediately after a successful registration.
+
+CONSTRAINTS
+- Do NOT change styling, layout, copy, or design tokens
+- Do NOT add new features
+- Fix only the registration flow and session persistence
+- Keep existing routing rules
+
+STEP 1: DIAGNOSE (READ-ONLY)
+A) In client/src/pages/Register.tsx:
+- Find the submit handler.
+- Log/inspect what happens on response:
+  - Does it check response.ok?
+  - Does it navigate to /login on failure?
+  - Does it navigate somewhere on success?
+- Confirm the endpoint it calls (e.g. /api/auth/register).
+
+B) In server/routes.ts (or wherever register endpoint is defined):
+- Locate POST /api/auth/register implementation.
+- Confirm it:
+  1) Creates the user
+  2) Sets the session (req.session.userId = newUser.id) BEFORE responding
+  3) Calls req.session.save (or returns only after session is set)
+- Confirm it returns a JSON body with success (and user) and an appropriate status (200/201).
+
+C) In server/index.ts session config:
+- Confirm express-session is configured correctly for Replit:
+  - app.set("trust proxy", 1) if needed
+  - cookie.secure is NOT forcing HTTPS-only in dev preview in a way that breaks cookies
+  - sameSite is reasonable (lax)
+  - store is connect-pg-simple (already)
+- Identify if the cookie is not being set at all.
+
+D) In browser devtools (if available in Replit preview) or server logs:
+- Confirm whether Set-Cookie is sent after register.
+- Confirm /api/auth/me immediately after register returns authenticated user or not.
+
+STEP 2: APPLY MINIMAL FIX
+Based on what you find, apply the smallest change that guarantees:
+1) On successful register response, Register.tsx does NOT navigate to /login.
+2) Session cookie is set and persists after register.
+3) After register success, perform the same redirect logic as login:
+   - fetch /api/cases
+   - route accordingly (0 cases -> /app/cases; else -> /app/dashboard/:caseId or current rule)
+
+COMMON EXPECTED FIXES (apply only if needed)
+- If server register does NOT set req.session.userId, add it.
+- If session is set but not persisting, ensure req.session.save(...) before sending response.
+- If cookie.secure is breaking dev, set cookie.secure based on NODE_ENV or req.secure and keep prod secure.
+- If Register.tsx routes to /login on any error, change it to:
+  - show error message on the page instead of routing
+  - only route on success.
+
+DELIVERABLES
+1) Exactly which files changed and line ranges.
+2) Explain which root cause you found (API failure vs cookie/session vs client redirect).
+3) Confirm with a manual test:
+   - Register -> stays logged in -> lands in /app/cases or /app/dashboard/:caseId as appropriate.
+   - Refresh page -> still logged in.
+   - /api/auth/me returns user.

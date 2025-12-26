@@ -39,7 +39,13 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
       
-      res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Registration failed" });
+        }
+        res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+      });
     } catch (error) {
       console.error("Register error:", error);
       res.status(500).json({ error: "Registration failed" });
@@ -66,7 +72,13 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
 
-      res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Login failed" });
+        }
+        res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
@@ -139,7 +151,13 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
 
-      res.redirect("/app/cases");
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/login?error=session_error");
+        }
+        res.redirect("/app/cases");
+      });
     } catch (error) {
       console.error("Magic link verify error:", error);
       res.status(500).json({ error: "Verification failed" });

@@ -140,7 +140,13 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     delete req.session.codeVerifier;
     req.session.userId = userId;
 
-    res.redirect("/app/cases");
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.redirect("/login?error=session_error");
+      }
+      res.redirect("/app/cases");
+    });
   } catch (error) {
     console.error("Google callback error:", error);
     res.redirect("/login?error=oauth_error");
@@ -214,7 +220,13 @@ router.post("/apple/callback", async (req: Request, res: Response) => {
     delete req.session.oauthState;
     req.session.userId = userId;
 
-    res.redirect("/app/cases");
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.redirect("/login?error=session_error");
+      }
+      res.redirect("/app/cases");
+    });
   } catch (error) {
     console.error("Apple callback error:", error);
     res.redirect("/login?error=oauth_error");
