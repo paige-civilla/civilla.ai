@@ -1,0 +1,51 @@
+TASK: Fix production auth + add CAPTCHA gating + prepare onboarding shell
+
+AUTONOMY: LOW
+CONSTRAINTS:
+- Do NOT change marketing pages styling/copy
+- Do NOT change existing route names unless required
+- Only make backend/config + minimal UI changes required for auth reliability and captcha
+
+PART A — PRODUCTION DB FIX + DIAGNOSTICS (P0)
+1) Add startup logging (NO secrets):
+   - Parse DATABASE_URL and log only: "DATABASE host: <hostname>"
+   - If DATABASE_URL missing: log clear error and refuse to boot OR return clear 500 on auth routes.
+   - If host includes "helium" or looks internal: log "DATABASE_URL is dev-only; set Neon/external Postgres in DEPLOYMENT secrets."
+
+2) Add endpoint GET /api/health/db
+   - Performs a simple SELECT 1
+   - Returns 200 { ok:true } on success
+   - Returns 500 { ok:false, error:"<safe message>" } on failure
+   - Do NOT leak credentials.
+
+3) Confirm the app uses DATABASE_URL from the DEPLOYMENT environment in production.
+   - Ensure migrations/tables exist in prod DB (users, cases, auth tables).
+   - If migrations are missing, apply them in the deploy-safe way currently used in this repo.
+
+PART B — CAPTCHA ON LOGIN/REGISTER/MAGIC LINK (P0)
+Support Cloudflare Turnstile if TURNSTILE_SITE_KEY + TURNSTILE_SECRET_KEY exist:
+- Frontend: on /login and /register, render Turnstile widget and include captchaToken in requests.
+- Backend: verify captchaToken using Turnstile siteverify endpoint BEFORE allowing:
+  - POST /api/auth/register
+  - POST /api/auth/login
+  - POST /api/auth/magic-link/request
+If Turnstile env vars are missing, gracefully:
+- Hide/disable captcha UI and allow flows in dev only OR return a clear error in prod.
+
+Important:
+- Verification must be server-side.
+- On failure: return 400 with user-friendly message ("Captcha verification failed. Please try again.")
+- Do not crash server.
+
+PART C — ONBOARDING SHELL (P1)
+Add a minimal /app/onboarding page (no deep logic yet) that:
+- Shows "Build your base" steps
+- On completion, redirects to /app (or /app/dashboard/:caseId depending on current routing)
+Do NOT redesign; use existing Civilla tokens/components for layout.
+
+DELIVERABLES:
+- List exact files changed + line ranges.
+- Confirm:
+  - civilla.ai/api/health/db returns ok:true in production
+  - register + login work on civilla.ai
+  - captcha blocks bots and does not break dev
