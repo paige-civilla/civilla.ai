@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useTurnstile } from "@/hooks/use-turnstile";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
@@ -13,7 +12,6 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [redirecting, setRedirecting] = useState(false);
-  const { token: turnstileToken, reset: resetTurnstile, hasSiteKey, status: turnstileStatus } = useTurnstile("turnstile-register");
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -36,7 +34,7 @@ export default function Register() {
   };
 
   const registerMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; turnstileToken: string | null }) => {
+    mutationFn: async (data: { email: string; password: string }) => {
       const res = await apiRequest("POST", "/api/auth/register", data);
       return res.json();
     },
@@ -45,15 +43,7 @@ export default function Register() {
       handlePostLoginRedirect();
     },
     onError: (err: Error) => {
-      const message = err.message || "Registration failed";
-      if (message.includes("captcha_required")) {
-        setError("Please complete the verification below");
-      } else if (message.includes("captcha_failed")) {
-        setError("Verification failed. Please try again.");
-        resetTurnstile();
-      } else {
-        setError(message);
-      }
+      setError(err.message || "Registration failed");
     },
   });
 
@@ -71,7 +61,7 @@ export default function Register() {
       return;
     }
 
-    registerMutation.mutate({ email, password, turnstileToken });
+    registerMutation.mutate({ email, password });
   };
 
   return (
@@ -140,21 +130,6 @@ export default function Register() {
                   required
                   data-testid="input-confirm-password"
                 />
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div id="turnstile-register" className="flex justify-center min-h-[72px]" data-testid="turnstile-register" />
-                {turnstileStatus === "loading" && (
-                  <span className="font-sans text-xs text-neutral-darkest/60">Loading verification...</span>
-                )}
-                {turnstileStatus === "missing_config" && (
-                  <span className="font-sans text-xs text-destructive">Verification unavailable (missing configuration)</span>
-                )}
-                {turnstileStatus === "script_failed" && (
-                  <span className="font-sans text-xs text-destructive">Verification failed to load. Disable content blockers or try another browser.</span>
-                )}
-                {turnstileStatus === "error" && (
-                  <span className="font-sans text-xs text-destructive">Verification error. Please refresh and try again.</span>
-                )}
               </div>
               <button
                 type="submit"

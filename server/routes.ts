@@ -34,16 +34,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/turnstile/site-key", (_req, res) => {
-    const siteKey = process.env.TURNSTILE_SITE_KEY || "";
-    res.json({ siteKey });
+    // CAPTCHA disabled
+    res.json({ siteKey: "" });
   });
 
   app.get("/api/auth/turnstile-status", (_req, res) => {
-    const siteKey = process.env.TURNSTILE_SITE_KEY || "";
-    const secretKey = process.env.TURNSTILE_SECRET_KEY || "";
     res.json({
-      enabled: !!(siteKey && secretKey),
-      siteKeyPresent: !!siteKey,
+      enabled: false,
+      siteKeyPresent: false,
       isProduction: process.env.NODE_ENV === "production",
     });
   });
