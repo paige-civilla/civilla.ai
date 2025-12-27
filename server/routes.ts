@@ -38,6 +38,16 @@ export async function registerRoutes(
     res.json({ siteKey });
   });
 
+  app.get("/api/auth/turnstile-status", (_req, res) => {
+    const siteKey = process.env.TURNSTILE_SITE_KEY || "";
+    const secretKey = process.env.TURNSTILE_SECRET_KEY || "";
+    res.json({
+      enabled: !!(siteKey && secretKey),
+      siteKeyPresent: !!siteKey,
+      isProduction: process.env.NODE_ENV === "production",
+    });
+  });
+
   app.use("/api/auth", oauthRouter);
 
   app.post("/api/auth/register", async (req, res) => {

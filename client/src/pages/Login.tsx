@@ -15,7 +15,7 @@ export default function Login() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [activeTab, setActiveTab] = useState<"password" | "magic">("password");
   const [redirecting, setRedirecting] = useState(false);
-  const { token: turnstileToken, reset: resetTurnstile, hasSiteKey } = useTurnstile("turnstile-login");
+  const { token: turnstileToken, reset: resetTurnstile, hasSiteKey, status: turnstileStatus } = useTurnstile("turnstile-login");
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -163,9 +163,21 @@ export default function Login() {
                     data-testid="input-password"
                   />
                 </div>
-                {hasSiteKey && (
-                  <div id="turnstile-login" className="flex justify-center" data-testid="turnstile-login" />
-                )}
+                <div className="flex flex-col items-center gap-1">
+                  <div id="turnstile-login" className="flex justify-center min-h-[72px]" data-testid="turnstile-login" />
+                  {turnstileStatus === "loading" && (
+                    <span className="font-sans text-xs text-neutral-darkest/60">Loading verification...</span>
+                  )}
+                  {turnstileStatus === "missing_config" && (
+                    <span className="font-sans text-xs text-destructive">Verification unavailable (missing configuration)</span>
+                  )}
+                  {turnstileStatus === "script_failed" && (
+                    <span className="font-sans text-xs text-destructive">Verification failed to load. Disable content blockers or try another browser.</span>
+                  )}
+                  {turnstileStatus === "error" && (
+                    <span className="font-sans text-xs text-destructive">Verification error. Please refresh and try again.</span>
+                  )}
+                </div>
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}
