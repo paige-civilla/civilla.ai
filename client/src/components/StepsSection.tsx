@@ -13,7 +13,7 @@ export default function StepsSection() {
     {
       num: "3",
       label: "Step Three",
-      text: "Get plain-language explanations of common stages and what information people typically prepare — without legal advice or outcome promises.",
+      text: "Get plain-language explanations of common stages and what information people typically prepare.",
     },
   ];
 
