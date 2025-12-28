@@ -1,0 +1,128 @@
+import fs from "fs";
+import path from "path";
+
+const ROOT = process.cwd();
+const SRC_ROOT = path.join(ROOT, "client", "src");
+
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
+      walk(p, out);
+    } else {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+function isCodeFile(fp) {
+  return fp.endsWith(".tsx") || fp.endsWith(".jsx");
+}
+
+function backupOnce(fp) {
+  const bak = fp + ".bak";
+  if (!fs.existsSync(bak)) fs.copyFileSync(fp, bak);
+}
+
+function heroCandidate(fp, content) {
+  // Heuristic definition of "hero boxes":
+  // - file name contains Hero OR
+  // - content contains a hero-ish className/id AND an <h1>
+  // This keeps the patch from touching the whole app.
+  const base = path.basename(fp).toLowerCase();
+  const filenameLooksHero = base.includes("hero");
+
+  const contentLooksHero =
+    /className\s*=\s*["'][^"']*hero[^"']*["']/i.test(content) ||
+    /id\s*=\s*["'][^"']*hero[^"']*["']/i.test(content) ||
+    /data-[a-z-]*hero/i.test(content);
+
+  const hasH1 = /<h1[\s>]/i.test(content);
+
+  // Only bother if the phrase exists at all
+  const hasPhrase = /not\s+legal\s+advice/i.test(content);
+
+  return hasPhrase && (filenameLooksHero || (contentLooksHero && hasH1));
+}
+
+function removeNotLegalAdvicePhrases(s) {
+  let out = s;
+
+  // Remove variants like:
+  // "— not legal advice."  " - not legal advice" " (not legal advice)" "Not legal advice."
+  // while trying not to leave awkward punctuation behind.
+  out = out.replace(/\s*[—–-]\s*not\s+legal\s+advice\.?/gi, "");
+  out = out.replace(/\s*\(\s*not\s+legal\s+advice\s*\)\.?\s*/gi, " ");
+  out = out.replace(/\bnot\s+legal\s+advice\.?\b/gi, "");
+
+  // If a JSX element becomes empty/whitespace-only after removal, delete the whole element.
+  // Targets common hero micro-lines:
+  // <p>Not legal advice.</p>  <small>...</small>  <span>...</span>  <div>...</div>
+  const empties = [
+    /<p\b[^>]*>\s*<\/p>\s*/gi,
+    /<small\b[^>]*>\s*<\/small>\s*/gi,
+    /<span\b[^>]*>\s*<\/span>\s*/gi,
+    /<div\b[^>]*>\s*<\/div>\s*/gi,
+  ];
+  for (const re of empties) out = out.replace(re, "");
+
+  // Clean up double spaces created by removals
+  out = out.replace(/[ \t]{2,}/g, " ");
+  // Clean up " .", " ,"
+  out = out.replace(/\s+\./g, ".");
+  out = out.replace(/\s+,/g, ",");
+
+  return out;
+}
+
+function countMatches(s) {
+  const m = s.match(/not\s+legal\s+advice/gi);
+  return m ? m.length : 0;
+}
+
+function main() {
+  if (!fs.existsSync(SRC_ROOT)) {
+    console.error("ERROR: client/src not found. Run this from your project root.");
+    process.exit(1);
+  }
+
+  const files = walk(SRC_ROOT).filter(isCodeFile);
+
+  const scanned = [];
+  const changed = [];
+
+  for (const fp of files) {
+    const prev = fs.readFileSync(fp, "utf8");
+    if (!heroCandidate(fp, prev)) continue;
+
+    scanned.push(fp);
+
+    const beforeCount = countMatches(prev);
+    const next = removeNotLegalAdvicePhrases(prev);
+    const afterCount = countMatches(next);
+
+    if (next !== prev) {
+      backupOnce(fp);
+      fs.writeFileSync(fp, next, "utf8");
+      changed.push({ fp, beforeCount, afterCount });
+    }
+  }
+
+  console.log("\n=== Remove 'not legal advice' in HERO boxes — Summary ===");
+  console.log("Hero-candidate files scanned:", scanned.length);
+  console.log("Files changed:", changed.length);
+
+  for (const c of changed) {
+    console.log(`- ${c.fp}  (matches: ${c.beforeCount} -> ${c.afterCount})`);
+  }
+
+  if (changed.length === 0) {
+    console.log("\nNo changes were needed (no 'not legal advice' found in hero-candidate files).");
+  } else {
+    console.log("\n✅ Done. Backups saved as .bak next to each changed file.");
+  }
+}
+
+main();
