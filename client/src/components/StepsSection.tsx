@@ -50,9 +50,6 @@ export default function StepsSection() {
             </div>
           ))}
 
-          <p className="pt-2 text-center text-sm italic font-medium text-neutral-darkest/70 md:text-base">
-            *Educational, Research, And Organizational Support — Not Legal Advice Or Representation.*
-          </p>
         </div>
       </div>
     </section>
