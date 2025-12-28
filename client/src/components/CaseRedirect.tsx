@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import type { Case } from "@shared/schema";
 
 interface CaseRedirectProps {
-  targetPath: "dashboard" | "case";
+  targetPath: "dashboard" | "case" | "documents" | "timeline" | "evidence" | "exhibits" | "tasks" | "deadlines" | "messages";
 }
 
 export default function CaseRedirect({ targetPath }: CaseRedirectProps) {
@@ -39,11 +39,7 @@ export default function CaseRedirect({ targetPath }: CaseRedirectProps) {
     localStorage.setItem("selectedCaseId", targetCaseId);
     setHasRedirected(true);
 
-    if (targetPath === "dashboard") {
-      setLocation(`/app/dashboard/${targetCaseId}`, { replace: true });
-    } else {
-      setLocation(`/app/case/${targetCaseId}`, { replace: true });
-    }
+    setLocation(`/app/${targetPath}/${targetCaseId}`, { replace: true });
   }, [isLoading, casesData, hasRedirected, setLocation, targetPath]);
 
   return (

@@ -24,6 +24,13 @@ import FAQPage from "@/pages/FAQ";
 import AppCases from "@/pages/AppCases";
 import AppDashboard from "@/pages/AppDashboard";
 import AppCase from "@/pages/AppCase";
+import AppDocuments from "@/pages/AppDocuments";
+import AppTimeline from "@/pages/AppTimeline";
+import AppEvidence from "@/pages/AppEvidence";
+import AppExhibits from "@/pages/AppExhibits";
+import AppTasks from "@/pages/AppTasks";
+import AppDeadlines from "@/pages/AppDeadlines";
+import AppMessages from "@/pages/AppMessages";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -52,8 +59,22 @@ function Router() {
       <Route path="/app/cases" component={AppCases} />
       <Route path="/app/dashboard/:caseId" component={AppDashboard} />
       <Route path="/app/case/:caseId" component={AppCase} />
+      <Route path="/app/documents/:caseId" component={AppDocuments} />
+      <Route path="/app/timeline/:caseId" component={AppTimeline} />
+      <Route path="/app/evidence/:caseId" component={AppEvidence} />
+      <Route path="/app/exhibits/:caseId" component={AppExhibits} />
+      <Route path="/app/tasks/:caseId" component={AppTasks} />
+      <Route path="/app/deadlines/:caseId" component={AppDeadlines} />
+      <Route path="/app/messages/:caseId" component={AppMessages} />
       <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
+      <Route path="/app/documents">{() => <CaseRedirect targetPath="documents" />}</Route>
+      <Route path="/app/timeline">{() => <CaseRedirect targetPath="timeline" />}</Route>
+      <Route path="/app/evidence">{() => <CaseRedirect targetPath="evidence" />}</Route>
+      <Route path="/app/exhibits">{() => <CaseRedirect targetPath="exhibits" />}</Route>
+      <Route path="/app/tasks">{() => <CaseRedirect targetPath="tasks" />}</Route>
+      <Route path="/app/deadlines">{() => <CaseRedirect targetPath="deadlines" />}</Route>
+      <Route path="/app/messages">{() => <CaseRedirect targetPath="messages" />}</Route>
       <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />
     </Switch>

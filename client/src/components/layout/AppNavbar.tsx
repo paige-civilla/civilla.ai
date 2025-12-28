@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Moon, Sun, LogOut, Briefcase, LayoutDashboard, Settings, User } from "lucide-react";
+import { Menu, X, Moon, Sun, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, MessageSquare } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
@@ -82,7 +82,16 @@ export default function AppNavbar() {
       ...getStaticMenuLinks(),
     ];
     if (caseId) {
-      links.push({ label: "Case Settings", href: `/app/case/${caseId}`, icon: Settings });
+      links.push(
+        { label: "Documents", href: `/app/documents/${caseId}`, icon: FileText },
+        { label: "Timeline", href: `/app/timeline/${caseId}`, icon: Calendar },
+        { label: "Evidence", href: `/app/evidence/${caseId}`, icon: FolderOpen },
+        { label: "Exhibits", href: `/app/exhibits/${caseId}`, icon: Image },
+        { label: "Tasks", href: `/app/tasks/${caseId}`, icon: CheckSquare },
+        { label: "Deadlines", href: `/app/deadlines/${caseId}`, icon: Clock },
+        { label: "Messages", href: `/app/messages/${caseId}`, icon: MessageSquare },
+        { label: "Case Settings", href: `/app/case/${caseId}`, icon: Settings },
+      );
     }
     return links;
   })();
