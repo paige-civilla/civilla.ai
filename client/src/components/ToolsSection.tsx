@@ -21,7 +21,7 @@ const FEATURES = [
   {
     title: "Your Child Support Estimator",
     desc:
-      "Get an educational estimate range using guideline-style equations and the information you enter. This is not court-accurate and not legal advice.",
+      "Estimate only — not court-official. Actual amounts are set by the court and may differ. For legal advice, talk to a licensed attorney or legal aid.",
   },
   {
     title: "Your Research Assistant",
