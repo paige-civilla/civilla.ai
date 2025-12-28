@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, generateToken, hashToken, requireAuth } from "./auth";
 import { mailProvider } from "./mail";
 import { testDbConnection } from "./db";
-import { verifyTurnstile } from "./turnstile";
+// Turnstile disabled - import commented out
+// import { verifyTurnstile } from "./turnstile";
 import oauthRouter from "./oauth";
 import { insertCaseSchema } from "@shared/schema";
 import { z } from "zod";
@@ -50,17 +51,10 @@ export async function registerRoutes(
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, turnstileToken } = req.body;
+      const { email, password } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
-      }
-
-      const turnstileResult = await verifyTurnstile(turnstileToken || "", req.ip);
-      if (!turnstileResult.ok) {
-        if (process.env.NODE_ENV === "production") {
-          return res.status(400).json({ error: turnstileToken ? "captcha_failed" : "captcha_required" });
-        }
       }
 
       if (password.length < 8) {
@@ -93,17 +87,10 @@ export async function registerRoutes(
 
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password, turnstileToken } = req.body;
+      const { email, password } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
-      }
-
-      const turnstileResult = await verifyTurnstile(turnstileToken || "", req.ip);
-      if (!turnstileResult.ok) {
-        if (process.env.NODE_ENV === "production") {
-          return res.status(400).json({ error: turnstileToken ? "captcha_failed" : "captcha_required" });
-        }
       }
 
       const user = await storage.getUserByEmail(email);
