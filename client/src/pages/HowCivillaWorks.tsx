@@ -39,7 +39,7 @@ function JourneySection() {
               Your Case, Step By Step
             </h2>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              See the stages many family-law cases often move through — and what people typically prepare along the way.
+              See the stages many family-law cases often move through, and what people typically prepare along the way.
             </p>
           </div>
         </div>
