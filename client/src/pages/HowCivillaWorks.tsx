@@ -20,7 +20,7 @@ function HeaderSection() {
               How{" "}<BrandMark text="civilla" />{" "}Works
             </h1>
             <p className="cv-p font-sans text-sm md:text-[20px] w-full">
-              A calm, step-by-step overview of what{" "}<BrandMark text="civilla" />{" "}can help you understand and organize — without legal advice.
+              An overview of what{" "}<BrandMark text="civilla" />{" "}can help you understand, research, and organize.
             </p>
           </div>
         </div>
