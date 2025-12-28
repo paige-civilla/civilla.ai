@@ -99,7 +99,7 @@ export default function ToolsSection() {
                 Track What Matters In Your Case
               </h3>
               <p className="mt-4 text-white/85 leading-relaxed text-sm md:text-base">
-                <BrandText>Family court can feel chaotic. civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized — without legal advice or outcome promises.</BrandText>
+                <BrandText>Family court can feel chaotic. civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized without promising outcomes.</BrandText>
               </p>
 
               <p className="mt-6 text-[10px] text-white/70 font-bold italic">
