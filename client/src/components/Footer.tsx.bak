@@ -116,8 +116,6 @@ export default function Footer() {
           </p>
         </div>
       </div>
-    
-        <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.5, opacity: 0.8 }}>Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.</p>
-</footer>
+    </footer>
   );
 }

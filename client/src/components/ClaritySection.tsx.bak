@@ -52,11 +52,12 @@ export function ClaritySection() {
             </div>
           ))}
 
-          </div>
+          <p className="pt-2 text-center text-sm italic font-medium text-neutral-darkest/70 md:text-base">
+            *Educational, Research, And Organizational Support — Not Legal Advice Or Representation.*
+          </p>
+        </div>
       </div>
-    
-        <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.5, opacity: 0.85 }}><em>*[Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.]</em></p>
-</section>
+    </section>
   );
 }
 

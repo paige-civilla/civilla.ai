@@ -1,0 +1,145 @@
+cat > scripts/patch-disclaimers.mjs <<'EOF'
+import fs from "fs";
+import path from "path";
+
+const ROOT = process.cwd();
+const DISCLAIMER =
+  "Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn’t provide legal advice or represent you in court.";
+
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name.startsWith(".") || entry.name === "dist") continue;
+      walk(p, out);
+    } else {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+function findFirstByName(startDir, filename) {
+  const files = walk(startDir);
+  return files.find((f) => path.basename(f) === filename) || null;
+}
+
+function backupFile(fp) {
+  const bak = fp + ".bak";
+  if (!fs.existsSync(bak)) fs.copyFileSync(fp, bak);
+}
+
+function writeIfChanged(fp, next) {
+  const prev = fs.readFileSync(fp, "utf8");
+  if (prev === next) {
+    console.log(`No change: ${fp}`);
+    return false;
+  }
+  backupFile(fp);
+  fs.writeFileSync(fp, next, "utf8");
+  console.log(`Updated: ${fp} (backup: ${fp}.bak)`);
+  return true;
+}
+
+// --- Patch Footer.tsx: insert disclaimer before </footer>
+function patchFooter(footerPath) {
+  let s = fs.readFileSync(footerPath, "utf8");
+
+  // Avoid duplicate insertion
+  if (s.includes(DISCLAIMER)) {
+    console.log("Footer already contains disclaimer. Skipping footer insert.");
+    return false;
+  }
+
+  const idx = s.lastIndexOf("</footer>");
+  if (idx === -1) {
+    console.log("Could not find </footer> in Footer.tsx. Skipping footer insert.");
+    return false;
+  }
+
+  // Insert a small paragraph right before closing footer
+  const insert =
+    `\n        <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.5, opacity: 0.8 }}>` +
+    `${DISCLAIMER}</p>\n`;
+
+  // Heuristic: insert just before </footer> with indentation similar to JSX
+  const next = s.slice(0, idx) + insert + s.slice(idx);
+  return writeIfChanged(footerPath, next);
+}
+
+// --- Patch ClaritySection.tsx: remove standalone "not legal advice" micro-line and add italic footnote
+function patchClarity(clarityPath) {
+  let s = fs.readFileSync(clarityPath, "utf8");
+
+  // If footnote already present, skip insertion
+  const footnoteMarker = "*[Civilla helps you understand how cases typically move through family court";
+  const alreadyHasFootnote = s.includes(footnoteMarker) || s.includes(DISCLAIMER);
+  // We'll still attempt to remove old micro-lines if present, but skip re-inserting footnote if it exists.
+
+  // Remove simple standalone paragraph lines that contain "not legal advice"
+  // This targets cases like: <p>Educational ... not legal advice.</p>
+  const beforeRemove = s;
+  s = s.replace(
+    /<p\b[^>]*>\s*[^<]*not legal advice[^<]*<\/p>\s*/gi,
+    ""
+  );
+
+  // If already has the footnote, only write removal changes (if any)
+  if (alreadyHasFootnote) {
+    if (s !== beforeRemove) return writeIfChanged(clarityPath, s);
+    console.log("ClaritySection already has footnote/disclaimer. No change needed.");
+    return false;
+  }
+
+  // Insert italic footnote near the bottom of the returned JSX:
+  // Insert before the last closing tag in the file's return JSX (heuristic: last '</' before final ');')
+  const endReturn = s.lastIndexOf(");");
+  if (endReturn === -1) {
+    console.log("Could not find end of return ');' in ClaritySection.tsx. Skipping clarity insert.");
+    return false;
+  }
+
+  const segment = s.slice(0, endReturn);
+  const lastCloseTag = segment.lastIndexOf("</");
+  if (lastCloseTag === -1) {
+    console.log("Could not find a closing JSX tag near end of ClaritySection.tsx. Skipping clarity insert.");
+    return false;
+  }
+
+  const footnote =
+    `\n        <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.5, opacity: 0.85 }}>` +
+    `<em>*[${DISCLAIMER}]</em></p>\n`;
+
+  const next = s.slice(0, lastCloseTag) + footnote + s.slice(lastCloseTag);
+  return writeIfChanged(clarityPath, next);
+}
+
+function main() {
+  const srcRoot = path.join(ROOT, "client", "src");
+  if (!fs.existsSync(srcRoot)) {
+    console.error("Could not find client/src. Are you running this from the project root?");
+    process.exit(1);
+  }
+
+  const footer = findFirstByName(srcRoot, "Footer.tsx");
+  const clarity = path.join(srcRoot, "components", "ClaritySection.tsx");
+
+  console.log("Found:");
+  console.log("  Footer.tsx:", footer || "(not found)");
+  console.log("  ClaritySection.tsx:", fs.existsSync(clarity) ? clarity : "(not found)");
+
+  let changed = false;
+
+  if (footer) changed = patchFooter(footer) || changed;
+  else console.log("Footer.tsx not found under client/src. (No footer patch applied.)");
+
+  if (fs.existsSync(clarity)) changed = patchClarity(clarity) || changed;
+  else console.log("ClaritySection.tsx not found at client/src/components/ClaritySection.tsx. (No clarity patch applied.)");
+
+  console.log(changed ? "\n✅ Patch complete." : "\nℹ️ No changes were necessary.");
+}
+
+main();
+EOF
+
+node scripts/patch-disclaimers.mjs
