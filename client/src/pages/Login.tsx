@@ -53,17 +53,17 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream">
+    <div className="flex flex-col min-h-screen bg-background">
       <NavbarCream />
       
       <section className="flex-1 w-full flex flex-col items-center justify-center px-5 py-10 md:py-16">
         <div className="max-w-[420px] w-full">
-          <div className="rounded-2xl border border-neutral-darkest/15 bg-white/70 backdrop-blur-sm shadow-sm p-6 md:p-8 space-y-6">
+          <div className="rounded-2xl border border-border bg-card backdrop-blur-sm shadow-sm p-6 md:p-8 space-y-6">
             <div className="text-center space-y-2">
-              <h1 className="text-[28px] md:text-[32px] font-figtree font-semibold tracking-tight text-neutral-darkest">
+              <h1 className="text-[28px] md:text-[32px] font-figtree font-semibold tracking-tight text-foreground">
                 Login
               </h1>
-              <p className="text-[14px] leading-6 text-neutral-darkest/70">
+              <p className="text-[14px] leading-6 text-muted-foreground">
                 Welcome Back!
               </p>
             </div>
@@ -76,7 +76,7 @@ export default function Login() {
 
             <form onSubmit={handlePasswordLogin} className="flex flex-col gap-4 w-full">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="font-sans text-sm font-medium text-neutral-darkest">
+                <label htmlFor="email" className="font-sans text-sm font-medium text-foreground">
                   Email
                 </label>
                 <input
@@ -84,13 +84,13 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
+                  className="w-full px-3 min-h-11 border border-border rounded-md font-sans text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                   required
                   data-testid="input-email"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="font-sans text-sm font-medium text-neutral-darkest">
+                <label htmlFor="password" className="font-sans text-sm font-medium text-foreground">
                   Password
                 </label>
                 <input
@@ -98,7 +98,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
+                  className="w-full px-3 min-h-11 border border-border rounded-md font-sans text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                   required
                   data-testid="input-password"
                 />
@@ -114,9 +114,9 @@ export default function Login() {
             </form>
 
             <div className="w-full flex items-center gap-3">
-              <div className="flex-1 h-px bg-neutral-darkest/15" />
-              <span className="text-[12px] uppercase tracking-wide text-neutral-darkest/50">or continue with</span>
-              <div className="flex-1 h-px bg-neutral-darkest/15" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[12px] uppercase tracking-wide text-muted-foreground">or continue with</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             <div className="flex flex-col gap-3 w-full">
@@ -124,7 +124,7 @@ export default function Login() {
                 {oauthStatus?.google ? (
                   <a
                     href="/api/auth/google/start"
-                    className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest font-sans font-medium text-sm min-h-11 rounded-md hover:bg-neutral-darkest/5 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-card border border-border text-foreground font-sans font-medium text-sm min-h-11 rounded-md hover:bg-accent transition-colors"
                     data-testid="button-google-login"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -139,7 +139,7 @@ export default function Login() {
                   <div className="flex flex-col gap-0.5">
                     <button
                       disabled
-                      className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-darkest/20 text-neutral-darkest/40 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed opacity-50"
+                      className="w-full flex items-center justify-center gap-2 bg-card border border-border text-muted-foreground font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed opacity-50"
                       data-testid="button-google-login"
                     >
                       <svg className="w-5 h-5 opacity-50" viewBox="0 0 24 24">
@@ -150,7 +150,7 @@ export default function Login() {
                       </svg>
                       Continue with Google
                     </button>
-                    <span className="font-sans text-xs text-neutral-darkest/50 text-center">Coming soon</span>
+                    <span className="font-sans text-xs text-muted-foreground text-center">Coming soon</span>
                   </div>
                 )}
               </div>
@@ -158,7 +158,7 @@ export default function Login() {
                 {oauthStatus?.apple ? (
                   <a
                     href="/api/auth/apple/start"
-                    className="w-full flex items-center justify-center gap-2 bg-neutral-darkest text-white font-sans font-medium text-sm min-h-11 rounded-md hover:bg-neutral-darkest/90 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-sans font-medium text-sm min-h-11 rounded-md hover:opacity-90 transition-colors"
                     data-testid="button-apple-login"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -170,7 +170,7 @@ export default function Login() {
                   <div className="flex flex-col gap-0.5">
                     <button
                       disabled
-                      className="w-full flex items-center justify-center gap-2 bg-neutral-darkest/50 text-white/70 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-2 bg-foreground/50 text-background/70 font-sans font-medium text-sm min-h-11 rounded-md cursor-not-allowed"
                       data-testid="button-apple-login"
                     >
                       <svg className="w-5 h-5 opacity-70" viewBox="0 0 24 24" fill="currentColor">
@@ -178,16 +178,16 @@ export default function Login() {
                       </svg>
                       Continue with Apple
                     </button>
-                    <span className="font-sans text-xs text-neutral-darkest/50 text-center">Coming soon</span>
+                    <span className="font-sans text-xs text-muted-foreground text-center">Coming soon</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          <p className="font-sans text-sm text-neutral-darkest/70 text-center mt-6">
+          <p className="font-sans text-sm text-muted-foreground text-center mt-6">
             Don't have an account?{" "}
-            <Link href="/register" className="text-bush hover:underline" data-testid="link-register">
+            <Link href="/register" className="text-primary hover:underline" data-testid="link-register">
               Create account
             </Link>
           </p>

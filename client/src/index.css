@@ -369,40 +369,52 @@ p,
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,255,255, .12);
+  --badge-outline: rgba(255,255,255, .08);
   --opaque-button-border-intensity: 9;
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
-  --background: 158 45% 8%;
-  --foreground: 40 28% 96%;
-  --border: 158 45% 14%;
-  --card: 158 45% 10%;
-  --card-foreground: 40 28% 96%;
-  --card-border: 158 45% 12%;
-  --sidebar: 158 45% 12%;
-  --sidebar-foreground: 40 28% 96%;
-  --sidebar-border: 158 45% 14%;
-  --sidebar-primary: 158 52% 15%;
-  --sidebar-primary-foreground: 40 28% 98%;
-  --sidebar-accent: 158 45% 16%;
-  --sidebar-accent-foreground: 40 28% 94%;
-  --sidebar-ring: 158 52% 15%;
-  --popover: 158 45% 14%;
-  --popover-foreground: 40 28% 96%;
-  --popover-border: 158 45% 16%;
-  --primary: 158 52% 15%;
-  --primary-foreground: 40 28% 98%;
-  --secondary: 158 45% 18%;
-  --secondary-foreground: 40 28% 94%;
-  --muted: 158 45% 20%;
-  --muted-foreground: 40 28% 70%;
-  --accent: 158 30% 22%;
-  --accent-foreground: 40 28% 92%;
-  --destructive: 0 72% 28%;
-  --destructive-foreground: 0 72% 98%;
-  --input: 40 28% 92%;
-  --ring: 158 52% 15%;
+  --elevate-1: rgba(255,255,255, .05);
+  --elevate-2: rgba(255,255,255, .10);
+  /* Near #070503 - deep warm black */
+  --background: 20 40% 2%;
+  /* Near #fcfbf9 - off-white cream */
+  --foreground: 40 27% 98%;
+  /* Subtle light border */
+  --border: 40 20% 18%;
+  /* Card slightly lighter than background - near #0f0d0c */
+  --card: 20 30% 4%;
+  --card-foreground: 40 27% 98%;
+  --card-border: 40 20% 14%;
+  /* Sidebar */
+  --sidebar: 20 30% 5%;
+  --sidebar-foreground: 40 27% 96%;
+  --sidebar-border: 40 20% 12%;
+  --sidebar-primary: 158 52% 20%;
+  --sidebar-primary-foreground: 40 27% 98%;
+  --sidebar-accent: 20 25% 10%;
+  --sidebar-accent-foreground: 40 27% 94%;
+  --sidebar-ring: 158 52% 20%;
+  /* Popover */
+  --popover: 20 28% 6%;
+  --popover-foreground: 40 27% 98%;
+  --popover-border: 40 20% 15%;
+  /* Bush green primary */
+  --primary: 158 52% 20%;
+  --primary-foreground: 40 27% 98%;
+  /* Secondary */
+  --secondary: 20 25% 12%;
+  --secondary-foreground: 40 27% 92%;
+  /* Muted - ensure readable contrast */
+  --muted: 20 20% 16%;
+  --muted-foreground: 40 20% 65%;
+  /* Accent */
+  --accent: 20 18% 14%;
+  --accent-foreground: 40 27% 92%;
+  /* Destructive */
+  --destructive: 0 72% 35%;
+  --destructive-foreground: 0 0% 98%;
+  /* Input text */
+  --input: 40 27% 92%;
+  --ring: 158 52% 25%;
   --chart-1: 158 65% 75%;
   --chart-2: 40 55% 70%;
   --chart-3: 158 50% 65%;
