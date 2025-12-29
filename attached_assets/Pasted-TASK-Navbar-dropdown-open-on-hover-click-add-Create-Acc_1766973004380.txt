@@ -1,0 +1,72 @@
+TASK: Navbar dropdown open-on-hover/click + add Create Account link
+
+AUTONOMY: LOW
+
+GOALS
+1) Public navbars: The right-side nav items that have submenus (dropdowns) must open on:
+   - Hover (desktop)
+   - Click/tap (mobile + desktop)
+   Dropdown must close on mouse leave, Escape key, and when clicking outside.
+2) Add a clear "Create account" link that routes to /register.
+   Also keep /login available.
+3) Do not change typography/colors/layout beyond what is required to enable dropdown behavior.
+
+CONSTRAINTS
+- Do NOT redesign the navbar.
+- Do NOT change copy except adding the label "Create account" where needed.
+- Internal routing must use wouter <Link>.
+- No window.location for internal routes.
+- Must work for both:
+  - client/src/components/Navbar.tsx (Home/dark navbar)
+  - client/src/components/NavbarCream.tsx (cream navbar on other pages)
+  - If AppNavbar has similar right-side items, apply same dropdown behavior there too.
+
+IMPLEMENTATION DETAILS
+A) Add/Create Account link
+- Ensure /register exists and is routed (it already should be).
+- In BOTH Navbar.tsx and NavbarCream.tsx:
+  - Add a right-side link: "Create account" -> /register
+  - Keep existing /login entry (or add if missing).
+  - For mobile menu, include both links too.
+
+B) Dropdown behavior for menu groups
+- Identify the right-side grouped items that currently require click to expand OR are static.
+- Implement a small, reusable dropdown component or inline logic:
+  - State: openMenuId (string | null)
+  - Handlers:
+    - onMouseEnter (desktop): setOpenMenuId(menuId)
+    - onMouseLeave (desktop): setOpenMenuId(null)
+    - onClick: toggle setOpenMenuId(menuId)
+    - onKeyDown: Escape closes
+  - Click-outside handler: useEffect + document.addEventListener("mousedown", ...) to close if click outside dropdown container.
+- Accessibility:
+  - Trigger should have aria-haspopup="menu"
+  - aria-expanded={isOpen}
+  - Menu container role="menu"
+  - Menu items role="menuitem"
+- On mobile:
+  - Keep click/tap to open and close.
+  - Hover should not be required.
+
+C) Disable placeholders remain disabled
+- Keep FAQ and Resources as disabled “Coming soon” spans exactly as currently implemented.
+- Do not add routes for them.
+
+FILES TO CHANGE (minimum)
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+- (Optional if needed) client/src/components/AppNavbar.tsx
+
+VALIDATION CHECKLIST
+- Desktop: Hover over dropdown triggers -> menu opens; moving away closes.
+- Desktop: Clicking trigger toggles menu.
+- Desktop: Clicking outside closes menu.
+- Desktop: Pressing Escape closes menu.
+- Mobile: Tapping trigger opens/closes menu; no hover required.
+- Clicking "Create account" routes to /register (SPA, no full reload).
+- Clicking "Login" routes to /login.
+- No console errors or duplicate key warnings.
+
+DELIVERABLE
+- Provide exact file + line ranges changed.
+- Confirm behavior works on desktop and mobile.
