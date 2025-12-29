@@ -1,0 +1,58 @@
+TASK: Fix 500 error when creating a Timeline event (POST) on production domain
+
+AUTONOMY: LOW
+CONSTRAINTS:
+- Do NOT change UI styling, layout, or copy
+- Only touch backend/routes/storage/schema/migrations/observability needed to fix the 500
+- Keep existing API shape unless absolutely required
+
+USER-REPORTED BUG:
+Clicking "Create an event" on /app/timeline/:caseId throws 500 in production.
+
+GOAL:
+Creating a timeline event returns 200 and persists to DB for that caseId, on civilla.ai (deployment).
+
+STEP 1 — Identify the failing request + stack trace
+1) In Replit Deployments -> Logs, reproduce the error by clicking "Create an event".
+2) Find the exact failing endpoint and error message/stack trace.
+   - Confirm it is the timeline create endpoint (POST) and capture:
+     - request path
+     - status code
+     - error string (ex: relation "timeline_events" does not exist)
+     - any SQL error codes
+
+STEP 2 — Add minimal diagnostics (safe, no secrets)
+Add GET /api/health/timeline that:
+- requires auth
+- runs a simple DB query that proves the timeline table exists (ex: SELECT 1 FROM timelineEvents LIMIT 1)
+- returns 200 { ok:true } if query works
+- returns 500 { ok:false, error:"<safe error>" } if it fails
+Do NOT include credentials in errors.
+
+STEP 3 — Fix the root cause (most likely: production DB missing table)
+If logs show table missing / migration missing:
+- Ensure timelineEvents table exists in shared/schema.ts (already added)
+- Apply schema/migrations to PRODUCTION DATABASE used by deployments
+  - If using Drizzle:
+    - run the appropriate migration/push step that this repo uses (drizzle-kit push or migrations)
+  - Verify by re-running /api/health/timeline and confirming ok:true
+
+If logs show route mismatch:
+- Confirm frontend calls the same route you implemented in server/routes.ts
+- Align the server route path to the frontend call (or vice versa), minimal change only
+
+If logs show case ownership / parsing error:
+- Log the received payload keys (safe) to confirm required fields exist
+- Add validation: return 400 with a clear message if required fields are missing/invalid (instead of 500)
+
+STEP 4 — Validate on the LIVE deployment
+After fix + republish:
+- On civilla.ai:
+  - Create a timeline event -> should succeed
+  - Refresh -> event persists
+  - /api/health/timeline -> returns { ok:true }
+
+DELIVERABLE:
+- Report exactly what the error was (one sentence, no secrets)
+- List files changed with line ranges
+- Confirm production DB schema now includes timelineEvents
