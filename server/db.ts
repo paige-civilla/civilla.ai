@@ -4,25 +4,18 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-// Use NEON_DATABASE_URL in production if available (for external Neon DB)
-// Fall back to DATABASE_URL for development
 function cleanConnectionString(str: string | undefined): string | undefined {
   if (!str) return undefined;
-  // Remove any leading garbage before postgresql://
   const match = str.match(/postgresql:\/\/.+/);
   return match ? match[0].trim() : str.trim();
 }
 
-const rawConnectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+const rawConnectionString = process.env.DATABASE_URL;
 const connectionString = cleanConnectionString(rawConnectionString);
 
 if (!connectionString) {
-  console.error("FATAL: DATABASE_URL or NEON_DATABASE_URL environment variable is required");
-  throw new Error("DATABASE_URL or NEON_DATABASE_URL environment variable is required");
-}
-
-if (process.env.NEON_DATABASE_URL) {
-  console.log("Using NEON_DATABASE_URL for database connection");
+  console.error("FATAL: DATABASE_URL environment variable is required");
+  throw new Error("DATABASE_URL environment variable is required");
 }
 
 function parseDbHost(connectionString: string): string {
@@ -35,7 +28,8 @@ function parseDbHost(connectionString: string): string {
 }
 
 const dbHost = parseDbHost(connectionString);
-console.log(`DATABASE host: ${dbHost}`);
+console.log(`DB env var used: DATABASE_URL`);
+console.log(`DB host: ${dbHost}`);
 
 const knownInternalHosts = ["helium", "localhost", "127.0.0.1"];
 if (knownInternalHosts.some(h => dbHost.includes(h)) && process.env.NODE_ENV === "production") {
