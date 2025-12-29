@@ -3,9 +3,6 @@ import Footer from "@/components/Footer";
 import { BrandMark } from "@/components/BrandMark";
 
 import imgPlaceholderImage1 from "@assets/casey-horner-4rDCa5hBlCs-unsplash_1766971405145.jpg";
-import imgVector from "@assets/a-car-sits-still-at-a-crossroad_1766971423475.jpg";
-import imgVector1 from "@assets/evgeni-evgeniev-LPKk3wtkC-g-unsplash_1766971440085.jpg";
-import imgVector2 from "@assets/federico-bottos-Z3NceSeZqgI-unsplash_1766971456558.jpg";
 
 function HeaderSection() {
   return (
@@ -114,9 +111,6 @@ function ClaritySection() {
 
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start w-full">
           <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
-            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-              <img src={imgVector2} alt="" className="w-full h-full" />
-            </div>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
               <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
                 The Stress Of Not Knowing What Comes Next
@@ -128,9 +122,6 @@ function ClaritySection() {
           </div>
 
           <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
-            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-              <img src={imgVector1} alt="" className="w-full h-full" />
-            </div>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
               <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
                 What Your Options Actually Are
@@ -142,9 +133,6 @@ function ClaritySection() {
           </div>
 
           <div className="flex flex-1 flex-col gap-4 md:gap-6 items-center min-h-0 min-w-0">
-            <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-              <img src={imgVector} alt="" className="w-full h-full" />
-            </div>
             <div className="flex flex-col gap-4 md:gap-6 items-center text-white text-center w-full min-w-0">
               <h3 className="cv-h font-heading text-heading-3-mobile md:text-[40px] tracking-[0.32px] md:tracking-[0.4px] w-full">
                 Your Sense Of Agency In Your Own Case
