@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Check, X } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import { PasswordField } from "@/components/ui/PasswordField";
 
 function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   return (
@@ -130,15 +131,11 @@ export default function Register() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="font-sans text-sm font-medium text-foreground">
-                  Password
-                </label>
-                <input
+                <PasswordField
+                  label="Password"
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 min-h-11 border border-border rounded-md font-sans text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                   required
                   data-testid="input-password"
                 />
@@ -150,15 +147,11 @@ export default function Register() {
                 </ul>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="confirm-password" className="font-sans text-sm font-medium text-foreground">
-                  Confirm Password
-                </label>
-                <input
+                <PasswordField
+                  label="Confirm Password"
                   id="confirm-password"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 min-h-11 border border-border rounded-md font-sans text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
                   required
                   data-testid="input-confirm-password"
                 />

@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+import { PasswordField } from "@/components/ui/PasswordField";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -89,20 +90,14 @@ export default function Login() {
                   data-testid="input-email"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="font-sans text-sm font-medium text-foreground">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 min-h-11 border border-border rounded-md font-sans text-sm text-foreground bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
-                  required
-                  data-testid="input-password"
-                />
-              </div>
+              <PasswordField
+                label="Password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                data-testid="input-password"
+              />
               <button
                 type="submit"
                 disabled={loginMutation.isPending}
