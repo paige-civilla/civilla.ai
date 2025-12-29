@@ -107,7 +107,7 @@ export default function Register() {
                 Create Account
               </h1>
               <p className="text-[14px] leading-6 text-neutral-darkest/70">
-                Join civilla today
+                Take Back Your Time
               </p>
             </div>
 

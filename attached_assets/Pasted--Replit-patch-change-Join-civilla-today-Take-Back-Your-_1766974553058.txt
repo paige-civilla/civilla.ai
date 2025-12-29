@@ -1,0 +1,85 @@
+# Replit patch: change "Join civilla today" -> "Take Back Your Time" (Title Case)
+# - Scans client/src for the phrase (case-insensitive)
+# - Replaces it everywhere it appears in UI text
+# - Creates .bak backups for every changed file
+# Run from your project root in Replit Shell.
+
+mkdir -p scripts
+
+cat > scripts/patch-create-account-title.mjs <<'EOF'
+import fs from "fs";
+import path from "path";
+
+const ROOT = process.cwd();
+const SRC_ROOT = path.join(ROOT, "client", "src");
+const TARGET_RE = /join\s+civilla\s+today/gi;
+const REPLACEMENT = "Take Back Your Time";
+
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
+      walk(p, out);
+    } else {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+function isCodeFile(fp) {
+  return fp.endsWith(".tsx") || fp.endsWith(".jsx") || fp.endsWith(".ts") || fp.endsWith(".js");
+}
+
+function backupOnce(fp) {
+  const bak = fp + ".bak";
+  if (!fs.existsSync(bak)) fs.copyFileSync(fp, bak);
+}
+
+function countMatches(s) {
+  const m = s.match(TARGET_RE);
+  return m ? m.length : 0;
+}
+
+function main() {
+  if (!fs.existsSync(SRC_ROOT)) {
+    console.error("ERROR: client/src not found. Run this from the project root.");
+    process.exit(1);
+  }
+
+  const files = walk(SRC_ROOT).filter(isCodeFile);
+  const changed = [];
+
+  for (const fp of files) {
+    const prev = fs.readFileSync(fp, "utf8");
+    const before = countMatches(prev);
+    if (before === 0) continue;
+
+    const next = prev.replace(TARGET_RE, REPLACEMENT);
+    const after = countMatches(next);
+
+    if (next !== prev) {
+      backupOnce(fp);
+      fs.writeFileSync(fp, next, "utf8");
+      changed.push({ fp, before, after });
+    }
+  }
+
+  console.log("\n=== Patch Summary: 'Join civilla today' -> 'Take Back Your Time' ===");
+  console.log("Files changed:", changed.length);
+  for (const c of changed) {
+    console.log(`- ${c.fp} (matches: ${c.before} -> ${c.after})`);
+  }
+
+  if (changed.length === 0) {
+    console.log("\nNo matches found. If the text is coming from CMS/config, tell me where it's defined.");
+  } else {
+    console.log("\n✅ Done. Backups saved as .bak next to each changed file.");
+  }
+}
+
+main();
+EOF
+
+node scripts/patch-create-account-title.mjs
