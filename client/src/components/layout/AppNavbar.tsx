@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Moon, Sun, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, MessageSquare } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, MessageSquare } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
-import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -48,7 +47,6 @@ const getStaticMenuLinks = () => [
 export default function AppNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location, setLocation] = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -110,13 +108,6 @@ export default function AppNavbar() {
   });
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("civilla-theme");
-    const isDark = savedTheme === "dark";
-    setIsDarkMode(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         isMenuOpen &&
@@ -150,13 +141,6 @@ export default function AppNavbar() {
     }
   }, [isMenuOpen]);
 
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    document.documentElement.classList.toggle("dark", newMode);
-    localStorage.setItem("civilla-theme", newMode ? "dark" : "light");
-  };
-
   const handleQuickExit = () => {
     const safePages = [
       "https://en.wikipedia.org/wiki/Coffee#Preparation",
@@ -169,13 +153,13 @@ export default function AppNavbar() {
 
   return (
     <div ref={shellRef} className="civilla-nav-shell">
-      <nav className="bg-cream dark:bg-background w-full relative" data-testid="navbar-app">
+      <nav className="bg-cream w-full relative" data-testid="navbar-app">
         <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-4 w-full max-w-container">
             <div className="flex items-center">
               <Link href="/app" className="relative h-7 w-auto" data-testid="link-logo-app">
                 <img 
-                  src={isDarkMode ? logoWhite : logoColor} 
+                  src={logoColor} 
                   alt="civilla.ai" 
                   className="h-full w-auto object-contain"
                 />
@@ -183,20 +167,8 @@ export default function AppNavbar() {
             </div>
             <div className="flex items-center justify-center gap-2">
               <button 
-                onClick={toggleDarkMode}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
-                aria-label="Toggle dark mode"
-                data-testid="button-theme-toggle-app"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-foreground" />
-                ) : (
-                  <Moon className="w-4 h-4 text-foreground" />
-                )}
-              </button>
-              <button 
                 ref={menuButtonRef}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Open menu"
                 aria-expanded={isMenuOpen}
@@ -228,7 +200,7 @@ export default function AppNavbar() {
         <div 
           ref={menuRef} 
           style={{ top: menuPos.top, right: menuPos.right }}
-          className="fixed w-[280px] bg-popover dark:bg-popover border border-popover-border dark:border-popover-border rounded-lg shadow-xl p-4 max-h-[75vh] overflow-auto z-[9999]" 
+          className="fixed w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl p-4 max-h-[75vh] overflow-auto z-[9999]" 
           data-testid="dropdown-menu-app"
         >
           {authData?.user && (

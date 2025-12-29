@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, Trophy, UserPlus, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, Trophy, UserPlus, ChevronDown } from "lucide-react";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
-import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 import BrandMark from "@/components/BrandMark";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
@@ -86,7 +85,6 @@ export default function NavbarCream() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [location] = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -99,13 +97,6 @@ export default function NavbarCream() {
   const [mainMenuPos, setMainMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   useFixedNavShell(shellRef);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("civilla-theme");
-    const isDark = savedTheme === "dark";
-    setIsDarkMode(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
 
   const closeAllMenus = useCallback(() => {
     setIsMenuOpen(false);
@@ -163,13 +154,6 @@ export default function NavbarCream() {
     }
   }, [isMenuOpen]);
 
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    document.documentElement.classList.toggle("dark", newMode);
-    localStorage.setItem("civilla-theme", newMode ? "dark" : "light");
-  };
-
   const handleQuickExit = () => {
     const safePages = [
       "https://en.wikipedia.org/wiki/Coffee#Preparation",
@@ -222,32 +206,19 @@ export default function NavbarCream() {
 
   return (
     <div ref={shellRef} className="civilla-nav-shell">
-    <nav className="bg-cream dark:bg-background w-full relative" data-testid="navbar-cream">
+    <nav className="bg-cream w-full relative" data-testid="navbar-cream">
       <div className="h-12 md:h-14 lg:h-16 flex items-center justify-center px-4 md:px-6 lg:px-8 py-0">
         <div className="flex items-center justify-between gap-3 md:gap-4 w-full max-w-container">
           <div className="flex items-center">
             <Link href="/" className="relative h-6 md:h-8 lg:h-9 w-auto" data-testid="link-logo">
               <img 
-                src={isDarkMode ? logoWhite : logoColor} 
+                src={logoColor} 
                 alt="civilla.ai" 
                 className="h-full w-auto object-contain"
               />
             </Link>
           </div>
           <div className="flex items-center justify-center gap-1.5 md:gap-2">
-            <button 
-              onClick={toggleDarkMode}
-              className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
-              aria-label="Toggle dark mode"
-              data-testid="button-theme-toggle"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 md:w-5 md:h-5 text-foreground" />
-              ) : (
-                <Moon className="w-4 h-4 md:w-5 md:h-5 text-foreground" />
-              )}
-            </button>
-            
             <div 
               className="relative"
               onMouseEnter={handleAccountMouseEnter}
@@ -256,7 +227,7 @@ export default function NavbarCream() {
               <button
                 ref={accountButtonRef}
                 onClick={() => setIsAccountOpen(!isAccountOpen)}
-                className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
+                className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
                 aria-label="Account options"
                 aria-haspopup="menu"
                 aria-expanded={isAccountOpen}
@@ -274,7 +245,7 @@ export default function NavbarCream() {
             >
               <button 
                 ref={menuButtonRef}
-                className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
+                className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Open menu"
                 aria-haspopup="menu"
@@ -310,7 +281,7 @@ export default function NavbarCream() {
         ref={accountRef}
         role="menu"
         style={{ top: accountMenuPos.top, left: Math.max(12, accountMenuPos.left) }}
-        className="fixed w-44 bg-popover dark:bg-popover border border-popover-border dark:border-popover-border rounded-xl shadow-xl py-2 z-[9999]"
+        className="fixed w-44 bg-popover border border-popover-border rounded-xl shadow-xl py-2 z-[9999]"
         onMouseEnter={handleAccountMouseEnter}
         onMouseLeave={handleAccountMouseLeave}
         data-testid="dropdown-account"
@@ -343,7 +314,7 @@ export default function NavbarCream() {
         ref={menuRef} 
         role="menu"
         style={{ top: mainMenuPos.top, right: mainMenuPos.right }}
-        className="fixed w-[min(900px,calc(100vw-24px))] bg-popover dark:bg-popover border border-popover-border dark:border-popover-border rounded-2xl shadow-xl p-6 md:p-8 max-h-[75vh] overflow-auto z-[9999]" 
+        className="fixed w-[min(900px,calc(100vw-24px))] bg-popover border border-popover-border rounded-2xl shadow-xl p-6 md:p-8 max-h-[75vh] overflow-auto z-[9999]" 
         onMouseEnter={handleMenuMouseEnter}
         onMouseLeave={handleMenuMouseLeave}
         data-testid="dropdown-menu"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, Moon, Sun, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, Trophy, UserPlus, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Sparkles, Info, ShieldCheck, Heart, Home, CreditCard, Compass, FileText, Lock, Mail, LogIn, Target, Users, Accessibility, ScrollText, MessageCircle, CircleHelp, Trophy, UserPlus, ChevronDown } from "lucide-react";
 import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 import BrandMark from "@/components/BrandMark";
 
@@ -85,7 +85,6 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [location] = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -98,13 +97,6 @@ export default function Navbar() {
   const [mainMenuPos, setMainMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   useFixedNavShell(shellRef);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("civilla-theme");
-    const isDark = savedTheme === "dark";
-    setIsDarkMode(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
 
   const closeAllMenus = useCallback(() => {
     setIsMenuOpen(false);
@@ -162,13 +154,6 @@ export default function Navbar() {
     }
   }, [isMenuOpen]);
 
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    document.documentElement.classList.toggle("dark", newMode);
-    localStorage.setItem("civilla-theme", newMode ? "dark" : "light");
-  };
-
   const handleQuickExit = () => {
     const safePages = [
       "https://en.wikipedia.org/wiki/Coffee#Preparation",
@@ -221,7 +206,7 @@ export default function Navbar() {
 
   return (
     <div ref={shellRef} className="civilla-nav-shell">
-    <nav className="bg-bush dark:bg-bush-dark w-full relative" data-testid="navbar">
+    <nav className="bg-bush w-full relative" data-testid="navbar">
       <div className="h-9 flex items-center justify-center px-6 py-0">
         <div className="flex items-center justify-between gap-4 w-full max-w-container">
           <div className="flex items-center">
@@ -234,19 +219,6 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="flex items-center justify-center gap-2">
-            <button 
-              onClick={toggleDarkMode}
-              className="inline-flex items-center justify-center rounded-md p-1.5 border border-white/20 hover:border-white/35 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-              aria-label="Toggle dark mode"
-              data-testid="button-theme-toggle"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 text-white" />
-              ) : (
-                <Moon className="w-4 h-4 text-white" />
-              )}
-            </button>
-            
             <div 
               className="relative"
               onMouseEnter={handleAccountMouseEnter}
@@ -309,7 +281,7 @@ export default function Navbar() {
         ref={accountRef}
         role="menu"
         style={{ top: accountMenuPos.top, left: Math.max(12, accountMenuPos.left) }}
-        className="fixed w-44 bg-popover dark:bg-popover border border-popover-border dark:border-popover-border rounded-xl shadow-xl py-2 z-[9999]"
+        className="fixed w-44 bg-popover border border-popover-border rounded-xl shadow-xl py-2 z-[9999]"
         onMouseEnter={handleAccountMouseEnter}
         onMouseLeave={handleAccountMouseLeave}
         data-testid="dropdown-account"
@@ -342,7 +314,7 @@ export default function Navbar() {
         ref={menuRef} 
         role="menu"
         style={{ top: mainMenuPos.top, right: mainMenuPos.right }}
-        className="fixed w-[min(900px,calc(100vw-24px))] bg-popover dark:bg-popover border border-popover-border dark:border-popover-border rounded-2xl shadow-xl p-6 md:p-8 max-h-[75vh] overflow-auto z-[9999]" 
+        className="fixed w-[min(900px,calc(100vw-24px))] bg-popover border border-popover-border rounded-2xl shadow-xl p-6 md:p-8 max-h-[75vh] overflow-auto z-[9999]" 
         onMouseEnter={handleMenuMouseEnter}
         onMouseLeave={handleMenuMouseLeave}
         data-testid="dropdown-menu"
