@@ -149,7 +149,7 @@ function BoundariesSection() {
  ))}
  </div>
  <p className="font-arimo text-sm leading-[1.6] text-white/70 italic">
- *Education and organization only or representation.
+ *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
  </p>
  </div>
  </div>
