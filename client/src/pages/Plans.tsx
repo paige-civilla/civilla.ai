@@ -681,10 +681,6 @@ function PricingCardsSection() {
           >
             Contact Us
           </a>
-
-          <p className="mt-4 text-sm italic text-neutral-900/70">
-            *Educational, research, and organizational support — not legal advice or representation.*
-          </p>
         </div>
       </div>
 
@@ -740,10 +736,6 @@ function PricingCardsSection() {
               <span>Upgrade anytime to unlock full access immediately.</span>
             </li>
           </ul>
-
-          <p className="mt-4 text-sm italic text-neutral-900/70">
-            *Educational, research, and organizational support — not legal advice or representation.*
-          </p>
         </div>
 
         {/* Mobile: plan tabs + readable lists (Core/Pro/Premium only) */}
