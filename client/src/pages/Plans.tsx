@@ -63,7 +63,7 @@ export const PRICING_PLANS = [
       "Quick wins + case health insights",
       "Child support estimate range",
     ],
-    finePrint: "Cancel anytime. Education-only tools — not legal advice.",
+    finePrint: "",
   },
   {
     id: "premium",
