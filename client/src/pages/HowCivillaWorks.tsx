@@ -2,13 +2,13 @@ import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { BrandMark } from "@/components/BrandMark";
 
-const imgPlaceholderImage = "https://www.figma.com/api/mcp/asset/c0dba5d6-8871-4138-b2ce-bb7c8038878a";
-const imgPlaceholderImage1 = "https://www.figma.com/api/mcp/asset/9a0ac209-9561-45fe-b293-55d1583c7ca2";
-const imgVector = "https://www.figma.com/api/mcp/asset/733776f2-b811-4d3c-84db-e74919032fd1";
-const imgVector1 = "https://www.figma.com/api/mcp/asset/e735d03f-ac75-40ca-bfe1-7e7077182662";
-const imgVector2 = "https://www.figma.com/api/mcp/asset/91268db6-076c-4db4-9141-c3f3fa218d73";
-const imgRuleIcon = "https://www.figma.com/api/mcp/asset/eb534531-c64a-41f5-8ac8-db343f842da1";
-const imgExploreIcon = "https://www.figma.com/api/mcp/asset/b7406a41-4908-40e6-bf88-31270c1ca4cb";
+import imgPlaceholderImage from "@assets/andrew-coelho-aL7SA1ASVdQ-unsplash_1766971373993.jpg";
+import imgPlaceholderImage1 from "@assets/casey-horner-4rDCa5hBlCs-unsplash_1766971405145.jpg";
+import imgVector from "@assets/a-car-sits-still-at-a-crossroad_1766971423475.jpg";
+import imgVector1 from "@assets/evgeni-evgeniev-LPKk3wtkC-g-unsplash_1766971440085.jpg";
+import imgVector2 from "@assets/federico-bottos-Z3NceSeZqgI-unsplash_1766971456558.jpg";
+import imgRuleIcon from "@assets/foggy-landscape-reflected-in-lake_1766971484286.jpg";
+import imgExploreIcon from "@assets/quiet-wild-meadow-filled-with-plants-2_1766971509254.jpg";
 
 function HeaderSection() {
   return (
