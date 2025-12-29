@@ -6,8 +6,9 @@ import { testDbConnection } from "./db";
 // Turnstile disabled - import commented out
 // import { verifyTurnstile } from "./turnstile";
 import oauthRouter from "./oauth";
-import { insertCaseSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -225,6 +226,124 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Update case error:", error);
       res.status(500).json({ error: "Failed to update case" });
+    }
+  });
+
+  app.get("/api/health/timeline", async (_req, res) => {
+    try {
+      await db.select().from(timelineEvents).limit(1);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Timeline health check error:", error);
+      res.status(500).json({ ok: false, error: "Timeline table unavailable" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/timeline", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const events = await storage.listTimelineEvents(caseId, userId);
+      res.json({ events });
+    } catch (error) {
+      console.error("Get timeline events error:", error);
+      res.status(500).json({ error: "Failed to fetch timeline events" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/timeline", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertTimelineEventSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid event data", details: parseResult.error.errors });
+      }
+
+      const event = await storage.createTimelineEvent(caseId, userId, parseResult.data);
+      res.status(201).json({ event });
+    } catch (error) {
+      console.error("Create timeline event error:", error);
+      res.status(500).json({ error: "Failed to create timeline event" });
+    }
+  });
+
+  app.patch("/api/timeline/:eventId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { eventId } = req.params;
+
+      const existingEvent = await storage.getTimelineEvent(eventId, userId);
+      if (!existingEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      const caseRecord = await storage.getCase(existingEvent.caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found or access denied" });
+      }
+
+      const { eventDate, title, category, notes } = req.body;
+      
+      if (title !== undefined && (typeof title !== "string" || title.length === 0 || title.length > 120)) {
+        return res.status(400).json({ error: "Title must be 1-120 characters" });
+      }
+
+      const validCategories = ["court", "filing", "communication", "incident", "parenting_time", "expense", "medical", "school", "other"];
+      if (category !== undefined && !validCategories.includes(category)) {
+        return res.status(400).json({ error: "Invalid category" });
+      }
+
+      const updatedEvent = await storage.updateTimelineEvent(eventId, userId, {
+        eventDate: eventDate ? new Date(eventDate) : undefined,
+        title,
+        category,
+        notes,
+      });
+
+      res.json({ event: updatedEvent });
+    } catch (error) {
+      console.error("Update timeline event error:", error);
+      res.status(500).json({ error: "Failed to update timeline event" });
+    }
+  });
+
+  app.delete("/api/timeline/:eventId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { eventId } = req.params;
+
+      const existingEvent = await storage.getTimelineEvent(eventId, userId);
+      if (!existingEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      const caseRecord = await storage.getCase(existingEvent.caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found or access denied" });
+      }
+
+      const deleted = await storage.deleteTimelineEvent(eventId, userId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete event" });
+      }
+
+      res.json({ message: "Event deleted" });
+    } catch (error) {
+      console.error("Delete timeline event error:", error);
+      res.status(500).json({ error: "Failed to delete timeline event" });
     }
   });
 
