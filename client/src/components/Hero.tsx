@@ -1,6 +1,5 @@
 import { ArrowDown } from "lucide-react";
-
-const heroImageUrl = "https://www.figma.com/api/mcp/asset/85ca7531-1d25-422f-a53e-dda981af7a47";
+import heroImageUrl from "@assets/john-towner-3Kv48NS4WUU-unsplash-2_1766971233230.jpg";
 
 export default function Hero() {
   return (
