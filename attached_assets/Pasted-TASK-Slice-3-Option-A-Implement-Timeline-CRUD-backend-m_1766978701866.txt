@@ -1,0 +1,86 @@
+TASK: Slice 3 (Option A) — Implement Timeline CRUD (backend + minimal UI)
+
+AUTONOMY: LOW
+
+GOAL
+Turn the existing /app/timeline/:caseId skeleton page into a working Timeline feature:
+- Postgres table for timeline events
+- Secure CRUD API
+- Minimal UI to add/edit/delete/list events
+- Must enforce user ownership + case ownership (no cross-user access)
+
+CONSTRAINTS
+- Do NOT change marketing pages or public site design
+- Do NOT add dark mode
+- Do NOT add AI, uploads, OCR, exhibits, patterns, deadlines, tasks in this slice
+- Keep styling consistent with the authenticated app shell tokens (bush/cream/neutral)
+- Maintain existing routing conventions (wouter, URL-first)
+- Do not invent new routes beyond the endpoints listed below
+
+DATA MODEL (Drizzle)
+Add table: timeline_events (or timelineEvents)
+Fields:
+- id (uuid pk)
+- userId (fk to users, required)
+- caseId (fk to cases, required)
+- eventDate (timestamp, required)
+- title (text, required, 1-120 chars)
+- category (text, required; allow values: court, filing, communication, incident, parenting_time, expense, medical, school, other)
+- notes (text, optional)
+- source (text, required default "user_manual")
+- createdAt (timestamp default now)
+- updatedAt (timestamp default now)
+
+INDEXES
+- index on (caseId, eventDate)
+- index on (userId)
+
+BACKEND REQUIREMENTS
+Create endpoints with requireAuth and ownership enforcement:
+1) GET /api/cases/:caseId/timeline
+   - Verify user owns the case
+   - Return events sorted by eventDate DESC (newest first)
+2) POST /api/cases/:caseId/timeline
+   - Verify user owns the case
+   - Validate required fields: eventDate, title, category
+3) PATCH /api/timeline/:eventId
+   - Verify user owns the timeline event (via userId) AND it belongs to a case owned by user
+   - Allow updating: eventDate, title, category, notes
+4) DELETE /api/timeline/:eventId
+   - Same ownership enforcement as PATCH
+5) Add GET /api/health/timeline (minimal) that returns {ok:true} if timeline table can be queried (no secrets)
+
+STORAGE LAYER
+Add storage methods:
+- listTimelineEvents(caseId, userId)
+- createTimelineEvent(caseId, userId, data)
+- updateTimelineEvent(eventId, userId, data)
+- deleteTimelineEvent(eventId, userId)
+
+FRONTEND REQUIREMENTS
+Update the existing page:
+Route already exists: /app/timeline/:caseId
+
+Implement:
+- Fetch case via GET /api/cases/:caseId (already used pattern)
+- Fetch events via GET /api/cases/:caseId/timeline
+- Render list (date, title, category, notes)
+- Add Event form at top (or modal) with:
+  - date/time input
+  - title input
+  - category select
+  - notes textarea
+- Each event row has Edit + Delete
+  - Edit can be inline or modal (keep simple)
+- Use existing token styles, no hardcoded hex
+- Ensure no overflow: long titles/notes wrap, no horizontal scroll
+
+VALIDATION (must pass)
+- Works on published domain (not just preview)
+- Create/edit/delete persists after refresh
+- Unauthorized access is blocked (cannot read another user’s case timeline)
+- No console errors
+
+DELIVERABLE
+- List exact files changed (file + line ranges)
+- Provide a short test checklist confirming endpoints + UI behavior
