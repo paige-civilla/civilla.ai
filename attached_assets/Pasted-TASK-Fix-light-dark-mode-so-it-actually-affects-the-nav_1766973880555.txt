@@ -1,0 +1,61 @@
+TASK: Fix light/dark mode so it actually affects the navbars (Home + Cream + App)
+
+AUTONOMY: LOW
+CONSTRAINTS:
+- Do NOT redesign layout/spacing.
+- Do NOT change copy.
+- Only fix theme toggle plumbing + navbar token usage so dark/light works.
+
+FILES:
+- client/src/components/ThemeToggle.tsx (or wherever the toggle is)
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+- client/src/components/layout/AppNavbar.tsx
+- client/src/index.css (ONLY if tokens are missing for dark mode)
+- tailwind.config.ts (ONLY if darkMode: ["class"] is missing)
+
+GOAL:
+1) Theme toggle must persist (localStorage).
+2) Toggling must add/remove "dark" class on document.documentElement.
+3) Navbars must use token-based classes so colors actually change with .dark.
+
+STEP 1 — VERIFY TAILWIND DARK MODE
+In tailwind.config.ts confirm:
+  darkMode: ["class"]
+If missing, add it (minimum edit).
+
+STEP 2 — MAKE THE TOGGLE ACTUALLY CONTROL <html class="dark">
+Implement a single shared theme helper (do NOT add libraries):
+
+- Define theme type: "light" | "dark"
+- On app boot: read localStorage key "civilla-theme"
+  - if missing: default to "light"
+- Apply theme by mutating:
+  document.documentElement.classList.toggle("dark", theme === "dark");
+
+ThemeToggle must:
+- show current mode
+- on click: flip theme, write localStorage, apply to documentElement immediately
+
+IMPORTANT:
+- Do not rely on body class. Use document.documentElement.
+
+STEP 3 — ENSURE NAVBARS USE TOKENS THAT SWITCH WITH .dark
+In all 3 navbars, replace any fixed background/text that prevents theme switching.
+Rules:
+- Use bg-background / bg-card / text-foreground / border-border (or the project’s existing token classes)
+- If the design requires Home navbar to remain bush-green, still ensure text/icon colors use tokens that adapt in dark mode.
+- DO NOT introduce forbidden palette classes (bg-green-, text-green-, etc.)
+- Ensure hamburger + person icon use currentColor (text-* classes) so they switch.
+
+STEP 4 — VALIDATE
+- Toggle on Home: navbar background/text changes appropriately.
+- Toggle on another page (NavbarCream): changes appropriately.
+- Toggle inside /app (AppNavbar): changes appropriately.
+- Reload page: theme persists.
+- No console errors.
+
+DELIVERABLE
+- Report exactly which file(s) changed and line ranges.
+- Confirm documentElement dark class toggles (yes/no).
+- Confirm nav icons change color in both themes (yes/no).

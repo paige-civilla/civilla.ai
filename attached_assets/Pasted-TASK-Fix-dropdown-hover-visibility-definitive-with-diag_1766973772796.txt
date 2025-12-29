@@ -1,0 +1,80 @@
+TASK: Fix dropdown hover visibility (definitive) with diagnosis + minimal code change
+
+AUTONOMY: LOW
+DO NOT redesign. DO NOT change copy. Only fix dropdown behavior/visibility.
+
+FILES:
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+- client/src/components/AppNavbar.tsx (if it has dropdowns)
+
+STEP 0 — DIAGNOSE (READ-ONLY FIRST)
+For EACH dropdown (right-side nav buttons):
+1) Identify the dropdown menu element (the actual <div> that should appear).
+2) Identify its parent wrappers up to <body>.
+3) Report:
+   - Is the dropdown present in the DOM when open=true?
+   - Computed class list on dropdown (look for hidden/opacity-0/pointer-events-none)
+   - Any ancestor with overflow-hidden / overflow-x-hidden / overflow-clip
+   - Any ancestor that creates a stacking context (transform, filter, opacity < 1, position with z-index)
+4) If any of the above exists, that’s the reason it’s invisible. Report exactly which element and file/line.
+
+STEP 1 — APPLY THE FIX (CHOOSE THE FIRST THAT APPLIES)
+A) If dropdown is being CLIPPED by overflow:
+- Move the dropdown element so it is NOT inside the overflow-hidden container.
+- The simplest: render the dropdown as a sibling under a top-level wrapper inside Navbar (not inside any clipped flex row).
+- Or set ONLY the minimal wrapper to overflow-visible (do NOT remove global overflow-x hidden on html/body).
+
+B) If dropdown is behind content (z-index/stacking context):
+- Ensure the dropdown has: `fixed` positioning and a high z-index: `z-[9999]`
+- Anchor it using getBoundingClientRect from the trigger button (below).
+
+C) If dropdown closes instantly / hover handlers wrong:
+- Wrap trigger + dropdown in ONE wrapper:
+  <div className="relative" onMouseEnter open onMouseLeave close>
+    Trigger
+    {open && dropdown}
+  </div>
+- Ensure dropdown itself is inside that wrapper so hovering into it does not fire mouseleave.
+
+STEP 2 — IMPLEMENT A FAILSAFE “FIXED POSITION DROPDOWN”
+Regardless of which cause it is, implement this robust dropdown pattern for desktop:
+
+- Add refs + positioning:
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+- On open, compute position:
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setMenuPos({ top: r.bottom + 8, left: r.right - 260, width: 260 });
+  }, [open]);
+
+- Render menu as FIXED so it cannot be clipped:
+  {open && menuPos && (
+    <div
+      style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
+      className="fixed z-[9999] rounded-xl border border-neutral-darkest/10 shadow-lg bg-cream text-neutral-darkest"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      ...menu items...
+    </div>
+  )}
+
+IMPORTANT:
+- The trigger button must have ref={triggerRef}
+- Do NOT use opacity transitions until it works.
+- Ensure menu has NO hidden/opacity-0/pointer-events-none.
+- Ensure menu items remain accessible (aria attributes kept).
+
+STEP 3 — VALIDATE
+- Desktop: hover trigger -> menu appears; move mouse into menu -> stays open; move away -> closes.
+- Mobile: click trigger -> menu appears; click again/outside -> closes.
+- No console errors.
+
+DELIVERABLE
+1) Tell me which root cause it was (clipping vs hidden classes vs z-index vs hover close).
+2) List file + exact line ranges changed.
+3) Confirm validation passed on Navbar.tsx and NavbarCream.tsx (and AppNavbar if applicable).

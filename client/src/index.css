@@ -426,7 +426,7 @@ p,
   }
 
   body {
-    @apply font-sans antialiased bg-cream text-neutral-darkest;
+    @apply font-sans antialiased bg-background text-foreground;
   }
 }
 

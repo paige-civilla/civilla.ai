@@ -1,0 +1,68 @@
+TASK: Fix navbar dropdowns not visible on hover/click (z-index + overflow clipping)
+
+AUTONOMY: LOW
+
+CONSTRAINTS:
+- Do NOT change visual design, spacing, or copy.
+- Only fix dropdown visibility and interaction behavior.
+- Keep current hover/click behavior (but make the menu actually appear).
+
+DIAGNOSIS (CONFIRMED):
+- Dropdown is inside a stacking context with lower z-index than .civilla-nav-shell (z-index: 1000).
+- Global CSS rule `[class*="container"] { overflow: hidden; }` can clip dropdowns (navbar wrappers often include max-w-container).
+- Result: dropdown content renders but is hidden/clipped.
+
+GOAL:
+- Dropdown menus must be visible above everything, not clipped, on desktop + mobile.
+- Hover OR click should open (whichever is already implemented) and the user must be able to interact with the menu.
+
+FIX STRATEGY (DO THIS IN ORDER):
+
+1) REMOVE/RESTRICT THE GLOBAL CLIPPING RULE
+File: client/src/index.css
+Find the rule that looks like:
+  [class*="container"] { overflow: hidden; ... }
+This rule is too broad and breaks dropdowns/modals/tooltips.
+
+Replace it with a safer rule that DOES NOT apply to navbar/container wrappers.
+Options (pick ONE):
+A) Remove overflow:hidden entirely from that selector, keep other safe properties.
+B) Narrow it to a specific wrapper class you control, e.g.:
+   .civilla-page-shell [class*="container"] { overflow: hidden; }
+But do NOT apply it to nav shells or global containers.
+
+Required outcome:
+- Navbar ancestors must allow overflow to be visible.
+
+2) ENSURE NAV SHELL DOES NOT CLIP
+In these files (whichever is used for the dropdown):
+- client/src/components/Navbar.tsx
+- client/src/components/NavbarCream.tsx
+- client/src/components/layout/AppNavbar.tsx
+Make sure the immediate navbar wrapper has:
+- overflow-visible
+and does NOT sit inside an overflow-hidden ancestor.
+
+3) RENDER DROPDOWNS IN A PORTAL LAYER (PREFERRED FIX)
+Implement dropdown menus using a portal to document.body so they are immune to overflow clipping and stacking contexts.
+
+Implementation requirements:
+- When a menu is open, render the dropdown panel via ReactDOM.createPortal(...) to document.body.
+- Use position: fixed for the dropdown panel.
+- Compute its top/left from the trigger button’s getBoundingClientRect().
+- Use z-index: 9999 (Tailwind: z-[9999]) so it sits above nav shell and all content.
+- Add an outside-click handler to close (if not already present).
+- Keep keyboard accessibility (Escape closes, focusable links inside).
+
+4) VALIDATE
+- Hover/click shows dropdown visibly on:
+  - Home navbar
+  - Cream navbar
+  - App navbar
+- Dropdown is not clipped at any viewport width.
+- No console errors/warnings.
+
+DELIVERABLE
+- Report exact file changes (file + line ranges).
+- Confirm global container clipping rule was removed or safely scoped.
+- Confirm dropdowns are rendered via portal with z-[9999].

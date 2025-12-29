@@ -4,6 +4,7 @@ import { Menu, X, Moon, Sun, LogOut, Briefcase, LayoutDashboard, Settings, User,
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
+import logoWhite from "@assets/noBgWhite-2_1766258904832.png";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -51,6 +52,8 @@ export default function AppNavbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   useFixedNavShell(shellRef);
 
@@ -107,11 +110,10 @@ export default function AppNavbar() {
   });
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
+    const savedTheme = localStorage.getItem("civilla-theme");
+    const isDark = savedTheme === "dark";
+    setIsDarkMode(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
   }, []);
 
   useEffect(() => {
@@ -127,21 +129,32 @@ export default function AppNavbar() {
       }
     };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+  useEffect(() => {
+    if (isMenuOpen && menuButtonRef.current) {
+      const rect = menuButtonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 12, right: window.innerWidth - rect.right });
     }
+  }, [isMenuOpen]);
+
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    document.documentElement.classList.toggle("dark", newMode);
+    localStorage.setItem("civilla-theme", newMode ? "dark" : "light");
   };
 
   const handleQuickExit = () => {
@@ -156,13 +169,13 @@ export default function AppNavbar() {
 
   return (
     <div ref={shellRef} className="civilla-nav-shell">
-      <nav className="bg-cream w-full relative" data-testid="navbar-app">
+      <nav className="bg-cream dark:bg-background w-full relative" data-testid="navbar-app">
         <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-4 w-full max-w-container">
             <div className="flex items-center">
               <Link href="/app" className="relative h-7 w-auto" data-testid="link-logo-app">
                 <img 
-                  src={logoColor} 
+                  src={isDarkMode ? logoWhite : logoColor} 
                   alt="civilla.ai" 
                   className="h-full w-auto object-contain"
                 />
@@ -171,19 +184,19 @@ export default function AppNavbar() {
             <div className="flex items-center justify-center gap-2">
               <button 
                 onClick={toggleDarkMode}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
                 aria-label="Toggle dark mode"
                 data-testid="button-theme-toggle-app"
               >
                 {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-neutral-darkest" />
+                  <Sun className="w-4 h-4 text-foreground" />
                 ) : (
-                  <Moon className="w-4 h-4 text-neutral-darkest" />
+                  <Moon className="w-4 h-4 text-foreground" />
                 )}
               </button>
               <button 
                 ref={menuButtonRef}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Open menu"
                 aria-expanded={isMenuOpen}
@@ -191,11 +204,11 @@ export default function AppNavbar() {
               >
                 <span className="flex items-center gap-1.5">
                   {isMenuOpen ? (
-                    <X className="h-4 w-4 text-neutral-darkest" aria-hidden="true" />
+                    <X className="h-4 w-4 text-foreground" aria-hidden="true" />
                   ) : (
-                    <Menu className="h-4 w-4 text-neutral-darkest" aria-hidden="true" />
+                    <Menu className="h-4 w-4 text-foreground" aria-hidden="true" />
                   )}
-                  <span className="text-xs font-medium text-neutral-darkest">Menu</span>
+                  <span className="text-xs font-medium text-foreground">Menu</span>
                 </span>
               </button>
               <button 
@@ -209,55 +222,56 @@ export default function AppNavbar() {
             </div>
           </div>
         </div>
-
-        {isMenuOpen && (
-          <div 
-            ref={menuRef} 
-            className="fixed inset-x-3 top-[44px] md:absolute md:right-4 md:left-auto md:top-full md:mt-3 md:w-[280px] bg-[#e7ebea] border border-neutral-darkest/10 rounded-lg shadow-xl p-4 max-h-[75vh] overflow-auto z-50" 
-            data-testid="dropdown-menu-app"
-          >
-            {authData?.user && (
-              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-neutral-darkest/10">
-                <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-darkest truncate">{authData.user.email}</p>
-                </div>
-              </div>
-            )}
-            <div className="flex flex-col">
-              {menuLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-neutral-darkest/90 hover:text-neutral-darkest hover:bg-neutral-darkest/5 ${
-                    location === link.href ? "font-medium bg-neutral-darkest/[0.06]" : ""
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                  data-testid={`menu-link-${link.label.toLowerCase()}`}
-                >
-                  <link.icon className="h-4 w-4 opacity-70" />
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-3 pt-3 border-t border-neutral-darkest/10">
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  logoutMutation.mutate();
-                }}
-                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-neutral-darkest/70 hover:text-neutral-darkest hover:bg-neutral-darkest/5 w-full"
-                data-testid="button-logout-menu"
-              >
-                <LogOut className="h-4 w-4 opacity-70" />
-                Log out
-              </button>
-            </div>
-          </div>
-        )}
       </nav>
+
+      {isMenuOpen && menuPos && (
+        <div 
+          ref={menuRef} 
+          style={{ top: menuPos.top, right: menuPos.right }}
+          className="fixed w-[280px] bg-popover dark:bg-popover border border-popover-border dark:border-popover-border rounded-lg shadow-xl p-4 max-h-[75vh] overflow-auto z-[9999]" 
+          data-testid="dropdown-menu-app"
+        >
+          {authData?.user && (
+            <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
+              <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-popover-foreground truncate">{authData.user.email}</p>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col">
+            {menuLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-popover-foreground hover:bg-accent/50 ${
+                  location === link.href ? "font-medium bg-accent/30" : ""
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+                data-testid={`menu-link-${link.label.toLowerCase()}`}
+              >
+                <link.icon className="h-4 w-4 opacity-70" />
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <div className="mt-3 pt-3 border-t border-border">
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                logoutMutation.mutate();
+              }}
+              className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-popover-foreground/70 hover:text-popover-foreground hover:bg-accent/50 w-full"
+              data-testid="button-logout-menu"
+            >
+              <LogOut className="h-4 w-4 opacity-70" />
+              Log out
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
