@@ -167,7 +167,7 @@ function CTASection() {
 
 export default function MeetTheFounders() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream">
       <NavbarCream />
       <main className="flex-1">
         <HeaderSection />

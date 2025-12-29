@@ -51,11 +51,11 @@ function FAQAccordion({ sections }: { sections: { title: string; items: FaqItem[
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen flex flex-col" data-testid="page-faq">
+    <div className="min-h-screen flex flex-col bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream" data-testid="page-faq">
       <NavbarCream />
 
-      <main className="flex-1 bg-cream">
-        <section className="bg-[#e7ebea] w-full px-5 md:px-16 py-16 md:py-28" data-testid="section-hero">
+      <main className="flex-1 bg-cream dark:bg-neutral-darkest">
+        <section className="bg-[#e7ebea] dark:bg-neutral-darkest/80 w-full px-5 md:px-16 py-16 md:py-28" data-testid="section-hero">
           <div className="mx-auto max-w-container">
             <div className="flex flex-col gap-6 items-center text-center max-w-[768px] mx-auto">
               <h1 className="font-figtree font-bold text-[clamp(48px,6vw,84px)] leading-[1.1] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>

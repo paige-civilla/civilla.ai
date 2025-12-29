@@ -78,11 +78,11 @@ export default function SafetySupport() {
   ];
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col" data-testid="page-safety-support">
+    <div className="min-h-screen bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream flex flex-col" data-testid="page-safety-support">
       <NavbarCream />
       
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] py-28 px-4 md:px-16" data-testid="section-hero">
+      <section className="bg-[#e7ebea] dark:bg-neutral-darkest/80 py-28 px-4 md:px-16" data-testid="section-hero">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col items-center text-center max-w-[768px] mx-auto gap-6">
             <h1 className="font-figtree font-bold text-[clamp(48px,6vw,84px)] leading-[1.1] tracking-[0.01em] text-neutral-darkest" style={{ textWrap: "balance" }}>

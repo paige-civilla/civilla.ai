@@ -53,11 +53,11 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" data-testid="page-contact">
+    <div className="min-h-screen flex flex-col bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream" data-testid="page-contact">
       <NavbarCream />
 
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] px-5 md:px-16 py-16 md:py-28" data-testid="section-hero">
+      <section className="bg-[#e7ebea] dark:bg-neutral-darkest/80 px-5 md:px-16 py-16 md:py-28" data-testid="section-hero">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-6 md:gap-8 items-center text-center max-w-[768px] mx-auto">
             <div className="flex flex-col gap-4 md:gap-6 items-center w-full">

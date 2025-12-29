@@ -41,11 +41,11 @@ export default function Accessibility() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" data-testid="page-accessibility">
+    <div className="min-h-screen flex flex-col bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream" data-testid="page-accessibility">
       <NavbarCream />
 
       {/* Hero Section */}
-      <section className="bg-[#e7ebea] py-16 md:py-28 px-5 md:px-16" data-testid="section-hero">
+      <section className="bg-[#e7ebea] dark:bg-neutral-darkest/80 py-16 md:py-28 px-5 md:px-16" data-testid="section-hero">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-6 md:gap-8 items-center text-center max-w-[768px] mx-auto">
             <div className="flex flex-col gap-4 md:gap-6 items-center w-full">
@@ -69,7 +69,7 @@ export default function Accessibility() {
       </section>
 
       {/* What We're Doing Section */}
-      <section className="bg-cream py-16 md:py-28 px-5 md:px-16" data-testid="section-what-we-do">
+      <section className="bg-cream dark:bg-neutral-darkest py-16 md:py-28 px-5 md:px-16" data-testid="section-what-we-do">
         <div className="max-w-container mx-auto">
           <div className="flex flex-col gap-8 md:gap-12 max-w-3xl">
             <div className="flex flex-col gap-4 md:gap-6">
@@ -128,7 +128,7 @@ export default function Accessibility() {
       {/* Report an Accessibility Issue Section */}
       <section 
         id="report" 
-        className="bg-cream py-16 md:py-28 px-5 md:px-16 scroll-mt-20" 
+        className="bg-cream dark:bg-neutral-darkest py-16 md:py-28 px-5 md:px-16 scroll-mt-20" 
         data-testid="section-report"
       >
         <div className="max-w-container mx-auto">

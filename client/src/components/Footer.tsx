@@ -30,14 +30,14 @@ const footerLinks = {
 export default function Footer() {
   return (
     <footer 
-      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-20"
+      className="bg-cream dark:bg-neutral-darkest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-20"
       data-testid="footer"
     >
       <div className="flex flex-col gap-12 md:gap-16 items-start max-w-container w-full">
-        <div className="w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest">
+        <div className="w-full pt-8 pb-8 border-t-2 border-b-2 border-neutral-darkest dark:border-cream">
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-12 max-w-content-large mx-auto">
             <div className="flex flex-col gap-3 items-start">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest dark:text-cream leading-[1.6]">
                 Start Here
               </span>
               <div className="flex flex-col items-start w-full">
@@ -45,7 +45,7 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest dark:text-cream leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     <BrandText>{link.label}</BrandText>
@@ -55,7 +55,7 @@ export default function Footer() {
             </div>
 
             <div className="flex flex-col gap-3 items-start">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest dark:text-cream leading-[1.6]">
                 About <span className="italic font-medium">civilla</span>
               </span>
               <div className="flex flex-col items-start w-full">
@@ -63,7 +63,7 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest dark:text-cream leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     <BrandText>{link.label}</BrandText>
@@ -73,7 +73,7 @@ export default function Footer() {
             </div>
 
             <div className="flex flex-col gap-3 items-start">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest dark:text-cream leading-[1.6]">
                 Trust & Safety
               </span>
               <div className="flex flex-col items-start w-full">
@@ -81,7 +81,7 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest dark:text-cream leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     {link.label}
@@ -91,7 +91,7 @@ export default function Footer() {
             </div>
 
             <div className="flex flex-col gap-3 items-start">
-              <span className="font-sans font-bold text-xs text-neutral-darkest leading-[1.6]">
+              <span className="font-sans font-bold text-xs text-neutral-darkest dark:text-cream leading-[1.6]">
                 Support
               </span>
               <div className="flex flex-col items-start w-full">
@@ -99,7 +99,7 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest leading-[1.6] w-full"
+                    className="py-1.5 font-sans font-normal text-xs text-neutral-darkest dark:text-cream leading-[1.6] w-full"
                     data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
                     {link.label}
@@ -111,7 +111,7 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center justify-center w-full">
-          <p className="font-sans font-normal text-body-small text-neutral-darkest leading-[1.6]">
+          <p className="font-sans font-normal text-body-small text-neutral-darkest dark:text-cream leading-[1.6]">
             © 2025 <Brand>civilla.ai</Brand>. All rights reserved.
           </p>
         </div>

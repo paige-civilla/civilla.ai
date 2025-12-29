@@ -23,8 +23,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <p className="font-sans text-neutral-darkest/60">Loading...</p>
+      <div className="min-h-screen bg-cream dark:bg-neutral-darkest flex items-center justify-center">
+        <p className="font-sans text-neutral-darkest/60 dark:text-cream/60">Loading...</p>
       </div>
     );
   }
@@ -34,7 +34,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream" data-testid="app-layout">
+    <div className="flex flex-col min-h-screen bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream" data-testid="app-layout">
       <AppNavbar />
       <main className="flex-1 w-full">
         {children}

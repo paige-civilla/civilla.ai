@@ -1,0 +1,73 @@
+TASK: Fix dark mode so it applies to ALL pages (not just Navbar)
+
+AUTONOMY: LOW
+GOAL:
+Dark mode must affect the entire page (background, text, footer, all sections) across:
+- Public pages (Home + marketing pages)
+- App pages (/app/*)
+
+CURRENT ISSUE:
+Only Navbar updates, footer and page content stay light.
+
+ROOT CAUSE (likely):
+The `dark` class is not being applied to `document.documentElement` (html), or is applied only within Navbar scope.
+
+CONSTRAINTS:
+- Do NOT redesign sections or change copy
+- Do NOT change routing
+- Keep existing Civilla tokens/fonts
+- Minimal file edits, only what’s necessary for theme propagation
+
+IMPLEMENTATION:
+1) Make theme toggle apply to <html> (global)
+   - Locate your theme logic (likely in:
+     client/src/components/ThemeToggle.tsx
+     OR a theme hook/context in client/src/lib/*)
+
+   REQUIRED behavior:
+   - Store theme in localStorage (e.g., "civilla-theme" = "light" | "dark")
+   - On load, apply theme to the whole document:
+       document.documentElement.classList.toggle("dark", theme === "dark")
+
+   Also listen to system preference ONLY if you already do; otherwise skip.
+
+2) Ensure the page wrapper uses theme-aware background/text
+   - Update BOTH layout wrappers so the whole page inherits the theme:
+
+   Files (one or both exist; update whichever are in use):
+   - client/src/components/layout/PublicLayout.tsx
+   - client/src/components/layout/AppLayout.tsx
+
+   Change their top-level wrapper to include:
+   - min-h-screen
+   - background and text that respond to `.dark`
+
+   Use token-based classes if you have them.
+   Example (choose the tokens you already use):
+     className="min-h-screen bg-cream text-neutral-darkest dark:bg-neutral-darkest dark:text-cream"
+
+   IMPORTANT:
+   - The wrapper must be OUTSIDE Navbar + Footer so it affects everything.
+
+3) Fix Footer background/text to respect theme
+   File:
+   - client/src/components/Footer.tsx
+
+   Replace any hardcoded light-only background (e.g. bg-cream, bg-white)
+   with a theme-aware equivalent:
+     bg-cream dark:bg-neutral-darkest
+   and ensure text colors also switch:
+     text-neutral-darkest dark:text-cream
+   Links should remain readable (add dark:hover variants only if needed).
+
+4) Verification
+   - Toggle dark mode:
+     - Home page: hero sections + footer must switch
+     - Plans page: cards + footer switch
+     - /app pages: navbar + page background + footer switch
+   - Refresh the page: theme persists
+   - No console errors
+
+DELIVERABLE:
+- List exact files changed + line ranges
+- Confirm dark mode now affects page + footer across all routes

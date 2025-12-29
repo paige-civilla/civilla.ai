@@ -4,10 +4,10 @@ import Footer from "@/components/Footer";
 
 export default function AdminLogin() {
   return (
-    <div className="flex flex-col min-h-screen bg-cream">
+    <div className="flex flex-col min-h-screen bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream">
       <NavbarCream />
       
-      <section className="bg-[#e7ebea] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28">
+      <section className="bg-[#e7ebea] dark:bg-neutral-darkest/80 w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28">
         <div className="flex flex-col items-center max-w-container w-full">
           <div className="flex flex-col gap-6 md:gap-8 items-center max-w-[768px] w-full">
             <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
