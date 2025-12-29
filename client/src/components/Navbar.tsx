@@ -46,8 +46,8 @@ const menuSections = [
     links: [
       { label: "Home", href: "/", icon: Home },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
-      { label: "Login", href: "/login", icon: LogIn },
       { label: "Create account", href: "/register", icon: UserPlus },
+      { label: "Login", href: "/login", icon: LogIn },
     ]
   },
   {
@@ -315,16 +315,6 @@ export default function Navbar() {
         data-testid="dropdown-account"
       >
         <Link
-          href="/login"
-          role="menuitem"
-          className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent/50"
-          onClick={() => setIsAccountOpen(false)}
-          data-testid="link-login"
-        >
-          <LogIn className="w-4 h-4 opacity-70" />
-          Login
-        </Link>
-        <Link
           href="/register"
           role="menuitem"
           className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent/50"
@@ -333,6 +323,16 @@ export default function Navbar() {
         >
           <UserPlus className="w-4 h-4 opacity-70" />
           Create account
+        </Link>
+        <Link
+          href="/login"
+          role="menuitem"
+          className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent/50"
+          onClick={() => setIsAccountOpen(false)}
+          data-testid="link-login"
+        >
+          <LogIn className="w-4 h-4 opacity-70" />
+          Login
         </Link>
       </div>
     )}
