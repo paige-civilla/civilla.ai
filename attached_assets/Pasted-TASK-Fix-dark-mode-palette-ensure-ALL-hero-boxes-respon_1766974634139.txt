@@ -1,0 +1,67 @@
+TASK: Fix dark mode palette + ensure ALL hero boxes respond to theme (no partial switching)
+
+AUTONOMY: LOW
+
+SYMPTOMS:
+- Dark mode looks bad.
+- Only some hero boxes change in dark mode; others stay light.
+
+CONSTRAINTS:
+- Do NOT change layout structure, spacing, or copy.
+- Only change theme tokens + hero box styling so dark mode is consistent.
+- Do NOT introduce new features or pages.
+
+ROOT CAUSE (LIKELY):
+- Some hero boxes are using hardcoded classes (bg-cream/bg-white/border-neutral-*/hex) instead of semantic tokens.
+- Dark theme tokens in index.css are not tuned for Civilla’s palette.
+
+GOAL:
+1) Dark mode palette should match Civilla: deep near-black background, clean off-white text, bush green accents.
+2) 100% of hero boxes must switch correctly because they all use the same semantic token classes.
+
+STEP 1 — TUNE TOKENS (ONLY TOKENS)
+File: client/src/index.css
+In :root (light) keep existing values unless necessary.
+In .dark, set tokens to these exact values (or closest HSL equivalents if tokens use HSL):
+- --background: near #070503
+- --foreground: near #fcfbf9
+- --card: slightly lighter than background (near #0b0a09 or #0f0d0c)
+- --card-foreground: same as foreground
+- --border: subtle light border (white at ~10–16% opacity equivalent)
+- --muted / --muted-foreground: neutral readable (don’t go gray-on-gray too low contrast)
+- --primary should remain bush green family (but not neon)
+Make sure text contrast is strong.
+
+STEP 2 — HERO BOX CONTINUITY RULE
+Find the hero “boxes” used across marketing pages and app pages.
+They must ALL use ONLY semantic classes:
+- bg-card
+- text-card-foreground
+- border border-border
+and NO hardcoded background/border colors (no bg-cream, bg-white, bg-[#...], border-neutral-darkest/20, etc).
+
+If hero boxes are repeated as JSX blocks, create ONE presentational component:
+client/src/components/HeroBox.tsx (or similar)
+Props: title, body, optional children
+Default wrapper classes:
+"rounded-2xl border border-border bg-card text-card-foreground"
+Then replace all hero boxes to use this component so every box follows the same theme behavior.
+
+STEP 3 — AUDIT + REPLACE
+Repo-wide search for hero box wrappers and replace their className to remove hardcoded colors.
+Specifically search for:
+- bg-cream
+- bg-white
+- bg-[#
+- border-neutral
+- text-neutral-darkest
+Only replace within hero box containers / hero card containers (do not touch unrelated UI).
+
+STEP 4 — VERIFY
+- Toggle dark mode: EVERY hero box background/border/text switches.
+- No box remains white/cream in dark mode.
+- No contrast issues (body text readable).
+
+DELIVERABLE:
+- List every file changed (file + line ranges).
+- Confirm the new hero box continuity rule is enforced by using semantic tokens or the shared HeroBox component.
