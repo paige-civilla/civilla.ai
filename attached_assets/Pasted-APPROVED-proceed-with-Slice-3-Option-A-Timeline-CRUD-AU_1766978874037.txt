@@ -1,0 +1,72 @@
+APPROVED — proceed with Slice 3 (Option A) Timeline CRUD.
+
+AUTONOMY: LOW
+
+You may begin coding now. Do NOT ask for approval again unless something is unclear in Figma or conflicts with existing app patterns.
+
+SCOPE LOCK
+- Implement Timeline CRUD exactly per the spec we provided.
+- Backend + minimal UI on /app/timeline/:caseId only.
+- No uploads, no AI, no patterns, no exhibits, no deadlines/tasks wiring in this slice.
+- Do NOT change marketing pages or public routes.
+
+IMPLEMENTATION REQUIREMENTS (must match)
+1) shared/schema.ts
+- Add timeline events table (timeline_events or timelineEvents)
+- Fields:
+  id (uuid pk)
+  userId (fk users)
+  caseId (fk cases)
+  eventDate (timestamp required)
+  title (text required 1–120)
+  category (text required; allow: court, filing, communication, incident, parenting_time, expense, medical, school, other)
+  notes (text optional)
+  source (text required default "user_manual")
+  createdAt (timestamp default now)
+  updatedAt (timestamp default now)
+- Indexes:
+  (caseId, eventDate)
+  (userId)
+
+2) server/storage.ts
+Add methods:
+- listTimelineEvents(caseId, userId)
+- createTimelineEvent(caseId, userId, data)
+- updateTimelineEvent(eventId, userId, data)
+- deleteTimelineEvent(eventId, userId)
+
+All methods must enforce ownership:
+- user must own the case
+- user must own the event (and the event must belong to a case owned by the user)
+
+3) server/routes.ts
+Add endpoints (requireAuth everywhere):
+- GET    /api/cases/:caseId/timeline     -> sorted by eventDate DESC
+- POST   /api/cases/:caseId/timeline
+- PATCH  /api/timeline/:eventId
+- DELETE /api/timeline/:eventId
+- GET    /api/health/timeline -> { ok:true } if a simple timeline query works, else 500 { ok:false, error:"..." } (no secrets)
+
+4) Frontend
+Update the existing Timeline page for the app shell:
+- Route: /app/timeline/:caseId (use existing page file if present; otherwise create it but DO NOT rename routes)
+- Must:
+  - fetch case via GET /api/cases/:caseId
+  - fetch events via GET /api/cases/:caseId/timeline
+  - Add event form with:
+    date/time input, title input, category select, notes textarea
+  - List events with edit + delete
+  - Edit can be inline or modal (keep simple)
+- Styling constraints:
+  - Use existing Civilla tokens, no hardcoded hex
+  - No dark mode changes
+  - Ensure overflow safety: long text wraps, no horizontal scroll
+
+DELIVERABLE (required)
+After implementation, provide:
+A) Exact file changes with line ranges (file + lines)
+B) Endpoint checklist with example responses
+C) Manual test checklist for civilla.ai (published domain), including:
+   - create/edit/delete persists after refresh
+   - unauthorized caseId/eventId blocked
+   - no console errors
