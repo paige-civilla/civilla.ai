@@ -104,10 +104,6 @@ function HeaderSection() {
               organizing your information, or preparing your next steps. No surprises, no hidden
               fees.
             </p>
-
-            <p className="mt-4 text-sm leading-relaxed text-neutral-darkest/70 max-w-[34rem] italic">
-              *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
-            </p>
           </div>
         </div>
       </div>
