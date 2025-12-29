@@ -64,7 +64,7 @@ export default function Login() {
                 Login
               </h1>
               <p className="text-[14px] leading-6 text-neutral-darkest/70">
-                Welcome back to civilla
+                Welcome Back!
               </p>
             </div>
 
