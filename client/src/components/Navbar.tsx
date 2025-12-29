@@ -46,7 +46,7 @@ const menuSections = [
     links: [
       { label: "Home", href: "/", icon: Home },
       { label: "Plans & Pricing", href: "/plans", icon: CreditCard },
-      { label: "Create account", href: "/register", icon: UserPlus },
+      { label: "Create Account", href: "/register", icon: UserPlus },
       { label: "Login", href: "/login", icon: LogIn },
     ]
   },
@@ -322,7 +322,7 @@ export default function Navbar() {
           data-testid="link-create-account"
         >
           <UserPlus className="w-4 h-4 opacity-70" />
-          Create account
+          Create Account
         </Link>
         <Link
           href="/login"
