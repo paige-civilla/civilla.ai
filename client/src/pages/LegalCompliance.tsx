@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { FAQ_LEGAL, type FaqItem } from "@/content/faqs";
+import imgEducation from "@assets/sunlight-on-the-pages-of-an-open-book_1766971639667.jpg";
 
 function StyledCivilla({ text }: { text: string }) {
  const parts = text.split(/(civilla(?:'s)?)/gi);
@@ -71,7 +72,7 @@ function EducationSection() {
  <div className="flex flex-col md:flex-row gap-8 md:gap-20 items-center w-full">
  <div className="flex-1 w-full aspect-[600/640] rounded-2xl overflow-hidden">
  <img 
- src="https://www.figma.com/api/mcp/asset/45617208-0482-4b11-9665-f57d418aec3c"
+ src={imgEducation}
  alt="Open book representing education"
  className="w-full h-full object-cover"
  />
