@@ -4,6 +4,7 @@ import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { FAQ_LEGAL, type FaqItem } from "@/content/faqs";
 import imgEducation from "@assets/sunlight-on-the-pages-of-an-open-book_1766971639667.jpg";
+import imgBoundaries from "@assets/twin-doors_1766971933823.jpg";
 
 function StyledCivilla({ text }: { text: string }) {
  const parts = text.split(/(civilla(?:'s)?)/gi);
@@ -155,7 +156,7 @@ function BoundariesSection() {
  </div>
  <div className="flex-1 w-full aspect-[600/640] rounded-2xl overflow-hidden">
  <img 
- src="https://www.figma.com/api/mcp/asset/a8e88eac-3797-4930-8f68-b462609e9e2a"
+ src={imgBoundaries}
  alt="Door representing boundaries"
  className="w-full h-full object-cover"
  />
