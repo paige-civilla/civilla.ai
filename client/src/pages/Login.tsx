@@ -279,12 +279,6 @@ export default function Login() {
           </p>
         </div>
       </section>
-
-      <div className="flex items-center justify-center px-5 py-8">
-        <p className="font-sans text-[10px] text-neutral-darkest/60 text-center italic">
-          *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
-        </p>
-      </div>
       
       <Footer />
     </div>
