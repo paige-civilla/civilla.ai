@@ -2,13 +2,10 @@ import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
-  authMagicLinks,
   cases,
   authIdentities,
   type User,
   type InsertUser,
-  type MagicLink,
-  type InsertMagicLink,
   type Case,
   type InsertCase,
   type AuthIdentity,
@@ -19,10 +16,6 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  createMagicLink(link: InsertMagicLink): Promise<MagicLink>;
-  getMagicLinkByTokenHash(tokenHash: string): Promise<MagicLink | undefined>;
-  markMagicLinkUsed(id: string): Promise<void>;
   
   getCasesByUserId(userId: string): Promise<Case[]>;
   getCaseCountByUserId(userId: string): Promise<number>;
@@ -55,29 +48,6 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
-  }
-
-  async createMagicLink(link: InsertMagicLink): Promise<MagicLink> {
-    const [magicLink] = await db
-      .insert(authMagicLinks)
-      .values(link)
-      .returning();
-    return magicLink;
-  }
-
-  async getMagicLinkByTokenHash(tokenHash: string): Promise<MagicLink | undefined> {
-    const [link] = await db
-      .select()
-      .from(authMagicLinks)
-      .where(eq(authMagicLinks.tokenHash, tokenHash));
-    return link;
-  }
-
-  async markMagicLinkUsed(id: string): Promise<void> {
-    await db
-      .update(authMagicLinks)
-      .set({ usedAt: new Date() })
-      .where(eq(authMagicLinks.id, id));
   }
 
   async getCasesByUserId(userId: string): Promise<Case[]> {

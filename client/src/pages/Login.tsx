@@ -9,10 +9,7 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [magicLinkEmail, setMagicLinkEmail] = useState("");
   const [error, setError] = useState("");
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const [activeTab, setActiveTab] = useState<"password" | "magic">("password");
   const [redirecting, setRedirecting] = useState(false);
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
@@ -49,29 +46,10 @@ export default function Login() {
     },
   });
 
-  const magicLinkMutation = useMutation({
-    mutationFn: async (data: { email: string }) => {
-      const res = await apiRequest("POST", "/api/auth/magic-link/request", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      setMagicLinkSent(true);
-    },
-    onError: (err: Error) => {
-      setError(err.message || "Failed to send magic link");
-    },
-  });
-
   const handlePasswordLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     loginMutation.mutate({ email, password });
-  };
-
-  const handleMagicLink = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    magicLinkMutation.mutate({ email: magicLinkEmail });
   };
 
   return (
@@ -90,114 +68,50 @@ export default function Login() {
               </p>
             </div>
 
-            <div className="flex gap-2 w-full">
-              <button
-                type="button"
-                onClick={() => setActiveTab("password")}
-                className={`flex-1 py-2.5 font-sans text-sm font-medium rounded-md transition-colors ${
-                  activeTab === "password"
-                    ? "bg-bush text-white"
-                    : "bg-white text-neutral-darkest border border-neutral-darkest/20 hover:bg-neutral-darkest/5"
-                }`}
-                data-testid="tab-password"
-              >
-                Password
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("magic")}
-                className={`flex-1 py-2.5 font-sans text-sm font-medium rounded-md transition-colors ${
-                  activeTab === "magic"
-                    ? "bg-bush text-white"
-                    : "bg-white text-neutral-darkest border border-neutral-darkest/20 hover:bg-neutral-darkest/5"
-                }`}
-                data-testid="tab-magic-link"
-              >
-                Magic Link
-              </button>
-            </div>
-
             {error && (
               <div className="w-full p-4 bg-destructive/10 border border-destructive/30 rounded-md">
                 <p className="font-sans text-sm text-destructive">{error}</p>
               </div>
             )}
 
-            {activeTab === "password" ? (
-              <form onSubmit={handlePasswordLogin} className="flex flex-col gap-4 w-full">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="email" className="font-sans text-sm font-medium text-neutral-darkest">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
-                    required
-                    data-testid="input-email"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="password" className="font-sans text-sm font-medium text-neutral-darkest">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
-                    required
-                    data-testid="input-password"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loginMutation.isPending}
-                  className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
-                  data-testid="button-login"
-                >
-                  {loginMutation.isPending ? "Logging in..." : "Login"}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleMagicLink} className="flex flex-col gap-4 w-full">
-                {magicLinkSent ? (
-                  <div className="w-full p-4 bg-bush/10 border border-bush/30 rounded-md">
-                    <p className="font-sans text-sm text-bush text-center">
-                      Check your email for a magic link to sign in.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="magic-email" className="font-sans text-sm font-medium text-neutral-darkest">
-                        Email
-                      </label>
-                      <input
-                        id="magic-email"
-                        type="email"
-                        value={magicLinkEmail}
-                        onChange={(e) => setMagicLinkEmail(e.target.value)}
-                        className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
-                        required
-                        data-testid="input-magic-email"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={magicLinkMutation.isPending}
-                      className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
-                      data-testid="button-magic-link"
-                    >
-                      {magicLinkMutation.isPending ? "Sending..." : "Send Magic Link"}
-                    </button>
-                  </>
-                )}
-              </form>
-            )}
+            <form onSubmit={handlePasswordLogin} className="flex flex-col gap-4 w-full">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="email" className="font-sans text-sm font-medium text-neutral-darkest">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
+                  required
+                  data-testid="input-email"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="password" className="font-sans text-sm font-medium text-neutral-darkest">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
+                  required
+                  data-testid="input-password"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loginMutation.isPending}
+                className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
+                data-testid="button-login"
+              >
+                {loginMutation.isPending ? "Logging in..." : "Login"}
+              </button>
+            </form>
 
             <div className="w-full flex items-center gap-3">
               <div className="flex-1 h-px bg-neutral-darkest/15" />

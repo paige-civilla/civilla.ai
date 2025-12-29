@@ -1,8 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { hashPassword, comparePasswords, generateToken, hashToken, requireAuth } from "./auth";
-import { mailProvider } from "./mail";
+import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection } from "./db";
 // Turnstile disabled - import commented out
 // import { verifyTurnstile } from "./turnstile";
@@ -116,90 +115,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
-    }
-  });
-
-  app.post("/api/auth/magic-link/request", async (req, res) => {
-    try {
-      const { email } = req.body;
-
-      if (!email) {
-        return res.status(400).json({ error: "Email is required" });
-      }
-
-      let user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        user = await storage.createUser({ email, passwordHash: null });
-      }
-
-      const token = generateToken();
-      const tokenHash = hashToken(token);
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-      await storage.createMagicLink({
-        userId: user.id,
-        tokenHash,
-        expiresAt,
-      });
-
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-      const mailResult = await mailProvider.sendMagicLink(email, token, baseUrl);
-
-      if (!mailResult.success) {
-        console.error("Magic link email failed:", mailResult.error);
-        return res.status(500).json({ error: "Unable to send email right now. Please try again later." });
-      }
-
-      res.json({ message: "Magic link sent to your email" });
-    } catch (error) {
-      console.error("Magic link request error:", error);
-      res.status(500).json({ error: "Failed to send magic link" });
-    }
-  });
-
-  app.get("/api/auth/magic-link/verify", async (req, res) => {
-    try {
-      const { token } = req.query;
-
-      if (!token || typeof token !== "string") {
-        return res.status(400).json({ error: "Token is required" });
-      }
-
-      const tokenHash = hashToken(token);
-      const magicLink = await storage.getMagicLinkByTokenHash(tokenHash);
-
-      if (!magicLink) {
-        return res.status(400).json({ error: "Invalid or expired link" });
-      }
-
-      if (magicLink.usedAt) {
-        return res.status(400).json({ error: "Link has already been used" });
-      }
-
-      if (new Date() > magicLink.expiresAt) {
-        return res.status(400).json({ error: "Link has expired" });
-      }
-
-      await storage.markMagicLinkUsed(magicLink.id);
-
-      const user = await storage.getUser(magicLink.userId);
-      if (!user) {
-        return res.status(400).json({ error: "User not found" });
-      }
-
-      req.session.userId = user.id;
-
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.redirect("/login?error=session_error");
-        }
-        res.redirect("/app/cases");
-      });
-    } catch (error) {
-      console.error("Magic link verify error:", error);
-      res.status(500).json({ error: "Verification failed" });
     }
   });
 

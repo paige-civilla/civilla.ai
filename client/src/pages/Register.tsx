@@ -1,9 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Check, X } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
+
+function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
+  return (
+    <li className={`flex items-center gap-2 text-xs ${met ? "text-bush" : "text-neutral-darkest/60"}`}>
+      {met ? (
+        <Check className="w-3 h-3" />
+      ) : (
+        <X className="w-3 h-3" />
+      )}
+      {label}
+    </li>
+  );
+}
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -33,6 +47,23 @@ export default function Register() {
     setLocation("/app");
   };
 
+  const passwordRequirements = useMemo(() => ({
+    minLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/`~;']/.test(password),
+  }), [password]);
+
+  const allRequirementsMet = useMemo(() => 
+    passwordRequirements.minLength &&
+    passwordRequirements.hasUppercase &&
+    passwordRequirements.hasNumber &&
+    passwordRequirements.hasSpecial,
+  [passwordRequirements]);
+
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const canSubmit = allRequirementsMet && passwordsMatch && email.length > 0;
+
   const registerMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
       const res = await apiRequest("POST", "/api/auth/register", data);
@@ -51,13 +82,13 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    if (!allRequirementsMet) {
+      setError("Please meet all password requirements");
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    if (!passwordsMatch) {
+      setError("Passwords do not match");
       return;
     }
 
@@ -112,10 +143,14 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 min-h-11 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/25 focus:border-bush"
                   required
-                  minLength={8}
                   data-testid="input-password"
                 />
-                <span className="font-sans text-xs text-neutral-darkest/60">At least 8 characters</span>
+                <ul className="flex flex-col gap-1 mt-1">
+                  <PasswordRequirement met={passwordRequirements.minLength} label="8+ characters" />
+                  <PasswordRequirement met={passwordRequirements.hasUppercase} label="1 uppercase letter" />
+                  <PasswordRequirement met={passwordRequirements.hasNumber} label="1 number" />
+                  <PasswordRequirement met={passwordRequirements.hasSpecial} label="1 special character" />
+                </ul>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="confirm-password" className="font-sans text-sm font-medium text-neutral-darkest">
@@ -130,10 +165,15 @@ export default function Register() {
                   required
                   data-testid="input-confirm-password"
                 />
+                {confirmPassword.length > 0 && (
+                  <span className={`font-sans text-xs ${passwordsMatch ? "text-bush" : "text-destructive"}`}>
+                    {passwordsMatch ? "Passwords match" : "Passwords do not match"}
+                  </span>
+                )}
               </div>
               <button
                 type="submit"
-                disabled={registerMutation.isPending}
+                disabled={!canSubmit || registerMutation.isPending}
                 className="w-full bg-bush text-white font-bold text-sm min-h-11 rounded-md button-inset-shadow disabled:opacity-50"
                 data-testid="button-register"
               >
@@ -221,12 +261,6 @@ export default function Register() {
           </p>
         </div>
       </section>
-
-      <div className="flex items-center justify-center px-5 py-8">
-        <p className="font-sans text-[10px] text-neutral-darkest/60 text-center italic">
-          *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
-        </p>
-      </div>
       
       <Footer />
     </div>
