@@ -2,13 +2,10 @@ import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { BrandMark } from "@/components/BrandMark";
 
-import imgPlaceholderImage from "@assets/andrew-coelho-aL7SA1ASVdQ-unsplash_1766971373993.jpg";
 import imgPlaceholderImage1 from "@assets/casey-horner-4rDCa5hBlCs-unsplash_1766971405145.jpg";
 import imgVector from "@assets/a-car-sits-still-at-a-crossroad_1766971423475.jpg";
 import imgVector1 from "@assets/evgeni-evgeniev-LPKk3wtkC-g-unsplash_1766971440085.jpg";
 import imgVector2 from "@assets/federico-bottos-Z3NceSeZqgI-unsplash_1766971456558.jpg";
-import imgRuleIcon from "@assets/foggy-landscape-reflected-in-lake_1766971484286.jpg";
-import imgExploreIcon from "@assets/quiet-wild-meadow-filled-with-plants-2_1766971509254.jpg";
 
 function HeaderSection() {
   return (
@@ -67,9 +64,6 @@ function JourneySection() {
             <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
               <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
                 <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
-                  <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                    <img src={imgRuleIcon} alt="" className="w-full h-full" />
-                  </div>
                   <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                     <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
                       Information & Guidelines Available to the Public
@@ -85,9 +79,6 @@ function JourneySection() {
             <div className="bg-cream border-2 border-neutral-darkest rounded-2xl overflow-hidden flex-1 flex flex-col min-w-0">
               <div className="flex flex-col gap-4 md:gap-6 items-start justify-center p-6 md:p-8 min-w-0">
                 <div className="flex flex-col gap-4 md:gap-6 items-start w-full min-w-0">
-                  <div className="w-10 h-10 md:w-12 md:h-12 relative flex-shrink-0">
-                    <img src={imgExploreIcon} alt="" className="w-full h-full" />
-                  </div>
                   <div className="flex flex-col gap-3 md:gap-4 items-start text-neutral-darkest w-full min-w-0">
                     <h3 className="font-heading font-bold text-heading-3-mobile md:text-[40px] leading-[1.2] tracking-[0.32px] md:tracking-[0.4px] w-full">
                       Prepare With Clarity
