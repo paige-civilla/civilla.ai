@@ -89,17 +89,17 @@ export const YEARLY_SAVINGS_LABEL = "2 Mo. Free";
 
 function HeaderSection() {
   return (
-    <section className="bg-[#e7ebea]" data-testid="section-header">
+    <section className="bg-[#e7ebea] dark:bg-neutral-darkest/80" data-testid="section-header">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           <div className="min-w-0">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-neutral-darkest">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-neutral-darkest dark:text-cream">
               Plans &amp; Pricing
             </h1>
           </div>
 
           <div className="min-w-0">
-            <p className="text-base sm:text-lg leading-relaxed text-neutral-darkest/80 max-w-[34rem]">
+            <p className="text-base sm:text-lg leading-relaxed text-neutral-darkest/80 dark:text-cream/80 max-w-[34rem]">
               Choose a plan that fits where you are. Whether you're learning the process,
               organizing your information, or preparing your next steps. No surprises, no hidden
               fees.
@@ -115,10 +115,10 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
   const proPlan = PRICING_PLANS.find(p => p.id === "pro")!;
 
   return (
-    <section className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-most-popular">
+    <section className="bg-cream dark:bg-neutral-darkest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28" data-testid="section-most-popular">
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-4 items-center max-w-[768px] w-full">
-          <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest text-center w-full">
+          <div className="flex flex-col gap-4 md:gap-6 items-center text-neutral-darkest dark:text-cream text-center w-full">
             <h2 className="cv-h font-heading font-bold text-heading-2-mobile md:text-[60px] tracking-[0.44px] md:tracking-[0.6px] leading-[1.2] w-full">
               <span className="relative inline-block pb-2 md:pb-4">
                 Most Popular
@@ -144,7 +144,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
 
         <div className="flex flex-col gap-8 md:gap-12 items-center w-full md:max-w-[640px]">
           <div 
-            className="inline-flex items-center rounded-full border border-black/20 bg-white p-1"
+            className="inline-flex items-center rounded-full border border-black/20 dark:border-cream/20 bg-white dark:bg-neutral-darkest p-1"
             role="group"
             aria-label="Billing period selection"
           >
@@ -152,7 +152,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               type="button"
               className={[
                 "rounded-full px-5 py-2 text-sm font-semibold transition",
-                billingPeriod === "monthly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
+                billingPeriod === "monthly" ? "bg-black dark:bg-cream text-white dark:text-neutral-darkest shadow-sm" : "text-black/70 dark:text-cream/70 hover:text-black dark:hover:text-cream",
               ].join(" ")}
               onClick={() => setBillingPeriod("monthly")}
               aria-pressed={billingPeriod === "monthly"}
@@ -165,7 +165,7 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               type="button"
               className={[
                 "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition",
-                billingPeriod === "yearly" ? "bg-black text-white shadow-sm" : "text-black/70 hover:text-black",
+                billingPeriod === "yearly" ? "bg-black dark:bg-cream text-white dark:text-neutral-darkest shadow-sm" : "text-black/70 dark:text-cream/70 hover:text-black dark:hover:text-cream",
               ].join(" ")}
               onClick={() => setBillingPeriod("yearly")}
               aria-pressed={billingPeriod === "yearly"}
@@ -175,12 +175,12 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
               Yearly*
             </button>
           </div>
-          <p className="mt-3 text-xs text-white/70 text-center max-w-md">
+          <p className="mt-3 text-xs text-neutral-darkest/70 dark:text-cream/70 text-center max-w-md">
             *Yearly plans include two months free — at signup and every renewal.
           </p>
 
-          <div className="bg-cream border-2 border-neutral-darkest rounded-2xl p-6 md:p-8 flex flex-col gap-6 md:gap-8 items-center w-full">
-            <div className="flex flex-col gap-2 items-center text-neutral-darkest text-center w-full">
+          <div className="bg-cream dark:bg-neutral-darkest/60 border-2 border-neutral-darkest dark:border-cream/30 rounded-2xl p-6 md:p-8 flex flex-col gap-6 md:gap-8 items-center w-full">
+            <div className="flex flex-col gap-2 items-center text-neutral-darkest dark:text-cream text-center w-full">
               <div className="text-2xl sm:text-3xl font-semibold">
                 <BrandMark className="cv-brand-tight" />{" "}
                 <span className="font-semibold">pro</span>
@@ -200,8 +200,8 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
             <div className="flex flex-col gap-4 py-2 w-full text-left">
               {proPlan.highlights.map((feature, index) => (
                 <div key={index} className="flex gap-3 items-start w-full">
-                  <Check className="w-5 md:w-6 h-5 md:h-6 text-neutral-darkest flex-shrink-0 mt-0.5" />
-                  <span className="cv-panel-body font-sans text-sm md:text-[16px] leading-[1.6] text-neutral-darkest">
+                  <Check className="w-5 md:w-6 h-5 md:h-6 text-neutral-darkest dark:text-cream flex-shrink-0 mt-0.5" />
+                  <span className="cv-panel-body font-sans text-sm md:text-[16px] leading-[1.6] text-neutral-darkest dark:text-cream">
                     {feature}
                   </span>
                 </div>
@@ -452,7 +452,7 @@ function PricingCardsSection() {
   const PaidCell = ({ startsIn, tier }: { startsIn: PaidTierKey; tier: PaidTierKey }) => {
     const ok = tierIndex(tier) >= tierIndex(startsIn);
     return (
-      <div className="flex justify-center text-lg font-semibold text-neutral-900">
+      <div className="flex justify-center text-lg font-semibold text-neutral-900 dark:text-cream">
         {ok ? "✓" : "×"}
       </div>
     );
@@ -470,12 +470,12 @@ function PricingCardsSection() {
     return (
       <div>
         <div className="flex items-end gap-2">
-          <div className="text-4xl font-black leading-none text-neutral-900">
+          <div className="text-4xl font-black leading-none text-neutral-900 dark:text-cream">
             {price}
           </div>
-          <div className="pb-1 text-sm font-semibold text-neutral-900/70">{suffix}</div>
+          <div className="pb-1 text-sm font-semibold text-neutral-900/70 dark:text-cream/70">{suffix}</div>
         </div>
-        <p className="mt-2 text-sm text-neutral-900/70">{plan.tagline}</p>
+        <p className="mt-2 text-sm text-neutral-900/70 dark:text-cream/70">{plan.tagline}</p>
       </div>
     );
   };
@@ -483,21 +483,21 @@ function PricingCardsSection() {
   const Cell = ({ on }: { on: boolean }) => (
     <div className="flex justify-center">
       {on ? (
-        <Check className="h-4 w-4 text-neutral-900" aria-label="Included" />
+        <Check className="h-4 w-4 text-neutral-900 dark:text-cream" aria-label="Included" />
       ) : (
-        <X className="h-4 w-4 text-neutral-900/40" aria-label="Not included" />
+        <X className="h-4 w-4 text-neutral-900/40 dark:text-cream/40" aria-label="Not included" />
       )}
     </div>
   );
 
   const MobileRow = ({ label, on }: { label: string; on: boolean }) => (
-    <div className="flex items-start justify-between gap-3 border-b border-neutral-900/10 py-3 last:border-b-0">
-      <div className="min-w-0 text-sm font-semibold text-neutral-900/85">{label}</div>
+    <div className="flex items-start justify-between gap-3 border-b border-neutral-900/10 dark:border-cream/10 py-3 last:border-b-0">
+      <div className="min-w-0 text-sm font-semibold text-neutral-900/85 dark:text-cream/85">{label}</div>
       <div className="pt-[2px]">
         {on ? (
-          <Check className="h-4 w-4 text-neutral-900" aria-label="Included" />
+          <Check className="h-4 w-4 text-neutral-900 dark:text-cream" aria-label="Included" />
         ) : (
-          <X className="h-4 w-4 text-neutral-900/40" aria-label="Not included" />
+          <X className="h-4 w-4 text-neutral-900/40 dark:text-cream/40" aria-label="Not included" />
         )}
       </div>
     </div>
@@ -513,13 +513,13 @@ function PricingCardsSection() {
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 md:px-6" id="compare">
       {/* SECOND HERO — Plans + Toggle + Button */}
-      <div className="rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 md:p-10">
+      <div className="rounded-[28px] border border-neutral-900/15 dark:border-cream/15 bg-white/40 dark:bg-neutral-darkest/60 p-6 md:p-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <h2 className="text-4xl font-black tracking-tight text-neutral-900 md:text-5xl">
+            <h2 className="text-4xl font-black tracking-tight text-neutral-900 dark:text-cream md:text-5xl">
               Choose Your Plan
             </h2>
-            <p className="mt-2 max-w-xl text-base text-neutral-900/75">
+            <p className="mt-2 max-w-xl text-base text-neutral-900/75 dark:text-cream/75">
               Educational, research, and organization tools for family<br />
               law cases, powered by information you enter.
             </p>
@@ -527,7 +527,7 @@ function PricingCardsSection() {
             <button
               type="button"
               onClick={scrollToFullFeatures}
-              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 hover:opacity-80"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-cream hover:opacity-80"
               data-testid="button-see-full-features"
             >
               See Full List Of Features
@@ -536,15 +536,15 @@ function PricingCardsSection() {
           </div>
 
           {/* Toggle */}
-          <div className="inline-flex items-center rounded-full border border-neutral-900/15 bg-white/60 p-1">
+          <div className="inline-flex items-center rounded-full border border-neutral-900/15 dark:border-cream/15 bg-white/60 dark:bg-neutral-darkest/60 p-1">
             <button
               type="button"
               onClick={() => setBillingPeriod("monthly")}
               className={[
                 "rounded-full px-5 py-2 text-sm font-semibold transition",
                 billingPeriod === "monthly"
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-900/70 hover:text-neutral-900",
+                  ? "bg-neutral-900 dark:bg-cream text-white dark:text-neutral-darkest"
+                  : "text-neutral-900/70 dark:text-cream/70 hover:text-neutral-900 dark:hover:text-cream",
               ].join(" ")}
               data-testid="button-cards-monthly"
             >
@@ -556,8 +556,8 @@ function PricingCardsSection() {
               className={[
                 "ml-1 rounded-full px-5 py-2 text-sm font-semibold transition",
                 billingPeriod === "yearly"
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-900/70 hover:text-neutral-900",
+                  ? "bg-neutral-900 dark:bg-cream text-white dark:text-neutral-darkest"
+                  : "text-neutral-900/70 dark:text-cream/70 hover:text-neutral-900 dark:hover:text-cream",
               ].join(" ")}
               data-testid="button-cards-yearly"
             >
@@ -565,7 +565,7 @@ function PricingCardsSection() {
             </button>
           </div>
         </div>
-        <p className="mt-3 text-xs text-neutral-900/60">
+        <p className="mt-3 text-xs text-neutral-900/60 dark:text-cream/60">
           *Yearly plans include two months free — at signup and every renewal.
         </p>
 
@@ -574,27 +574,27 @@ function PricingCardsSection() {
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className="relative flex h-full flex-col rounded-[24px] border border-neutral-900/15 bg-white/60 p-6 min-w-0"
+              className="relative flex h-full flex-col rounded-[24px] border border-neutral-900/15 dark:border-cream/15 bg-white/60 dark:bg-neutral-darkest/60 p-6 min-w-0"
               data-testid={`pricing-card-${plan.id}`}
             >
               {"badge" in plan && plan.badge ? (
-                <div className="absolute -top-3 left-6 rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
+                <div className="absolute -top-3 left-6 rounded-full bg-neutral-900 dark:bg-cream px-3 py-1 text-xs font-semibold text-white dark:text-neutral-darkest">
                   {plan.badge}
                 </div>
               ) : null}
 
-              <div className="text-lg font-black text-neutral-900">{plan.name}</div>
+              <div className="text-lg font-black text-neutral-900 dark:text-cream">{plan.name}</div>
               <div className="mt-4">
                 <PriceLine plan={plan} />
               </div>
 
-              <div className="my-5 h-px w-full bg-neutral-900/10" />
+              <div className="my-5 h-px w-full bg-neutral-900/10 dark:bg-cream/10" />
 
-              <div className="text-sm font-semibold text-neutral-900">Highlights</div>
-              <ul className="mt-3 space-y-2 text-sm text-neutral-900/80 mb-6">
+              <div className="text-sm font-semibold text-neutral-900 dark:text-cream">Highlights</div>
+              <ul className="mt-3 space-y-2 text-sm text-neutral-900/80 dark:text-cream/80 mb-6">
                 {plan.highlights.map((t) => (
                   <li key={t} className="flex gap-2">
-                    <Check className="mt-[2px] h-4 w-4 text-neutral-900/70" />
+                    <Check className="mt-[2px] h-4 w-4 text-neutral-900/70 dark:text-cream/70" />
                     <span>{t}</span>
                   </li>
                 ))}
@@ -614,28 +614,28 @@ function PricingCardsSection() {
 
         {/* Add-ons under the cards */}
         <div className="mt-10">
-          <h3 className="text-2xl font-black text-neutral-900">Add-Ons</h3>
+          <h3 className="text-2xl font-black text-neutral-900 dark:text-cream">Add-Ons</h3>
           <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3 items-stretch">
             {addOns.map((a) => (
               <div
                 key={a.title}
-                className="h-full rounded-[24px] border border-neutral-900/15 bg-white/60 p-6 min-w-0"
+                className="h-full rounded-[24px] border border-neutral-900/15 dark:border-cream/15 bg-white/60 dark:bg-neutral-darkest/60 p-6 min-w-0"
               >
-                <div className="text-lg font-black text-neutral-900">{a.title}</div>
-                <div className="mt-2 text-sm font-semibold text-neutral-900/70">{a.price}</div>
+                <div className="text-lg font-black text-neutral-900 dark:text-cream">{a.title}</div>
+                <div className="mt-2 text-sm font-semibold text-neutral-900/70 dark:text-cream/70">{a.price}</div>
                 {a.description ? (
-                  <p className="mt-2 text-sm text-neutral-900/75">{a.description}</p>
+                  <p className="mt-2 text-sm text-neutral-900/75 dark:text-cream/75">{a.description}</p>
                 ) : null}
-                <ul className="mt-4 space-y-2 text-sm text-neutral-900/80">
+                <ul className="mt-4 space-y-2 text-sm text-neutral-900/80 dark:text-cream/80">
                   {a.bullets.map((t) => (
                     <li key={t} className="flex gap-2">
-                      <Check className="mt-[2px] h-4 w-4 text-neutral-900/70" />
+                      <Check className="mt-[2px] h-4 w-4 text-neutral-900/70 dark:text-cream/70" />
                       <span>{t}</span>
                     </li>
                   ))}
                 </ul>
                 {"footnote" in a && a.footnote ? (
-                  <div className="mt-4 text-xs text-neutral-900/60">{a.footnote}</div>
+                  <div className="mt-4 text-xs text-neutral-900/60 dark:text-cream/60">{a.footnote}</div>
                 ) : null}
               </div>
             ))}
@@ -644,16 +644,16 @@ function PricingCardsSection() {
       </div>
 
       {/* Organizations hero box */}
-      <div className="mt-12 rounded-[24px] border border-neutral-900/20 bg-white/40 p-6 md:p-10">
-        <h3 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">
+      <div className="mt-12 rounded-[24px] border border-neutral-900/20 dark:border-cream/20 bg-white/40 dark:bg-neutral-darkest/60 p-6 md:p-10">
+        <h3 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 dark:text-cream">
           Organizations &amp; DV Shelters
         </h3>
 
-        <p className="mt-2 text-neutral-900/70 max-w-3xl">
+        <p className="mt-2 text-neutral-900/70 dark:text-cream/70 max-w-3xl">
           Custom pricing for domestic violence shelters, legal aid, and advocacy groups.
         </p>
 
-        <p className="mt-4 italic text-neutral-900/70 max-w-3xl">
+        <p className="mt-4 italic text-neutral-900/70 dark:text-cream/70 max-w-3xl">
           We're actively pursuing grant and sponsor partnerships to help subsidize access where possible.
         </p>
 
@@ -665,7 +665,7 @@ function PricingCardsSection() {
               "Non-profit pricing",
               "Bulk access options",
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 text-neutral-900/80">
+              <li key={item} className="flex items-start gap-3 text-neutral-900/80 dark:text-cream/80">
                 <span className="mt-[2px] font-semibold text-emerald-900">✓</span>
                 <span>{item}</span>
               </li>
@@ -685,29 +685,29 @@ function PricingCardsSection() {
       </div>
 
       {/* Full feature comparison */}
-      <div id="full-features" className="mt-10 rounded-[28px] border border-neutral-900/15 bg-white/40 p-6 md:p-10">
+      <div id="full-features" className="mt-10 rounded-[28px] border border-neutral-900/15 dark:border-cream/15 bg-white/40 dark:bg-neutral-darkest/60 p-6 md:p-10">
         <div className="min-w-0">
-          <h3 className="text-3xl font-black text-neutral-900">Full Feature Comparison</h3>
-          <p className="mt-2 text-base text-neutral-900/75">
+          <h3 className="text-3xl font-black text-neutral-900 dark:text-cream">Full Feature Comparison</h3>
+          <p className="mt-2 text-base text-neutral-900/75 dark:text-cream/75">
             Features listed by where they start. Higher tiers add more checkmarks.
           </p>
         </div>
 
         {/* Trial callout */}
-        <div className="mt-6 rounded-[18px] border border-neutral-900/15 bg-white/60 p-5 md:p-6">
+        <div className="mt-6 rounded-[18px] border border-neutral-900/15 dark:border-cream/15 bg-white/60 dark:bg-neutral-darkest/60 p-5 md:p-6">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-lg font-bold text-neutral-900">3-Day Trial</p>
-              <p className="text-neutral-900/70">
+              <p className="text-lg font-bold text-neutral-900 dark:text-cream">3-Day Trial</p>
+              <p className="text-neutral-900/70 dark:text-cream/70">
                 Try Premium workflows first — with a few protective limits.
               </p>
             </div>
-            <div className="text-sm font-semibold text-neutral-900/70">
+            <div className="text-sm font-semibold text-neutral-900/70 dark:text-cream/70">
               Ends automatically • No auto-billing
             </div>
           </div>
 
-          <ul className="mt-4 space-y-2 text-neutral-900/80">
+          <ul className="mt-4 space-y-2 text-neutral-900/80 dark:text-cream/80">
             <li className="flex gap-2">
               <span className="mt-[2px]">✓</span>
               <span>Access to Premium-level features to explore the workflow.</span>
@@ -740,7 +740,7 @@ function PricingCardsSection() {
 
         {/* Mobile: plan tabs + readable lists (Core/Pro/Premium only) */}
         <div className="mt-6 md:hidden">
-          <div className="inline-flex w-full overflow-x-auto rounded-full border border-neutral-900/15 bg-white/60 p-1">
+          <div className="inline-flex w-full overflow-x-auto rounded-full border border-neutral-900/15 dark:border-cream/15 bg-white/60 dark:bg-neutral-darkest/60 p-1">
             {[
               { id: "core", label: "Core" },
               { id: "pro", label: "Pro" },
@@ -753,8 +753,8 @@ function PricingCardsSection() {
                 className={[
                   "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition",
                   mobilePlan === p.id
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-900/70 hover:text-neutral-900",
+                    ? "bg-neutral-900 dark:bg-cream text-white dark:text-neutral-darkest"
+                    : "text-neutral-900/70 dark:text-cream/70 hover:text-neutral-900 dark:hover:text-cream",
                 ].join(" ")}
               >
                 {p.label}
@@ -764,8 +764,8 @@ function PricingCardsSection() {
 
           <div className="mt-5 space-y-5">
             {paidFeatureGroups.map((g) => (
-              <div key={g.title} className="rounded-2xl border border-neutral-900/15 bg-white/60 p-4">
-                <div className="text-sm font-black text-neutral-900">{g.title}</div>
+              <div key={g.title} className="rounded-2xl border border-neutral-900/15 dark:border-cream/15 bg-white/60 dark:bg-neutral-darkest/60 p-4">
+                <div className="text-sm font-black text-neutral-900 dark:text-cream">{g.title}</div>
                 <div className="mt-2">
                   {g.rows.map((r) => (
                     <MobileRow key={r.label} label={r.label} on={getPaidMobileValue(r.startsIn)} />
