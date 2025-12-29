@@ -26,6 +26,14 @@ body[data-civilla-fixed-nav="true"] {
   z-index: 1000;
   /* Keep whatever the navbar already looks like (no frosty blur) */
   backdrop-filter: none !important;
+  /* Ensure dropdowns can overflow */
+  overflow: visible !important;
+}
+
+/* Ensure nav inner elements don't clip dropdowns */
+.civilla-nav-shell *,
+.civilla-nav-shell nav {
+  overflow: visible;
 }
 
 /* =========================================
@@ -77,13 +85,18 @@ div {
 }
 
 /* Card / box safety (applies to all content boxes) */
+/* NOTE: Removed [class*="container"] from overflow:hidden - it clips navbar dropdowns */
 .cv-card,
 .card,
 [class*="card"],
-[class*="box"],
-[class*="container"] {
+[class*="box"] {
   max-width: 100%;
   overflow: hidden;
+}
+
+/* Containers get max-width but NOT overflow:hidden (would clip dropdowns/modals) */
+[class*="container"]:not(.civilla-nav-shell):not(.civilla-nav-shell *) {
+  max-width: 100%;
 }
 
 /* Text inside cards must wrap - but no mid-word splits */
