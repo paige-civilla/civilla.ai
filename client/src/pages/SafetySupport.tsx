@@ -3,9 +3,8 @@ import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { FAQ_SAFETY, type FaqItem } from "@/content/faqs";
 import { Link } from "wouter";
-import foggyLandscape from "@assets/foggy-landscape-reflected-in-lake_1766286894997.jpg";
-
-const imgTabPane1 = "https://www.figma.com/api/mcp/asset/692b1d30-a133-4b7e-9584-de390e708ba4";
+import imgDiscretion from "@assets/lakeside-cliffs-and-blue-sky_1766972270386.jpg";
+import imgEmotionalSafety from "@assets/sunset-over-calm-water-and-sandy-shore_1766972306379.jpg";
 
 const safetyTools = [
   {
@@ -187,8 +186,8 @@ export default function SafetySupport() {
           <div className="flex flex-col gap-12 items-center max-w-3xl mx-auto">
             <div className="w-full">
               <img 
-                src={foggyLandscape} 
-                alt="Foggy landscape reflected in lake" 
+                src={imgDiscretion} 
+                alt="Lakeside cliffs and blue sky" 
                 className="w-full aspect-[16/9] object-cover rounded-2xl"
               />
             </div>
@@ -282,8 +281,8 @@ export default function SafetySupport() {
             <div className="flex flex-col gap-16 items-center w-full">
               <div className="w-full aspect-[1280/738] rounded-2xl overflow-hidden">
                 <img 
-                  src={imgTabPane1} 
-                  alt="Calm and supportive environment" 
+                  src={imgEmotionalSafety} 
+                  alt="Sunset over calm water and sandy shore" 
                   className="w-full h-full object-cover"
                 />
               </div>
