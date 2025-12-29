@@ -223,10 +223,10 @@ export default function NavbarCream() {
   return (
     <div ref={shellRef} className="civilla-nav-shell">
     <nav className="bg-cream dark:bg-background w-full relative" data-testid="navbar-cream">
-      <div className="h-9 flex items-center justify-center px-6 py-0">
-        <div className="flex items-center justify-between gap-4 w-full max-w-container">
+      <div className="h-12 md:h-14 lg:h-16 flex items-center justify-center px-4 md:px-6 lg:px-8 py-0">
+        <div className="flex items-center justify-between gap-3 md:gap-4 w-full max-w-container">
           <div className="flex items-center">
-            <Link href="/" className="relative h-7 w-auto" data-testid="link-logo">
+            <Link href="/" className="relative h-6 md:h-8 lg:h-9 w-auto" data-testid="link-logo">
               <img 
                 src={isDarkMode ? logoWhite : logoColor} 
                 alt="civilla.ai" 
@@ -234,17 +234,17 @@ export default function NavbarCream() {
               />
             </Link>
           </div>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-1.5 md:gap-2">
             <button 
               onClick={toggleDarkMode}
-              className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
+              className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
               aria-label="Toggle dark mode"
               data-testid="button-theme-toggle"
             >
               {isDarkMode ? (
-                <Sun className="w-4 h-4 text-foreground" />
+                <Sun className="w-4 h-4 md:w-5 md:h-5 text-foreground" />
               ) : (
-                <Moon className="w-4 h-4 text-foreground" />
+                <Moon className="w-4 h-4 md:w-5 md:h-5 text-foreground" />
               )}
             </button>
             
@@ -256,14 +256,14 @@ export default function NavbarCream() {
               <button
                 ref={accountButtonRef}
                 onClick={() => setIsAccountOpen(!isAccountOpen)}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
+                className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
                 aria-label="Account options"
                 aria-haspopup="menu"
                 aria-expanded={isAccountOpen}
                 data-testid="button-account-dropdown"
               >
-                <User className="w-4 h-4 text-foreground" />
-                <ChevronDown className={`w-3 h-3 text-foreground ml-0.5 transition-transform ${isAccountOpen ? 'rotate-180' : ''}`} />
+                <User className="w-4 h-4 md:w-5 md:h-5 text-foreground" />
+                <ChevronDown className={`w-3 h-3 md:w-4 md:h-4 text-foreground ml-0.5 transition-transform ${isAccountOpen ? 'rotate-180' : ''}`} />
               </button>
             </div>
 
@@ -274,31 +274,31 @@ export default function NavbarCream() {
             >
               <button 
                 ref={menuButtonRef}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
+                className="inline-flex items-center justify-center rounded-md p-1 md:p-1.5 lg:p-2 border border-neutral-darkest/20 dark:border-white/20 hover:border-neutral-darkest/35 dark:hover:border-white/35 hover:bg-neutral-darkest/5 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40 dark:focus-visible:ring-white/40"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Open menu"
                 aria-haspopup="menu"
                 aria-expanded={isMenuOpen}
                 data-testid="button-menu"
               >
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1 md:gap-1.5">
                   {isMenuOpen ? (
-                    <X className="h-4 w-4 text-foreground" aria-hidden="true" />
+                    <X className="h-4 w-4 md:h-5 md:w-5 text-foreground" aria-hidden="true" />
                   ) : (
-                    <Menu className="h-4 w-4 text-foreground" aria-hidden="true" />
+                    <Menu className="h-4 w-4 md:h-5 md:w-5 text-foreground" aria-hidden="true" />
                   )}
-                  <span className="text-xs font-medium text-foreground">Menu</span>
+                  <span className="text-xs md:text-sm font-medium text-foreground">Menu</span>
                 </span>
               </button>
             </div>
 
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 rounded-md bg-bush"
+              className="ml-1.5 md:ml-2 p-1 md:p-1.5 lg:p-2 rounded-md bg-bush"
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
-              <LogOut className="w-4 h-4 text-white" />
+              <LogOut className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </button>
           </div>
         </div>
