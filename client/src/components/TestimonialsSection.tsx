@@ -37,18 +37,18 @@ export default function TestimonialsSection() {
 
   return (
     <section 
-      className="bg-cream w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      className="bg-cream dark:bg-neutral-darkest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-testimonials"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-5 md:gap-6 items-center text-neutral-darkest text-center max-w-content-large w-full">
+        <div className="flex flex-col gap-5 md:gap-6 items-center text-neutral-darkest dark:text-cream text-center max-w-content-large w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
             Early Notes
           </h2>
           <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
             We're in early access. Here's the kind of feedback we're hearing — and what we're building toward.
           </p>
-          <p className="font-sans font-normal text-xs text-neutral-darkest/50 w-full">
+          <p className="font-sans font-normal text-xs text-neutral-darkest/50 dark:text-cream/50 w-full">
             We don't publish feedback without permission.
           </p>
         </div>
@@ -57,25 +57,25 @@ export default function TestimonialsSection() {
           {earlyNotes.map((note) => (
             <div
               key={note.id}
-              className="flex-1 flex flex-col gap-6 items-start p-8 bg-cream border-2 border-neutral-darkest rounded-lg"
+              className="flex-1 flex flex-col gap-6 items-start p-8 bg-cream dark:bg-neutral-darkest/60 border-2 border-neutral-darkest dark:border-cream/30 rounded-lg"
               data-testid={`note-${note.id}`}
             >
-              <p className="font-sans font-normal text-body-medium leading-[1.6] text-neutral-darkest italic">
+              <p className="font-sans font-normal text-body-medium leading-[1.6] text-neutral-darkest dark:text-cream italic">
                 "{note.quote}"
               </p>
-              <span className="font-sans font-normal text-sm text-neutral-darkest/60">
+              <span className="font-sans font-normal text-sm text-neutral-darkest/60 dark:text-cream/60">
                 Anonymous — Early Access
               </span>
             </div>
           ))}
         </div>
 
-        <div className="w-full max-w-[600px] flex flex-col gap-6 p-8 bg-neutral-lightest rounded-lg border border-neutral-darkest/20">
+        <div className="w-full max-w-[600px] flex flex-col gap-6 p-8 bg-neutral-lightest dark:bg-neutral-darkest/60 rounded-lg border border-neutral-darkest/20 dark:border-cream/20">
           <div className="flex flex-col gap-2 text-center">
-            <h3 className="font-heading font-bold text-heading-4-mobile md:text-heading-4 tracking-[0.3px] md:tracking-[0.4px] text-neutral-darkest">
+            <h3 className="font-heading font-bold text-heading-4-mobile md:text-heading-4 tracking-[0.3px] md:tracking-[0.4px] text-neutral-darkest dark:text-cream">
               Share Your Thoughts
             </h3>
-            <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest/80">
+            <p className="font-sans font-normal text-sm leading-[1.6] text-neutral-darkest/80 dark:text-cream/80">
               Your feedback helps us improve <span className="italic font-medium">civilla</span>. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
             </p>
           </div>
@@ -87,7 +87,7 @@ export default function TestimonialsSection() {
                 placeholder="Name (optional)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="flex-1 px-4 py-2.5 bg-white border border-neutral-darkest/30 rounded-lg font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/50 focus:outline-none focus:border-bush"
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-neutral-darkest border border-neutral-darkest/30 dark:border-cream/30 rounded-lg font-sans text-sm text-neutral-darkest dark:text-cream placeholder:text-neutral-darkest/50 dark:placeholder:text-cream/50 focus:outline-none focus:border-bush"
                 data-testid="input-feedback-name"
               />
               <input
@@ -95,7 +95,7 @@ export default function TestimonialsSection() {
                 placeholder="Email (optional)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 px-4 py-2.5 bg-white border border-neutral-darkest/30 rounded-lg font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/50 focus:outline-none focus:border-bush"
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-neutral-darkest border border-neutral-darkest/30 dark:border-cream/30 rounded-lg font-sans text-sm text-neutral-darkest dark:text-cream placeholder:text-neutral-darkest/50 dark:placeholder:text-cream/50 focus:outline-none focus:border-bush"
                 data-testid="input-feedback-email"
               />
             </div>
@@ -104,7 +104,7 @@ export default function TestimonialsSection() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              className="w-full px-4 py-2.5 bg-white border border-neutral-darkest/30 rounded-lg font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/50 focus:outline-none focus:border-bush resize-none"
+              className="w-full px-4 py-2.5 bg-white dark:bg-neutral-darkest border border-neutral-darkest/30 dark:border-cream/30 rounded-lg font-sans text-sm text-neutral-darkest dark:text-cream placeholder:text-neutral-darkest/50 dark:placeholder:text-cream/50 focus:outline-none focus:border-bush resize-none"
               data-testid="input-feedback-message"
             />
           </div>
@@ -119,7 +119,7 @@ export default function TestimonialsSection() {
               <Send className="w-4 h-4 mr-2" />
               Send Feedback
             </Button>
-            <span className="font-sans font-normal text-xs text-neutral-darkest/50">
+            <span className="font-sans font-normal text-xs text-neutral-darkest/50 dark:text-cream/50">
               This will open your email app.
             </span>
           </div>

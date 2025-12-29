@@ -47,11 +47,11 @@ export default function FAQSection() {
 
   return (
     <section 
-      className="bg-neutral-lightest w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      className="bg-neutral-lightest dark:bg-neutral-darkest/60 w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-faq"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
-        <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large text-neutral-darkest text-center w-full">
+        <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large text-neutral-darkest dark:text-cream text-center w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
             FAQs
           </h2>
@@ -60,26 +60,26 @@ export default function FAQSection() {
           </p>
         </div>
 
-        <div className="flex flex-col items-start max-w-content-large w-full border-b-2 border-neutral-darkest">
+        <div className="flex flex-col items-start max-w-content-large w-full border-b-2 border-neutral-darkest dark:border-cream">
           {faqs.map((faq) => (
             <div key={faq.id} className="flex flex-col items-start w-full">
               <button
                 onClick={() => toggleItem(faq.id)}
-                className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest text-left"
+                className="flex gap-6 items-center w-full py-5 border-t-2 border-neutral-darkest dark:border-cream text-left"
                 data-testid={`button-faq-${faq.id}`}
               >
-                <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest">
+                <span className="flex-1 font-sans font-bold text-body-medium leading-[1.6] text-neutral-darkest dark:text-cream">
                   <BrandText>{faq.question}</BrandText>
                 </span>
                 {openItems.includes(faq.id) ? (
-                  <ChevronUp className="w-8 h-8 text-neutral-darkest shrink-0" />
+                  <ChevronUp className="w-8 h-8 text-neutral-darkest dark:text-cream shrink-0" />
                 ) : (
-                  <ChevronDown className="w-8 h-8 text-neutral-darkest shrink-0" />
+                  <ChevronDown className="w-8 h-8 text-neutral-darkest dark:text-cream shrink-0" />
                 )}
               </button>
               {openItems.includes(faq.id) && (
                 <div className="flex items-start pb-6 w-full">
-                  <p className="flex-1 font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest">
+                  <p className="flex-1 font-sans font-normal text-body-regular leading-[1.6] text-neutral-darkest dark:text-cream">
                     <BrandText>{faq.answer}</BrandText>
                   </p>
                 </div>

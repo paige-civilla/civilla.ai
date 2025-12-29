@@ -35,7 +35,7 @@ export default function StepsSection() {
 
                 {/* Desktop: underlined Step One/Two/Three */}
                 <div className="hidden md:block">
-                  <div className="inline-block border-b border-neutral-darkest/80 pb-2 text-2xl font-semibold">
+                  <div className="inline-block border-b border-neutral-darkest/80 dark:border-cream/80 pb-2 text-2xl font-semibold">
                     {s.label}
                   </div>
                 </div>
@@ -43,7 +43,7 @@ export default function StepsSection() {
 
               {/* Right column */}
               <div className="md:col-span-8">
-                <p className="text-left text-base leading-relaxed text-neutral-darkest/80 md:text-lg">
+                <p className="text-left text-base leading-relaxed text-neutral-darkest/80 dark:text-cream/80 md:text-lg">
                   {s.text}
                 </p>
               </div>

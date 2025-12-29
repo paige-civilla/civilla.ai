@@ -1,0 +1,78 @@
+TASK: Fix dark mode text “blacking out” (text not readable)
+
+AUTONOMY: LOW
+GOAL:
+When dark mode is enabled, ALL text remains readable (no “black on dark” or “dark on dark”).
+Do NOT redesign layout or change copy. Only adjust color classes to be theme-aware.
+
+CONSTRAINTS:
+- No spacing/layout refactors
+- No copy changes
+- Prefer token-based colors already in the project
+- Avoid introducing new palettes (no bg-green-, text-green-, etc.)
+
+ROOT CAUSE:
+Many components use light-only text classes like:
+- text-neutral-darkest
+- text-black
+- text-[#070503]
+but in dark mode the background becomes dark, so the text becomes invisible.
+
+IMPLEMENTATION PLAN:
+1) Define/confirm safe global text defaults at the page wrapper level
+   Files:
+   - client/src/components/layout/PublicLayout.tsx
+   - client/src/components/layout/AppLayout.tsx
+
+   Ensure wrapper uses:
+   - Light: dark text on cream
+   - Dark: light text on dark
+
+   Example wrapper class (use existing tokens you already have):
+   className="min-h-screen bg-cream text-neutral-darkest dark:bg-neutral-darkest dark:text-cream"
+
+2) Sweep “hardcoded dark text” and add dark variants
+   Search and patch ONLY color classes (no structure changes) for these patterns:
+
+   Replace:
+   - text-neutral-darkest → text-neutral-darkest dark:text-cream
+   - text-black / text-[#070503] → text-neutral-darkest dark:text-cream
+   - text-neutral-darkest/70 → text-neutral-darkest/70 dark:text-cream/70
+   - text-neutral-darkest/50 → text-neutral-darkest/50 dark:text-cream/50
+
+   Also for subtle labels:
+   - text-neutral-darkest/60 → text-neutral-darkest/60 dark:text-cream/60
+
+3) Cards/boxes need theme-aware surfaces
+   Anywhere you see these backgrounds:
+   - bg-white
+   - bg-cream
+   - bg-[#fcfbf9]
+   Add a dark background so text has contrast:
+   - bg-white → bg-white dark:bg-neutral-darkest/60
+   - bg-cream → bg-cream dark:bg-neutral-darkest/60
+   and ensure border switches if needed:
+   - border-neutral-darkest/20 → border-neutral-darkest/20 dark:border-cream/20
+
+4) Links + buttons readable in dark mode
+   - Links that were dark should become light in dark mode:
+     text-neutral-darkest → text-neutral-darkest dark:text-cream
+   - Outlined buttons that are dark-outline in light mode should invert in dark mode:
+     border-neutral-darkest/20 → border-neutral-darkest/20 dark:border-cream/30
+     text-neutral-darkest → text-neutral-darkest dark:text-cream
+
+5) Priority targets (where you’ll see the issue most):
+   - client/src/components/Hero.tsx (headline, subtext, CTA)
+   - client/src/components/Footer.tsx (all column headings + links)
+   - client/src/pages/Home.tsx (section headings + body text)
+   - client/src/pages/Plans.tsx (pricing cards text + footnotes)
+   - Any “Hero box” / section-card component used sitewide
+
+VALIDATION:
+- Toggle dark mode: all headings + body text readable on every page
+- Footer switches and remains readable
+- No console errors
+
+DELIVERABLE:
+- List each file changed + line ranges
+- Confirm which classes were updated (text + bg + border)
