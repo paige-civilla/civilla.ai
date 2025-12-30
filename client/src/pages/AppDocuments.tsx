@@ -232,7 +232,7 @@ export default function AppDocuments() {
           state: currentCase.state || "Idaho",
         },
         case: {
-          caseNumber: currentCase.caseNumber || "CV10-XX-XXXX",
+          caseNumber: currentCase.title || "CV10-XX-XXXX",
         },
         parties: {
           petitioner: "[Petitioner Name]",
