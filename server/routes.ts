@@ -145,7 +145,27 @@ Judge of the Superior Court`,
   },
   certificate_of_service: {
     title: "Certificate of Service",
-    content: `CERTIFICATE OF SERVICE
+    content: `[YOUR NAME]
+[YOUR ADDRESS]
+[CITY, STATE ZIP]
+[PHONE NUMBER]
+[EMAIL ADDRESS]
+Petitioner/Respondent, In Pro Per
+
+SUPERIOR COURT OF THE STATE OF [STATE]
+COUNTY OF [COUNTY]
+
+In re the Matter of:
+
+[PETITIONER NAME],
+        Petitioner,
+vs.
+[RESPONDENT NAME],
+        Respondent.
+
+Case No.: [CASE NUMBER]
+
+CERTIFICATE OF SERVICE
 
 I certify that on this ____ day of __________, 2025, I served a true and correct copy of the foregoing [Document Title] upon:
 
