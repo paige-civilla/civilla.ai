@@ -8,6 +8,7 @@ import {
   evidenceFiles,
   documents,
   userProfiles,
+  generatedDocuments,
   type User,
   type InsertUser,
   type Case,
@@ -23,6 +24,8 @@ import {
   type UpdateDocument,
   type UserProfile,
   type UpsertUserProfile,
+  type GeneratedDocument,
+  type GenerateDocumentPayload,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -60,6 +63,10 @@ export interface IStorage {
 
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   upsertUserProfile(userId: string, data: UpsertUserProfile): Promise<UserProfile>;
+
+  listGeneratedDocuments(userId: string, caseId: string): Promise<GeneratedDocument[]>;
+  createGeneratedDocument(userId: string, caseId: string, templateType: string, title: string, payloadJson: GenerateDocumentPayload): Promise<GeneratedDocument>;
+  getGeneratedDocument(userId: string, docId: string): Promise<GeneratedDocument | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -435,6 +442,43 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async listGeneratedDocuments(userId: string, caseId: string): Promise<GeneratedDocument[]> {
+    const docs = await db
+      .select()
+      .from(generatedDocuments)
+      .where(and(eq(generatedDocuments.userId, userId), eq(generatedDocuments.caseId, caseId)))
+      .orderBy(desc(generatedDocuments.createdAt));
+    return docs;
+  }
+
+  async createGeneratedDocument(
+    userId: string,
+    caseId: string,
+    templateType: string,
+    title: string,
+    payloadJson: GenerateDocumentPayload
+  ): Promise<GeneratedDocument> {
+    const [doc] = await db
+      .insert(generatedDocuments)
+      .values({
+        userId,
+        caseId,
+        templateType,
+        title,
+        payloadJson,
+      })
+      .returning();
+    return doc;
+  }
+
+  async getGeneratedDocument(userId: string, docId: string): Promise<GeneratedDocument | undefined> {
+    const [doc] = await db
+      .select()
+      .from(generatedDocuments)
+      .where(and(eq(generatedDocuments.id, docId), eq(generatedDocuments.userId, userId)));
+    return doc;
   }
 }
 
