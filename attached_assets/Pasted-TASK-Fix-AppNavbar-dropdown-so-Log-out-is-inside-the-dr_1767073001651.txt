@@ -1,0 +1,38 @@
+TASK: Fix AppNavbar dropdown so "Log out" is inside the dropdown card (not floating outside)
+
+AUTONOMY: LOW
+
+GOAL:
+In the authenticated app navbar dropdown (the menu that opens after login), the "Log out" row must appear INSIDE the dropdown panel/card with the other items. It must not render outside the card.
+
+CONSTRAINTS:
+- Only edit: client/src/components/layout/AppNavbar.tsx
+- Do NOT change colors, spacing, fonts, icon set, or menu item order
+- Do NOT change routes, API calls, or backend logic
+- Do NOT redesign the dropdown
+- Fix must work on desktop and mobile
+
+PROBLEM DESCRIPTION:
+Currently the dropdown card ends above the "Log out" item, and "Log out" is rendered below the card (looks like it is outside the menu). This indicates "Log out" is being rendered outside the dropdown container in JSX, or there are two different renders (desktop/mobile) and only one is fixed.
+
+WHAT TO DO (AUDIT + FIX):
+1) Open client/src/components/layout/AppNavbar.tsx
+2) Search for all occurrences of the literal text "Log out" (Cmd/Ctrl+F).
+3) Identify how many dropdown/menu render blocks exist (common: one for desktop, one for mobile).
+4) Ensure there is ONLY ONE "Log out" render per dropdown, and it is located INSIDE the dropdown container div that has the fixed positioning and the max-height/overflow classes.
+   - The dropdown container is the element that visually creates the panel/card (typically a <div className="fixed w-[280px] ...">).
+   - "Log out" must be placed before that container closes.
+5) Remove any "Log out" JSX that appears AFTER the dropdown container closes, or that is rendered outside the dropdown.
+6) Keep the same button/link classes currently used for "Log out" and keep the icon.
+7) If there are separate desktop and mobile menus, apply the same fix to BOTH.
+8) Confirm the dropdown scroll still works and that the menu items are not clipped.
+
+DELIVERABLE:
+- Report how many "Log out" occurrences were found before the fix
+- Report the exact line ranges changed in AppNavbar.tsx
+- Confirm:
+  a) "Log out" is visually inside the dropdown card
+  b) No console errors
+  c) Menu still opens/closes correctly
+  d) Works on both desktop and mobile
+STOP AFTER THIS FIX.

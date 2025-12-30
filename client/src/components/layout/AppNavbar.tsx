@@ -229,13 +229,13 @@ export default function AppNavbar() {
               </Link>
             ))}
           </div>
-          <div className="mt-3 pt-3 border-t border-border">
+          <div className="mt-3 pt-3 border-t border-neutral-darkest/10">
             <button
               onClick={() => {
                 setIsMenuOpen(false);
                 logoutMutation.mutate();
               }}
-              className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-popover-foreground/70 hover:text-popover-foreground hover:bg-accent/50 w-full"
+              className="flex items-center gap-3 py-2 px-2 rounded-md text-sm text-popover-foreground/70 hover:text-popover-foreground hover:bg-accent/50 w-full text-left"
               data-testid="button-logout-menu"
             >
               <LogOut className="h-4 w-4 opacity-70" />
