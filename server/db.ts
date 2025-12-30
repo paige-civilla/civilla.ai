@@ -189,6 +189,11 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("evidence_files", "category", "TEXT");
   await addColumnIfNotExists("evidence_files", "description", "TEXT");
   await addColumnIfNotExists("evidence_files", "tags", "TEXT");
+  
+  await addColumnIfNotExists("user_profiles", "auto_fill_choice_made", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfNotExists("user_profiles", "default_role", "TEXT NOT NULL DEFAULT 'self_represented'");
+  await addColumnIfNotExists("user_profiles", "bar_number", "TEXT");
+  await addColumnIfNotExists("user_profiles", "firm_name", "TEXT");
 
   await initTable("documents", `
     CREATE TABLE IF NOT EXISTS documents (

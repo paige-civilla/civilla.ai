@@ -1,0 +1,91 @@
+TASK: Slice 3 Completion — Autofill Consent + Remember Choice + Date Confirmation + Role Selector
+
+AUTONOMY: LOW
+USER IS NOT A DEVELOPER — implement fully, do not ask user to edit code.
+
+GOAL
+In the Document “Review & Edit” flow:
+1) Auto-fill user info (name/email/address) + case info when available
+2) BUT the user must be able to accept or deny autofill
+3) Remember the user’s last choice (accept/deny) and apply it next time
+4) Date field must be auto-filled BUT require user confirmation in the review UI
+5) Add “Role selector”: Self-Represented vs Attorney, which controls the signature block fields shown and exported DOCX output
+6) Do not change marketing pages or styling outside AppDocuments flow.
+
+CONSTRAINTS
+- Keep Civilla design tokens and existing styling patterns (no redesign)
+- Do not break existing document history feature
+- Use wouter routing only (already in place)
+- Store user preference server-side so it works across devices (NOT localStorage only)
+
+IMPLEMENTATION REQUIREMENTS
+
+A) DATA MODEL
+1) Update shared/schema.ts userProfiles (or add if missing) to include:
+   - autofillEnabled boolean NOT NULL DEFAULT true
+   - defaultRole text NOT NULL DEFAULT 'self_represented'  (allowed: 'self_represented' | 'attorney')
+2) Ensure server/db.ts initDbTables() adds columns with “addColumnIfNotExists” migration for existing DB.
+
+B) PROFILE API
+1) Confirm these endpoints exist; if not, implement:
+   - GET /api/profile (requireAuth) returns { profile }
+   - PATCH or POST /api/profile (requireAuth) upserts profile + preferences using zod schema
+2) Must not expose secrets.
+
+C) APPDOCUMENTS UX FLOW
+1) When user clicks “Review & Edit”:
+   - If profile exists AND autofillEnabled is true:
+       Pre-fill reviewPayload with profile + case data
+   - If profile exists AND autofillEnabled is false:
+       Leave user fields blank (or previous manual values), but still fill case data
+2) Add a lightweight modal/step BEFORE showing the full review form IF profile exists and user has never made a choice before:
+   - “Use your saved info to auto-fill documents?” [Use Autofill] [Not Now]
+   - Save this choice to user profile as autofillEnabled true/false
+   - Do not download yet
+3) Add an “Autofill” toggle inside the Review & Edit modal:
+   - Label: “Use saved info for auto-fill”
+   - Toggling updates reviewPayload live and persists preference via /api/profile
+
+D) DATE CONFIRMATION
+1) Date is auto-set to today in reviewPayload
+2) BUT require a confirm checkbox before enabling final Download:
+   - Checkbox label: “I confirm the date is correct”
+   - If unchecked: disable final Download button and show helper text
+3) Remember nothing about the date (date always defaults to “today” each time)
+
+E) ROLE SELECTOR
+1) In Review & Edit modal, add “Filing as” dropdown:
+   - “Self-Represented”
+   - “Attorney”
+2) Persist selection to profile as defaultRole
+3) When role = attorney:
+   - Show attorney fields (Bar number optional, firm, etc.) in the signature section
+   - Include those values in payload_json and exported DOCX
+4) When role = self_represented:
+   - Show “Pro Se / Self-Represented” signature format
+   - Hide attorney-only fields
+
+F) GENERATED DOCUMENT HISTORY
+1) The saved generated_documents payload_json must include:
+   - autofillEnabledUsed (boolean)
+   - roleUsed ('self_represented' | 'attorney')
+   - dateConfirmed (boolean)
+2) Re-download from history must re-open modal with those saved values.
+
+G) VALIDATION / TESTS (LIVE DOMAIN)
+After publish, verify:
+1) First time opening Review & Edit prompts autofill consent (if profile exists)
+2) Decline → next time it does NOT autofill and does not prompt again
+3) Accept → next time it autofills and does not prompt again
+4) Toggle inside modal persists preference across refresh
+5) Date confirm checkbox required to download
+6) Role selector changes signature fields shown
+7) Download History items re-open with correct saved values
+8) No console errors, no 500s, /api/profile returns 200 when logged in
+
+DELIVERABLE
+- List files changed + line ranges
+- Confirm preference saved server-side (user_profiles)
+- Confirm date confirmation gating implemented
+- Confirm role selector implemented and included in DOCX output
+STOP AFTER IMPLEMENTATION + REPORT

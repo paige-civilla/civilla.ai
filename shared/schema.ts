@@ -33,6 +33,10 @@ export const userProfiles = pgTable("user_profiles", {
   partyRole: text("party_role"),
   isSelfRepresented: boolean("is_self_represented").notNull().default(true),
   autoFillEnabled: boolean("auto_fill_enabled").notNull().default(true),
+  autoFillChoiceMade: boolean("auto_fill_choice_made").notNull().default(false),
+  defaultRole: text("default_role").notNull().default("self_represented"),
+  barNumber: text("bar_number"),
+  firmName: text("firm_name"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -49,6 +53,10 @@ export const upsertUserProfileSchema = z.object({
   partyRole: z.string().max(50).optional().nullable(),
   isSelfRepresented: z.boolean().optional(),
   autoFillEnabled: z.boolean().optional(),
+  autoFillChoiceMade: z.boolean().optional(),
+  defaultRole: z.enum(["self_represented", "attorney"]).optional(),
+  barNumber: z.string().max(50).optional().nullable(),
+  firmName: z.string().max(200).optional().nullable(),
 });
 
 export type UpsertUserProfile = z.infer<typeof upsertUserProfileSchema>;

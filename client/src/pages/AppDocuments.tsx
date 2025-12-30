@@ -58,6 +58,18 @@ interface UserProfile {
   partyRole: string | null;
   isSelfRepresented: boolean;
   autoFillEnabled: boolean;
+  autoFillChoiceMade: boolean;
+  defaultRole: "self_represented" | "attorney";
+  barNumber: string | null;
+  firmName: string | null;
+}
+
+interface ExtendedPayload extends GenerateDocumentPayload {
+  meta?: {
+    autofillEnabledUsed: boolean;
+    roleUsed: "self_represented" | "attorney";
+    dateConfirmed: boolean;
+  };
 }
 
 export default function AppDocuments() {
@@ -272,6 +284,14 @@ export default function AppDocuments() {
   const [reviewDocType, setReviewDocType] = useState<CourtDocType | null>(null);
   const [isBodyExpanded, setIsBodyExpanded] = useState(false);
   const [editableBody, setEditableBody] = useState<string[]>([]);
+  
+  const [showAutofillConsentModal, setShowAutofillConsentModal] = useState(false);
+  const [pendingDocType, setPendingDocType] = useState<CourtDocType | null>(null);
+  const [dateConfirmed, setDateConfirmed] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"self_represented" | "attorney">("self_represented");
+  const [attorneyBarNumber, setAttorneyBarNumber] = useState("");
+  const [attorneyFirmName, setAttorneyFirmName] = useState("");
+  const [autofillToggle, setAutofillToggle] = useState(true);
 
   type CourtDocType = "declaration" | "affidavit" | "motion" | "memorandum" | "certificate_of_service";
 
@@ -346,16 +366,31 @@ export default function AppDocuments() {
 
   const openReviewModal = (docType: CourtDocType) => {
     if (!currentCase) return;
-    const template = courtDocTemplates[docType];
     
-    const addressParts = [
-      userProfile?.addressLine1 || "",
-      userProfile?.addressLine2 || "",
-      [userProfile?.city, userProfile?.state, userProfile?.zip].filter(Boolean).join(", "),
-    ].filter(Boolean).join(", ");
+    if (userProfile && !userProfile.autoFillChoiceMade) {
+      setPendingDocType(docType);
+      setShowAutofillConsentModal(true);
+      setIsCourtDocDialogOpen(false);
+      setSelectedCourtDocType("");
+      return;
+    }
+    
+    proceedToReview(docType, userProfile?.autoFillEnabled ?? true);
+  };
+
+  const proceedToReview = (docType: CourtDocType, useAutofill: boolean) => {
+    if (!currentCase) return;
+    const template = courtDocTemplates[docType];
 
     const today = new Date();
     const dateStr = today.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    const role = userProfile?.defaultRole || "self_represented";
+    setSelectedRole(role);
+    setAttorneyBarNumber(userProfile?.barNumber || "");
+    setAttorneyFirmName(userProfile?.firmName || "");
+    setAutofillToggle(useAutofill);
+    setDateConfirmed(false);
 
     const payload: GenerateDocumentPayload = {
       court: {
@@ -367,20 +402,28 @@ export default function AppDocuments() {
         caseNumber: currentCase.title || "CV10-XX-XXXX",
       },
       parties: {
-        petitioner: userProfile?.partyRole === "petitioner" ? (userProfile?.fullName || "[Petitioner Name]") : "[Petitioner Name]",
-        respondent: userProfile?.partyRole === "respondent" ? (userProfile?.fullName || "[Respondent Name]") : "[Respondent Name]",
+        petitioner: useAutofill && userProfile?.partyRole === "petitioner" ? (userProfile?.fullName || "[Petitioner Name]") : "[Petitioner Name]",
+        respondent: useAutofill && userProfile?.partyRole === "respondent" ? (userProfile?.fullName || "[Respondent Name]") : "[Respondent Name]",
       },
       filer: {
-        fullName: userProfile?.fullName || "[Your Full Name]",
-        email: userProfile?.email || "",
-        addressLine1: userProfile?.addressLine1 || "[Your Address]",
-        addressLine2: userProfile?.addressLine2 || "",
-        city: userProfile?.city || "",
-        state: userProfile?.state || "",
-        zip: userProfile?.zip || "",
-        phone: userProfile?.phone || "",
-        partyRole: userProfile?.partyRole || "petitioner",
-        isSelfRepresented: userProfile?.isSelfRepresented ?? true,
+        fullName: useAutofill ? (userProfile?.fullName || "[Your Full Name]") : "[Your Full Name]",
+        email: useAutofill ? (userProfile?.email || "") : "",
+        addressLine1: useAutofill ? (userProfile?.addressLine1 || "[Your Address]") : "[Your Address]",
+        addressLine2: useAutofill ? (userProfile?.addressLine2 || "") : "",
+        city: useAutofill ? (userProfile?.city || "") : "",
+        state: useAutofill ? (userProfile?.state || "") : "",
+        zip: useAutofill ? (userProfile?.zip || "") : "",
+        phone: useAutofill ? (userProfile?.phone || "") : "",
+        partyRole: useAutofill ? (userProfile?.partyRole || "petitioner") : "petitioner",
+        isSelfRepresented: role === "self_represented",
+        attorney: role === "attorney" ? {
+          name: useAutofill ? (userProfile?.fullName || "") : "",
+          firm: useAutofill ? (userProfile?.firmName || "") : "",
+          barNumber: useAutofill ? (userProfile?.barNumber || "") : "",
+          email: useAutofill ? (userProfile?.email || "") : "",
+          phone: useAutofill ? (userProfile?.phone || "") : "",
+          address: useAutofill ? (userProfile?.addressLine1 || "") : "",
+        } : undefined,
       },
       document: {
         title: template.title,
@@ -392,9 +435,76 @@ export default function AppDocuments() {
     setReviewPayload(payload);
     setReviewDocType(docType);
     setEditableBody([...template.body]);
+    setShowAutofillConsentModal(false);
+    setPendingDocType(null);
     setIsCourtDocDialogOpen(false);
     setSelectedCourtDocType("");
     setIsReviewModalOpen(true);
+  };
+
+  const handleAutofillConsentAccept = async () => {
+    await updateProfileMutation.mutateAsync({ autoFillEnabled: true, autoFillChoiceMade: true });
+    if (pendingDocType) {
+      proceedToReview(pendingDocType, true);
+    }
+  };
+
+  const handleAutofillConsentDecline = async () => {
+    await updateProfileMutation.mutateAsync({ autoFillEnabled: false, autoFillChoiceMade: true });
+    if (pendingDocType) {
+      proceedToReview(pendingDocType, false);
+    }
+  };
+
+  const handleAutofillToggleChange = (enabled: boolean) => {
+    setAutofillToggle(enabled);
+    updateProfileMutation.mutate({ autoFillEnabled: enabled });
+    
+    if (!reviewPayload || !currentCase) return;
+    
+    if (enabled && userProfile) {
+      setReviewPayload({
+        ...reviewPayload,
+        filer: {
+          ...reviewPayload.filer,
+          fullName: userProfile.fullName || reviewPayload.filer.fullName,
+          email: userProfile.email || reviewPayload.filer.email,
+          addressLine1: userProfile.addressLine1 || reviewPayload.filer.addressLine1,
+          addressLine2: userProfile.addressLine2 || reviewPayload.filer.addressLine2,
+          city: userProfile.city || reviewPayload.filer.city,
+          state: userProfile.state || reviewPayload.filer.state,
+          zip: userProfile.zip || reviewPayload.filer.zip,
+          phone: userProfile.phone || reviewPayload.filer.phone,
+        },
+        parties: {
+          petitioner: userProfile.partyRole === "petitioner" ? (userProfile.fullName || "[Petitioner Name]") : reviewPayload.parties.petitioner,
+          respondent: userProfile.partyRole === "respondent" ? (userProfile.fullName || "[Respondent Name]") : reviewPayload.parties.respondent,
+        },
+      });
+    }
+  };
+
+  const handleRoleChange = (role: "self_represented" | "attorney") => {
+    setSelectedRole(role);
+    updateProfileMutation.mutate({ defaultRole: role });
+    
+    if (reviewPayload) {
+      setReviewPayload({
+        ...reviewPayload,
+        filer: {
+          ...reviewPayload.filer,
+          isSelfRepresented: role === "self_represented",
+          attorney: role === "attorney" ? {
+            name: reviewPayload.filer.fullName,
+            firm: attorneyFirmName,
+            barNumber: attorneyBarNumber,
+            email: reviewPayload.filer.email,
+            phone: reviewPayload.filer.phone,
+            address: reviewPayload.filer.addressLine1,
+          } : undefined,
+        },
+      });
+    }
   };
 
   const handleFinalDownload = async () => {
@@ -450,10 +560,30 @@ export default function AppDocuments() {
         throw new Error("Failed to generate document");
       }
 
+      const payloadWithMeta: ExtendedPayload = {
+        ...reviewPayload,
+        filer: {
+          ...reviewPayload.filer,
+          attorney: selectedRole === "attorney" ? {
+            name: reviewPayload.filer.fullName,
+            firm: attorneyFirmName,
+            barNumber: attorneyBarNumber,
+            email: reviewPayload.filer.email,
+            phone: reviewPayload.filer.phone,
+            address: reviewPayload.filer.addressLine1,
+          } : undefined,
+        },
+        meta: {
+          autofillEnabledUsed: autofillToggle,
+          roleUsed: selectedRole,
+          dateConfirmed: dateConfirmed,
+        },
+      };
+
       saveGeneratedDocMutation.mutate({
         templateType: reviewDocType,
         title: template.title,
-        payload: reviewPayload,
+        payload: payloadWithMeta as GenerateDocumentPayload,
       });
 
       const blob = await response.blob();
@@ -479,7 +609,7 @@ export default function AppDocuments() {
   };
 
   const handleRedownloadFromHistory = async (doc: GeneratedDocument) => {
-    const payload = doc.payloadJson as GenerateDocumentPayload;
+    const payload = doc.payloadJson as ExtendedPayload;
     const docType = doc.templateType as CourtDocType;
     const template = courtDocTemplates[docType];
     
@@ -487,6 +617,13 @@ export default function AppDocuments() {
       toast({ title: "Unknown document type", variant: "destructive" });
       return;
     }
+
+    const savedMeta = payload.meta;
+    setSelectedRole(savedMeta?.roleUsed || "self_represented");
+    setAutofillToggle(savedMeta?.autofillEnabledUsed ?? true);
+    setDateConfirmed(false);
+    setAttorneyBarNumber(payload.filer.attorney?.barNumber || "");
+    setAttorneyFirmName(payload.filer.attorney?.firm || "");
 
     setReviewPayload(payload);
     setReviewDocType(docType);
@@ -942,12 +1079,52 @@ export default function AppDocuments() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showAutofillConsentModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowAutofillConsentModal(false);
+          setPendingDocType(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Use Saved Information?</DialogTitle>
+            <DialogDescription>
+              Would you like to automatically fill in your name, address, and contact details from your saved profile?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-neutral-darkest/70">
+              This setting will be remembered for future documents. You can change it anytime from the document review screen.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleAutofillConsentDecline}
+              disabled={updateProfileMutation.isPending}
+              data-testid="button-decline-autofill"
+            >
+              Not Now
+            </Button>
+            <Button
+              onClick={handleAutofillConsentAccept}
+              disabled={updateProfileMutation.isPending}
+              className="bg-bush text-white"
+              data-testid="button-accept-autofill"
+            >
+              {updateProfileMutation.isPending ? "Saving..." : "Use Autofill"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isReviewModalOpen} onOpenChange={(open) => {
         if (!open) {
           setIsReviewModalOpen(false);
           setReviewPayload(null);
           setReviewDocType(null);
           setEditableBody([]);
+          setDateConfirmed(false);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -960,6 +1137,32 @@ export default function AppDocuments() {
           {reviewPayload && (
             <ScrollArea className="flex-1 pr-4">
               <div className="flex flex-col gap-4 py-4">
+                <div className="flex items-center justify-between p-3 bg-neutral-lightest rounded-md border">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="autofill-toggle"
+                      checked={autofillToggle}
+                      onCheckedChange={(checked) => handleAutofillToggleChange(!!checked)}
+                      data-testid="checkbox-autofill-toggle"
+                    />
+                    <Label htmlFor="autofill-toggle" className="text-sm cursor-pointer">
+                      Use saved info for auto-fill
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Filing as:</Label>
+                    <Select value={selectedRole} onValueChange={(val) => handleRoleChange(val as "self_represented" | "attorney")}>
+                      <SelectTrigger className="w-[160px]" data-testid="select-role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="self_represented">Self-Represented</SelectItem>
+                        <SelectItem value="attorney">Attorney</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <Label>County</Label>
@@ -1109,6 +1312,72 @@ export default function AppDocuments() {
                   </div>
                 </div>
 
+                {selectedRole === "attorney" && (
+                  <div className="border-t pt-4 mt-2">
+                    <p className="text-sm font-medium mb-3">Attorney Information</p>
+                    <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                          <Label>Bar Number</Label>
+                          <Input
+                            value={attorneyBarNumber}
+                            onChange={(e) => {
+                              setAttorneyBarNumber(e.target.value);
+                              if (reviewPayload) {
+                                setReviewPayload({
+                                  ...reviewPayload,
+                                  filer: {
+                                    ...reviewPayload.filer,
+                                    attorney: {
+                                      ...reviewPayload.filer.attorney,
+                                      barNumber: e.target.value,
+                                      name: reviewPayload.filer.fullName,
+                                      firm: attorneyFirmName,
+                                      email: reviewPayload.filer.email,
+                                      phone: reviewPayload.filer.phone,
+                                      address: reviewPayload.filer.addressLine1,
+                                    },
+                                  },
+                                });
+                              }
+                            }}
+                            placeholder="e.g., 12345"
+                            data-testid="input-attorney-bar-number"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label>Firm Name</Label>
+                          <Input
+                            value={attorneyFirmName}
+                            onChange={(e) => {
+                              setAttorneyFirmName(e.target.value);
+                              if (reviewPayload) {
+                                setReviewPayload({
+                                  ...reviewPayload,
+                                  filer: {
+                                    ...reviewPayload.filer,
+                                    attorney: {
+                                      ...reviewPayload.filer.attorney,
+                                      firm: e.target.value,
+                                      name: reviewPayload.filer.fullName,
+                                      barNumber: attorneyBarNumber,
+                                      email: reviewPayload.filer.email,
+                                      phone: reviewPayload.filer.phone,
+                                      address: reviewPayload.filer.addressLine1,
+                                    },
+                                  },
+                                });
+                              }
+                            }}
+                            placeholder="e.g., Smith & Associates"
+                            data-testid="input-attorney-firm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="border-t pt-4 mt-2">
                   <button
                     type="button"
@@ -1138,16 +1407,39 @@ export default function AppDocuments() {
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <Label>Document Date</Label>
-                  <Input
-                    value={reviewPayload.date}
-                    onChange={(e) => setReviewPayload({
-                      ...reviewPayload,
-                      date: e.target.value
-                    })}
-                    data-testid="input-review-date"
-                  />
+                <div className="border-t pt-4 mt-2">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
+                      <Label>Document Date</Label>
+                      <Input
+                        value={reviewPayload.date}
+                        onChange={(e) => {
+                          setReviewPayload({
+                            ...reviewPayload,
+                            date: e.target.value
+                          });
+                          setDateConfirmed(false);
+                        }}
+                        data-testid="input-review-date"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 p-3 bg-neutral-lightest rounded-md border">
+                      <Checkbox
+                        id="date-confirm"
+                        checked={dateConfirmed}
+                        onCheckedChange={(checked) => setDateConfirmed(!!checked)}
+                        data-testid="checkbox-date-confirm"
+                      />
+                      <Label htmlFor="date-confirm" className="text-sm cursor-pointer">
+                        I confirm the date is correct
+                      </Label>
+                    </div>
+                    {!dateConfirmed && (
+                      <p className="text-sm text-amber-600">
+                        Please confirm the date is correct before downloading.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </ScrollArea>
@@ -1160,6 +1452,7 @@ export default function AppDocuments() {
                 setReviewPayload(null);
                 setReviewDocType(null);
                 setEditableBody([]);
+                setDateConfirmed(false);
               }}
               data-testid="button-cancel-review"
             >
@@ -1167,7 +1460,7 @@ export default function AppDocuments() {
             </Button>
             <Button
               onClick={handleFinalDownload}
-              disabled={isDownloadingCourtDoc}
+              disabled={isDownloadingCourtDoc || !dateConfirmed}
               className="bg-bush text-white"
               data-testid="button-download-final"
             >
