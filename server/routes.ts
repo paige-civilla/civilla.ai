@@ -1081,7 +1081,12 @@ export async function registerRoutes(
           new Paragraph({
             children: [new TextRun({ text, font: "Times New Roman", size: 24 })],
             alignment: AlignmentType.LEFT,
-            spacing: { before: 0, after: 0, line: 480, lineRule: LineRuleType.AUTO },
+            spacing: {
+              before: 0,
+              after: 0,
+              line: 480,
+              lineRule: LineRuleType.AUTO,
+            },
           })
       );
 
