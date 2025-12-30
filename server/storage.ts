@@ -6,6 +6,7 @@ import {
   authIdentities,
   timelineEvents,
   evidenceFiles,
+  documents,
   type User,
   type InsertUser,
   type Case,
@@ -16,6 +17,9 @@ import {
   type InsertTimelineEvent,
   type EvidenceFile,
   type InsertEvidenceFile,
+  type Document,
+  type InsertDocument,
+  type UpdateDocument,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -43,6 +47,13 @@ export interface IStorage {
   getEvidenceFile(evidenceId: string, userId: string): Promise<EvidenceFile | undefined>;
   createEvidenceFile(caseId: string, userId: string, data: InsertEvidenceFile): Promise<EvidenceFile>;
   deleteEvidenceFile(evidenceId: string, userId: string): Promise<EvidenceFile | undefined>;
+
+  listDocuments(caseId: string, userId: string): Promise<Document[]>;
+  getDocument(docId: string, userId: string): Promise<Document | undefined>;
+  createDocument(caseId: string, userId: string, data: InsertDocument): Promise<Document>;
+  updateDocument(docId: string, userId: string, data: UpdateDocument): Promise<Document | undefined>;
+  duplicateDocument(docId: string, userId: string): Promise<Document | undefined>;
+  deleteDocument(docId: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -286,6 +297,86 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(evidenceFiles.id, evidenceId), eq(evidenceFiles.userId, userId)))
       .returning();
     return updated;
+  }
+
+  async listDocuments(caseId: string, userId: string): Promise<Document[]> {
+    const caseRecord = await this.getCase(caseId, userId);
+    if (!caseRecord) {
+      return [];
+    }
+    return db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.caseId, caseId), eq(documents.userId, userId)))
+      .orderBy(desc(documents.updatedAt));
+  }
+
+  async getDocument(docId: string, userId: string): Promise<Document | undefined> {
+    const [doc] = await db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.id, docId), eq(documents.userId, userId)));
+    return doc;
+  }
+
+  async createDocument(caseId: string, userId: string, data: InsertDocument): Promise<Document> {
+    const [doc] = await db
+      .insert(documents)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        templateKey: data.templateKey,
+        content: data.content || "",
+      })
+      .returning();
+    return doc;
+  }
+
+  async updateDocument(docId: string, userId: string, data: UpdateDocument): Promise<Document | undefined> {
+    const existingDoc = await this.getDocument(docId, userId);
+    if (!existingDoc) {
+      return undefined;
+    }
+    const [updated] = await db
+      .update(documents)
+      .set({
+        title: data.title ?? existingDoc.title,
+        content: data.content !== undefined ? data.content : existingDoc.content,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(documents.id, docId), eq(documents.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async duplicateDocument(docId: string, userId: string): Promise<Document | undefined> {
+    const existingDoc = await this.getDocument(docId, userId);
+    if (!existingDoc) {
+      return undefined;
+    }
+    const [dup] = await db
+      .insert(documents)
+      .values({
+        userId,
+        caseId: existingDoc.caseId,
+        title: `${existingDoc.title} (Copy)`,
+        templateKey: existingDoc.templateKey,
+        content: existingDoc.content,
+      })
+      .returning();
+    return dup;
+  }
+
+  async deleteDocument(docId: string, userId: string): Promise<boolean> {
+    const existingDoc = await this.getDocument(docId, userId);
+    if (!existingDoc) {
+      return false;
+    }
+    await db
+      .delete(documents)
+      .where(and(eq(documents.id, docId), eq(documents.userId, userId)));
+    return true;
   }
 }
 
