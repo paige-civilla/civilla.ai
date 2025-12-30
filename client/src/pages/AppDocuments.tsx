@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Case, Document } from "@shared/schema";
@@ -40,6 +41,20 @@ import type { Case, Document } from "@shared/schema";
 interface DocumentTemplate {
   key: string;
   title: string;
+}
+
+interface UserProfile {
+  fullName: string | null;
+  email: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  phone: string | null;
+  partyRole: string | null;
+  isSelfRepresented: boolean;
+  autoFillEnabled: boolean;
 }
 
 export default function AppDocuments() {
@@ -73,8 +88,17 @@ export default function AppDocuments() {
     enabled: !!currentCase,
   });
 
+  const { data: profileData, refetch: refetchProfile } = useQuery<{ profile: UserProfile }>({
+    queryKey: ["/api/profile"],
+  });
+
+  const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false);
+  const [autoFillFormData, setAutoFillFormData] = useState<Partial<UserProfile>>({});
+  const [dontAskAgain, setDontAskAgain] = useState(false);
+
   const templates = templatesData?.templates || [];
   const documents = documentsData?.documents || [];
+  const userProfile = profileData?.profile;
 
   useEffect(() => {
     if (currentCase) {
@@ -92,12 +116,30 @@ export default function AppDocuments() {
     mutationFn: async (data: { title: string; templateKey: string }) => {
       return apiRequest("POST", `/api/cases/${caseId}/documents`, data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "documents"] });
       setIsCreateDialogOpen(false);
       setNewDocTitle("");
       setNewDocTemplate("");
       toast({ title: "Document created" });
+
+      const profileResult = await refetchProfile();
+      const profile = profileResult.data?.profile;
+      if (profile?.autoFillEnabled && (!profile?.fullName || !profile?.addressLine1)) {
+        setAutoFillFormData({
+          fullName: profile.fullName || "",
+          email: profile.email || "",
+          addressLine1: profile.addressLine1 || "",
+          addressLine2: profile.addressLine2 || "",
+          city: profile.city || "",
+          state: profile.state || "",
+          zip: profile.zip || "",
+          phone: profile.phone || "",
+          partyRole: profile.partyRole || "petitioner",
+          isSelfRepresented: profile.isSelfRepresented ?? true,
+        });
+        setIsAutoFillModalOpen(true);
+      }
     },
     onError: () => {
       toast({ title: "Failed to create document", variant: "destructive" });
@@ -144,6 +186,60 @@ export default function AppDocuments() {
       toast({ title: "Failed to delete document", variant: "destructive" });
     },
   });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: Partial<UserProfile>) => {
+      return apiRequest("PATCH", "/api/profile", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
+      setIsAutoFillModalOpen(false);
+      setAutoFillFormData({});
+      setDontAskAgain(false);
+      toast({ title: "Profile saved" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save profile", variant: "destructive" });
+    },
+  });
+
+  const isProfileIncomplete = !userProfile?.fullName || !userProfile?.addressLine1;
+
+  const openAutoFillModal = () => {
+    if (userProfile) {
+      setAutoFillFormData({
+        fullName: userProfile.fullName || "",
+        email: userProfile.email || "",
+        addressLine1: userProfile.addressLine1 || "",
+        addressLine2: userProfile.addressLine2 || "",
+        city: userProfile.city || "",
+        state: userProfile.state || "",
+        zip: userProfile.zip || "",
+        phone: userProfile.phone || "",
+        partyRole: userProfile.partyRole || "petitioner",
+        isSelfRepresented: userProfile.isSelfRepresented ?? true,
+      });
+    }
+    setIsAutoFillModalOpen(true);
+  };
+
+  const handleSaveProfile = () => {
+    const profileUpdate: Partial<UserProfile> = {
+      ...autoFillFormData,
+      autoFillEnabled: !dontAskAgain,
+    };
+    updateProfileMutation.mutate(profileUpdate);
+  };
+
+  const handleSkipAutoFill = () => {
+    if (dontAskAgain) {
+      updateProfileMutation.mutate({ autoFillEnabled: false });
+    } else {
+      setIsAutoFillModalOpen(false);
+      setAutoFillFormData({});
+      setDontAskAgain(false);
+    }
+  };
 
   const [isDownloadingCourtDoc, setIsDownloadingCourtDoc] = useState(false);
   const [isCourtDocDialogOpen, setIsCourtDocDialogOpen] = useState(false);
@@ -664,6 +760,155 @@ export default function AppDocuments() {
             >
               <FileDown className="w-4 h-4 mr-2" />
               {isDownloadingCourtDoc ? "Downloading..." : "Download"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAutoFillModalOpen} onOpenChange={setIsAutoFillModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Auto-Fill Your Information</DialogTitle>
+            <DialogDescription>
+              Save your contact details to automatically fill them into documents.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="autofill-fullName">Full Legal Name</Label>
+              <Input
+                id="autofill-fullName"
+                placeholder="John Doe"
+                value={autoFillFormData.fullName || ""}
+                onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, fullName: e.target.value }))}
+                data-testid="input-autofill-fullname"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="autofill-email">Email</Label>
+              <Input
+                id="autofill-email"
+                type="email"
+                placeholder="john@example.com"
+                value={autoFillFormData.email || ""}
+                onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, email: e.target.value }))}
+                data-testid="input-autofill-email"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="autofill-addressLine1">Address Line 1</Label>
+              <Input
+                id="autofill-addressLine1"
+                placeholder="123 Main Street"
+                value={autoFillFormData.addressLine1 || ""}
+                onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, addressLine1: e.target.value }))}
+                data-testid="input-autofill-address1"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="autofill-addressLine2">Address Line 2 (Optional)</Label>
+              <Input
+                id="autofill-addressLine2"
+                placeholder="Apt 4B"
+                value={autoFillFormData.addressLine2 || ""}
+                onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, addressLine2: e.target.value }))}
+                data-testid="input-autofill-address2"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="autofill-city">City</Label>
+                <Input
+                  id="autofill-city"
+                  placeholder="Boise"
+                  value={autoFillFormData.city || ""}
+                  onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, city: e.target.value }))}
+                  data-testid="input-autofill-city"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="autofill-state">State</Label>
+                <Input
+                  id="autofill-state"
+                  placeholder="ID"
+                  value={autoFillFormData.state || ""}
+                  onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, state: e.target.value }))}
+                  data-testid="input-autofill-state"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="autofill-zip">ZIP</Label>
+                <Input
+                  id="autofill-zip"
+                  placeholder="83702"
+                  value={autoFillFormData.zip || ""}
+                  onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, zip: e.target.value }))}
+                  data-testid="input-autofill-zip"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="autofill-phone">Phone</Label>
+              <Input
+                id="autofill-phone"
+                type="tel"
+                placeholder="(208) 555-1234"
+                value={autoFillFormData.phone || ""}
+                onChange={(e) => setAutoFillFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                data-testid="input-autofill-phone"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="autofill-partyRole">Your Role in Case</Label>
+              <Select
+                value={autoFillFormData.partyRole || "petitioner"}
+                onValueChange={(val) => setAutoFillFormData((prev) => ({ ...prev, partyRole: val }))}
+              >
+                <SelectTrigger id="autofill-partyRole" data-testid="select-autofill-partyrole">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="petitioner">Petitioner</SelectItem>
+                  <SelectItem value="respondent">Respondent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Checkbox
+                id="autofill-selfRep"
+                checked={autoFillFormData.isSelfRepresented ?? true}
+                onCheckedChange={(checked) =>
+                  setAutoFillFormData((prev) => ({ ...prev, isSelfRepresented: !!checked }))
+                }
+                data-testid="checkbox-autofill-selfrep"
+              />
+              <Label htmlFor="autofill-selfRep" className="text-sm">
+                I am representing myself (Pro Se)
+              </Label>
+            </div>
+            <div className="flex items-center gap-2 border-t pt-4 mt-2">
+              <Checkbox
+                id="dontAskAgain"
+                checked={dontAskAgain}
+                onCheckedChange={(checked) => setDontAskAgain(!!checked)}
+                data-testid="checkbox-dont-ask-again"
+              />
+              <Label htmlFor="dontAskAgain" className="text-sm text-muted-foreground">
+                Don't ask me again
+              </Label>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-row justify-between gap-2">
+            <Button variant="outline" onClick={handleSkipAutoFill} data-testid="button-skip-autofill">
+              Skip
+            </Button>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={updateProfileMutation.isPending}
+              className="bg-bush text-white"
+              data-testid="button-save-autofill"
+            >
+              {updateProfileMutation.isPending ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
