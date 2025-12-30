@@ -1,6 +1,6 @@
 import { Link, useParams } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Calendar, MessageSquare, Users } from "lucide-react";
+import { FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
 export default function AppCase() {
@@ -25,11 +25,43 @@ export default function AppCase() {
       Icon: Calendar,
     },
     {
+      key: "evidence",
+      title: "Evidence",
+      subtitle: "Manage and organize case evidence",
+      href: caseId ? `/app/evidence/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: FolderOpen,
+    },
+    {
+      key: "exhibits",
+      title: "Exhibits",
+      subtitle: "Prepare exhibits for court filings",
+      href: caseId ? `/app/exhibits/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: FileStack,
+    },
+    {
+      key: "tasks",
+      title: "Tasks",
+      subtitle: "Track your to-do items",
+      href: caseId ? `/app/tasks/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: CheckSquare,
+    },
+    {
+      key: "deadlines",
+      title: "Deadlines",
+      subtitle: "Never miss an important date",
+      href: caseId ? `/app/deadlines/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: Clock,
+    },
+    {
       key: "messages",
       title: "Messages",
       subtitle: "Secure communication center",
       href: caseId ? `/app/messages/${caseId}` : "/app",
-      comingSoon: true,
+      comingSoon: false,
       Icon: MessageSquare,
     },
     {
@@ -90,10 +122,10 @@ export default function AppCase() {
             );
 
             return comingSoon ? (
-              <div key={key} data-testid={`card-module-${key}`}>{Tile}</div>
+              <div key={key} data-testid={`tile-${key}`}>{Tile}</div>
             ) : (
               <Link key={key} href={href}>
-                <a className="block" data-testid={`link-module-${key}`}>{Tile}</a>
+                <a className="block" data-testid={`tile-${key}`}>{Tile}</a>
               </Link>
             );
           })}

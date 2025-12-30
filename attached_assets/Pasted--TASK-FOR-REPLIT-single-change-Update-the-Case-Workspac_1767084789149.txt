@@ -1,0 +1,94 @@
+*** TASK FOR REPLIT (single change): Update the Case Workspace tiles so:
+*** 1) Remove the "Modules" label/title above the tile grid (keep the welcome banner)
+*** 2) Make all tiles clickable for modules that already exist:
+***    Documents, Timeline, Evidence, Exhibits, Tasks, Deadlines, Messages
+*** 3) Keep Contacts as "Coming soon" (NOT clickable) unless a real /app/contacts/:caseId route exists
+*** 4) Do NOT change overall styling tokens, spacing, or AppLayout wrapper.
+
+--- a/client/src/pages/AppCase.tsx
++++ b/client/src/pages/AppCase.tsx
+@@
+-// (existing imports...)
++// (existing imports...)
++import { Link } from "wouter";
+ 
+@@
+ export default function AppCase() {
+   // (existing state/hooks for currentCase + caseId etc.)
+ 
+   return (
+     <AppLayout>
+       <div className="space-y-6">
+         {/* Welcome banner stays as-is */}
+ 
+-        {/* If there is a heading that says "Modules", remove it */}
+-        <div className="flex items-center justify-between">
+-          <h2 className="font-heading text-lg text-neutral-darkest">Modules</h2>
+-        </div>
++        {/* Removed the "Modules" heading per request */}
+ 
+-        {/* Existing 4 tiles grid */}
+-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+-          {/* Documents tile clickable */}
+-          {/* Timeline tile clickable */}
+-          {/* Messages coming soon */}
+-          {/* Contacts coming soon */}
+-        </div>
++        {/* Updated tiles: link to real module routes */}
++        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
++          <Link href={`/app/documents/${caseId}`}>
++            <a data-testid="tile-documents" className="block">
++              {/* keep existing tile markup/classes inside here */}
++              {/* TITLE: Documents */}
++            </a>
++          </Link>
++
++          <Link href={`/app/timeline/${caseId}`}>
++            <a data-testid="tile-timeline" className="block">
++              {/* TITLE: Timeline */}
++            </a>
++          </Link>
++
++          <Link href={`/app/evidence/${caseId}`}>
++            <a data-testid="tile-evidence" className="block">
++              {/* TITLE: Evidence */}
++            </a>
++          </Link>
++
++          <Link href={`/app/exhibits/${caseId}`}>
++            <a data-testid="tile-exhibits" className="block">
++              {/* TITLE: Exhibits */}
++            </a>
++          </Link>
++
++          <Link href={`/app/tasks/${caseId}`}>
++            <a data-testid="tile-tasks" className="block">
++              {/* TITLE: Tasks */}
++            </a>
++          </Link>
++
++          <Link href={`/app/deadlines/${caseId}`}>
++            <a data-testid="tile-deadlines" className="block">
++              {/* TITLE: Deadlines */}
++            </a>
++          </Link>
++
++          <Link href={`/app/messages/${caseId}`}>
++            <a data-testid="tile-messages" className="block">
++              {/* TITLE: Messages */}
++            </a>
++          </Link>
++
++          {/* Contacts stays non-clickable until the route exists */}
++          <div data-testid="tile-contacts">
++            {/* keep existing Contacts tile markup/classes */}
++            {/* TITLE: Contacts */}
++            {/* keep "Coming soon" */}
++          </div>
++        </div>
+ 
+         {/* Case Details placeholder stays as-is */}
+       </div>
+     </AppLayout>
+   );
+ }
