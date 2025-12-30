@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
@@ -325,6 +325,83 @@ export async function registerRoutes(
     }
 
     res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+  });
+
+  app.get("/api/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      const profile = await storage.getUserProfile(userId);
+
+      if (profile) {
+        res.json({
+          profile: {
+            fullName: profile.fullName,
+            email: profile.email || user?.email || null,
+            addressLine1: profile.addressLine1,
+            addressLine2: profile.addressLine2,
+            city: profile.city,
+            state: profile.state,
+            zip: profile.zip,
+            phone: profile.phone,
+            partyRole: profile.partyRole,
+            isSelfRepresented: profile.isSelfRepresented,
+            autoFillEnabled: profile.autoFillEnabled,
+          },
+        });
+      } else {
+        res.json({
+          profile: {
+            fullName: null,
+            email: user?.email || null,
+            addressLine1: null,
+            addressLine2: null,
+            city: null,
+            state: null,
+            zip: null,
+            phone: null,
+            partyRole: null,
+            isSelfRepresented: true,
+            autoFillEnabled: true,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Get profile error:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.patch("/api/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const parseResult = upsertUserProfileSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid profile data", details: parseResult.error.errors });
+      }
+
+      const updatedProfile = await storage.upsertUserProfile(userId, parseResult.data);
+      const user = await storage.getUser(userId);
+
+      res.json({
+        profile: {
+          fullName: updatedProfile.fullName,
+          email: updatedProfile.email || user?.email || null,
+          addressLine1: updatedProfile.addressLine1,
+          addressLine2: updatedProfile.addressLine2,
+          city: updatedProfile.city,
+          state: updatedProfile.state,
+          zip: updatedProfile.zip,
+          phone: updatedProfile.phone,
+          partyRole: updatedProfile.partyRole,
+          isSelfRepresented: updatedProfile.isSelfRepresented,
+          autoFillEnabled: updatedProfile.autoFillEnabled,
+        },
+      });
+    } catch (error) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
   });
 
   app.get("/api/cases", requireAuth, async (req, res) => {
