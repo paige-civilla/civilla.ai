@@ -1,190 +1,108 @@
-import { useEffect, useState } from "react";
-import { useLocation, useParams } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Save } from "lucide-react";
+import { Link, useParams } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, Calendar, MessageSquare, Users } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
-import type { Case } from "@shared/schema";
 
 export default function AppCase() {
-  const [, setLocation] = useLocation();
-  const params = useParams<{ caseId: string }>();
-  const caseId = params.caseId;
-  
-  const [title, setTitle] = useState("");
-  const [state, setState] = useState("");
-  const [county, setCounty] = useState("");
-  const [caseType, setCaseType] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const params = useParams() as { caseId?: string };
+  const caseId = params.caseId || "";
 
-  const { data: caseData, isLoading } = useQuery<{ case: Case }>({
-    queryKey: ["/api/cases", caseId],
-    enabled: !!caseId,
-  });
-
-  const currentCase = caseData?.case;
-
-  useEffect(() => {
-    if (!isLoading && !currentCase && caseId) {
-      setLocation("/app/cases");
-    }
-  }, [isLoading, currentCase, caseId, setLocation]);
-
-  useEffect(() => {
-    if (currentCase) {
-      setTitle(currentCase.title);
-      setState(currentCase.state || "");
-      setCounty(currentCase.county || "");
-      setCaseType(currentCase.caseType || "");
-      localStorage.setItem("selectedCaseId", currentCase.id);
-    }
-  }, [currentCase]);
-
-  const updateCaseMutation = useMutation({
-    mutationFn: async (data: { title: string; state?: string; county?: string; caseType?: string }) => {
-      const res = await apiRequest("PATCH", `/api/cases/${caseId}`, data);
-      return res.json();
+  const modules = [
+    {
+      key: "documents",
+      title: "Documents",
+      subtitle: "Upload and organize your case documents",
+      href: caseId ? `/app/documents/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: FileText,
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId] });
-      setSuccess("Case settings saved successfully");
-      setError("");
-      setTimeout(() => setSuccess(""), 3000);
+    {
+      key: "timeline",
+      title: "Timeline",
+      subtitle: "Track key dates and deadlines",
+      href: caseId ? `/app/timeline/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: Calendar,
     },
-    onError: (err: any) => {
-      setError(err.message || "Failed to update case");
-      setSuccess("");
+    {
+      key: "messages",
+      title: "Messages",
+      subtitle: "Secure communication center",
+      href: caseId ? `/app/messages/${caseId}` : "/app",
+      comingSoon: true,
+      Icon: MessageSquare,
     },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    updateCaseMutation.mutate({
-      title,
-      state: state || undefined,
-      county: county || undefined,
-      caseType: caseType || undefined,
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center py-20">
-          <p className="font-sans text-neutral-darkest/60">Loading...</p>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!currentCase) {
-    return null;
-  }
+    {
+      key: "contacts",
+      title: "Contacts",
+      subtitle: "Manage case-related contacts",
+      href: caseId ? `/app/contacts/${caseId}` : "/app",
+      comingSoon: true,
+      Icon: Users,
+    },
+  ];
 
   return (
     <AppLayout>
-      <section className="w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16">
-        <div className="flex flex-col items-start max-w-container w-full">
-          <button
-            onClick={() => setLocation("/app")}
-            className="inline-flex items-center gap-2 text-sm text-bush font-medium mb-6"
-            data-testid="button-back-to-dashboard"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-
-          <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest mb-8">
-            Case Settings
-          </h1>
-
-          {error && (
-            <div className="w-full bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-6">
-              <p className="font-sans text-sm text-destructive">{error}</p>
+      <div className="px-4 md:px-8 py-8">
+        <div className="rounded-2xl bg-[#e7ebea] p-6 md:p-8 mb-10">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-bush text-white flex items-center justify-center">
+              <span className="text-lg font-semibold"> </span>
             </div>
-          )}
-
-          {success && (
-            <div className="w-full bg-bush/10 border border-bush/30 rounded-lg p-4 mb-6">
-              <p className="font-sans text-sm text-bush">{success}</p>
+            <div>
+              <h1 className="font-heading font-bold text-2xl md:text-3xl text-neutral-darkest">
+                You&apos;re in your Case Workspace
+              </h1>
+              <p className="font-sans text-neutral-darkest/70 mt-1">
+                This is your central hub for managing your case. Access documents, track deadlines, and stay organized.
+              </p>
             </div>
-          )}
-
-          <div className="w-full max-w-xl bg-white border border-neutral-darkest/10 rounded-lg p-6">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="title" className="font-sans text-sm font-medium text-neutral-darkest">
-                  Case Title <span className="text-destructive">*</span>
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                  required
-                  data-testid="input-case-title"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="state" className="font-sans text-sm font-medium text-neutral-darkest">
-                  State
-                </label>
-                <input
-                  id="state"
-                  type="text"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                  placeholder="e.g., California"
-                  data-testid="input-case-state"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="county" className="font-sans text-sm font-medium text-neutral-darkest">
-                  County
-                </label>
-                <input
-                  id="county"
-                  type="text"
-                  value={county}
-                  onChange={(e) => setCounty(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                  placeholder="e.g., Alameda"
-                  data-testid="input-case-county"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="caseType" className="font-sans text-sm font-medium text-neutral-darkest">
-                  Case Type
-                </label>
-                <input
-                  id="caseType"
-                  type="text"
-                  value={caseType}
-                  onChange={(e) => setCaseType(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                  placeholder="e.g., Custody"
-                  data-testid="input-case-type"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={updateCaseMutation.isPending}
-                className="inline-flex items-center justify-center gap-2 bg-bush text-white font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow disabled:opacity-50 mt-2"
-                data-testid="button-save-case"
-              >
-                <Save className="w-4 h-4" />
-                {updateCaseMutation.isPending ? "Saving..." : "Save Changes"}
-              </button>
-            </form>
           </div>
         </div>
-      </section>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          {modules.map(({ key, title, subtitle, href, comingSoon, Icon }) => {
+            const Tile = (
+              <Card
+                className={[
+                  "h-full rounded-2xl border bg-white",
+                  comingSoon ? "opacity-70" : "cursor-pointer hover:shadow-md transition-shadow",
+                ].join(" ")}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#f4f6f5] flex items-center justify-center">
+                      <Icon className="w-6 h-6 text-bush" />
+                    </div>
+
+                    {comingSoon && (
+                      <span className="px-3 py-1 rounded-full text-xs bg-neutral-100 text-neutral-600">
+                        Coming soon
+                      </span>
+                    )}
+                  </div>
+
+                  <h2 className="mt-6 font-heading font-bold text-lg text-neutral-darkest">{title}</h2>
+                  <p className="mt-2 font-sans text-sm text-neutral-darkest/60">{subtitle}</p>
+                </CardContent>
+              </Card>
+            );
+
+            return comingSoon ? (
+              <div key={key} data-testid={`card-module-${key}`}>{Tile}</div>
+            ) : (
+              <Link key={key} href={href}>
+                <a className="block" data-testid={`link-module-${key}`}>{Tile}</a>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-10 border-t pt-8">
+          <h2 className="font-heading font-bold text-xl text-neutral-darkest">Case Details</h2>
+        </div>
+      </div>
     </AppLayout>
   );
 }
