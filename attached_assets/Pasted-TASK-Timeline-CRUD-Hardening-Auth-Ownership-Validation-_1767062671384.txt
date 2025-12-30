@@ -1,0 +1,92 @@
+TASK: Timeline CRUD Hardening (Auth + Ownership + Validation + Better Errors)
+
+AUTONOMY: LOW
+SCOPE: BACKEND-FIRST (minimal frontend only if required to display errors)
+GOAL:
+Timeline event create/edit/delete must never succeed unless:
+1) user is authenticated
+2) case belongs to the user
+3) input passes validation
+Also: errors should be clear and consistent (no vague 500s).
+
+CONSTRAINTS:
+- Do NOT change marketing pages or any public pages
+- Do NOT redesign Timeline UI
+- Do NOT add new features beyond validation/error handling
+- Minimal file edits only; keep existing routes/URLs the same
+- No new auth methods
+
+STEP 0 — READ ONLY (confirm current state)
+Inspect:
+- shared/schema.ts (timeline_events fields)
+- server/storage.ts (timeline methods)
+- server/routes.ts (timeline endpoints)
+Confirm whether timeline endpoints already use requireAuth and verify case ownership.
+If ownership checks are missing anywhere, implement them.
+
+STEP 1 — ENFORCE AUTH + OWNERSHIP ON ALL TIMELINE ENDPOINTS
+For every timeline route (list/create/update/delete + health if relevant):
+- Must requireAuth middleware
+- Must verify the caseId belongs to req.session.userId before any timeline query
+Implementation detail:
+- Reuse existing getCase(caseId, userId) if available, or add a small helper in storage:
+  assertCaseOwnership(caseId, userId) -> returns case or throws a 404/403-safe error
+
+Expected behavior:
+- If not logged in: 401 { error: "Unauthorized" }
+- If case does not belong to user or doesn't exist: 404 { error: "Case not found" }
+(Do NOT leak existence of other users’ cases)
+
+STEP 2 — SERVER-SIDE VALIDATION (CREATE + UPDATE)
+Validate incoming payloads:
+Required on CREATE:
+- caseId: non-empty UUID string
+- eventDate: valid ISO date string (YYYY-MM-DD or full ISO)
+- title: 1–120 chars
+Optional:
+- category: 0–60 chars (or restrict to known set if already defined)
+- notes: max 10,000 chars
+- source: max 500 chars
+
+On UPDATE:
+- allow partial updates, but if provided must pass same limits
+- prevent empty title/eventDate if present
+
+If validation fails:
+Return 400 with structured response:
+{ error: "Validation failed", fields: { title: "Required", eventDate: "Invalid date", ... } }
+
+STEP 3 — CONSISTENT ERROR HANDLING
+Ensure timeline routes never throw raw DB errors to the client.
+- Catch errors
+- If table missing: return 503 { error: "Service unavailable" } (but with our initDbTables this should not happen)
+- If other DB errors: return 500 { error: "Server error" }
+Also log server-side with a clear prefix: "Timeline route error:" (no secrets).
+
+STEP 4 — HEALTH CHECKS (DO NOT BREAK EXISTING)
+Keep:
+GET /api/health/db -> { ok:true }
+GET /api/health/timeline -> { ok:true }
+If timeline health fails, return:
+{ ok:false, error:"Timeline table unavailable" }
+No secrets.
+
+STEP 5 — MINIMAL FRONTEND (ONLY IF NEEDED)
+If the Timeline UI currently can’t show backend error text:
+- Add minimal error display (no design changes): a small red text line above the form submit button showing the returned error.
+Otherwise, skip frontend changes.
+
+VALIDATION (MUST RUN)
+On the LIVE domain after publish:
+1) GET /api/health/db -> ok:true
+2) GET /api/health/timeline -> ok:true
+3) Logged out: creating event -> 401
+4) Logged in: creating event with blank title -> 400 with fields.title
+5) Logged in: creating event for a caseId not owned -> 404
+6) Logged in: valid create -> 200; refresh -> persists
+7) Update + delete work and respect ownership
+
+DELIVERABLE:
+- List EXACT files changed + line ranges
+- Confirm all 7 validation tests pass
+- Confirm no UI redesign occurred
