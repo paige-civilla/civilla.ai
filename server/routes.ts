@@ -143,6 +143,30 @@ Dated: _______________
 _______________________________
 Judge of the Superior Court`,
   },
+  certificate_of_service: {
+    title: "Certificate of Service",
+    content: `CERTIFICATE OF SERVICE
+
+I certify that on this ____ day of __________, 2025, I served a true and correct copy of the foregoing [Document Title] upon:
+
+[Name]
+[Address]
+[City, State ZIP]
+
+via:
+[ ] U.S. Mail, postage prepaid
+[ ] Hand Delivery
+[ ] Email to: [email address]
+[ ] Other: __________
+
+
+DATED this ____ day of __________, 2025.
+
+
+_______________________________
+[YOUR FULL NAME]
+Petitioner, Pro Se`,
+  },
 };
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;

@@ -212,6 +212,7 @@ export const documentTemplateKeys = [
   "declaration",
   "motion",
   "proposed_order",
+  "certificate_of_service",
 ] as const;
 
 export type DocumentTemplateKey = typeof documentTemplateKeys[number];
