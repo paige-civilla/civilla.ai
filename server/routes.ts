@@ -10,7 +10,25 @@ import { db } from "./db";
 import multer from "multer";
 import crypto from "crypto";
 import { isR2Configured, uploadToR2, getSignedDownloadUrl, deleteFromR2 } from "./r2";
-import { Document as DocxDocument, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
+import {
+  Document as DocxDocument,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  AlignmentType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  VerticalAlign,
+  Footer,
+  PageNumber,
+  NumberFormat,
+  convertInchesToTwip,
+  LineRuleType,
+} from "docx";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -874,6 +892,310 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Export DOCX error:", error);
       res.status(500).json({ error: "Failed to export document" });
+    }
+  });
+
+  const courtDocxSchema = z.object({
+    court: z.object({
+      district: z.string(),
+      county: z.string(),
+      state: z.string(),
+    }),
+    case: z.object({
+      caseNumber: z.string(),
+    }),
+    parties: z.object({
+      petitioner: z.string(),
+      respondent: z.string(),
+    }),
+    document: z.object({
+      title: z.string(),
+      subtitle: z.string().optional(),
+    }),
+    contactBlock: z.object({
+      isRepresented: z.boolean(),
+      name: z.string(),
+      address: z.string(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      barNumber: z.string().optional(),
+      firm: z.string().optional(),
+    }),
+    body: z.object({
+      paragraphs: z.array(z.string()),
+    }),
+    signature: z.object({
+      datedLine: z.string(),
+      signerName: z.string(),
+      signerTitle: z.string(),
+    }),
+    footer: z.object({
+      docName: z.string(),
+      showPageNumbers: z.boolean(),
+    }),
+  });
+
+  app.post("/api/templates/docx", requireAuth, async (req, res) => {
+    try {
+      const parseResult = courtDocxSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path.join(".");
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const data = parseResult.data;
+
+      const noBorder = {
+        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+      };
+
+      const thinBorder = {
+        top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+        bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+        left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+        right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+      };
+
+      const contactLines: string[] = [];
+      if (data.contactBlock.name) contactLines.push(data.contactBlock.name);
+      if (data.contactBlock.address) contactLines.push(data.contactBlock.address);
+      if (data.contactBlock.phone) contactLines.push(data.contactBlock.phone);
+      if (data.contactBlock.email) contactLines.push(data.contactBlock.email);
+      if (data.contactBlock.barNumber) contactLines.push(`Bar No. ${data.contactBlock.barNumber}`);
+      if (data.contactBlock.firm) contactLines.push(data.contactBlock.firm);
+      if (!data.contactBlock.isRepresented) contactLines.push("Pro Se");
+
+      const contactParagraphs = contactLines.map(
+        (line) =>
+          new Paragraph({
+            children: [new TextRun({ text: line, font: "Times New Roman", size: 24 })],
+            alignment: AlignmentType.LEFT,
+            spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+          })
+      );
+
+      const courtTitle = new Paragraph({
+        children: [
+          new TextRun({
+            text: `IN THE DISTRICT COURT OF THE ${data.court.district.toUpperCase()} JUDICIAL DISTRICT`,
+            font: "Times New Roman",
+            size: 24,
+            bold: true,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 400, after: 0, line: 240, lineRule: LineRuleType.AUTO },
+      });
+
+      const courtSubtitle = new Paragraph({
+        children: [
+          new TextRun({
+            text: `OF THE STATE OF ${data.court.state.toUpperCase()}, IN AND FOR THE COUNTY OF ${data.court.county.toUpperCase()}`,
+            font: "Times New Roman",
+            size: 24,
+            bold: true,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 400, line: 240, lineRule: LineRuleType.AUTO },
+      });
+
+      const captionTable = new Table({
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: data.parties.petitioner + ",", font: "Times New Roman", size: 24 })],
+                    spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: "        Petitioner,", font: "Times New Roman", size: 24 })],
+                    spacing: { after: 120, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: "vs.", font: "Times New Roman", size: 24 })],
+                    spacing: { after: 120, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: data.parties.respondent + ",", font: "Times New Roman", size: 24 })],
+                    spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: "        Respondent.", font: "Times New Roman", size: 24 })],
+                    spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                ],
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                borders: thinBorder,
+                verticalAlign: VerticalAlign.TOP,
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: `Case No. ${data.case.caseNumber}`, font: "Times New Roman", size: 24, bold: true })],
+                    spacing: { after: 200, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                  new Paragraph({
+                    children: [new TextRun({ text: data.document.title.toUpperCase(), font: "Times New Roman", size: 24, bold: true })],
+                    spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+                  }),
+                  ...(data.document.subtitle
+                    ? [
+                        new Paragraph({
+                          children: [new TextRun({ text: data.document.subtitle, font: "Times New Roman", size: 24 })],
+                          spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+                        }),
+                      ]
+                    : []),
+                ],
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                borders: thinBorder,
+                verticalAlign: VerticalAlign.TOP,
+              }),
+            ],
+          }),
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      });
+
+      const bodyParagraphs = data.body.paragraphs.map(
+        (text) =>
+          new Paragraph({
+            children: [new TextRun({ text, font: "Times New Roman", size: 24 })],
+            alignment: AlignmentType.LEFT,
+            spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+          })
+      );
+
+      const signatureBlock = [
+        new Paragraph({
+          children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
+          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: data.signature.datedLine, font: "Times New Roman", size: 24 })],
+          alignment: AlignmentType.LEFT,
+          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
+          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
+          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: "_______________________________", font: "Times New Roman", size: 24 })],
+          alignment: AlignmentType.LEFT,
+          spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: data.signature.signerName, font: "Times New Roman", size: 24 })],
+          alignment: AlignmentType.LEFT,
+          spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: data.signature.signerTitle, font: "Times New Roman", size: 24 })],
+          alignment: AlignmentType.LEFT,
+          spacing: { after: 0, line: 240, lineRule: LineRuleType.AUTO },
+        }),
+      ];
+
+      const footerContent = new Footer({
+        children: [
+          new Table({
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun({ text: data.footer.docName, font: "Times New Roman", size: 20 })],
+                        alignment: AlignmentType.LEFT,
+                      }),
+                    ],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    borders: noBorder,
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: "- ", font: "Times New Roman", size: 20 }),
+                          new TextRun({
+                            children: [PageNumber.CURRENT],
+                            font: "Times New Roman",
+                            size: 20,
+                          }),
+                          new TextRun({ text: " -", font: "Times New Roman", size: 20 }),
+                        ],
+                        alignment: AlignmentType.RIGHT,
+                      }),
+                    ],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    borders: noBorder,
+                  }),
+                ],
+              }),
+            ],
+            width: { size: 100, type: WidthType.PERCENTAGE },
+          }),
+        ],
+      });
+
+      const docxDoc = new DocxDocument({
+        sections: [
+          {
+            properties: {
+              page: {
+                margin: {
+                  top: convertInchesToTwip(1),
+                  right: convertInchesToTwip(1),
+                  bottom: convertInchesToTwip(1),
+                  left: convertInchesToTwip(1),
+                },
+              },
+            },
+            footers: {
+              default: footerContent,
+            },
+            children: [
+              ...contactParagraphs,
+              courtTitle,
+              courtSubtitle,
+              captionTable,
+              new Paragraph({
+                children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
+                spacing: { after: 200, line: 240, lineRule: LineRuleType.AUTO },
+              }),
+              ...bodyParagraphs,
+              ...signatureBlock,
+            ],
+          },
+        ],
+      });
+
+      const buffer = await Packer.toBuffer(docxDoc);
+
+      const sanitizedTitle = data.document.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "_").slice(0, 50);
+      const filename = `${sanitizedTitle || "document"}.docx`;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Generate court DOCX error:", error);
+      res.status(500).json({ error: "Failed to generate court document" });
     }
   });
 

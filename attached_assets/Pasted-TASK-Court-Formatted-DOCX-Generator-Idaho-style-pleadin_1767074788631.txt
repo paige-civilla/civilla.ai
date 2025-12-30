@@ -1,0 +1,77 @@
+TASK: Court-Formatted DOCX Generator (Idaho-style pleading format)
+
+AUTONOMY: LOW
+USER IS NOT A DEVELOPER: implement end-to-end without asking me to code.
+
+GOAL
+Add a DOCX generator so Civilla document templates export in court-ready format matching the uploaded “Declaration of Counsel” style:
+- Times New Roman 12 pt
+- Double spaced body text
+- 1" margins
+- Caption block with:
+  (1) Party/attorney contact block (top left)
+  (2) Court title centered (“IN THE DISTRICT COURT OF THE …”)
+  (3) Two-column caption box: left = parties, right = Case No. + document title
+- Footer: document name left, page number right formatted like “- 2 -”
+- Signature block at end with DATED line + signature line + name + “Pro Se” when self-represented
+
+SCOPE
+Backend + minimal UI wiring only. Do NOT change marketing pages or general site styling.
+
+IMPLEMENTATION REQUIREMENTS
+1) Install a Node DOCX library (prefer “docx” npm package).
+2) Create a backend endpoint:
+   POST /api/templates/docx
+   Input JSON:
+   {
+     "court": { "district": "Seventh", "county": "Bonneville", "state": "Idaho" },
+     "case": { "caseNumber": "CV10-19-3660" },
+     "parties": { "petitioner": "Paige Lin DiBella", "respondent": "Zachary DiBella" },
+     "document": { "title": "DECLARATION", "subtitle": "" },
+     "contactBlock": {
+        "isRepresented": false,
+        "name": "Paige Lin DiBella",
+        "address": "885 Lomax St, Apt 2201, Idaho Falls, ID 83401",
+        "phone": "",
+        "email": "paigelindibella@gmail.com",
+        "barNumber": "",
+        "firm": ""
+     },
+     "body": {
+        "paragraphs": [
+           "1. I am the Petitioner in this matter.",
+           "2. ..."
+        ]
+     },
+     "signature": {
+        "datedLine": "DATED this __ day of ______, 2025.",
+        "signerName": "Paige Lin DiBella",
+        "signerTitle": "Petitioner, Pro Se"
+     },
+     "footer": {
+        "docName": "DECLARATION",
+        "showPageNumbers": true
+     }
+   }
+   Output: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+3) Formatting rules inside the DOCX:
+   - Default font Times New Roman 12
+   - Line spacing 2.0 in body
+   - Body paragraphs left-aligned
+   - Caption elements exactly as described above
+   - Caption box can be implemented using a table (2 columns) with borders
+   - Footer with doc name on left + page number on right (“- X -”)
+
+4) Frontend: add a simple button on ONE page for now:
+   - On /app/documents/:caseId (the skeleton page), add a “Download DOCX (Court Format)” button
+   - When clicked, call the endpoint with sample data using the currently selected case’s fields (title/state/county/type/caseId if available), and download the returned file.
+
+5) No assumptions about production secrets. No new auth methods.
+   The endpoint must requireAuth.
+
+DELIVERABLE
+- List files changed and what was added
+- Confirm the DOCX opens and displays:
+  Times New Roman 12, double spaced, caption, footer page numbers, signature block
+- Provide the exact URL I should click and the button label I should press to test it
