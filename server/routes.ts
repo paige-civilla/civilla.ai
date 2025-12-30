@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
@@ -1323,6 +1323,78 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Generate court DOCX error:", error);
       res.status(500).json({ error: "Failed to generate court document" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/generated-documents", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const docs = await storage.listGeneratedDocuments(userId, caseId);
+      res.json({ documents: docs });
+    } catch (error) {
+      console.error("List generated documents error:", error);
+      res.status(500).json({ error: "Failed to list generated documents" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/documents/generate", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertGeneratedDocumentSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path.join(".");
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const { templateType, title, payload } = parseResult.data;
+
+      const doc = await storage.createGeneratedDocument(
+        userId,
+        caseId,
+        templateType,
+        title,
+        payload
+      );
+
+      res.status(201).json({ document: doc });
+    } catch (error) {
+      console.error("Create generated document error:", error);
+      res.status(500).json({ error: "Failed to create generated document" });
+    }
+  });
+
+  app.get("/api/generated-documents/:docId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { docId } = req.params;
+
+      const doc = await storage.getGeneratedDocument(userId, docId);
+      if (!doc) {
+        return res.status(404).json({ error: "Generated document not found" });
+      }
+
+      res.json({ document: doc });
+    } catch (error) {
+      console.error("Get generated document error:", error);
+      res.status(500).json({ error: "Failed to get generated document" });
     }
   });
 
