@@ -1,0 +1,38 @@
+TASK: Undo Privacy Policy Restructure (Copy-Only Compliance) + Keep Required AI Sentence
+
+AUTONOMY: LOW
+SCOPE: COPY ONLY — NO DESIGN, NO LAYOUT, NO NEW SECTIONS
+
+CONTEXT:
+We had a constraint breach: Privacy Policy was restructured into headed sections even though we required COPY ONLY with no structure changes.
+
+GOAL:
+1) Terms of Service: keep the already-added “no court/government affiliation” paragraph exactly as-is.
+2) Privacy Policy: revert to the pre-restructure format (paragraph style / original structure), then add ONE required sentence in the correct location.
+3) Do NOT change styling, spacing, components, or page layout.
+
+PRIVACY POLICY REQUIRED SENTENCE (ADD VERBATIM):
+“We do not use your private content to train public or third-party artificial intelligence models without your explicit consent.”
+
+IMPLEMENTATION STEPS:
+A) Privacy page file:
+- Open the Privacy Policy page component (likely: client/src/pages/PrivacyPolicy.tsx).
+- Identify what “restructure” was done (new headings, new numbering, grouped sections).
+- Revert that restructuring so the page returns to its prior paragraph-based structure.
+  - If there is a Replit checkpoint immediately before the restructure, use it as reference and manually restore the copy to match it.
+  - Do NOT introduce any new headings/section titles if they didn’t exist before.
+  - Do NOT rewrite or “improve” copy beyond restoring it.
+
+B) Insert the required AI sentence:
+- Find the paragraph that explains user case materials/content are private and belong to them (the “Your Content and Confidentiality” concept).
+- Append the required sentence directly after that paragraph.
+- Do not add a new header to place it. Do not add any other disclaimers.
+
+C) Verification:
+- Confirm only Privacy Policy copy structure was reverted + the one sentence added.
+- Confirm Terms page unchanged aside from the already-approved added paragraph.
+- Confirm no console errors.
+
+DELIVERABLE:
+- Report the exact file edited and the exact paragraph location where the AI sentence was appended.
+- Confirm no other text was modified beyond restoring pre-restructure copy + adding the one required sentence.
