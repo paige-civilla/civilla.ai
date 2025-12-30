@@ -1,0 +1,77 @@
+TASK: Slice 3A — Document Builder v1 (Templates + Editor + DOCX export)
+
+AUTONOMY: LOW
+GOAL:
+Implement an in-app Document Builder inside /app/documents/:caseId with real storage and DOCX export.
+
+CONSTRAINTS:
+- Do NOT change marketing pages or global styling
+- Keep Civilla design tokens and existing AppLayout/AppNavbar patterns
+- Must enforce auth + case ownership on every endpoint
+- Hard delete only
+- Must work on published domain (not just dev)
+
+BACKEND REQUIREMENTS:
+1) Schema
+- Add documents table to shared/schema.ts:
+  id (uuid pk)
+  userId (uuid, indexed)
+  caseId (uuid, indexed)
+  title (text, required)
+  templateKey (text enum: "declaration" | "motion" | "proposed_order")
+  content (text or json; store HTML as text is acceptable for v1)
+  createdAt, updatedAt
+- Add to initDbTables() so the documents table auto-creates like users/cases/timeline/evidence.
+
+2) Storage (server/storage.ts)
+Add methods with ownership enforcement:
+- listDocuments(caseId, userId)
+- getDocument(docId, userId)
+- createDocument(caseId, userId, {title, templateKey, content})
+- updateDocument(docId, userId, {title?, content?})
+- duplicateDocument(docId, userId)
+- deleteDocument(docId, userId)
+
+3) Routes (server/routes.ts)
+Add endpoints:
+- GET /api/cases/:caseId/documents
+- POST /api/cases/:caseId/documents
+- GET /api/documents/:docId
+- PATCH /api/documents/:docId
+- POST /api/documents/:docId/duplicate
+- DELETE /api/documents/:docId
+- GET /api/documents/:docId/export/docx  (returns downloadable docx)
+Add /api/health/documents similar to timeline/evidence health.
+
+Export DOCX:
+- Implement server-side docx generation from stored HTML (or from simple text blocks) using a stable library.
+- No secrets in logs.
+
+FRONTEND REQUIREMENTS:
+1) Update client/src/pages/AppDocuments.tsx
+Convert skeleton into working UI:
+- List documents for the case
+- Create Document modal: pick template + title
+- Click document opens editor view (same route is fine: /app/documents/:caseId?docId=... or nested route)
+- Editor supports title input + body editor (simple textarea acceptable for v1 if rich text is too risky)
+- Autosave (debounced) + manual Save
+- Buttons: Export DOCX, Duplicate, Delete
+
+2) Template Seeds
+Provide template content for:
+- declaration
+- motion
+- proposed_order
+Keep formatting simple and consistent.
+
+VALIDATION (must pass on live domain):
+- /api/health/documents returns {ok:true}
+- Create doc, refresh, content persists
+- Export DOCX downloads and opens correctly
+- Duplicate produces a second doc with same content
+- Delete removes doc permanently
+
+DELIVERABLE:
+- List files changed + brief summary
+- Confirm which editor type was used (textarea vs rich text) and why
+- Confirm DOCX export method/library

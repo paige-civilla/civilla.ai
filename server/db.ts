@@ -171,5 +171,21 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("evidence_files", "description", "TEXT");
   await addColumnIfNotExists("evidence_files", "tags", "TEXT");
 
+  await initTable("documents", `
+    CREATE TABLE IF NOT EXISTS documents (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      template_key TEXT NOT NULL,
+      content TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_documents_case_id ON documents(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id)`
+  ]);
+
   console.log("Database table initialization complete");
 }

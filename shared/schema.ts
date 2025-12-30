@@ -207,3 +207,46 @@ export const updateEvidenceMetadataSchema = z.object({
 export type UpdateEvidenceMetadata = z.infer<typeof updateEvidenceMetadataSchema>;
 export type InsertEvidenceFile = z.infer<typeof insertEvidenceFileSchema>;
 export type EvidenceFile = typeof evidenceFiles.$inferSelect;
+
+export const documentTemplateKeys = [
+  "declaration",
+  "motion",
+  "proposed_order",
+] as const;
+
+export type DocumentTemplateKey = typeof documentTemplateKeys[number];
+
+export const documents = pgTable("documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  templateKey: text("template_key").notNull(),
+  content: text("content").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("documents_case_idx").on(table.caseId),
+  userIdx: index("documents_user_idx").on(table.userId),
+}));
+
+export const insertDocumentSchema = createInsertSchema(documents)
+  .pick({
+    title: true,
+    templateKey: true,
+    content: true,
+  })
+  .extend({
+    title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+    templateKey: z.enum(documentTemplateKeys, { required_error: "Template is required" }),
+    content: z.string().optional().default(""),
+  });
+
+export const updateDocumentSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less").optional(),
+  content: z.string().optional(),
+});
+
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type UpdateDocument = z.infer<typeof updateDocumentSchema>;
+export type Document = typeof documents.$inferSelect;
