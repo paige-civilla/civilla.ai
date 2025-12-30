@@ -7,6 +7,7 @@ import {
   timelineEvents,
   evidenceFiles,
   documents,
+  userProfiles,
   type User,
   type InsertUser,
   type Case,
@@ -20,6 +21,8 @@ import {
   type Document,
   type InsertDocument,
   type UpdateDocument,
+  type UserProfile,
+  type UpsertUserProfile,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -54,6 +57,9 @@ export interface IStorage {
   updateDocument(docId: string, userId: string, data: UpdateDocument): Promise<Document | undefined>;
   duplicateDocument(docId: string, userId: string): Promise<Document | undefined>;
   deleteDocument(docId: string, userId: string): Promise<boolean>;
+
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  upsertUserProfile(userId: string, data: UpsertUserProfile): Promise<UserProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -377,6 +383,58 @@ export class DatabaseStorage implements IStorage {
       .delete(documents)
       .where(and(eq(documents.id, docId), eq(documents.userId, userId)));
     return true;
+  }
+
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, userId));
+    return profile;
+  }
+
+  async upsertUserProfile(userId: string, data: UpsertUserProfile): Promise<UserProfile> {
+    const existing = await this.getUserProfile(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(userProfiles)
+        .set({
+          fullName: data.fullName !== undefined ? data.fullName : existing.fullName,
+          email: data.email !== undefined ? data.email : existing.email,
+          addressLine1: data.addressLine1 !== undefined ? data.addressLine1 : existing.addressLine1,
+          addressLine2: data.addressLine2 !== undefined ? data.addressLine2 : existing.addressLine2,
+          city: data.city !== undefined ? data.city : existing.city,
+          state: data.state !== undefined ? data.state : existing.state,
+          zip: data.zip !== undefined ? data.zip : existing.zip,
+          phone: data.phone !== undefined ? data.phone : existing.phone,
+          partyRole: data.partyRole !== undefined ? data.partyRole : existing.partyRole,
+          isSelfRepresented: data.isSelfRepresented !== undefined ? data.isSelfRepresented : existing.isSelfRepresented,
+          autoFillEnabled: data.autoFillEnabled !== undefined ? data.autoFillEnabled : existing.autoFillEnabled,
+          updatedAt: new Date(),
+        })
+        .where(eq(userProfiles.userId, userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(userProfiles)
+        .values({
+          userId,
+          fullName: data.fullName ?? null,
+          email: data.email ?? null,
+          addressLine1: data.addressLine1 ?? null,
+          addressLine2: data.addressLine2 ?? null,
+          city: data.city ?? null,
+          state: data.state ?? null,
+          zip: data.zip ?? null,
+          phone: data.phone ?? null,
+          partyRole: data.partyRole ?? null,
+          isSelfRepresented: data.isSelfRepresented ?? true,
+          autoFillEnabled: data.autoFillEnabled ?? true,
+        })
+        .returning();
+      return created;
+    }
   }
 }
 
