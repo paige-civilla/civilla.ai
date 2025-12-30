@@ -36,7 +36,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { Case, Document } from "@shared/schema";
+import type { Case, Document, GeneratedDocument, GenerateDocumentPayload } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { History, Edit3, ChevronDown, ChevronUp } from "lucide-react";
 
 interface DocumentTemplate {
   key: string;
@@ -91,6 +94,13 @@ export default function AppDocuments() {
   const { data: profileData, refetch: refetchProfile } = useQuery<{ profile: UserProfile }>({
     queryKey: ["/api/profile"],
   });
+
+  const { data: generatedDocsData, isLoading: genDocsLoading } = useQuery<{ documents: GeneratedDocument[] }>({
+    queryKey: ["/api/cases", caseId, "generated-documents"],
+    enabled: !!currentCase,
+  });
+
+  const generatedDocuments = generatedDocsData?.documents || [];
 
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false);
   const [autoFillFormData, setAutoFillFormData] = useState<Partial<UserProfile>>({});
@@ -203,6 +213,18 @@ export default function AppDocuments() {
     },
   });
 
+  const saveGeneratedDocMutation = useMutation({
+    mutationFn: async (data: { templateType: string; title: string; payload: GenerateDocumentPayload }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/documents/generate`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "generated-documents"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to save document history", variant: "destructive" });
+    },
+  });
+
   const isProfileIncomplete = !userProfile?.fullName || !userProfile?.addressLine1;
 
   const openAutoFillModal = () => {
@@ -244,6 +266,12 @@ export default function AppDocuments() {
   const [isDownloadingCourtDoc, setIsDownloadingCourtDoc] = useState(false);
   const [isCourtDocDialogOpen, setIsCourtDocDialogOpen] = useState(false);
   const [selectedCourtDocType, setSelectedCourtDocType] = useState("");
+  
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewPayload, setReviewPayload] = useState<GenerateDocumentPayload | null>(null);
+  const [reviewDocType, setReviewDocType] = useState<CourtDocType | null>(null);
+  const [isBodyExpanded, setIsBodyExpanded] = useState(false);
+  const [editableBody, setEditableBody] = useState<string[]>([]);
 
   type CourtDocType = "declaration" | "affidavit" | "motion" | "memorandum" | "certificate_of_service";
 
@@ -316,44 +344,94 @@ export default function AppDocuments() {
     { value: "certificate_of_service", label: "Certificate of Service" },
   ];
 
-  const handleDownloadCourtFormat = async (docType: CourtDocType) => {
+  const openReviewModal = (docType: CourtDocType) => {
     if (!currentCase) return;
+    const template = courtDocTemplates[docType];
+    
+    const addressParts = [
+      userProfile?.addressLine1 || "",
+      userProfile?.addressLine2 || "",
+      [userProfile?.city, userProfile?.state, userProfile?.zip].filter(Boolean).join(", "),
+    ].filter(Boolean).join(", ");
+
+    const today = new Date();
+    const dateStr = today.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    const payload: GenerateDocumentPayload = {
+      court: {
+        district: "Seventh",
+        county: currentCase.county || "Bonneville",
+        state: currentCase.state || "Idaho",
+      },
+      case: {
+        caseNumber: currentCase.title || "CV10-XX-XXXX",
+      },
+      parties: {
+        petitioner: userProfile?.partyRole === "petitioner" ? (userProfile?.fullName || "[Petitioner Name]") : "[Petitioner Name]",
+        respondent: userProfile?.partyRole === "respondent" ? (userProfile?.fullName || "[Respondent Name]") : "[Respondent Name]",
+      },
+      filer: {
+        fullName: userProfile?.fullName || "[Your Full Name]",
+        email: userProfile?.email || "",
+        addressLine1: userProfile?.addressLine1 || "[Your Address]",
+        addressLine2: userProfile?.addressLine2 || "",
+        city: userProfile?.city || "",
+        state: userProfile?.state || "",
+        zip: userProfile?.zip || "",
+        phone: userProfile?.phone || "",
+        partyRole: userProfile?.partyRole || "petitioner",
+        isSelfRepresented: userProfile?.isSelfRepresented ?? true,
+      },
+      document: {
+        title: template.title,
+        subtitle: "",
+      },
+      date: dateStr,
+    };
+
+    setReviewPayload(payload);
+    setReviewDocType(docType);
+    setEditableBody([...template.body]);
+    setIsCourtDocDialogOpen(false);
+    setSelectedCourtDocType("");
+    setIsReviewModalOpen(true);
+  };
+
+  const handleFinalDownload = async () => {
+    if (!reviewPayload || !reviewDocType || !currentCase) return;
     setIsDownloadingCourtDoc(true);
     try {
-      const template = courtDocTemplates[docType];
-      const payload = {
-        court: {
-          district: "Seventh",
-          county: currentCase.county || "Bonneville",
-          state: currentCase.state || "Idaho",
-        },
-        case: {
-          caseNumber: currentCase.title || "CV10-XX-XXXX",
-        },
-        parties: {
-          petitioner: "[Petitioner Name]",
-          respondent: "[Respondent Name]",
-        },
-        document: {
-          title: template.title,
-          subtitle: "",
-        },
+      const template = courtDocTemplates[reviewDocType];
+      
+      const addressParts = [
+        reviewPayload.filer.addressLine1,
+        reviewPayload.filer.addressLine2,
+        [reviewPayload.filer.city, reviewPayload.filer.state, reviewPayload.filer.zip].filter(Boolean).join(" "),
+      ].filter(Boolean).join(", ");
+
+      const docxPayload = {
+        court: reviewPayload.court,
+        case: reviewPayload.case,
+        parties: reviewPayload.parties,
+        document: reviewPayload.document,
         contactBlock: {
-          isRepresented: false,
-          name: "[Your Full Name]",
-          address: "[Your Address, City, State ZIP]",
-          phone: "",
-          email: "[your.email@example.com]",
-          barNumber: "",
-          firm: "",
+          isRepresented: !reviewPayload.filer.isSelfRepresented,
+          name: reviewPayload.filer.fullName,
+          address: addressParts,
+          phone: reviewPayload.filer.phone || "",
+          email: reviewPayload.filer.email || "",
+          barNumber: reviewPayload.filer.attorney?.barNumber || "",
+          firm: reviewPayload.filer.attorney?.firm || "",
         },
         body: {
-          paragraphs: template.body,
+          paragraphs: editableBody,
         },
         signature: {
-          datedLine: "DATED this __ day of ______, 2025.",
-          signerName: "[Your Full Name]",
-          signerTitle: "Petitioner, Pro Se",
+          datedLine: `DATED this ${reviewPayload.date}.`,
+          signerName: reviewPayload.filer.fullName,
+          signerTitle: reviewPayload.filer.isSelfRepresented 
+            ? `${reviewPayload.filer.partyRole === "petitioner" ? "Petitioner" : "Respondent"}, Pro Se`
+            : reviewPayload.filer.attorney?.name || "Attorney",
         },
         footer: {
           docName: template.title,
@@ -365,12 +443,18 @@ export default function AppDocuments() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(docxPayload),
       });
 
       if (!response.ok) {
         throw new Error("Failed to generate document");
       }
+
+      saveGeneratedDocMutation.mutate({
+        templateType: reviewDocType,
+        title: template.title,
+        payload: reviewPayload,
+      });
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -382,13 +466,32 @@ export default function AppDocuments() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast({ title: `${template.title} downloaded` });
-      setIsCourtDocDialogOpen(false);
-      setSelectedCourtDocType("");
+      
+      setIsReviewModalOpen(false);
+      setReviewPayload(null);
+      setReviewDocType(null);
+      setEditableBody([]);
     } catch (error) {
       toast({ title: "Failed to download court document", variant: "destructive" });
     } finally {
       setIsDownloadingCourtDoc(false);
     }
+  };
+
+  const handleRedownloadFromHistory = async (doc: GeneratedDocument) => {
+    const payload = doc.payloadJson as GenerateDocumentPayload;
+    const docType = doc.templateType as CourtDocType;
+    const template = courtDocTemplates[docType];
+    
+    if (!template) {
+      toast({ title: "Unknown document type", variant: "destructive" });
+      return;
+    }
+
+    setReviewPayload(payload);
+    setReviewDocType(docType);
+    setEditableBody([...template.body]);
+    setIsReviewModalOpen(true);
   };
 
   const handleCreate = () => {
@@ -500,31 +603,44 @@ export default function AppDocuments() {
             </div>
           </div>
 
-          {docsLoading ? (
-            <div className="w-full py-12 text-center">
-              <p className="font-sans text-neutral-darkest/60">Loading documents...</p>
-            </div>
-          ) : documents.length === 0 ? (
-            <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-bush" />
-              </div>
-              <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Documents Yet</h2>
-              <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
-                Create your first document using one of our legal templates.
-              </p>
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-bush text-white font-sans"
-                data-testid="button-create-first-document"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Document
-              </Button>
-            </div>
-          ) : (
-            <div className="w-full grid gap-4">
-              {documents.map((doc) => (
+          <Tabs defaultValue="editable" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="editable" data-testid="tab-editable-documents">
+                <FileText className="w-4 h-4 mr-2" />
+                My Documents ({documents.length})
+              </TabsTrigger>
+              <TabsTrigger value="history" data-testid="tab-document-history">
+                <History className="w-4 h-4 mr-2" />
+                Download History ({generatedDocuments.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="editable">
+              {docsLoading ? (
+                <div className="w-full py-12 text-center">
+                  <p className="font-sans text-neutral-darkest/60">Loading documents...</p>
+                </div>
+              ) : documents.length === 0 ? (
+                <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
+                    <FileText className="w-8 h-8 text-bush" />
+                  </div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Documents Yet</h2>
+                  <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
+                    Create your first document using one of our legal templates.
+                  </p>
+                  <Button
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="bg-bush text-white font-sans"
+                    data-testid="button-create-first-document"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Document
+                  </Button>
+                </div>
+              ) : (
+                <div className="w-full grid gap-4">
+                  {documents.map((doc) => (
                 <Card key={doc.id} className="overflow-visible" data-testid={`card-document-${doc.id}`}>
                   <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -585,9 +701,70 @@ export default function AppDocuments() {
                     </div>
                   </CardHeader>
                 </Card>
-              ))}
-            </div>
-          )}
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="history">
+              {genDocsLoading ? (
+                <div className="w-full py-12 text-center">
+                  <p className="font-sans text-neutral-darkest/60">Loading history...</p>
+                </div>
+              ) : generatedDocuments.length === 0 ? (
+                <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
+                    <History className="w-8 h-8 text-bush" />
+                  </div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Download History</h2>
+                  <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
+                    Documents you generate and download will appear here for easy re-downloading.
+                  </p>
+                  <Button
+                    onClick={() => setIsCourtDocDialogOpen(true)}
+                    className="bg-bush text-white font-sans"
+                    data-testid="button-download-court-docx-history"
+                  >
+                    <FileDown className="w-4 h-4 mr-2" />
+                    Generate Court Document
+                  </Button>
+                </div>
+              ) : (
+                <div className="w-full grid gap-4">
+                  {generatedDocuments.map((genDoc) => (
+                    <Card key={genDoc.id} className="overflow-visible" data-testid={`card-generated-doc-${genDoc.id}`}>
+                      <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded bg-bush/10 flex items-center justify-center flex-shrink-0">
+                            <FileDown className="w-5 h-5 text-bush" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-heading font-bold text-lg text-neutral-darkest truncate" data-testid={`text-generated-doc-title-${genDoc.id}`}>
+                              {genDoc.title}
+                            </h3>
+                            <p className="font-sans text-xs text-neutral-darkest/60">
+                              Generated {formatDate(genDoc.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRedownloadFromHistory(genDoc)}
+                            data-testid={`button-redownload-${genDoc.id}`}
+                          >
+                            <Edit3 className="w-4 h-4 mr-2" />
+                            Review & Download
+                          </Button>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
@@ -753,13 +930,249 @@ export default function AppDocuments() {
               Cancel
             </Button>
             <Button
-              onClick={() => selectedCourtDocType && handleDownloadCourtFormat(selectedCourtDocType as CourtDocType)}
-              disabled={!selectedCourtDocType || isDownloadingCourtDoc}
+              onClick={() => selectedCourtDocType && openReviewModal(selectedCourtDocType as CourtDocType)}
+              disabled={!selectedCourtDocType}
               className="bg-bush text-white"
               data-testid="button-confirm-court-doc"
             >
+              <Edit3 className="w-4 h-4 mr-2" />
+              Review & Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isReviewModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsReviewModalOpen(false);
+          setReviewPayload(null);
+          setReviewDocType(null);
+          setEditableBody([]);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Review & Edit Document</DialogTitle>
+            <DialogDescription>
+              Review the information below and make any changes before downloading.
+            </DialogDescription>
+          </DialogHeader>
+          {reviewPayload && (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="flex flex-col gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label>County</Label>
+                    <Input
+                      value={reviewPayload.court.county}
+                      onChange={(e) => setReviewPayload({
+                        ...reviewPayload,
+                        court: { ...reviewPayload.court, county: e.target.value }
+                      })}
+                      data-testid="input-review-county"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>State</Label>
+                    <Input
+                      value={reviewPayload.court.state}
+                      onChange={(e) => setReviewPayload({
+                        ...reviewPayload,
+                        court: { ...reviewPayload.court, state: e.target.value }
+                      })}
+                      data-testid="input-review-state"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label>Case Number</Label>
+                  <Input
+                    value={reviewPayload.case.caseNumber}
+                    onChange={(e) => setReviewPayload({
+                      ...reviewPayload,
+                      case: { ...reviewPayload.case, caseNumber: e.target.value }
+                    })}
+                    data-testid="input-review-case-number"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label>Petitioner</Label>
+                    <Input
+                      value={reviewPayload.parties.petitioner || ""}
+                      onChange={(e) => setReviewPayload({
+                        ...reviewPayload,
+                        parties: { ...reviewPayload.parties, petitioner: e.target.value }
+                      })}
+                      data-testid="input-review-petitioner"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Respondent</Label>
+                    <Input
+                      value={reviewPayload.parties.respondent || ""}
+                      onChange={(e) => setReviewPayload({
+                        ...reviewPayload,
+                        parties: { ...reviewPayload.parties, respondent: e.target.value }
+                      })}
+                      data-testid="input-review-respondent"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-2">
+                  <p className="text-sm font-medium mb-3">Your Information</p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
+                      <Label>Full Name</Label>
+                      <Input
+                        value={reviewPayload.filer.fullName}
+                        onChange={(e) => setReviewPayload({
+                          ...reviewPayload,
+                          filer: { ...reviewPayload.filer, fullName: e.target.value }
+                        })}
+                        data-testid="input-review-filer-name"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Address</Label>
+                      <Input
+                        value={reviewPayload.filer.addressLine1}
+                        onChange={(e) => setReviewPayload({
+                          ...reviewPayload,
+                          filer: { ...reviewPayload.filer, addressLine1: e.target.value }
+                        })}
+                        data-testid="input-review-filer-address"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col gap-2">
+                        <Label>City</Label>
+                        <Input
+                          value={reviewPayload.filer.city || ""}
+                          onChange={(e) => setReviewPayload({
+                            ...reviewPayload,
+                            filer: { ...reviewPayload.filer, city: e.target.value }
+                          })}
+                          data-testid="input-review-filer-city"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label>State</Label>
+                        <Input
+                          value={reviewPayload.filer.state || ""}
+                          onChange={(e) => setReviewPayload({
+                            ...reviewPayload,
+                            filer: { ...reviewPayload.filer, state: e.target.value }
+                          })}
+                          data-testid="input-review-filer-state"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label>ZIP</Label>
+                        <Input
+                          value={reviewPayload.filer.zip || ""}
+                          onChange={(e) => setReviewPayload({
+                            ...reviewPayload,
+                            filer: { ...reviewPayload.filer, zip: e.target.value }
+                          })}
+                          data-testid="input-review-filer-zip"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <Label>Phone</Label>
+                        <Input
+                          value={reviewPayload.filer.phone || ""}
+                          onChange={(e) => setReviewPayload({
+                            ...reviewPayload,
+                            filer: { ...reviewPayload.filer, phone: e.target.value }
+                          })}
+                          data-testid="input-review-filer-phone"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label>Email</Label>
+                        <Input
+                          value={reviewPayload.filer.email || ""}
+                          onChange={(e) => setReviewPayload({
+                            ...reviewPayload,
+                            filer: { ...reviewPayload.filer, email: e.target.value }
+                          })}
+                          data-testid="input-review-filer-email"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-2">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-sm font-medium mb-3 hover-elevate p-1 rounded"
+                    onClick={() => setIsBodyExpanded(!isBodyExpanded)}
+                    data-testid="button-toggle-body-edit"
+                  >
+                    {isBodyExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    Edit Document Body ({editableBody.length} paragraphs)
+                  </button>
+                  {isBodyExpanded && (
+                    <div className="flex flex-col gap-2">
+                      {editableBody.map((para, idx) => (
+                        <Textarea
+                          key={idx}
+                          value={para}
+                          onChange={(e) => {
+                            const newBody = [...editableBody];
+                            newBody[idx] = e.target.value;
+                            setEditableBody(newBody);
+                          }}
+                          className="min-h-[60px]"
+                          data-testid={`textarea-body-paragraph-${idx}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label>Document Date</Label>
+                  <Input
+                    value={reviewPayload.date}
+                    onChange={(e) => setReviewPayload({
+                      ...reviewPayload,
+                      date: e.target.value
+                    })}
+                    data-testid="input-review-date"
+                  />
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsReviewModalOpen(false);
+                setReviewPayload(null);
+                setReviewDocType(null);
+                setEditableBody([]);
+              }}
+              data-testid="button-cancel-review"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleFinalDownload}
+              disabled={isDownloadingCourtDoc}
+              className="bg-bush text-white"
+              data-testid="button-download-final"
+            >
               <FileDown className="w-4 h-4 mr-2" />
-              {isDownloadingCourtDoc ? "Downloading..." : "Download"}
+              {isDownloadingCourtDoc ? "Downloading..." : "Download DOCX"}
             </Button>
           </DialogFooter>
         </DialogContent>
