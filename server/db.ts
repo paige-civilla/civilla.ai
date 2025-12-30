@@ -56,47 +56,87 @@ export async function testDbConnection(): Promise<{ ok: boolean; error?: string 
   }
 }
 
-export async function initTimelineTable(): Promise<{ created: boolean; error?: string }> {
+async function tableExists(tableName: string): Promise<boolean> {
+  const result = await pool.query(`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name = $1
+    ) as exists
+  `, [tableName]);
+  return result.rows[0]?.exists ?? false;
+}
+
+async function initTable(tableName: string, createSQL: string, indexSQL: string[] = []): Promise<boolean> {
   try {
-    const tableCheck = await pool.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'timeline_events'
-      ) as exists
-    `);
-    
-    if (tableCheck.rows[0]?.exists) {
-      console.log("timeline_events table already exists");
-      return { created: false };
+    if (await tableExists(tableName)) {
+      console.log(`${tableName} table already exists`);
+      return false;
     }
 
-    console.log("Creating timeline_events table...");
+    console.log(`Creating ${tableName} table...`);
+    await pool.query(createSQL);
     
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS timeline_events (
-        id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        user_id VARCHAR(255) NOT NULL,
-        case_id VARCHAR(255) NOT NULL,
-        event_date TIMESTAMP NOT NULL,
-        title TEXT NOT NULL,
-        category TEXT,
-        notes TEXT,
-        source TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
+    for (const idx of indexSQL) {
+      await pool.query(idx);
+    }
 
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_events_case_id ON timeline_events(case_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_events_user_id ON timeline_events(user_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_events_event_date ON timeline_events(event_date)`);
-
-    console.log("timeline_events table created successfully");
-    return { created: true };
+    console.log(`${tableName} table created successfully`);
+    return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Failed to init timeline_events table:", message);
-    return { created: false, error: message };
+    console.error(`Failed to init ${tableName} table:`, message);
+    return false;
   }
+}
+
+export async function initDbTables(): Promise<void> {
+  console.log("Initializing database tables...");
+
+  await initTable("users", `
+    CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT,
+      cases_allowed INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await initTable("cases", `
+    CREATE TABLE IF NOT EXISTS cases (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      state TEXT,
+      county TEXT,
+      case_type TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`
+  ]);
+
+  await initTable("timeline_events", `
+    CREATE TABLE IF NOT EXISTS timeline_events (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      event_date TIMESTAMP NOT NULL,
+      title TEXT NOT NULL,
+      category TEXT,
+      notes TEXT,
+      source TEXT DEFAULT 'user_manual',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_timeline_events_case_id ON timeline_events(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_timeline_events_user_id ON timeline_events(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_timeline_events_event_date ON timeline_events(event_date)`
+  ]);
+
+  console.log("Database table initialization complete");
 }

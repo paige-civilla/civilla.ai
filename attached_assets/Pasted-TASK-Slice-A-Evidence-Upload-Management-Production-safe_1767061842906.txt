@@ -1,0 +1,110 @@
+TASK: Slice A — Evidence Upload & Management (Production-safe)
+
+AUTONOMY: LOW
+SCOPE: Functionality + minimal UI in the existing Evidence module page ONLY.
+Do NOT redesign app layout, tokens, fonts, navbar, footer, or marketing pages.
+Use existing AppLayout/AppNavbar patterns and existing case ownership enforcement patterns.
+Use DATABASE_URL only (Neon). Do NOT introduce NEON_DATABASE_URL.
+
+GOAL
+Implement evidence uploads for a selected case:
+- Upload file
+- List files for the case
+- Delete file
+- Persist files in production using S3-compatible storage (NOT local disk)
+
+NON-GOALS (do NOT implement)
+- No OCR, no OpenAI, no Google OCR, no analysis
+- No Drive/OneDrive imports
+- No exhibit builder logic
+- No additional pages
+- No plan-limit gating yet
+
+REQUIREMENTS
+
+1) DATABASE
+Update shared/schema.ts:
+Create table: evidence_items
+Columns (suggested):
+- id (uuid, pk)
+- userId (uuid, not null, indexed)
+- caseId (uuid, not null, indexed)
+- filename (text, not null)
+- mimeType (text, not null)
+- sizeBytes (integer/bigint, not null)
+- storageKey (text, not null, unique)
+- createdAt (timestamp, default now)
+- updatedAt (timestamp, default now)
+Add index on (caseId, createdAt).
+
+Run migrations/Drizzle push so this table exists on production DATABASE_URL.
+
+2) STORAGE ADAPTER (PRODUCTION-SAFE)
+Create server/fileStorage.ts with a small interface:
+- putObject({ key, contentType, buffer }): returns { key }
+- deleteObject(key)
+- getPublicUrl(key) OR return key for later signed urls
+
+Implement S3-compatible storage using AWS SDK v3:
+Env vars required:
+S3_ENDPOINT
+S3_REGION
+S3_ACCESS_KEY_ID
+S3_SECRET_ACCESS_KEY
+S3_BUCKET
+S3_PUBLIC_BASE_URL (optional, if using public bucket) OR generate URLs if supported
+
+Behavior:
+- If any S3 env vars missing, return a clear 500 from upload endpoint:
+  { error: "Storage not configured" }
+Do NOT silently fall back to local disk in production.
+
+3) API ROUTES
+In server/routes.ts (or relevant router file):
+Add endpoints (all requireAuth + case ownership):
+- GET /api/evidence/:caseId
+  returns { items: EvidenceItem[] } ordered newest first
+- POST /api/evidence/:caseId (multipart/form-data)
+  Accept field name "file"
+  Enforce max upload size (start with 50MB; make it one constant MAX_UPLOAD_MB)
+  Upload file to S3 with a generated storageKey:
+    `users/<userId>/cases/<caseId>/<uuid>-<sanitizedFilename>`
+  Insert row into evidence_items with metadata
+  Return created item
+- DELETE /api/evidence/item/:evidenceId
+  Verify user owns it, delete from S3, then delete row
+- GET /api/health/evidence
+  Do a simple SELECT 1 FROM evidence_items LIMIT 1
+  Return { ok: true } or { ok: false, error: "Evidence table unavailable" }
+
+4) FRONTEND (Existing page)
+Convert client/src/pages/AppEvidence.tsx (or current evidence module page) from “Coming soon” to working UI.
+Use existing app design tokens and patterns. Do not add new styling systems.
+
+UI requirements:
+- Page header shows case title and context (like other module pages)
+- Upload area:
+  - <input type="file" />
+  - Upload button
+  - Show upload progress state (at least “Uploading…”)
+  - Show errors cleanly (toast or inline)
+- Evidence list:
+  - filename
+  - upload date
+  - size (KB/MB)
+  - “Delete” action
+  - Optional: “Open” link using storage URL if PUBLIC_BASE_URL is provided
+No page reloads.
+
+5) VALIDATION CHECKLIST (must pass on civilla.ai)
+- /api/health/evidence returns { ok: true }
+- Upload a PDF and an image under 50MB succeeds
+- Refresh page: file remains listed
+- Delete works and removes it from list
+- Unauthorized users cannot access another user’s case evidence (403/404)
+
+DELIVERABLE
+- List exact files changed with line ranges
+- List required new env vars for S3 storage
+- Confirm prod tests above pass
+STOP after Evidence slice is complete and verified.
