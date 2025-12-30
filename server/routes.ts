@@ -964,10 +964,10 @@ export async function registerRoutes(
       };
 
       const cellMargins = {
-        top: convertInchesToTwip(0.08),
-        bottom: convertInchesToTwip(0.08),
-        left: convertInchesToTwip(0.1),
-        right: convertInchesToTwip(0.1),
+        top: convertInchesToTwip(0.12),
+        bottom: convertInchesToTwip(0.12),
+        left: convertInchesToTwip(0.15),
+        right: convertInchesToTwip(0.15),
       };
 
       const contactLines: string[] = [];
@@ -1081,19 +1081,19 @@ export async function registerRoutes(
           new Paragraph({
             children: [new TextRun({ text, font: "Times New Roman", size: 24 })],
             alignment: AlignmentType.LEFT,
-            spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+            spacing: { before: 0, after: 0, line: 480, lineRule: LineRuleType.AUTO },
           })
       );
 
       const signatureBlock = [
         new Paragraph({
           children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
-          spacing: { before: 480, after: 0, line: 240, lineRule: LineRuleType.AUTO },
+          spacing: { before: 720, after: 0, line: 240, lineRule: LineRuleType.AUTO },
         }),
         new Paragraph({
           children: [new TextRun({ text: data.signature.datedLine, font: "Times New Roman", size: 24 })],
           alignment: AlignmentType.LEFT,
-          spacing: { after: 480, line: 240, lineRule: LineRuleType.AUTO },
+          spacing: { before: 0, after: 480, line: 240, lineRule: LineRuleType.AUTO },
         }),
         new Paragraph({
           children: [new TextRun({ text: "_______________________________", font: "Times New Roman", size: 24 })],
