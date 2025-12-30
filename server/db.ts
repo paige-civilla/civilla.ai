@@ -119,6 +119,25 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`
   ]);
 
+  await initTable("user_profiles", `
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id VARCHAR(255) PRIMARY KEY REFERENCES users(id),
+      full_name TEXT,
+      email TEXT,
+      address_line_1 TEXT,
+      address_line_2 TEXT,
+      city TEXT,
+      state TEXT,
+      zip TEXT,
+      phone TEXT,
+      party_role TEXT,
+      is_self_represented BOOLEAN NOT NULL DEFAULT true,
+      auto_fill_enabled BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
+
   await initTable("timeline_events", `
     CREATE TABLE IF NOT EXISTS timeline_events (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
