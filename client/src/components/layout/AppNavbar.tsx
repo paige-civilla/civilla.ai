@@ -200,46 +200,53 @@ export default function AppNavbar() {
         <div 
           ref={menuRef} 
           style={{ top: menuPos.top, right: menuPos.right }}
-          className="absolute right-0 mt-2 w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain z-[9999]" 
+          className="absolute right-0 mt-2 w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl z-[9999] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain" 
           data-testid="dropdown-menu-app"
         >
-          {authData?.user && (
-            <div className="flex items-center gap-3 pb-3 mb-3 border-b border-neutral-darkest/10">
-              <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+          <div className="p-4 flex flex-col">
+            {authData?.user && (
+              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-neutral-darkest/10">
+                <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-popover-foreground truncate">{authData.user.email}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-popover-foreground truncate">{authData.user.email}</p>
-              </div>
+            )}
+            <div className="flex flex-col gap-1">
+              {menuLinks.map((link) => (
+                <button
+                  key={link.href}
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setLocation(link.href);
+                  }}
+                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left font-sans text-neutral-darkest hover:bg-neutral-100 ${
+                    location === link.href ? "font-medium bg-accent/30" : ""
+                  }`}
+                  data-testid={`menu-link-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <link.icon className="h-5 w-5" />
+                  <span>{link.label}</span>
+                </button>
+              ))}
             </div>
-          )}
-          <div className="flex flex-col">
-            {menuLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-3 py-2 px-2 rounded-md text-sm text-popover-foreground hover:bg-accent/50 ${
-                  location === link.href ? "font-medium bg-accent/30" : ""
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-                data-testid={`menu-link-${link.label.toLowerCase()}`}
-              >
-                <link.icon className="h-4 w-4 opacity-70" />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="mt-3 pt-3 border-t border-popover-border">
+            <div className="border-t border-popover-border my-3" />
             <button
-              onClick={() => {
+              type="button"
+              onClick={async () => {
                 setIsMenuOpen(false);
-                logoutMutation.mutate();
+                await apiRequest("POST", "/api/auth/logout", {});
+                queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+                setLocation("/");
               }}
-              className="flex items-center gap-3 py-2 px-2 rounded-md text-sm text-popover-foreground/70 hover:text-popover-foreground hover:bg-accent/50 w-full text-left"
+              className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-left font-sans text-neutral-darkest hover:bg-neutral-100"
               data-testid="button-logout-menu"
             >
-              <LogOut className="h-4 w-4 opacity-70" />
-              Log out
+              <LogOut className="h-5 w-5" />
+              <span>Log out</span>
             </button>
           </div>
         </div>
