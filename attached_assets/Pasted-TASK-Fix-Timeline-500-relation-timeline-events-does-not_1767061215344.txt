@@ -1,0 +1,60 @@
+TASK: Fix Timeline 500 (relation "timeline_events" does not exist)
+
+AUTONOMY: LOW
+CONSTRAINTS:
+- Do NOT change frontend UI or styling
+- Do NOT change routes other than adding minimal health check
+- Only touch backend DB config, migrations, and observability needed to fix this
+- Use DATABASE_URL as the ONLY database env var (do not introduce NEON_DATABASE_URL)
+
+GOAL:
+On civilla.ai (published deployment), creating a timeline event must succeed.
+GET /api/health/timeline must return { ok: true }.
+
+DIAGNOSIS (must do first):
+1) On server startup, log:
+   - DB env var used (DATABASE_URL)
+   - parsed hostname ONLY (no user/pass/db printed)
+   Example: "DB host: ep-xxxx.neon.tech"
+2) Add/verify GET /api/health/timeline that:
+   - returns 200 { ok:true } if SELECT 1 FROM timeline_events LIMIT 1 works
+   - returns 500 { ok:false, error:"Timeline table unavailable" } with console.error logging if it fails
+
+FIX:
+3) Ensure timeline_events table exists in the SAME DB the server uses (DATABASE_URL).
+   Preferred: run Drizzle migration/push against DATABASE_URL for timeline_events schema.
+   If Drizzle push is not available in deployment, add a one-time safe init check on boot:
+     - if timeline_events missing, CREATE TABLE IF NOT EXISTS timeline_events (...)
+     - include required columns:
+       id uuid pk default gen_random_uuid()
+       user_id uuid not null
+       case_id uuid not null
+       event_date date not null
+       title text not null
+       category text null
+       notes text null
+       source text null
+       created_at timestamptz default now()
+       updated_at timestamptz default now()
+     - add indexes on (case_id), (user_id), (event_date)
+
+IMPORTANT:
+- If gen_random_uuid() requires pgcrypto, ensure extension is enabled:
+  CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+DEPLOYMENT CONFIG CHECK (must report):
+4) If DATABASE_URL hostname is "helium" or looks like internal host:
+   - log: "WARNING: DATABASE_URL points to internal host; deployment needs externally reachable Postgres"
+   - Provide instructions: set Deployment Secret DATABASE_URL to the Neon connection string.
+
+VALIDATION:
+5) After changes, verify in deployment logs:
+   - DB host printed and is NOT helium
+   - /api/health/timeline returns ok:true on civilla.ai
+   - Creating timeline event returns 200 and persists after refresh
+
+DELIVERABLE:
+- Files changed with line ranges
+- Final DB host (hostname only)
+- Confirm table exists in that DB
+STOP after timeline works in production.
