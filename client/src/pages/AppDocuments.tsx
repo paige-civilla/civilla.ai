@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType } from "lucide-react";
+import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -145,6 +145,85 @@ export default function AppDocuments() {
     },
   });
 
+  const [isDownloadingCourtDoc, setIsDownloadingCourtDoc] = useState(false);
+
+  const handleDownloadCourtFormat = async () => {
+    if (!currentCase) return;
+    setIsDownloadingCourtDoc(true);
+    try {
+      const payload = {
+        court: {
+          district: "Seventh",
+          county: currentCase.county || "Bonneville",
+          state: currentCase.state || "Idaho",
+        },
+        case: {
+          caseNumber: currentCase.caseNumber || "CV10-XX-XXXX",
+        },
+        parties: {
+          petitioner: "[Petitioner Name]",
+          respondent: "[Respondent Name]",
+        },
+        document: {
+          title: "DECLARATION",
+          subtitle: "",
+        },
+        contactBlock: {
+          isRepresented: false,
+          name: "[Your Full Name]",
+          address: "[Your Address, City, State ZIP]",
+          phone: "",
+          email: "[your.email@example.com]",
+          barNumber: "",
+          firm: "",
+        },
+        body: {
+          paragraphs: [
+            "1. I am the Petitioner in this matter and I am over the age of 18 years.",
+            "2. I have personal knowledge of the facts stated herein.",
+            "3. [Add your statements of fact here, each as a numbered paragraph.]",
+            "4. [Include specific dates, times, and details where relevant.]",
+          ],
+        },
+        signature: {
+          datedLine: "DATED this __ day of ______, 2025.",
+          signerName: "[Your Full Name]",
+          signerTitle: "Petitioner, Pro Se",
+        },
+        footer: {
+          docName: "DECLARATION",
+          showPageNumbers: true,
+        },
+      };
+
+      const response = await fetch("/api/templates/docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate document");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "DECLARATION.docx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Court document downloaded" });
+    } catch (error) {
+      toast({ title: "Failed to download court document", variant: "destructive" });
+    } finally {
+      setIsDownloadingCourtDoc(false);
+    }
+  };
+
   const handleCreate = () => {
     if (!newDocTitle.trim() || !newDocTemplate) {
       toast({ title: "Please provide a title and select a template", variant: "destructive" });
@@ -233,14 +312,26 @@ export default function AppDocuments() {
                 {currentCase.caseType && <span>{currentCase.caseType}</span>}
               </div>
             </div>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-bush text-white font-sans"
-              data-testid="button-create-document"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Document
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleDownloadCourtFormat}
+                disabled={isDownloadingCourtDoc}
+                variant="outline"
+                className="font-sans"
+                data-testid="button-download-court-docx"
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                {isDownloadingCourtDoc ? "Downloading..." : "Download DOCX (Court Format)"}
+              </Button>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-bush text-white font-sans"
+                data-testid="button-create-document"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Document
+              </Button>
+            </div>
           </div>
 
           {docsLoading ? (
