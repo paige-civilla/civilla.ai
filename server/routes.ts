@@ -4,17 +4,128 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
 import crypto from "crypto";
 import { isR2Configured, uploadToR2, getSignedDownloadUrl, deleteFromR2 } from "./r2";
+import { Document as DocxDocument, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
 });
+
+const DOCUMENT_TEMPLATES: Record<string, { title: string; content: string }> = {
+  declaration: {
+    title: "Declaration",
+    content: `DECLARATION
+
+I, [YOUR FULL NAME], declare under penalty of perjury under the laws of the State of [STATE] that the following is true and correct:
+
+1. I am over the age of 18 years and competent to testify to the matters stated herein.
+
+2. [Add your numbered statements of fact here]
+
+3. [Each paragraph should contain one clear statement]
+
+4. [Include dates, times, and specific details where relevant]
+
+I declare under penalty of perjury that the foregoing is true and correct.
+
+Executed on [DATE] at [CITY], [STATE].
+
+
+_______________________________
+[YOUR PRINTED NAME]
+Declarant`,
+  },
+  motion: {
+    title: "Motion",
+    content: `[YOUR NAME]
+[YOUR ADDRESS]
+[CITY, STATE ZIP]
+[PHONE NUMBER]
+[EMAIL ADDRESS]
+Petitioner/Respondent, In Pro Per
+
+SUPERIOR COURT OF THE STATE OF [STATE]
+COUNTY OF [COUNTY]
+
+In re the Matter of:
+
+[PETITIONER NAME],
+        Petitioner,
+vs.
+[RESPONDENT NAME],
+        Respondent.
+
+Case No.: [CASE NUMBER]
+
+MOTION FOR [RELIEF SOUGHT]
+
+COMES NOW [YOUR NAME], appearing in pro per, and respectfully moves this Honorable Court for an order [describe relief sought].
+
+This motion is made on the following grounds:
+
+1. [State your first reason or fact supporting this motion]
+
+2. [State additional reasons or facts]
+
+3. [Include all relevant information]
+
+This motion is based upon this notice of motion, the attached memorandum of points and authorities, the declaration of [YOUR NAME], all pleadings and papers on file in this action, and such oral and documentary evidence as may be presented at the hearing of this motion.
+
+WHEREFORE, [YOUR NAME] respectfully requests that this Court:
+1. Grant this motion;
+2. [List other specific relief requested];
+3. Award such other and further relief as the Court deems just and proper.
+
+Dated: [DATE]
+
+Respectfully submitted,
+
+_______________________________
+[YOUR PRINTED NAME]
+Petitioner/Respondent, In Pro Per`,
+  },
+  proposed_order: {
+    title: "Proposed Order",
+    content: `SUPERIOR COURT OF THE STATE OF [STATE]
+COUNTY OF [COUNTY]
+
+In re the Matter of:
+
+[PETITIONER NAME],
+        Petitioner,
+vs.
+[RESPONDENT NAME],
+        Respondent.
+
+Case No.: [CASE NUMBER]
+
+[PROPOSED] ORDER ON [MOTION TYPE]
+
+The Court, having considered [YOUR NAME]'s Motion for [RELIEF SOUGHT], filed on [DATE], and good cause appearing therefor;
+
+IT IS HEREBY ORDERED:
+
+1. [First order or finding]
+
+2. [Second order or finding]
+
+3. [Additional orders as needed]
+
+This order is effective [immediately / as of DATE].
+
+
+Dated: _______________
+
+_______________________________
+Judge of the Superior Court`,
+  },
+};
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
@@ -559,6 +670,210 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete evidence error:", error);
       res.status(500).json({ error: "Failed to delete evidence file" });
+    }
+  });
+
+  app.get("/api/health/documents", async (_req, res) => {
+    try {
+      await pool.query("SELECT 1 FROM documents LIMIT 1");
+      res.json({ ok: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  app.get("/api/document-templates", requireAuth, (_req, res) => {
+    const templates = documentTemplateKeys.map((key) => ({
+      key,
+      title: DOCUMENT_TEMPLATES[key]?.title || key,
+    }));
+    res.json({ templates });
+  });
+
+  app.get("/api/cases/:caseId/documents", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const docs = await storage.listDocuments(caseId, userId);
+      res.json({ documents: docs });
+    } catch (error) {
+      console.error("List documents error:", error);
+      res.status(500).json({ error: "Failed to list documents" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/documents", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertDocumentSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const { title, templateKey } = parseResult.data;
+      const templateContent = DOCUMENT_TEMPLATES[templateKey]?.content || "";
+
+      const doc = await storage.createDocument(caseId, userId, {
+        title,
+        templateKey,
+        content: templateContent,
+      });
+
+      res.status(201).json({ document: doc });
+    } catch (error) {
+      console.error("Create document error:", error);
+      res.status(500).json({ error: "Failed to create document" });
+    }
+  });
+
+  app.get("/api/documents/:docId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { docId } = req.params;
+
+      const doc = await storage.getDocument(docId, userId);
+      if (!doc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      res.json({ document: doc });
+    } catch (error) {
+      console.error("Get document error:", error);
+      res.status(500).json({ error: "Failed to get document" });
+    }
+  });
+
+  app.patch("/api/documents/:docId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { docId } = req.params;
+
+      const existingDoc = await storage.getDocument(docId, userId);
+      if (!existingDoc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      const parseResult = updateDocumentSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const updated = await storage.updateDocument(docId, userId, parseResult.data);
+      if (!updated) {
+        return res.status(500).json({ error: "Failed to update document" });
+      }
+
+      res.json({ document: updated });
+    } catch (error) {
+      console.error("Update document error:", error);
+      res.status(500).json({ error: "Failed to update document" });
+    }
+  });
+
+  app.post("/api/documents/:docId/duplicate", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { docId } = req.params;
+
+      const existingDoc = await storage.getDocument(docId, userId);
+      if (!existingDoc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      const dup = await storage.duplicateDocument(docId, userId);
+      if (!dup) {
+        return res.status(500).json({ error: "Failed to duplicate document" });
+      }
+
+      res.status(201).json({ document: dup });
+    } catch (error) {
+      console.error("Duplicate document error:", error);
+      res.status(500).json({ error: "Failed to duplicate document" });
+    }
+  });
+
+  app.delete("/api/documents/:docId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { docId } = req.params;
+
+      const existingDoc = await storage.getDocument(docId, userId);
+      if (!existingDoc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      const deleted = await storage.deleteDocument(docId, userId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete document" });
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Delete document error:", error);
+      res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
+  app.get("/api/documents/:docId/export/docx", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { docId } = req.params;
+
+      const doc = await storage.getDocument(docId, userId);
+      if (!doc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      const paragraphs = doc.content.split("\n").map((line) => {
+        return new Paragraph({
+          children: [new TextRun(line)],
+        });
+      });
+
+      const docxDoc = new DocxDocument({
+        sections: [
+          {
+            properties: {},
+            children: paragraphs,
+          },
+        ],
+      });
+
+      const buffer = await Packer.toBuffer(docxDoc);
+
+      const sanitizedTitle = doc.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "_").slice(0, 50);
+      const filename = `${sanitizedTitle || "document"}.docx`;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Export DOCX error:", error);
+      res.status(500).json({ error: "Failed to export document" });
     }
   });
 
