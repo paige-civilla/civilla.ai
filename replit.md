@@ -22,6 +22,10 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
+- 2024-12-30: Slice 4A - Created server/courtDocx.ts module with reusable DOCX formatting helpers
+- 2024-12-30: Refactored /api/templates/docx to use buildCourtDocxBuffer helper
+- 2024-12-30: Added references folder with format-only reference PDF and README
+- 2024-12-30: Proper court formatting: Times New Roman 12pt, true double spacing (480 twips) for body, single spacing (240 twips) for headers/captions/signatures, 1" margins, "Page X of Y" footer
 - 2024-12-24: Adjusted logo size to match quick exit button visually in both navbars
 - 2024-12-24: Added Admin Login and Careers pages (footer only)
 - 2024-12-24: Restructured footer to 4 columns matching navbar menu organization
