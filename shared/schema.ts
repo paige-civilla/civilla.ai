@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -126,3 +126,56 @@ export const insertTimelineEventSchema = createInsertSchema(timelineEvents)
 
 export type InsertTimelineEvent = z.infer<typeof insertTimelineEventSchema>;
 export type TimelineEvent = typeof timelineEvents.$inferSelect;
+
+export const allowedEvidenceMimeTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/csv",
+  "application/zip",
+] as const;
+
+export type AllowedEvidenceMimeType = typeof allowedEvidenceMimeTypes[number];
+
+export const evidenceFiles = pgTable("evidence_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  originalName: text("original_name").notNull(),
+  storageKey: text("storage_key").notNull(),
+  mimeType: text("mime_type").notNull(),
+  sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+  sha256: text("sha256"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("evidence_case_idx").on(table.caseId),
+  userIdx: index("evidence_user_idx").on(table.userId),
+  caseCreatedAtIdx: index("evidence_case_created_at_idx").on(table.caseId, table.createdAt),
+}));
+
+export const insertEvidenceFileSchema = createInsertSchema(evidenceFiles)
+  .pick({
+    originalName: true,
+    storageKey: true,
+    mimeType: true,
+    sizeBytes: true,
+    sha256: true,
+    notes: true,
+  })
+  .extend({
+    originalName: z.string().min(1, "File name is required"),
+    storageKey: z.string().min(1, "Storage key is required"),
+    mimeType: z.string().min(1, "MIME type is required"),
+    sizeBytes: z.number().int().positive("File size must be positive"),
+    sha256: z.string().optional(),
+    notes: z.string().max(10000, "Notes must be 10,000 characters or less").optional(),
+  });
+
+export type InsertEvidenceFile = z.infer<typeof insertEvidenceFileSchema>;
+export type EvidenceFile = typeof evidenceFiles.$inferSelect;

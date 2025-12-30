@@ -1,0 +1,91 @@
+TASK: Slice 2A — Evidence Uploads (Foundation)
+
+AUTONOMY: LOW
+
+GOAL
+Add an Evidence module that lets an authenticated user upload files to a case, list them, download them, and delete them — with strict ownership enforcement.
+
+CONSTRAINTS
+- Do NOT change marketing pages or public navbars
+- Do NOT redesign the UI; only minimal functional UI in the existing /app/evidence/:caseId page
+- Do NOT add new features beyond evidence upload/list/download/delete
+- Use existing auth + requireAuth middleware and case ownership checks
+- All database operations must enforce user ownership
+- Must work on live domain after publish
+
+DECISION REQUIRED FIRST (ASK ME IF NOT PROVIDED)
+Storage provider:
+Option 1: Cloudflare R2 (preferred if we want Cloudflare alignment)
+Option 2: S3-compatible (AWS S3 or any S3 endpoint)
+If no keys are present, implement LOCAL DEV storage fallback to /uploads and keep production storage disabled until keys are added.
+
+DATA MODEL (DB)
+In shared/schema.ts add table: evidence_files (or evidence)
+Fields:
+- id (uuid pk)
+- userId (uuid, indexed)
+- caseId (uuid, indexed)
+- originalName (text)
+- storageKey (text)            // object key or local path identifier
+- mimeType (text)
+- sizeBytes (integer/bigint)
+- sha256 (text, optional)
+- notes (text, optional, max 10,000)
+- createdAt (timestamp default now)
+Indexes: (caseId), (userId), (caseId, createdAt)
+
+SERVER (API)
+Add endpoints (all requireAuth):
+1) GET /api/cases/:caseId/evidence
+   - Verify case ownership via storage.getCase(caseId, userId)
+   - Return list of evidence metadata (no secrets)
+
+2) POST /api/cases/:caseId/evidence (multipart/form-data)
+   - Verify ownership
+   - Validate file size and type
+   - Store file (depending on storage mode)
+   - Insert row in evidence table
+   - Return created evidence record
+
+3) GET /api/evidence/:evidenceId/download
+   - Verify ownership by joining evidence.userId == session.userId
+   - Stream file from storage OR redirect to signed URL if using S3/R2 (short TTL)
+   - Never expose storage keys publicly
+
+4) DELETE /api/evidence/:evidenceId
+   - Verify ownership
+   - Delete object from storage
+   - Delete DB row
+   - Return 200 ok
+
+Add /api/health/evidence
+- Returns { ok:true } if evidence table exists and a simple select works, else 500 { ok:false, error:"..." }
+
+VALIDATION + ERROR HANDLING
+- If evidence table does not exist, server should auto-init it at boot using the existing initDbTables pattern (same approach as timeline_events)
+- Return structured validation errors { error:"Validation failed", fields:{...} }
+- Sanitize all server errors (no stack traces returned to client)
+
+FRONTEND (MINIMAL UI ONLY)
+Update existing page: client/src/pages/AppEvidence.tsx
+- Fetch case details (already done pattern)
+- Add:
+  - Upload button + file input (accept pdf, images, doc/docx, txt, csv, zip)
+  - List uploaded files with: name, size, uploaded date
+  - Download button (calls /download endpoint)
+  - Delete button (confirm then delete)
+- Keep styling consistent with app tokens (no new palette classes)
+
+DEFAULT LIMITS (SAFE START)
+- Max file size: 25MB per file for now
+- Max uploads: no hard cap in UI; rely on size limit + ownership
+(We can raise limits later + add paid tiers after we stabilize.)
+
+DELIVERABLE
+- List exact files changed with line ranges
+- Confirm the four endpoints work in dev
+- After publish: provide a checklist to test on civilla.ai
+
+STOPPING RULE
+If storage keys are missing, do NOT fake a “working” cloud upload.
+Implement local storage for dev and clearly disable production upload with a visible message in the UI until keys are configured.

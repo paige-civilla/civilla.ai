@@ -1,0 +1,107 @@
+TASK: Slice 2A — Evidence Uploads (Foundation) using Cloudflare R2
+
+AUTONOMY: LOW
+
+GOAL
+Add an Evidence module that lets an authenticated user upload files to a case, list them, download them, and delete them — stored in Cloudflare R2 — with strict ownership enforcement.
+
+CONSTRAINTS
+- Do NOT change marketing pages or public navbars
+- Do NOT redesign UI; only minimal functional UI in /app/evidence/:caseId
+- Do NOT add features beyond evidence upload/list/download/delete
+- Use existing auth + requireAuth middleware and case ownership checks
+- All DB ops must enforce ownership
+- Must work on live domain after publish
+
+R2 ENV VARS REQUIRED (Replit Secrets + Deployment Secrets)
+- R2_ACCOUNT_ID
+- R2_ACCESS_KEY_ID
+- R2_SECRET_ACCESS_KEY
+- R2_BUCKET_NAME
+- R2_PUBLIC_BASE_URL (optional; if not set, use signed URLs only)
+- R2_ENDPOINT (optional; derive from account id if missing: https://<accountid>.r2.cloudflarestorage.com)
+
+If any required R2 vars are missing:
+- Disable uploads in production with a clear UI message
+- Still allow listing (empty) and show how to configure keys
+- Do NOT pretend uploads succeed
+
+DATA MODEL (DB)
+In shared/schema.ts add table: evidence_files
+Fields:
+- id (uuid pk)
+- userId (uuid, indexed)
+- caseId (uuid, indexed)
+- originalName (text)
+- storageKey (text)            // R2 object key
+- mimeType (text)
+- sizeBytes (bigint/int)
+- sha256 (text, optional)
+- notes (text, optional, max 10,000)
+- createdAt (timestamp default now)
+Indexes: (caseId), (userId), (caseId, createdAt)
+
+SERVER
+A) BOOTSTRAP
+- Extend existing initDbTables() to also ensure evidence_files table exists (same auto-init style as timeline)
+
+B) R2 CLIENT
+- Use AWS SDK v3 S3Client pointed at R2 endpoint
+- Force path-style addressing if needed
+- Never log secrets; only log whether R2 is configured (true/false) and bucket name
+
+C) API ENDPOINTS (all requireAuth)
+1) GET /api/cases/:caseId/evidence
+   - Verify case ownership via storage.getCase(caseId, userId)
+   - Return evidence list (metadata only)
+
+2) POST /api/cases/:caseId/evidence (multipart/form-data)
+   - Verify ownership
+   - Validate:
+     - file present
+     - max 25MB
+     - allowed mime/types (pdf, images, doc/docx, txt, csv, zip)
+   - Build storageKey: userId/caseId/<uuid>-<sanitizedName>
+   - Upload to R2
+   - Insert evidence row and return it
+
+3) GET /api/evidence/:evidenceId/download
+   - Verify ownership (evidence.userId == session.userId)
+   - Prefer signed URL (short TTL like 60-300s) and 302 redirect to it
+   - Do NOT expose storageKey except internally
+
+4) DELETE /api/evidence/:evidenceId
+   - Verify ownership
+   - Delete object from R2
+   - Delete DB row
+   - Return { ok:true }
+
+5) GET /api/health/evidence
+   - { ok:true } if evidence_files table exists and a simple select works; else 500 { ok:false, error:"..." }
+
+VALIDATION + ERROR HANDLING
+- Structured validation errors: { error:"Validation failed", fields:{...} }
+- Sanitize server errors; no stack traces returned to client
+- If R2 not configured, POST should return 503 with { error:"Uploads not configured" }
+
+FRONTEND (MINIMAL UI)
+Update: client/src/pages/AppEvidence.tsx
+- Fetch case details (existing pattern)
+- Add upload control:
+  - file input + button
+  - show “Uploads not configured” if server returns 503
+- List uploaded files with:
+  - name, size, createdAt
+  - Download button -> hits /api/evidence/:id/download
+  - Delete button -> confirm then DELETE
+- Keep styling consistent with tokens (no new palette classes)
+
+DELIVERABLE
+- List exact files changed with line ranges
+- Confirm in dev:
+  - endpoints return expected responses
+- After publish:
+  - provide checklist to test on civilla.ai
+
+STOPPING RULE
+If R2 env vars are missing, do not implement fake cloud uploads. Disable upload with clear message until keys are added.
