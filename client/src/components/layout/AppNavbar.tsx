@@ -200,7 +200,7 @@ export default function AppNavbar() {
         <div 
           ref={menuRef} 
           style={{ top: menuPos.top, right: menuPos.right }}
-          className="fixed w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl p-4 max-h-[75vh] overflow-auto z-[9999]" 
+          className="fixed w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain z-[9999]" 
           data-testid="dropdown-menu-app"
         >
           {authData?.user && (
