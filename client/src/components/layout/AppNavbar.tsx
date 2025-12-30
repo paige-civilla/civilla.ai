@@ -200,47 +200,49 @@ export default function AppNavbar() {
         <div 
           ref={menuRef} 
           style={{ top: menuPos.top, right: menuPos.right }}
-          className="fixed w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain z-[9999]" 
+          className="fixed w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl z-[9999]" 
           data-testid="dropdown-menu-app"
         >
-          {authData?.user && (
-            <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
-              <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+          <div className="p-4 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain">
+            {authData?.user && (
+              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-neutral-darkest/10">
+                <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-popover-foreground truncate">{authData.user.email}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-popover-foreground truncate">{authData.user.email}</p>
-              </div>
+            )}
+            <div className="flex flex-col">
+              {menuLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-3 py-2 px-2 rounded-md text-sm text-popover-foreground hover:bg-accent/50 ${
+                    location === link.href ? "font-medium bg-accent/30" : ""
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                  data-testid={`menu-link-${link.label.toLowerCase()}`}
+                >
+                  <link.icon className="h-4 w-4 opacity-70" />
+                  {link.label}
+                </Link>
+              ))}
             </div>
-          )}
-          <div className="flex flex-col">
-            {menuLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-3 py-2 px-2 -mx-2 rounded-md text-sm text-popover-foreground hover:bg-accent/50 ${
-                  location === link.href ? "font-medium bg-accent/30" : ""
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-                data-testid={`menu-link-${link.label.toLowerCase()}`}
+            <div className="mt-3 pt-3 border-t border-neutral-darkest/10">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  logoutMutation.mutate();
+                }}
+                className="flex items-center gap-3 py-2 px-2 rounded-md text-sm text-popover-foreground/70 hover:text-popover-foreground hover:bg-accent/50 w-full text-left"
+                data-testid="button-logout-menu"
               >
-                <link.icon className="h-4 w-4 opacity-70" />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="mt-3 pt-3 border-t border-neutral-darkest/10">
-            <button
-              onClick={() => {
-                setIsMenuOpen(false);
-                logoutMutation.mutate();
-              }}
-              className="flex items-center gap-3 py-2 px-2 rounded-md text-sm text-popover-foreground/70 hover:text-popover-foreground hover:bg-accent/50 w-full text-left"
-              data-testid="button-logout-menu"
-            >
-              <LogOut className="h-4 w-4 opacity-70" />
-              Log out
-            </button>
+                <LogOut className="h-4 w-4 opacity-70" />
+                Log out
+              </button>
+            </div>
           </div>
         </div>
       )}
