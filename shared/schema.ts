@@ -142,6 +142,18 @@ export const allowedEvidenceMimeTypes = [
 
 export type AllowedEvidenceMimeType = typeof allowedEvidenceMimeTypes[number];
 
+export const evidenceCategories = [
+  "document",
+  "photo",
+  "message",
+  "medical",
+  "financial",
+  "school",
+  "other",
+] as const;
+
+export type EvidenceCategory = typeof evidenceCategories[number];
+
 export const evidenceFiles = pgTable("evidence_files", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -152,6 +164,9 @@ export const evidenceFiles = pgTable("evidence_files", {
   sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
   sha256: text("sha256"),
   notes: text("notes"),
+  category: text("category"),
+  description: text("description"),
+  tags: text("tags"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   caseIdx: index("evidence_case_idx").on(table.caseId),
@@ -167,6 +182,9 @@ export const insertEvidenceFileSchema = createInsertSchema(evidenceFiles)
     sizeBytes: true,
     sha256: true,
     notes: true,
+    category: true,
+    description: true,
+    tags: true,
   })
   .extend({
     originalName: z.string().min(1, "File name is required"),
@@ -175,7 +193,17 @@ export const insertEvidenceFileSchema = createInsertSchema(evidenceFiles)
     sizeBytes: z.number().int().positive("File size must be positive"),
     sha256: z.string().optional(),
     notes: z.string().max(10000, "Notes must be 10,000 characters or less").optional(),
+    category: z.string().max(50, "Category must be 50 characters or less").optional(),
+    description: z.string().max(5000, "Description must be 5,000 characters or less").optional(),
+    tags: z.string().max(500, "Tags must be 500 characters or less").optional(),
   });
 
+export const updateEvidenceMetadataSchema = z.object({
+  category: z.string().max(50, "Category must be 50 characters or less").optional(),
+  description: z.string().max(5000, "Description must be 5,000 characters or less").optional(),
+  tags: z.string().max(500, "Tags must be 500 characters or less").optional(),
+});
+
+export type UpdateEvidenceMetadata = z.infer<typeof updateEvidenceMetadataSchema>;
 export type InsertEvidenceFile = z.infer<typeof insertEvidenceFileSchema>;
 export type EvidenceFile = typeof evidenceFiles.$inferSelect;

@@ -149,6 +149,9 @@ export async function initDbTables(): Promise<void> {
       size_bytes BIGINT NOT NULL,
       sha256 TEXT,
       notes TEXT,
+      category TEXT,
+      description TEXT,
+      tags TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
@@ -156,6 +159,17 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_files_user_id ON evidence_files(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_created_at ON evidence_files(case_id, created_at)`
   ]);
+
+  const addColumnIfNotExists = async (table: string, column: string, colType: string) => {
+    try {
+      await pool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${colType}`);
+    } catch (err) {
+      console.log(`Column ${column} may already exist in ${table}`);
+    }
+  };
+  await addColumnIfNotExists("evidence_files", "category", "TEXT");
+  await addColumnIfNotExists("evidence_files", "description", "TEXT");
+  await addColumnIfNotExists("evidence_files", "tags", "TEXT");
 
   console.log("Database table initialization complete");
 }

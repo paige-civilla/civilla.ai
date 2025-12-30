@@ -1,13 +1,31 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, EvidenceFile } from "@shared/schema";
+
+const CATEGORIES = [
+  { value: "document", label: "Document" },
+  { value: "photo", label: "Photo" },
+  { value: "message", label: "Message" },
+  { value: "medical", label: "Medical" },
+  { value: "financial", label: "Financial" },
+  { value: "school", label: "School" },
+  { value: "other", label: "Other" },
+] as const;
+
+function getCategoryLabel(value: string): string {
+  const cat = CATEGORIES.find((c) => c.value === value);
+  return cat ? cat.label : value;
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -39,6 +57,10 @@ export default function AppEvidence() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingMetadata, setEditingMetadata] = useState<Record<string, { category: string; description: string; tags: string }>>({});
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -51,8 +73,16 @@ export default function AppEvidence() {
   });
 
   const currentCase = caseData?.case;
-  const files = evidenceData?.files || [];
+  const rawFiles = evidenceData?.files || [];
   const r2Configured = evidenceData?.r2Configured ?? false;
+
+  const filteredFiles = rawFiles
+    .filter((f) => filterCategory === "all" || f.category === filterCategory)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
 
   useEffect(() => {
     if (currentCase) {
@@ -65,6 +95,19 @@ export default function AppEvidence() {
       setLocation("/app/cases");
     }
   }, [caseLoading, currentCase, caseId, setLocation]);
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ evidenceId, data }: { evidenceId: string; data: { category?: string; description?: string; tags?: string } }) => {
+      return apiRequest("PATCH", `/api/cases/${caseId}/evidence/${evidenceId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence"] });
+      toast({ title: "Metadata saved", description: "File metadata updated successfully." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to update metadata", variant: "destructive" });
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (evidenceId: string) => {
@@ -133,6 +176,47 @@ export default function AppEvidence() {
 
   const handleDownload = (evidenceId: string) => {
     window.open(`/api/evidence/${evidenceId}/download`, "_blank");
+  };
+
+  const handleExpand = (file: EvidenceFile) => {
+    if (expandedId === file.id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(file.id);
+      if (!editingMetadata[file.id]) {
+        setEditingMetadata((prev) => ({
+          ...prev,
+          [file.id]: {
+            category: file.category || "",
+            description: file.description || "",
+            tags: file.tags || "",
+          },
+        }));
+      }
+    }
+  };
+
+  const handleMetadataChange = (fileId: string, field: "category" | "description" | "tags", value: string) => {
+    setEditingMetadata((prev) => ({
+      ...prev,
+      [fileId]: {
+        ...prev[fileId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveMetadata = (fileId: string) => {
+    const data = editingMetadata[fileId];
+    if (!data) return;
+    updateMutation.mutate({
+      evidenceId: fileId,
+      data: {
+        category: data.category || undefined,
+        description: data.description || undefined,
+        tags: data.tags || undefined,
+      },
+    });
   };
 
   if (caseLoading) {
@@ -222,11 +306,47 @@ export default function AppEvidence() {
             </Card>
           )}
 
+          {rawFiles.length > 0 && (
+            <div className="w-full flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-darkest/60">Filter:</span>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-[140px]" data-testid="select-filter-category">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-darkest/60">Sort:</span>
+                <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
+                  <SelectTrigger className="w-[120px]" data-testid="select-sort-order">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="oldest">Oldest</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <span className="text-sm text-neutral-darkest/60 ml-auto">
+                {filteredFiles.length} of {rawFiles.length} files
+              </span>
+            </div>
+          )}
+
           {evidenceLoading ? (
             <div className="w-full flex items-center justify-center py-12">
               <p className="font-sans text-neutral-darkest/60">Loading files...</p>
             </div>
-          ) : files.length === 0 ? (
+          ) : rawFiles.length === 0 ? (
             <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
                 <FolderOpen className="w-8 h-8 text-bush" />
@@ -240,66 +360,159 @@ export default function AppEvidence() {
                   : "File storage needs to be configured before you can upload evidence."}
               </p>
             </div>
+          ) : filteredFiles.length === 0 ? (
+            <div className="w-full bg-[#e7ebea] rounded-lg p-8 flex flex-col items-center justify-center text-center">
+              <p className="font-sans text-sm text-neutral-darkest/70">
+                No files match the current filter.
+              </p>
+            </div>
           ) : (
             <div className="w-full space-y-3">
-              {files.map((file) => {
+              {filteredFiles.map((file) => {
                 const FileIcon = getFileIcon(file.mimeType);
+                const isExpanded = expandedId === file.id;
+                const metadata = editingMetadata[file.id] || {
+                  category: file.category || "",
+                  description: file.description || "",
+                  tags: file.tags || "",
+                };
+
                 return (
                   <Card key={file.id} className="w-full" data-testid={`card-evidence-${file.id}`}>
-                    <CardContent className="py-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-bush/10 flex items-center justify-center flex-shrink-0">
-                        <FileIcon className="w-5 h-5 text-bush" />
+                    <CardContent className="py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-bush/10 flex items-center justify-center flex-shrink-0">
+                          <FileIcon className="w-5 h-5 text-bush" />
+                        </div>
+                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleExpand(file)}>
+                          <p className="font-sans font-medium text-neutral-darkest truncate" data-testid={`text-filename-${file.id}`}>
+                            {file.originalName}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-darkest/60">
+                            <span>{formatFileSize(Number(file.sizeBytes))}</span>
+                            <span>{formatDate(file.createdAt)}</span>
+                            {file.category && (
+                              <span className="bg-bush/10 text-bush px-2 py-0.5 rounded">
+                                {getCategoryLabel(file.category)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {deleteConfirmId === file.id ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteMutation.mutate(file.id)}
+                                disabled={deleteMutation.isPending}
+                                data-testid={`button-confirm-delete-${file.id}`}
+                              >
+                                {deleteMutation.isPending ? "Deleting..." : "Confirm"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setDeleteConfirmId(null)}
+                                data-testid={`button-cancel-delete-${file.id}`}
+                              >
+                                Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleExpand(file)}
+                                data-testid={`button-expand-${file.id}`}
+                              >
+                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleDownload(file.id)}
+                                data-testid={`button-download-${file.id}`}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setDeleteConfirmId(file.id)}
+                                data-testid={`button-delete-${file.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-sans font-medium text-neutral-darkest truncate" data-testid={`text-filename-${file.id}`}>
-                          {file.originalName}
-                        </p>
-                        <p className="font-sans text-xs text-neutral-darkest/60">
-                          {formatFileSize(Number(file.sizeBytes))} · {formatDate(file.createdAt)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {deleteConfirmId === file.id ? (
-                          <>
+
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-neutral-darkest/10 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-neutral-darkest mb-1">
+                                Category
+                              </label>
+                              <Select
+                                value={metadata.category || "none"}
+                                onValueChange={(v) => handleMetadataChange(file.id, "category", v === "none" ? "" : v)}
+                              >
+                                <SelectTrigger data-testid={`select-category-${file.id}`}>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">No category</SelectItem>
+                                  {CATEGORIES.map((cat) => (
+                                    <SelectItem key={cat.value} value={cat.value}>
+                                      {cat.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-neutral-darkest mb-1">
+                                Tags
+                              </label>
+                              <Input
+                                value={metadata.tags}
+                                onChange={(e) => handleMetadataChange(file.id, "tags", e.target.value)}
+                                placeholder="Comma-separated tags"
+                                maxLength={500}
+                                data-testid={`input-tags-${file.id}`}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-neutral-darkest mb-1">
+                              Description
+                            </label>
+                            <Textarea
+                              value={metadata.description}
+                              onChange={(e) => handleMetadataChange(file.id, "description", e.target.value)}
+                              placeholder="Add a description for this file..."
+                              rows={3}
+                              maxLength={5000}
+                              data-testid={`textarea-description-${file.id}`}
+                            />
+                          </div>
+                          <div className="flex justify-end">
                             <Button
                               size="sm"
-                              variant="destructive"
-                              onClick={() => deleteMutation.mutate(file.id)}
-                              disabled={deleteMutation.isPending}
-                              data-testid={`button-confirm-delete-${file.id}`}
+                              onClick={() => handleSaveMetadata(file.id)}
+                              disabled={updateMutation.isPending}
+                              data-testid={`button-save-metadata-${file.id}`}
                             >
-                              {deleteMutation.isPending ? "Deleting..." : "Confirm"}
+                              <Save className="w-4 h-4 mr-2" />
+                              {updateMutation.isPending ? "Saving..." : "Save"}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setDeleteConfirmId(null)}
-                              data-testid={`button-cancel-delete-${file.id}`}
-                            >
-                              Cancel
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDownload(file.id)}
-                              data-testid={`button-download-${file.id}`}
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setDeleteConfirmId(file.id)}
-                              data-testid={`button-delete-${file.id}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );

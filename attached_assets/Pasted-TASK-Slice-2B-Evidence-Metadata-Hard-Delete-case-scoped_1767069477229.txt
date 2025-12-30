@@ -1,0 +1,72 @@
+TASK: Slice 2B — Evidence Metadata + Hard Delete (case-scoped)
+
+AUTONOMY: LOW
+
+GOAL
+Enhance Evidence uploads (already working) by adding metadata fields + UI, and enforce HARD DELETE:
+- Evidence is always scoped to ONE case (no cross-case reuse).
+- Hard delete must remove the object from R2 AND remove the DB record (no recovery).
+
+CONSTRAINTS
+- Do NOT change marketing pages or public nav
+- Do NOT redesign the app shell
+- Keep existing routes exactly
+- Minimum necessary edits only
+- Continue using wouter <Link> and existing design tokens
+- Do NOT add notifications yet (Twilio/SendGrid later)
+
+REQUIREMENTS
+
+A) DATABASE (shared/schema.ts + initDbTables)
+1) Extend evidence_files table with these nullable columns:
+- category (text)
+- description (text)
+- tags (text)  // store as comma-separated for now (no separate table yet)
+
+2) Ensure initDbTables creates/updates evidence_files table definition accordingly.
+If migrations aren’t in use, add a safe “add column if not exists” approach OR create table with the new columns if missing (same pattern used for other table init).
+
+B) API
+1) Evidence list endpoint must return the new metadata fields.
+2) Add PATCH endpoint:
+PATCH /api/cases/:caseId/evidence/:fileId
+Body accepts: category, description, tags
+Validate:
+- category: max 50 chars, optional
+- description: max 5000 chars, optional
+- tags: max 500 chars, optional
+Return structured validation errors like the timeline endpoints.
+
+3) HARD DELETE enforcement:
+DELETE /api/cases/:caseId/evidence/:fileId must:
+- verify auth + case ownership + file ownership
+- delete from R2 first
+- only if R2 delete succeeds: delete DB record
+- if R2 delete fails: return 500 with safe error message; do not delete DB record
+
+C) FRONTEND (client/src/pages/AppEvidence.tsx)
+1) Add metadata UI per file:
+- Category dropdown (e.g., Document, Photo, Message, Medical, Financial, School, Other)
+- Description textarea (optional)
+- Tags input (optional)
+2) Add “Save” button per file row/card to PATCH metadata.
+3) Add filter controls:
+- Filter by category (All + categories)
+- Sort by newest/oldest
+4) Hard delete UX:
+- Keep existing confirm dialog
+- After delete, refresh list; show success or error toast/message
+
+D) VALIDATION (must pass)
+- Upload still works
+- List shows metadata
+- Patch updates persist after refresh
+- Delete removes file from R2 + DB (verify by refresh and download failing)
+- Ownership enforced (cannot edit/delete other case’s files)
+- No console errors
+
+DELIVERABLE
+- List files changed with line ranges
+- Confirm endpoints added
+- Confirm hard delete ordering (R2 first, DB second)
+- Provide test steps I can run in the browser

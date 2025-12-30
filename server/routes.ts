@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
@@ -494,6 +494,43 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/cases/:caseId/evidence/:evidenceId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      const parseResult = updateEvidenceMetadataSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const updated = await storage.updateEvidenceMetadata(evidenceId, userId, parseResult.data);
+      if (!updated) {
+        return res.status(500).json({ error: "Failed to update file metadata" });
+      }
+
+      res.json({ file: updated });
+    } catch (error) {
+      console.error("Update evidence metadata error:", error);
+      res.status(500).json({ error: "Failed to update file metadata" });
+    }
+  });
+
   app.delete("/api/evidence/:evidenceId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -508,13 +545,14 @@ export async function registerRoutes(
         try {
           await deleteFromR2(file.storageKey);
         } catch (r2Error) {
-          console.error("R2 delete error (continuing with DB delete):", r2Error);
+          console.error("R2 delete error:", r2Error);
+          return res.status(500).json({ error: "Failed to delete file from storage" });
         }
       }
 
       const deleted = await storage.deleteEvidenceFile(evidenceId, userId);
       if (!deleted) {
-        return res.status(500).json({ error: "Failed to delete file" });
+        return res.status(500).json({ error: "Failed to delete file record" });
       }
 
       res.json({ ok: true });

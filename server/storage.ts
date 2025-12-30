@@ -266,6 +266,27 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(evidenceFiles.id, evidenceId), eq(evidenceFiles.userId, userId)));
     return file;
   }
+
+  async updateEvidenceMetadata(
+    evidenceId: string,
+    userId: string,
+    data: { category?: string; description?: string; tags?: string }
+  ): Promise<EvidenceFile | undefined> {
+    const file = await this.getEvidenceFile(evidenceId, userId);
+    if (!file) {
+      return undefined;
+    }
+    const [updated] = await db
+      .update(evidenceFiles)
+      .set({
+        category: data.category,
+        description: data.description,
+        tags: data.tags,
+      })
+      .where(and(eq(evidenceFiles.id, evidenceId), eq(evidenceFiles.userId, userId)))
+      .returning();
+    return updated;
+  }
 }
 
 export const storage = new DatabaseStorage();
