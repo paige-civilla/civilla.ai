@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, MessageSquare } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoColor from "@assets/noBgColor-2_1766294100143.png";
 
@@ -46,12 +46,10 @@ const getStaticMenuLinks = () => [
 
 export default function AppNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   useFixedNavShell(shellRef);
 
@@ -97,16 +95,6 @@ export default function AppNavbar() {
     return links;
   })();
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", "/api/auth/logout", {});
-    },
-    onSuccess: () => {
-      queryClient.clear();
-      setLocation("/login");
-    },
-  });
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -134,13 +122,6 @@ export default function AppNavbar() {
     };
   }, [isMenuOpen]);
 
-  useEffect(() => {
-    if (isMenuOpen && menuButtonRef.current) {
-      const rect = menuButtonRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 12, right: window.innerWidth - rect.right });
-    }
-  }, [isMenuOpen]);
-
   const handleQuickExit = () => {
     const safePages = [
       "https://en.wikipedia.org/wiki/Coffee#Preparation",
@@ -165,7 +146,7 @@ export default function AppNavbar() {
                 />
               </Link>
             </div>
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2 relative">
               <button 
                 ref={menuButtonRef}
                 className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
@@ -194,63 +175,79 @@ export default function AppNavbar() {
             </div>
           </div>
         </div>
-      </nav>
 
-      {isMenuOpen && menuPos && (
-        <div 
-          ref={menuRef} 
-          style={{ top: menuPos.top, right: menuPos.right }}
-          className="absolute right-0 mt-2 w-[280px] bg-popover border border-popover-border rounded-lg shadow-xl z-[9999] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain" 
-          data-testid="dropdown-menu-app"
-        >
-          <div className="p-4 flex flex-col">
-            {authData?.user && (
-              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-neutral-darkest/10">
-                <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+        {isMenuOpen && (
+          <div 
+            ref={menuRef}
+            className="absolute left-0 right-0 top-full mt-2 z-[9999]"
+            data-testid="dropdown-menu-app"
+          >
+            <div className="mx-auto max-w-6xl px-3">
+              <div
+                className="bg-popover border border-popover-border rounded-xl shadow-xl p-4"
+                role="menu"
+                aria-label="App menu"
+              >
+                {authData?.user && (
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="font-sans text-sm text-neutral-darkest/70">
+                      {authData.user.email}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {menuLinks.map((item) => (
+                    <button
+                      key={item.href}
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setLocation(item.href);
+                      }}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-sans text-sm text-neutral-darkest hover:bg-neutral-100 border border-transparent hover:border-neutral-200"
+                      role="menuitem"
+                      data-testid={`menu-link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  ))}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-popover-foreground truncate">{authData.user.email}</p>
+
+                <div className="mt-4 pt-3 border-t border-popover-border flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsMenuOpen(false);
+                      await apiRequest("POST", "/api/auth/logout", {});
+                      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+                      setLocation("/");
+                    }}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-neutral-100 border border-transparent hover:border-neutral-200"
+                    data-testid="button-logout-menu"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Log out</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest/70 hover:bg-neutral-100"
+                    data-testid="button-close-menu"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
-            )}
-            <div className="flex flex-col gap-1">
-              {menuLinks.map((link) => (
-                <button
-                  key={link.href}
-                  type="button"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setLocation(link.href);
-                  }}
-                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left font-sans text-neutral-darkest hover:bg-neutral-100 ${
-                    location === link.href ? "font-medium bg-accent/30" : ""
-                  }`}
-                  data-testid={`menu-link-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <link.icon className="h-5 w-5" />
-                  <span>{link.label}</span>
-                </button>
-              ))}
             </div>
-            <div className="border-t border-popover-border my-3" />
-            <button
-              type="button"
-              onClick={async () => {
-                setIsMenuOpen(false);
-                await apiRequest("POST", "/api/auth/logout", {});
-                queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-                setLocation("/");
-              }}
-              className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-left font-sans text-neutral-darkest hover:bg-neutral-100"
-              data-testid="button-logout-menu"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Log out</span>
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </nav>
     </div>
   );
 }
