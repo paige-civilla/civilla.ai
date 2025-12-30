@@ -1,0 +1,103 @@
+REPLIT TASK (Slice 4A) — Make Court DOCX match the reference PDF format (Times New Roman 12, double-spaced, Idaho-style caption + footer + signature block)
+
+AUTONOMY: LOW
+DO NOT change any UI styling or marketing pages.
+Only change the DOCX generation code (backend) + (if needed) the download endpoint wiring.
+
+GOAL (what the DOCX must look like):
+1) Font: Times New Roman everywhere (including caption/header/footer), 12pt body
+2) Line spacing: Double-spaced body paragraphs
+3) Page margins: 1 inch all around
+4) Caption/header block at top includes:
+   - Filer/party info (name, address, phone, email, role, “In Pro Per” if self-represented) on the left
+   - Court info centered: “IN THE DISTRICT COURT OF THE ___ JUDICIAL DISTRICT OF THE STATE OF IDAHO, IN AND FOR THE COUNTY OF ___”
+   - Parties + Case No. + Document Title section like standard pleading caption
+5) Footer:
+   - Left: Document title (ex: “DECLARATION OF [NAME]” or template title)
+   - Right: Page X of Y (page numbering)
+6) Ending block:
+   - Date line: “DATED: ____________, 20__.”
+   - Signature line: “_____________________________”
+   - If self-represented: print name + “Petitioner/Respondent, pro se”
+   - If attorney: attorney name, firm, bar number, email, phone, address
+
+WHERE TO IMPLEMENT:
+Search for the DOCX generator endpoint and the docx builder:
+- server/routes.ts  (look for routes like /api/templates/docx or “court format”)
+- any helper like server/docx.ts, server/templates/*.ts, server/courtDocx.ts
+
+IMPLEMENTATION REQUIREMENTS (use the `docx` npm library):
+A) Create a single helper that enforces formatting defaults:
+- Times New Roman 12 everywhere
+- Double spacing
+- 1" margins
+- Footer with title + page numbers
+
+B) Build a reusable caption builder:
+Input: GenerateDocumentPayload + templateType
+Output: docx blocks for:
+- filer block (left aligned)
+- court title (centered, bold)
+- caption table (2 columns):
+   left: Petitioner/Respondent lines
+   right: Case No.
+- document title centered and bold
+
+C) Ensure body paragraphs are truly double spaced:
+In docx, that is paragraph spacing with `line: 480` (twips) and `lineRule: "auto"`.
+Also ensure `spacing: { before: 0, after: 0, line: 480, lineRule: "auto" }` on body paragraphs.
+
+D) Footer:
+Use docx PageNumber:
+- “Page ” + PageNumber.CURRENT + “ of ” + PageNumber.TOTAL_PAGES
+
+E) Signature block:
+Conditional on payload.filer.isSelfRepresented or payload.filer.attorney presence.
+
+CONCRETE CODE CHANGES (DO THIS EXACTLY):
+
+1) Create a new file: server/courtDocx.ts
+- Export: buildCourtDocxBuffer({ templateType, title, payload }): Promise<Buffer>
+- Use docx Document with:
+  - sections: [{
+      properties: {
+        page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } // 1 inch
+      },
+      footers: { default: footerWithTitleAndPageNumbers(title) },
+      children: [ ...captionBlocks, ...bodyBlocks, ...signatureBlocks ]
+    }]
+
+- Add helper functions:
+  - timesRun(text, opts) => new TextRun({ text, font: "Times New Roman", size: 24, ...opts })
+  - p(textOrRuns, alignment?) => new Paragraph({ children: runs, alignment, spacing: { before: 0, after: 0, line: 480, lineRule: "auto" } })
+  - captionBlocks(payload, templateType, title)
+  - signatureBlocks(payload)
+
+2) Update the existing DOCX download route in server/routes.ts:
+- Replace the current ad-hoc DOCX builder with a call to buildCourtDocxBuffer()
+- Ensure response headers:
+  - Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+  - Content-Disposition: attachment; filename="Civilla_<DocTitle>.docx"
+
+3) Make sure ALL templates (Declaration, Motion, Proposed Order, Certificate of Service) use the SAME caption + footer formatting.
+Only the document title and body content differs.
+
+4) Add 1 quick debug endpoint (optional but recommended) to verify formatting in production:
+GET /api/health/docx -> { ok:true }
+No secrets.
+
+ACCEPTANCE TEST (you run this after publish):
+- Download each of the 4 templates.
+- Open in Word/Google Docs:
+  - Body text is Times New Roman 12
+  - Paragraph line spacing is Double (not “Multiple 1.15”)
+  - Margins are 1”
+  - Caption appears correctly (court line centered, parties/case no, doc title centered)
+  - Footer shows “Page 1 of 1” etc and includes doc title
+  - Signature block matches role (pro se vs attorney)
+
+DELIVERABLE BACK TO ME:
+- Tell me which files you edited
+- Paste ONLY the new server/courtDocx.ts file contents
+- Paste ONLY the updated route handler function where DOCX is downloaded
+- Then publish so I can validate against your screenshots
