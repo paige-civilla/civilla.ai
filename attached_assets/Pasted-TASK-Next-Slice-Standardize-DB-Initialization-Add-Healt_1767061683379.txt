@@ -1,0 +1,66 @@
+TASK: Next Slice — Standardize DB Initialization + Add Health Checks (prevent dev/prod table mismatch)
+
+AUTONOMY: LOW
+
+GOAL
+1) Prevent future “table missing in production” errors by standardizing DB/table initialization on server boot.
+2) Add a simple, safe DB health endpoint so we can verify production DB connectivity instantly.
+
+CONSTRAINTS
+- Do NOT change any frontend UI, styling, routes, or copy
+- Backend only
+- Do NOT log secrets (no full DATABASE_URL)
+- Log hostname only
+- Do NOT introduce new auth methods or new features beyond health/init
+
+WHAT TO IMPLEMENT
+
+A) Centralize DB Host Logging (hostname only)
+- On server boot, log:
+  - "DB env var used: DATABASE_URL"
+  - "DB host: <hostname>"
+  - If hostname === "helium", also log:
+    "WARNING: DATABASE_URL points to internal host 'helium'; deployment needs externally reachable Postgres"
+- Mask credentials completely.
+
+B) Add a general DB health endpoint
+- Add GET /api/health/db
+- Behavior:
+  - Returns 200 JSON: { ok: true } if a trivial DB query succeeds (e.g., select 1)
+  - Returns 500 JSON: { ok: false, error: "<short message>" } if query fails
+- Must not leak secrets or stack traces.
+
+C) Standardize table init on boot (minimal + safe)
+- Create a single init function (ex: initDbTables()) that runs once on server startup.
+- It should ensure required tables exist for CURRENT FEATURES:
+  - users
+  - cases
+  - timeline_events
+- Use CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS
+- Keep schema aligned with existing Drizzle schema (no breaking changes).
+- If any table create fails, log a clear message and continue booting (do not crash the whole server unless DB itself is unreachable).
+
+D) Keep existing timeline init logic, but refactor so there is ONE place responsible for init
+- If initTimelineTable exists, either:
+  - call it inside initDbTables(), OR
+  - merge it into initDbTables() and delete the duplicate function
+- No duplicate table creation logic across files.
+
+FILES (expected)
+- server/db.ts: add/organize initDbTables + safe hostname parsing/logging
+- server/index.ts: call initDbTables() on boot
+- server/routes.ts: add GET /api/health/db (and keep /api/health/timeline intact)
+
+VALIDATION (must do after changes)
+On the deployed domain:
+1) GET https://civilla.ai/api/health/db -> { ok: true }
+2) GET https://civilla.ai/api/health/timeline -> { ok: true }
+3) Create a timeline event in the UI -> no 500
+4) Refresh -> event persists
+5) Deployment logs show DB host (hostname only) and NO secrets.
+
+DELIVERABLE
+- Report exact file changes with line ranges
+- Confirm no frontend files were modified
+- Confirm DB host logging is hostname-only
+- Confirm both health endpoints return ok:true on the live domain
