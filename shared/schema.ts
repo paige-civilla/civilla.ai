@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -285,3 +285,75 @@ export const updateDocumentSchema = z.object({
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type UpdateDocument = z.infer<typeof updateDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
+
+export const generatedDocumentTemplateTypes = [
+  "declaration",
+  "affidavit",
+  "motion",
+  "memorandum",
+  "certificate_of_service",
+] as const;
+
+export type GeneratedDocumentTemplateType = typeof generatedDocumentTemplateTypes[number];
+
+export const generatedDocuments = pgTable("generated_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  templateType: text("template_type").notNull(),
+  title: text("title").notNull(),
+  payloadJson: jsonb("payload_json").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseCreatedAtIdx: index("gen_docs_user_case_created_at_idx").on(table.userId, table.caseId, table.createdAt),
+}));
+
+export const generateDocumentPayloadSchema = z.object({
+  court: z.object({
+    district: z.string().optional(),
+    county: z.string().min(1, "County is required"),
+    state: z.string().min(1, "State is required"),
+  }),
+  case: z.object({
+    caseNumber: z.string().min(1, "Case number is required"),
+  }),
+  parties: z.object({
+    petitioner: z.string().optional(),
+    respondent: z.string().optional(),
+  }),
+  filer: z.object({
+    fullName: z.string().min(1, "Full name is required"),
+    email: z.string().optional(),
+    addressLine1: z.string().min(1, "Address is required"),
+    addressLine2: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zip: z.string().optional(),
+    phone: z.string().optional(),
+    partyRole: z.string().min(1, "Party role is required"),
+    isSelfRepresented: z.boolean(),
+    attorney: z.object({
+      name: z.string().optional(),
+      firm: z.string().optional(),
+      barNumber: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      address: z.string().optional(),
+    }).optional(),
+  }),
+  document: z.object({
+    title: z.string().optional(),
+    subtitle: z.string().optional(),
+  }).optional(),
+  date: z.string().min(1, "Date is required"),
+});
+
+export const insertGeneratedDocumentSchema = z.object({
+  templateType: z.enum(generatedDocumentTemplateTypes, { required_error: "Template type is required" }),
+  title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+  payload: generateDocumentPayloadSchema,
+});
+
+export type GenerateDocumentPayload = z.infer<typeof generateDocumentPayloadSchema>;
+export type InsertGeneratedDocument = z.infer<typeof insertGeneratedDocumentSchema>;
+export type GeneratedDocument = typeof generatedDocuments.$inferSelect;
