@@ -956,11 +956,18 @@ export async function registerRoutes(
         right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
       };
 
-      const thinBorder = {
-        top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-        left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-        right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+      const captionBorder = {
+        top: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+        left: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+        right: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+      };
+
+      const cellMargins = {
+        top: convertInchesToTwip(0.08),
+        bottom: convertInchesToTwip(0.08),
+        left: convertInchesToTwip(0.1),
+        right: convertInchesToTwip(0.1),
       };
 
       const contactLines: string[] = [];
@@ -991,7 +998,7 @@ export async function registerRoutes(
           }),
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 400, after: 0, line: 240, lineRule: LineRuleType.AUTO },
+        spacing: { before: 480, after: 0, line: 240, lineRule: LineRuleType.AUTO },
       });
 
       const courtSubtitle = new Paragraph({
@@ -1004,7 +1011,7 @@ export async function registerRoutes(
           }),
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 0, after: 400, line: 240, lineRule: LineRuleType.AUTO },
+        spacing: { before: 0, after: 360, line: 240, lineRule: LineRuleType.AUTO },
       });
 
       const captionTable = new Table({
@@ -1035,7 +1042,8 @@ export async function registerRoutes(
                   }),
                 ],
                 width: { size: 50, type: WidthType.PERCENTAGE },
-                borders: thinBorder,
+                borders: captionBorder,
+                margins: cellMargins,
                 verticalAlign: VerticalAlign.TOP,
               }),
               new TableCell({
@@ -1058,7 +1066,8 @@ export async function registerRoutes(
                     : []),
                 ],
                 width: { size: 50, type: WidthType.PERCENTAGE },
-                borders: thinBorder,
+                borders: captionBorder,
+                margins: cellMargins,
                 verticalAlign: VerticalAlign.TOP,
               }),
             ],
@@ -1079,20 +1088,12 @@ export async function registerRoutes(
       const signatureBlock = [
         new Paragraph({
           children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
-          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+          spacing: { before: 480, after: 0, line: 240, lineRule: LineRuleType.AUTO },
         }),
         new Paragraph({
           children: [new TextRun({ text: data.signature.datedLine, font: "Times New Roman", size: 24 })],
           alignment: AlignmentType.LEFT,
-          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
-        }),
-        new Paragraph({
-          children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
-          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
-        }),
-        new Paragraph({
-          children: [new TextRun({ text: "", font: "Times New Roman", size: 24 })],
-          spacing: { after: 0, line: 480, lineRule: LineRuleType.AUTO },
+          spacing: { after: 480, line: 240, lineRule: LineRuleType.AUTO },
         }),
         new Paragraph({
           children: [new TextRun({ text: "_______________________________", font: "Times New Roman", size: 24 })],
