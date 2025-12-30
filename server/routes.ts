@@ -812,6 +812,10 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/health/docx", (_req, res) => {
+    res.json({ ok: true, message: "DOCX generation available" });
+  });
+
   app.get("/api/document-templates", requireAuth, (_req, res) => {
     const templates = documentTemplateKeys.map((key) => ({
       key,
