@@ -133,6 +133,10 @@ export async function initDbTables(): Promise<void> {
       party_role TEXT,
       is_self_represented BOOLEAN NOT NULL DEFAULT true,
       auto_fill_enabled BOOLEAN NOT NULL DEFAULT true,
+      auto_fill_choice_made BOOLEAN NOT NULL DEFAULT false,
+      default_role TEXT NOT NULL DEFAULT 'self_represented',
+      bar_number TEXT,
+      firm_name TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
