@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -19,6 +19,40 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const userProfiles = pgTable("user_profiles", {
+  userId: varchar("user_id").primaryKey().references(() => users.id),
+  fullName: text("full_name"),
+  email: text("email"),
+  addressLine1: text("address_line_1"),
+  addressLine2: text("address_line_2"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  phone: text("phone"),
+  partyRole: text("party_role"),
+  isSelfRepresented: boolean("is_self_represented").notNull().default(true),
+  autoFillEnabled: boolean("auto_fill_enabled").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const upsertUserProfileSchema = z.object({
+  fullName: z.string().max(200).optional().nullable(),
+  email: z.string().max(200).optional().nullable(),
+  addressLine1: z.string().max(200).optional().nullable(),
+  addressLine2: z.string().max(200).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  state: z.string().max(100).optional().nullable(),
+  zip: z.string().max(20).optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  partyRole: z.string().max(50).optional().nullable(),
+  isSelfRepresented: z.boolean().optional(),
+  autoFillEnabled: z.boolean().optional(),
+});
+
+export type UpsertUserProfile = z.infer<typeof upsertUserProfileSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;
 
 export const authMagicLinks = pgTable("auth_magic_links", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

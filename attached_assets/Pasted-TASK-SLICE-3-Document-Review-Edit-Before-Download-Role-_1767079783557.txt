@@ -1,0 +1,132 @@
+TASK: SLICE 3 — Document “Review & Edit” Before Download + Role Selector + Document History (LOW AUTONOMY)
+
+GOAL
+1) Before downloading DOCX, show a “Review & Edit” screen/modal with editable fields:
+   - Name, email, address (multi-line)
+   - Party role (Petitioner/Respondent/Other)
+   - Self-represented toggle (Yes/No)
+   - Court: district/county/state
+   - Case number
+   - Document title/caption (template-specific)
+   - Date (editable)
+2) Add a role selector that affects signature block:
+   - If self-represented: “Pro Se”/“Self-Represented” line
+   - If attorney: show attorney info fields (name, bar number optional, firm, email/phone/address)
+3) Add Document History:
+   - List generated documents (template type + created date + caseId)
+   - Re-download (regenerate) using saved snapshot values
+4) Add basic required-field guardrails:
+   - Cannot download if missing: full name, party role (or “Other” typed), court county/state, case number, date
+
+CONSTRAINTS
+- Do NOT change the DOCX formatting rules already implemented
+- Do NOT change marketing pages
+- Keep it within the existing authenticated app layout styles (tokens)
+
+IMPLEMENTATION
+
+A) DATABASE / SCHEMA
+Edit: shared/schema.ts
+Add table: generated_documents
+Columns:
+- id (uuid PK)
+- userId (uuid FK users.id)
+- caseId (uuid FK cases.id)
+- templateType (text) // "declaration" | "motion" | "proposed_order" | "certificate_of_service"
+- title (text) // display label shown in history
+- payloadJson (jsonb) // snapshot of the exact fields used to generate
+- createdAt (timestamp default now)
+
+Index on (userId, caseId, createdAt desc)
+
+Update server/db.ts initDbTables() to create generated_documents.
+
+B) STORAGE
+Edit: server/storage.ts
+Add methods:
+- listGeneratedDocuments(userId, caseId): returns list ordered newest first
+- createGeneratedDocument(userId, caseId, templateType, title, payloadJson)
+- getGeneratedDocument(userId, docId): ownership enforced
+
+C) ROUTES
+Edit: server/routes.ts
+Add endpoints (requireAuth + ownership):
+1) GET /api/cases/:caseId/documents
+Returns { documents: [...] } list
+
+2) POST /api/cases/:caseId/documents/generate
+Body:
+{
+  templateType,
+  payload: {
+    court: { district, county, state },
+    case: { caseNumber },
+    parties: { petitioner, respondent },
+    filer: {
+      fullName,
+      email,
+      addressLine1, addressLine2, city, state, zip, phone,
+      partyRole, isSelfRepresented,
+      attorney: { name?, firm?, barNumber?, email?, phone?, address? } // only when isSelfRepresented=false
+    },
+    date: "YYYY-MM-DD"
+  }
+}
+Server:
+- Validate required fields
+- Call existing DOCX generator (reuse your current generator function)
+- Save snapshot to generated_documents (payloadJson)
+- Return the DOCX as download (same as current) OR return { ok:true, docId } and a second endpoint for download
+Recommended:
+- Keep current “download docx” response behavior for simplicity, but also store history record before streaming.
+
+3) GET /api/documents/:docId/download
+- Loads stored payloadJson, regenerates docx, streams file download
+
+D) FRONTEND: AppDocuments page
+Edit: client/src/pages/AppDocuments.tsx
+Replace the current immediate download action with:
+
+Flow:
+1) User clicks New Document → chooses template
+2) Slice 2 modal asks autofill accept/skip and prepares initial state
+3) Open “Review & Edit” modal/page:
+   Sections:
+   - Contact Info (name/email/phone/address)
+   - Party Role (dropdown)
+   - Self-represented toggle
+     If toggle = Attorney:
+       show attorney fields (name, firm, email, phone, address, bar number optional)
+   - Case Info (district/county/state, case number)
+   - Date (date input)
+   Buttons:
+   - Primary: “Download DOCX”
+   - Secondary: “Cancel”
+   - Optional text: “This creates a copy in your document history.”
+
+On submit:
+- Validate required fields client-side; show inline errors
+- POST /api/cases/:caseId/documents/generate
+- The response should download a DOCX
+- After success: refresh history list
+
+Document History UI:
+- On page load (when caseId present): GET /api/cases/:caseId/documents
+- Render list cards:
+  - Title
+  - Template type label
+  - Created date/time
+  - Button: “Download again” -> GET /api/documents/:docId/download
+
+E) DELIVERABLE CHECKLIST / TESTS
+- Generate doc works and creates history record
+- History list updates
+- “Download again” regenerates and downloads same content
+- Required field validation blocks download with clear messages
+- Attorney/self-represented toggle changes which fields are shown and sent
+
+OUTPUT REQUIREMENT
+After implementing, report:
+- Files changed + line ranges
+- 10-step test plan (exact clicks)
+- Confirm history persists after refresh and per-case separation works

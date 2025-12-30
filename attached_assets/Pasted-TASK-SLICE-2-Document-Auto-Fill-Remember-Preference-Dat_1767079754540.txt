@@ -1,0 +1,116 @@
+TASK: SLICE 2 — Document Auto-Fill + Remember Preference + Date Confirmation (LOW AUTONOMY)
+
+GOAL
+1) Auto-fill Name, Email, Address, Party Role, and Case info for document templates.
+2) User must explicitly Accept or Skip auto-fill (no silent fill).
+3) Remember the user’s last choice (autoFillEnabled true/false).
+4) Date must be auto-filled ONLY if user accepts auto-fill, and the UI must show it for confirmation.
+
+CONSTRAINTS
+- Do NOT change styling/layout beyond adding the minimal modal and fields needed
+- Do NOT change existing docx formatting rules (Times New Roman 12, double-spaced, pleading header)
+- Keep templates A/B/C and Certificate of Service working
+- Keep routes stable
+- Add only the minimal schema/routes to support profile + preference
+
+IMPLEMENTATION
+
+A) DATABASE / SCHEMA
+Edit: shared/schema.ts
+Add a new table: user_profiles
+Columns:
+- userId (uuid, PK, FK to users.id)
+- fullName (text, nullable)
+- email (text, nullable)  // store user-preferred contact email, default to users.email if empty
+- addressLine1 (text, nullable)
+- addressLine2 (text, nullable)
+- city (text, nullable)
+- state (text, nullable)
+- zip (text, nullable)
+- phone (text, nullable)
+- partyRole (text, nullable) // "Petitioner", "Respondent", "Other"
+- isSelfRepresented (boolean, not null default true)
+- autoFillEnabled (boolean, not null default true)
+- createdAt (timestamp default now)
+- updatedAt (timestamp default now)
+
+Add to server/db.ts initDbTables(): ensure table exists and addColumnIfNotExists for new columns if needed.
+
+B) STORAGE LAYER
+Edit: server/storage.ts
+Add functions:
+- getUserProfile(userId): returns profile or null
+- upsertUserProfile(userId, profilePatch): insert if none, else update; always updates updatedAt
+- getAutoFillPreference(userId): returns boolean (default true if no profile)
+- setAutoFillPreference(userId, enabled): upserts profile with autoFillEnabled
+
+C) API ROUTES
+Edit: server/routes.ts
+Add endpoints (requireAuth):
+1) GET /api/profile
+Returns:
+{
+  profile: {
+    fullName, email, addressLine1, addressLine2, city, state, zip, phone,
+    partyRole, isSelfRepresented, autoFillEnabled
+  }
+}
+If no profile exists, return profile with nulls + autoFillEnabled default true, email default to user.email.
+
+2) PATCH /api/profile
+Accept body:
+{
+  fullName?, email?, addressLine1?, addressLine2?, city?, state?, zip?, phone?,
+  partyRole?, isSelfRepresented?, autoFillEnabled?
+}
+Validate lengths (safe limits):
+- name/email/fields <= 200
+- address lines <= 200
+- city/state <= 100
+- zip <= 20
+- phone <= 30
+Return updated profile.
+
+3) (Optional but helpful) GET /api/profile/autofill
+Return { autoFillEnabled: boolean } from profile (default true)
+
+D) FRONTEND (Documents page)
+Edit: client/src/pages/AppDocuments.tsx (or wherever the “New Document” dropdown lives)
+When user chooses a template:
+1) Fetch /api/profile and current case details (already available on page)
+2) Open a modal:
+Title: “Auto-fill your information?”
+Body: “Would you like Civilla to auto-fill your name, address, email, case details, and today’s date?”
+Buttons:
+- Primary: “Use auto-fill”
+- Secondary: “Skip auto-fill”
+Checkbox: “Remember my choice” (default checked)
+If remember checked:
+- On accept -> PATCH /api/profile { autoFillEnabled: true }
+- On skip -> PATCH /api/profile { autoFillEnabled: false }
+
+If user has autoFillEnabled already saved:
+- Still show the modal, BUT preselect based on preference and include a one-click confirm:
+  “Use auto-fill (recommended)” and “Skip auto-fill”
+This preserves explicit confirmation.
+
+If user chooses Use auto-fill:
+- Prefill the document builder form inputs (Slice 3 will expand); for now, store in local component state:
+  name/email/address fields + party role + isSelfRepresented + date = today (YYYY-MM-DD)
+- Show the date field in the modal summary: “Date to insert: December 30, 2025” with small “Edit” link that opens a date input.
+
+If user chooses Skip auto-fill:
+- Leave fields blank (including date).
+
+E) DELIVERABLE CHECKLIST
+- /api/profile works (GET + PATCH)
+- New Document flow prompts auto-fill confirmation
+- Remember preference works across refresh
+- Date is only filled when auto-fill accepted and is visible for confirmation
+- No console errors
+
+OUTPUT REQUIREMENT
+After implementing, report:
+- Files changed + line ranges
+- How to test (exact clicks)
+- Confirm preference persists and date confirmation appears
