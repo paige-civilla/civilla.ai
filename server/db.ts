@@ -138,5 +138,24 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_timeline_events_event_date ON timeline_events(event_date)`
   ]);
 
+  await initTable("evidence_files", `
+    CREATE TABLE IF NOT EXISTS evidence_files (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      original_name TEXT NOT NULL,
+      storage_key TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes BIGINT NOT NULL,
+      sha256 TEXT,
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_id ON evidence_files(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_files_user_id ON evidence_files(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_created_at ON evidence_files(case_id, created_at)`
+  ]);
+
   console.log("Database table initialization complete");
 }

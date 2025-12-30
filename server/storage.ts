@@ -5,6 +5,7 @@ import {
   cases,
   authIdentities,
   timelineEvents,
+  evidenceFiles,
   type User,
   type InsertUser,
   type Case,
@@ -13,6 +14,8 @@ import {
   type InsertAuthIdentity,
   type TimelineEvent,
   type InsertTimelineEvent,
+  type EvidenceFile,
+  type InsertEvidenceFile,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -35,6 +38,11 @@ export interface IStorage {
   createTimelineEvent(caseId: string, userId: string, data: InsertTimelineEvent): Promise<TimelineEvent>;
   updateTimelineEvent(eventId: string, userId: string, data: Partial<InsertTimelineEvent>): Promise<TimelineEvent | undefined>;
   deleteTimelineEvent(eventId: string, userId: string): Promise<boolean>;
+
+  listEvidenceFiles(caseId: string, userId: string): Promise<EvidenceFile[]>;
+  getEvidenceFile(evidenceId: string, userId: string): Promise<EvidenceFile | undefined>;
+  createEvidenceFile(caseId: string, userId: string, data: InsertEvidenceFile): Promise<EvidenceFile>;
+  deleteEvidenceFile(evidenceId: string, userId: string): Promise<EvidenceFile | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -209,6 +217,54 @@ export class DatabaseStorage implements IStorage {
       .delete(timelineEvents)
       .where(and(eq(timelineEvents.id, eventId), eq(timelineEvents.userId, userId)));
     return true;
+  }
+
+  async listEvidenceFiles(caseId: string, userId: string): Promise<EvidenceFile[]> {
+    const caseRecord = await this.getCase(caseId, userId);
+    if (!caseRecord) {
+      return [];
+    }
+    return db
+      .select()
+      .from(evidenceFiles)
+      .where(and(eq(evidenceFiles.caseId, caseId), eq(evidenceFiles.userId, userId)))
+      .orderBy(desc(evidenceFiles.createdAt));
+  }
+
+  async getEvidenceFile(evidenceId: string, userId: string): Promise<EvidenceFile | undefined> {
+    const [file] = await db
+      .select()
+      .from(evidenceFiles)
+      .where(and(eq(evidenceFiles.id, evidenceId), eq(evidenceFiles.userId, userId)));
+    return file;
+  }
+
+  async createEvidenceFile(caseId: string, userId: string, data: InsertEvidenceFile): Promise<EvidenceFile> {
+    const [file] = await db
+      .insert(evidenceFiles)
+      .values({
+        userId,
+        caseId,
+        originalName: data.originalName,
+        storageKey: data.storageKey,
+        mimeType: data.mimeType,
+        sizeBytes: data.sizeBytes,
+        sha256: data.sha256,
+        notes: data.notes,
+      })
+      .returning();
+    return file;
+  }
+
+  async deleteEvidenceFile(evidenceId: string, userId: string): Promise<EvidenceFile | undefined> {
+    const file = await this.getEvidenceFile(evidenceId, userId);
+    if (!file) {
+      return undefined;
+    }
+    await db
+      .delete(evidenceFiles)
+      .where(and(eq(evidenceFiles.id, evidenceId), eq(evidenceFiles.userId, userId)));
+    return file;
   }
 }
 

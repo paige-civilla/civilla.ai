@@ -2,13 +2,25 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
-import { testDbConnection } from "./db";
-// Turnstile disabled - import commented out
-// import { verifyTurnstile } from "./turnstile";
+import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
+import multer from "multer";
+import crypto from "crypto";
+import { isR2Configured, uploadToR2, getSignedDownloadUrl, deleteFromR2 } from "./r2";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+});
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+function sanitizeFileName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9.-]/g, "_").slice(0, 100);
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -373,6 +385,142 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete timeline event error:", error);
       res.status(500).json({ error: "Failed to delete timeline event" });
+    }
+  });
+
+  app.get("/api/health/evidence", async (_req, res) => {
+    try {
+      const result = await pool.query("SELECT 1 FROM evidence_files LIMIT 1");
+      res.json({ ok: true, r2Configured: isR2Configured() });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const files = await storage.listEvidenceFiles(caseId, userId);
+      res.json({ files, r2Configured: isR2Configured() });
+    } catch (error) {
+      console.error("List evidence error:", error);
+      res.status(500).json({ error: "Failed to list evidence files" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence", requireAuth, upload.single("file"), async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      if (!isR2Configured()) {
+        return res.status(503).json({ error: "Uploads not configured" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "Validation failed", fields: { file: "File is required" } });
+      }
+
+      if (req.file.size > MAX_FILE_SIZE) {
+        return res.status(400).json({ error: "Validation failed", fields: { file: "File must be 25MB or less" } });
+      }
+
+      const mimeType = req.file.mimetype;
+      if (!allowedEvidenceMimeTypes.includes(mimeType as any)) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          fields: { file: "File type not allowed. Allowed: PDF, images, Word documents, text, CSV, ZIP" } 
+        });
+      }
+
+      const fileId = crypto.randomUUID();
+      const sanitizedName = sanitizeFileName(req.file.originalname);
+      const storageKey = `${userId}/${caseId}/${fileId}-${sanitizedName}`;
+
+      const sha256 = crypto.createHash("sha256").update(req.file.buffer).digest("hex");
+
+      await uploadToR2(storageKey, req.file.buffer, mimeType);
+
+      const notes = typeof req.body.notes === "string" ? req.body.notes.slice(0, 10000) : undefined;
+
+      const file = await storage.createEvidenceFile(caseId, userId, {
+        originalName: req.file.originalname,
+        storageKey,
+        mimeType,
+        sizeBytes: req.file.size,
+        sha256,
+        notes,
+      });
+
+      res.status(201).json({ file });
+    } catch (error) {
+      console.error("Upload evidence error:", error);
+      res.status(500).json({ error: "Failed to upload evidence file" });
+    }
+  });
+
+  app.get("/api/evidence/:evidenceId/download", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { evidenceId } = req.params;
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      if (!isR2Configured()) {
+        return res.status(503).json({ error: "Downloads not configured" });
+      }
+
+      const signedUrl = await getSignedDownloadUrl(file.storageKey, 300);
+      res.redirect(302, signedUrl);
+    } catch (error) {
+      console.error("Download evidence error:", error);
+      res.status(500).json({ error: "Failed to download evidence file" });
+    }
+  });
+
+  app.delete("/api/evidence/:evidenceId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { evidenceId } = req.params;
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      if (isR2Configured()) {
+        try {
+          await deleteFromR2(file.storageKey);
+        } catch (r2Error) {
+          console.error("R2 delete error (continuing with DB delete):", r2Error);
+        }
+      }
+
+      const deleted = await storage.deleteEvidenceFile(evidenceId, userId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete file" });
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Delete evidence error:", error);
+      res.status(500).json({ error: "Failed to delete evidence file" });
     }
   });
 
