@@ -269,7 +269,16 @@ export async function registerRoutes(
 
       const parseResult = insertTimelineEventSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ error: "Invalid event data", details: parseResult.error.errors });
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      if (parseResult.data.notes && parseResult.data.notes.length > 10000) {
+        return res.status(400).json({ error: "Validation failed", fields: { notes: "Notes must be 10,000 characters or less" } });
       }
 
       const event = await storage.createTimelineEvent(caseId, userId, parseResult.data);
@@ -296,14 +305,34 @@ export async function registerRoutes(
       }
 
       const { eventDate, title, category, notes } = req.body;
+      const fields: Record<string, string> = {};
       
-      if (title !== undefined && (typeof title !== "string" || title.length === 0 || title.length > 120)) {
-        return res.status(400).json({ error: "Title must be 1-120 characters" });
+      if (title !== undefined) {
+        if (typeof title !== "string" || title.length === 0) {
+          fields.title = "Title is required";
+        } else if (title.length > 120) {
+          fields.title = "Title must be 120 characters or less";
+        }
+      }
+
+      if (eventDate !== undefined) {
+        const parsedDate = new Date(eventDate);
+        if (isNaN(parsedDate.getTime())) {
+          fields.eventDate = "Invalid date";
+        }
       }
 
       const validCategories = ["court", "filing", "communication", "incident", "parenting_time", "expense", "medical", "school", "other"];
       if (category !== undefined && !validCategories.includes(category)) {
-        return res.status(400).json({ error: "Invalid category" });
+        fields.category = "Invalid category";
+      }
+
+      if (notes !== undefined && typeof notes === "string" && notes.length > 10000) {
+        fields.notes = "Notes must be 10,000 characters or less";
+      }
+
+      if (Object.keys(fields).length > 0) {
+        return res.status(400).json({ error: "Validation failed", fields });
       }
 
       const updatedEvent = await storage.updateTimelineEvent(eventId, userId, {
