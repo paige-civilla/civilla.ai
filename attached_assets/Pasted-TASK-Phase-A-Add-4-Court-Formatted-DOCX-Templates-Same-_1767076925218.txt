@@ -1,0 +1,95 @@
+TASK: Phase A — Add 4 Court-Formatted DOCX Templates (Same Format as Declaration-4)
+
+AUTONOMY: LOW
+SCOPE: DOCX GENERATION ONLY (no UI redesign, no styling changes to marketing pages)
+
+GOAL
+Add 4 new court-formatted DOCX templates that match the existing “Declaration-4” output exactly in:
+- Times New Roman, 12 pt
+- Double-spaced body text
+- Same caption/header layout (party info + court info)
+- Same caption table / box alignment
+- Same page numbering placement
+- Same signature block placement and style
+
+NEW TEMPLATES TO ADD
+1) Affidavit
+2) Motion
+3) Memorandum
+4) Certificate of Service
+
+NON-NEGOTIABLE FORMATTING RULES
+- Use the same document builder logic, margins, spacing, fonts, and layout constants as Declaration-4.
+- Do NOT “approximate” formatting. Clone the working template generator and only change text content.
+- Keep everything visually identical except:
+  - Document title (e.g., “AFFIDAVIT”, “MOTION”, etc.)
+  - Default placeholder body text
+
+WHERE THESE SHOULD APPEAR
+On the existing Documents page, in the same place the current “Download DOCX (Court Format)” / generator is exposed.
+If there is a “New Document” modal/dropdown already:
+- Add these 4 items to that selector.
+Otherwise:
+- Add 4 additional buttons near the existing court format action, using the same button style and spacing.
+
+DATA INPUT
+Use the same payload schema currently used for the court doc generator:
+- court: { district, county, state }
+- case: { caseNumber }
+- parties: { petitioner, respondent }
+Also include the user signature block exactly like Declaration-4 supports:
+- If user is pro se: show “Petitioner, Pro Se” (or “Respondent, Pro Se” if that option exists; if not, keep Petitioner)
+- If attorney flow exists: keep placeholder attorney block but do not invent new UI for attorney selection in Phase A
+
+DEFAULT BODY PLACEHOLDERS (COPY)
+AFFIDAVIT body placeholder should start like:
+1. I am the Petitioner in this matter and I am over the age of 18 years.
+2. I have personal knowledge of the facts stated herein.
+3. [Add your statements of fact here, each as a numbered paragraph.]
+4. [Include specific dates, times, and details where relevant.]
+
+MOTION body placeholder should start like:
+COMES NOW the Petitioner, and hereby moves the Court for an Order granting the following relief:
+1. [State the specific relief requested.]
+2. [State additional requests.]
+This Motion is supported by the attached Declaration/Affidavit and any accompanying exhibits.
+
+MEMORANDUM body placeholder should start like:
+I. INTRODUCTION
+[Write a brief introduction.]
+II. FACTS
+[Summarize the relevant facts.]
+III. ARGUMENT
+[Explain the legal argument and why the Court should grant the requested relief.]
+IV. CONCLUSION
+[State the requested outcome.]
+
+CERTIFICATE OF SERVICE body placeholder should start like:
+I certify that on this ____ day of __________, 2025, I served a true and correct copy of the foregoing [Document Title] upon:
+[Name]
+[Address]
+via [ ] U.S. Mail  [ ] Hand Delivery  [ ] Email  [ ] Other: __________
+
+DATED this ____ day of __________, 2025.
+[Your Full Name]
+Petitioner, Pro Se
+
+BACKEND/API
+- If the current generator endpoint only supports “Declaration”, extend it to accept a template type parameter, e.g. templateType = "declaration" | "affidavit" | "motion" | "memorandum" | "certificate_of_service"
+- Or create separate endpoints per template if simpler, but keep it consistent and minimal.
+
+VALIDATION TESTS (MUST PASS)
+1) Generate each of the 4 templates and open in Word:
+   - Font is Times New Roman 12 everywhere (including caption text)
+   - Body is double-spaced
+   - Caption layout matches Declaration-4
+   - Signature block matches Declaration-4
+   - Page number placement matches Declaration-4
+2) No console errors in browser
+3) No server errors during generation
+
+DELIVERABLE
+- Report exact files changed + line ranges
+- Confirm templates are accessible from Documents page
+- Provide the route/endpoint(s) and example request payload(s)
+- Confirm formatting matches Declaration-4 (not “close” — identical)

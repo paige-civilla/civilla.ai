@@ -146,11 +146,76 @@ export default function AppDocuments() {
   });
 
   const [isDownloadingCourtDoc, setIsDownloadingCourtDoc] = useState(false);
+  const [isCourtDocDialogOpen, setIsCourtDocDialogOpen] = useState(false);
+  const [selectedCourtDocType, setSelectedCourtDocType] = useState("");
 
-  const handleDownloadCourtFormat = async () => {
+  type CourtDocType = "declaration" | "affidavit" | "motion" | "memorandum" | "certificate_of_service";
+
+  const courtDocTemplates: Record<CourtDocType, { title: string; body: string[] }> = {
+    declaration: {
+      title: "DECLARATION",
+      body: [
+        "1. I am the Petitioner in this matter and I am over the age of 18 years.",
+        "2. I have personal knowledge of the facts stated herein.",
+        "3. [Add your statements of fact here, each as a numbered paragraph.]",
+        "4. [Include specific dates, times, and details where relevant.]",
+      ],
+    },
+    affidavit: {
+      title: "AFFIDAVIT",
+      body: [
+        "1. I am the Petitioner in this matter and I am over the age of 18 years.",
+        "2. I have personal knowledge of the facts stated herein.",
+        "3. [Add your statements of fact here, each as a numbered paragraph.]",
+        "4. [Include specific dates, times, and details where relevant.]",
+      ],
+    },
+    motion: {
+      title: "MOTION",
+      body: [
+        "COMES NOW the Petitioner, and hereby moves the Court for an Order granting the following relief:",
+        "1. [State the specific relief requested.]",
+        "2. [State additional requests.]",
+        "This Motion is supported by the attached Declaration/Affidavit and any accompanying exhibits.",
+      ],
+    },
+    memorandum: {
+      title: "MEMORANDUM",
+      body: [
+        "I. INTRODUCTION",
+        "[Write a brief introduction.]",
+        "II. FACTS",
+        "[Summarize the relevant facts.]",
+        "III. ARGUMENT",
+        "[Explain the legal argument and why the Court should grant the requested relief.]",
+        "IV. CONCLUSION",
+        "[State the requested outcome.]",
+      ],
+    },
+    certificate_of_service: {
+      title: "CERTIFICATE OF SERVICE",
+      body: [
+        "I certify that on this ____ day of __________, 2025, I served a true and correct copy of the foregoing [Document Title] upon:",
+        "[Name]",
+        "[Address]",
+        "via [ ] U.S. Mail  [ ] Hand Delivery  [ ] Email  [ ] Other: __________",
+      ],
+    },
+  };
+
+  const courtDocOptions = [
+    { value: "declaration", label: "Declaration" },
+    { value: "affidavit", label: "Affidavit" },
+    { value: "motion", label: "Motion" },
+    { value: "memorandum", label: "Memorandum" },
+    { value: "certificate_of_service", label: "Certificate of Service" },
+  ];
+
+  const handleDownloadCourtFormat = async (docType: CourtDocType) => {
     if (!currentCase) return;
     setIsDownloadingCourtDoc(true);
     try {
+      const template = courtDocTemplates[docType];
       const payload = {
         court: {
           district: "Seventh",
@@ -165,7 +230,7 @@ export default function AppDocuments() {
           respondent: "[Respondent Name]",
         },
         document: {
-          title: "DECLARATION",
+          title: template.title,
           subtitle: "",
         },
         contactBlock: {
@@ -178,12 +243,7 @@ export default function AppDocuments() {
           firm: "",
         },
         body: {
-          paragraphs: [
-            "1. I am the Petitioner in this matter and I am over the age of 18 years.",
-            "2. I have personal knowledge of the facts stated herein.",
-            "3. [Add your statements of fact here, each as a numbered paragraph.]",
-            "4. [Include specific dates, times, and details where relevant.]",
-          ],
+          paragraphs: template.body,
         },
         signature: {
           datedLine: "DATED this __ day of ______, 2025.",
@@ -191,7 +251,7 @@ export default function AppDocuments() {
           signerTitle: "Petitioner, Pro Se",
         },
         footer: {
-          docName: "DECLARATION",
+          docName: template.title,
           showPageNumbers: true,
         },
       };
@@ -211,12 +271,14 @@ export default function AppDocuments() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "DECLARATION.docx";
+      a.download = `${template.title.replace(/\s+/g, "_")}.docx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast({ title: "Court document downloaded" });
+      toast({ title: `${template.title} downloaded` });
+      setIsCourtDocDialogOpen(false);
+      setSelectedCourtDocType("");
     } catch (error) {
       toast({ title: "Failed to download court document", variant: "destructive" });
     } finally {
@@ -314,14 +376,13 @@ export default function AppDocuments() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
-                onClick={handleDownloadCourtFormat}
-                disabled={isDownloadingCourtDoc}
+                onClick={() => setIsCourtDocDialogOpen(true)}
                 variant="outline"
                 className="font-sans"
                 data-testid="button-download-court-docx"
               >
                 <FileDown className="w-4 h-4 mr-2" />
-                {isDownloadingCourtDoc ? "Downloading..." : "Download DOCX (Court Format)"}
+                Download DOCX (Court Format)
               </Button>
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
@@ -551,6 +612,53 @@ export default function AppDocuments() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isCourtDocDialogOpen} onOpenChange={setIsCourtDocDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Download Court Document</DialogTitle>
+            <DialogDescription>Select a court document template to download in DOCX format.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="court-doc-type">Document Type</Label>
+              <Select value={selectedCourtDocType} onValueChange={setSelectedCourtDocType}>
+                <SelectTrigger id="court-doc-type" data-testid="select-court-doc-type">
+                  <SelectValue placeholder="Select a document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courtDocOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} data-testid={`option-court-doc-${opt.value}`}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCourtDocDialogOpen(false);
+                setSelectedCourtDocType("");
+              }}
+              data-testid="button-cancel-court-doc"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => selectedCourtDocType && handleDownloadCourtFormat(selectedCourtDocType as CourtDocType)}
+              disabled={!selectedCourtDocType || isDownloadingCourtDoc}
+              className="bg-bush text-white"
+              data-testid="button-confirm-court-doc"
+            >
+              <FileDown className="w-4 h-4 mr-2" />
+              {isDownloadingCourtDoc ? "Downloading..." : "Download"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
