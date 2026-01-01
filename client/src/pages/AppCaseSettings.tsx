@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,28 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CaseChild } from "@shared/schema";
 
+const US_STATES = [
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
+  "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
+  "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
+  "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
+  "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
+  "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+  "Wisconsin", "Wyoming"
+];
+
+const CASE_TYPES = [
+  "Custody",
+  "Divorce",
+  "Child Support",
+  "Paternity",
+  "Guardianship",
+  "Adoption",
+  "Visitation",
+  "Other"
+];
+
 export default function AppCaseSettings() {
   const params = useParams() as { caseId?: string };
   const caseId = params.caseId || "";
@@ -43,6 +66,14 @@ export default function AppCaseSettings() {
     lastName: "",
     dateOfBirth: "",
     notes: "",
+  });
+
+  const [editCaseDialogOpen, setEditCaseDialogOpen] = useState(false);
+  const [caseForm, setCaseForm] = useState({
+    title: "",
+    caseType: "",
+    state: "",
+    county: "",
   });
 
   const { data: caseData, isLoading: caseLoading } = useQuery<{ case: Case }>({
@@ -101,6 +132,41 @@ export default function AppCaseSettings() {
       toast({ title: "Failed to remove child", variant: "destructive" });
     },
   });
+
+  const updateCaseMutation = useMutation({
+    mutationFn: async (data: typeof caseForm) => {
+      return apiRequest("PATCH", `/api/cases/${caseId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      toast({ title: "Case updated successfully" });
+      setEditCaseDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update case", variant: "destructive" });
+    },
+  });
+
+  const openEditCaseDialog = () => {
+    if (caseRecord) {
+      setCaseForm({
+        title: caseRecord.title || "",
+        caseType: caseRecord.caseType || "",
+        state: caseRecord.state || "",
+        county: caseRecord.county || "",
+      });
+      setEditCaseDialogOpen(true);
+    }
+  };
+
+  const handleCaseSubmit = () => {
+    if (!caseForm.title.trim()) {
+      toast({ title: "Case title is required", variant: "destructive" });
+      return;
+    }
+    updateCaseMutation.mutate(caseForm);
+  };
 
   const openAddChildDialog = () => {
     setEditingChild(null);
@@ -196,7 +262,17 @@ export default function AppCaseSettings() {
 
         {caseRecord && (
           <div className="mb-10">
-            <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-4">Case Information</h2>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <h2 className="font-heading font-bold text-xl text-neutral-darkest">Case Information</h2>
+              <Button
+                variant="outline"
+                onClick={openEditCaseDialog}
+                data-testid="button-edit-case"
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit Case
+              </Button>
+            </div>
             <Card className="bg-white">
               <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -311,6 +387,84 @@ export default function AppCaseSettings() {
           )}
         </div>
       </div>
+
+      <Dialog open={editCaseDialogOpen} onOpenChange={setEditCaseDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Case</DialogTitle>
+            <DialogDescription>
+              Update your case information.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="case-title">Case Title *</Label>
+              <Input
+                id="case-title"
+                value={caseForm.title}
+                onChange={(e) => setCaseForm({ ...caseForm, title: e.target.value })}
+                placeholder="e.g., Smith v. Smith"
+                data-testid="input-case-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="case-type">Case Type</Label>
+              <Select
+                value={caseForm.caseType}
+                onValueChange={(value) => setCaseForm({ ...caseForm, caseType: value })}
+              >
+                <SelectTrigger data-testid="select-case-type">
+                  <SelectValue placeholder="Select case type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CASE_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="case-state">State</Label>
+              <Select
+                value={caseForm.state}
+                onValueChange={(value) => setCaseForm({ ...caseForm, state: value })}
+              >
+                <SelectTrigger data-testid="select-case-state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((state) => (
+                    <SelectItem key={state} value={state}>{state}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="case-county">County</Label>
+              <Input
+                id="case-county"
+                value={caseForm.county}
+                onChange={(e) => setCaseForm({ ...caseForm, county: e.target.value })}
+                placeholder="e.g., Los Angeles County"
+                data-testid="input-case-county"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCaseDialogOpen(false)} data-testid="button-cancel-case-edit">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCaseSubmit}
+              disabled={updateCaseMutation.isPending}
+              className="bg-bush text-white"
+              data-testid="button-save-case"
+            >
+              {updateCaseMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={childDialogOpen} onOpenChange={setChildDialogOpen}>
         <DialogContent className="sm:max-w-md">
