@@ -305,8 +305,10 @@ export default function AppDocuments() {
   const [isCourtDocDialogOpen, setIsCourtDocDialogOpen] = useState(false);
   const [selectedCourtDocType, setSelectedCourtDocType] = useState("");
   
+  type DocStep = "draft" | "review" | "filing";
+  const [docStep, setDocStep] = useState<DocStep>("draft");
+  
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const activeStep: 1 | 2 | 3 = isReviewModalOpen ? 2 : 1;
   const [reviewPayload, setReviewPayload] = useState<GenerateDocumentPayload | null>(null);
   const [reviewDocType, setReviewDocType] = useState<CourtDocType | null>(null);
   const [isBodyExpanded, setIsBodyExpanded] = useState(false);
@@ -746,50 +748,54 @@ export default function AppDocuments() {
                 {currentCase.caseType && <span>{currentCase.caseType}</span>}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={() => setIsCourtDocDialogOpen(true)}
-                  variant="outline"
-                  className="font-sans"
-                  data-testid="button-download-court-docx"
-                >
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Prepare Court Filing (DOCX)
-                </Button>
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-bush text-white font-sans"
-                data-testid="button-create-document"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Document
-              </Button>
-              </div>
-              <p className="font-sans text-xs text-neutral-darkest/60 max-w-xs text-right">
-                Use steps 1-3 below to create a draft, review your details, and download a court-formatted DOCX.
-              </p>
-            </div>
           </div>
 
-          <StepStrip activeStep={activeStep} />
-
-          <Tabs defaultValue="editable" className="w-full mt-4">
-            <TabsList className="mb-4">
-              <TabsTrigger value="editable" data-testid="tab-editable-documents">
-                <FileText className="w-4 h-4 mr-2" />
-                Draft Documents ({documents.length})
+          <Tabs value={docStep} onValueChange={(v) => setDocStep(v as DocStep)} className="w-full">
+            <TabsList className="w-full grid grid-cols-1 md:grid-cols-3 gap-2 bg-transparent p-0 h-auto">
+              <TabsTrigger
+                value="draft"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-bush data-[state=active]:bg-bush/5"
+                data-testid="tab-step-1-draft"
+              >
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">1</span>
+                Draft
               </TabsTrigger>
-              <TabsTrigger value="history" data-testid="tab-document-history">
-                <History className="w-4 h-4 mr-2" />
-                Court Filings (DOCX) ({generatedDocuments.length})
+
+              <TabsTrigger
+                value="review"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-bush data-[state=active]:bg-bush/5"
+                data-testid="tab-step-2-review"
+              >
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">2</span>
+                Review
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="filing"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-bush data-[state=active]:bg-bush/5"
+                data-testid="tab-step-3-filing"
+              >
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">3</span>
+                Court Filing (DOCX)
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="editable">
-              <div className="mb-4">
-                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Step 1 of 3: Draft Documents</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">Create or edit your draft here. This is not court-formatted.</p>
+            <TabsContent value="draft" className="mt-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 1: Create or edit your draft</h2>
+                  <p className="font-sans text-sm text-neutral-darkest/70">
+                    Drafts are your working documents. They are not court-formatted.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-bush text-white font-sans"
+                  data-testid="button-create-document"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Document
+                </Button>
               </div>
               {docsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -881,10 +887,42 @@ export default function AppDocuments() {
               )}
             </TabsContent>
 
-            <TabsContent value="history">
+            <TabsContent value="review" className="mt-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 2: Review details before court format</h2>
+                  <p className="font-sans text-sm text-neutral-darkest/70">
+                    Confirm your name, address, role (self-represented vs attorney), and the date before generating the DOCX.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setIsCourtDocDialogOpen(true)}
+                  variant="outline"
+                  className="font-sans"
+                  data-testid="button-open-court-doc-dialog"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Prepare Court Filing (DOCX)
+                </Button>
+              </div>
+
+              <div className="rounded-lg border border-neutral-light bg-white p-4">
+                <p className="font-sans text-sm text-neutral-darkest/80 mb-2 font-medium">
+                  What happens next:
+                </p>
+                <ol className="list-decimal pl-5 font-sans text-sm text-neutral-darkest/70 space-y-1">
+                  <li>Select the document type (Declaration, Motion, Proposed Order, Certificate of Service)</li>
+                  <li>Review and edit the court caption + your information</li>
+                  <li>Confirm the date</li>
+                  <li>Download the court-formatted DOCX</li>
+                </ol>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="filing" className="mt-6">
               <div className="mb-4">
-                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Step 3 of 3: Court Filings (DOCX)</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">These are your generated court-formatted DOCX files. Re-download anytime.</p>
+                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Your court-formatted DOCX files</h2>
+                <p className="font-sans text-sm text-neutral-darkest/70">These are the generated court-formatted versions you can re-download anytime.</p>
               </div>
               {genDocsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -900,12 +938,12 @@ export default function AppDocuments() {
                     Documents you generate and download will appear here for easy re-downloading.
                   </p>
                   <Button
-                    onClick={() => setIsCourtDocDialogOpen(true)}
+                    onClick={() => { setDocStep("review"); }}
                     className="bg-bush text-white font-sans"
-                    data-testid="button-download-court-docx-history"
+                    data-testid="button-go-to-step-2"
                   >
                     <FileDown className="w-4 h-4 mr-2" />
-                    Prepare Court Filing
+                    Go to Step 2: Review
                   </Button>
                 </div>
               ) : (
