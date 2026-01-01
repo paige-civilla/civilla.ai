@@ -353,7 +353,7 @@ export default function AppDashboard() {
 
           <div className="w-full flex flex-col lg:flex-row gap-8">
             <div className="lg:w-[380px] flex-shrink-0">
-              <div className="bg-[hsl(var(--app-surface))] rounded-lg border border-[hsl(var(--app-panel-border))] overflow-hidden">
+              <div className="bg-card rounded-lg border border-[#A2BEC2] overflow-hidden">
                 <CaseMonthCalendar caseId={primaryCase.id} />
                 
                 <div className="px-4 pb-4">
@@ -430,7 +430,7 @@ export default function AppDashboard() {
                     <Link
                       key={module.title}
                       href={module.href}
-                      className="relative bg-[hsl(var(--app-surface))] border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
+                      className="relative bg-card border border-[#A2BEC2] rounded-lg p-5 hover:bg-muted cursor-pointer block transition-colors"
                       data-testid={`module-card-${module.title.toLowerCase()}`}
                     >
                       <div className="w-10 h-10 rounded-md bg-[hsl(var(--muted))] flex items-center justify-center mb-3">
