@@ -1,0 +1,394 @@
+REPLIT AGENT TASK: Slice 4B (Tasks + Deadlines Foundation) — FULL IMPLEMENTATION
+
+AUTONOMY: LOW
+GOAL:
+- Add Tasks and Deadlines modules (CRUD) for a case.
+- Follow existing patterns used by Timeline and Evidence.
+- No marketing page changes. No navbar redesign.
+- Must work on civilla.ai after publish.
+
+ACCEPTANCE TESTS (LIVE DOMAIN):
+1) GET /api/health/tasks -> { ok:true } when table exists
+2) GET /api/health/deadlines -> { ok:true } when table exists
+3) Logged in:
+   - /app/tasks/:caseId loads, shows list, can create, edit, complete, delete a task.
+   - /app/deadlines/:caseId loads, shows list, can create, edit, mark done, delete a deadline.
+4) Ownership enforced: user cannot read/write another user’s case items.
+
+===========================================================
+A) BACKEND: SCHEMA
+===========================================================
+
+FILE: shared/schema.ts
+
+1) Add these categories near other const arrays:
+
+export const taskStatuses = ["open", "completed"] as const;
+export type TaskStatus = typeof taskStatuses[number];
+
+export const deadlineStatuses = ["upcoming", "done"] as const;
+export type DeadlineStatus = typeof deadlineStatuses[number];
+
+2) Add the tables (place after timelineEvents or evidenceFiles, before documents is fine):
+
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("open"),
+
+  dueDate: timestamp("due_date"), // optional
+  priority: integer("priority").notNull().default(2), // 1=high,2=normal,3=low
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("tasks_case_idx").on(table.caseId),
+  userIdx: index("tasks_user_idx").on(table.userId),
+  caseDueIdx: index("tasks_case_due_idx").on(table.caseId, table.dueDate),
+  caseStatusIdx: index("tasks_case_status_idx").on(table.caseId, table.status),
+}));
+
+export const deadlines = pgTable("deadlines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+
+  title: text("title").notNull(),
+  notes: text("notes"),
+  status: text("status").notNull().default("upcoming"),
+
+  dueDate: timestamp("due_date").notNull(),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("deadlines_case_idx").on(table.caseId),
+  userIdx: index("deadlines_user_idx").on(table.userId),
+  caseDueIdx: index("deadlines_case_due_idx").on(table.caseId, table.dueDate),
+  caseStatusIdx: index("deadlines_case_status_idx").on(table.caseId, table.status),
+}));
+
+3) Add Zod schemas/types:
+
+export const insertTaskSchema = createInsertSchema(tasks)
+  .pick({
+    title: true,
+    description: true,
+    status: true,
+    dueDate: true,
+    priority: true,
+  })
+  .extend({
+    title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+    description: z.string().max(5000, "Description must be 5,000 characters or less").optional().nullable(),
+    status: z.enum(taskStatuses).optional().default("open"),
+    dueDate: z.coerce.date().optional().nullable(),
+    priority: z.number().int().min(1).max(3).optional().default(2),
+  });
+
+export const updateTaskSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  status: z.enum(taskStatuses).optional(),
+  dueDate: z.coerce.date().optional().nullable(),
+  priority: z.number().int().min(1).max(3).optional(),
+});
+
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type UpdateTask = z.infer<typeof updateTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
+
+export const insertDeadlineSchema = createInsertSchema(deadlines)
+  .pick({
+    title: true,
+    notes: true,
+    status: true,
+    dueDate: true,
+  })
+  .extend({
+    title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+    notes: z.string().max(10000, "Notes must be 10,000 characters or less").optional().nullable(),
+    status: z.enum(deadlineStatuses).optional().default("upcoming"),
+    dueDate: z.coerce.date({ required_error: "Due date is required" }),
+  });
+
+export const updateDeadlineSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  notes: z.string().max(10000).optional().nullable(),
+  status: z.enum(deadlineStatuses).optional(),
+  dueDate: z.coerce.date().optional(),
+});
+
+export type InsertDeadline = z.infer<typeof insertDeadlineSchema>;
+export type UpdateDeadline = z.infer<typeof updateDeadlineSchema>;
+export type Deadline = typeof deadlines.$inferSelect;
+
+===========================================================
+B) BACKEND: DB INIT (AUTO-CREATE TABLES)
+===========================================================
+
+FILE: server/db.ts
+
+Inside initDbTables(), after timeline_events and before documents is fine, add:
+
+await initTable("tasks", `
+  CREATE TABLE IF NOT EXISTS tasks (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    user_id VARCHAR(255) NOT NULL,
+    case_id VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'open',
+    due_date TIMESTAMP,
+    priority INTEGER NOT NULL DEFAULT 2,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )
+`, [
+  `CREATE INDEX IF NOT EXISTS idx_tasks_case_id ON tasks(case_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_tasks_case_due ON tasks(case_id, due_date)`,
+  `CREATE INDEX IF NOT EXISTS idx_tasks_case_status ON tasks(case_id, status)`
+]);
+
+await initTable("deadlines", `
+  CREATE TABLE IF NOT EXISTS deadlines (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    user_id VARCHAR(255) NOT NULL,
+    case_id VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'upcoming',
+    due_date TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )
+`, [
+  `CREATE INDEX IF NOT EXISTS idx_deadlines_case_id ON deadlines(case_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_deadlines_user_id ON deadlines(user_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_deadlines_case_due ON deadlines(case_id, due_date)`,
+  `CREATE INDEX IF NOT EXISTS idx_deadlines_case_status ON deadlines(case_id, status)`
+]);
+
+===========================================================
+C) BACKEND: STORAGE METHODS (OWNERSHIP ENFORCED)
+===========================================================
+
+FILE: server/storage.ts
+
+1) Update imports from @shared/schema to include:
+tasks, deadlines,
+type Task, type InsertTask, type UpdateTask,
+type Deadline, type InsertDeadline, type UpdateDeadline
+
+2) Update IStorage interface with:
+
+listTasks(userId: string, caseId: string): Promise<Task[]>;
+createTask(userId: string, caseId: string, data: InsertTask): Promise<Task>;
+updateTask(userId: string, taskId: string, data: UpdateTask): Promise<Task | undefined>;
+deleteTask(userId: string, taskId: string): Promise<boolean>;
+
+listDeadlines(userId: string, caseId: string): Promise<Deadline[]>;
+createDeadline(userId: string, caseId: string, data: InsertDeadline): Promise<Deadline>;
+updateDeadline(userId: string, deadlineId: string, data: UpdateDeadline): Promise<Deadline | undefined>;
+deleteDeadline(userId: string, deadlineId: string): Promise<boolean>;
+
+3) Implement in DatabaseStorage (use the same patterns as timeline/evidence):
+
+async listTasks(userId: string, caseId: string): Promise<Task[]> {
+  const rows = await db.select().from(tasks)
+    .where(and(eq(tasks.userId, userId), eq(tasks.caseId, caseId)))
+    .orderBy(desc(tasks.createdAt));
+  return rows;
+}
+
+async createTask(userId: string, caseId: string, data: InsertTask): Promise<Task> {
+  const [row] = await db.insert(tasks)
+    .values({
+      userId,
+      caseId,
+      title: data.title,
+      description: data.description ?? null,
+      status: data.status ?? "open",
+      dueDate: data.dueDate ?? null,
+      priority: data.priority ?? 2,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+async updateTask(userId: string, taskId: string, data: UpdateTask): Promise<Task | undefined> {
+  const [row] = await db.update(tasks)
+    .set({
+      ...("title" in data ? { title: data.title } : {}),
+      ...("description" in data ? { description: data.description ?? null } : {}),
+      ...("status" in data ? { status: data.status } : {}),
+      ...("dueDate" in data ? { dueDate: data.dueDate ?? null } : {}),
+      ...("priority" in data ? { priority: data.priority } : {}),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+    .returning();
+  return row;
+}
+
+async deleteTask(userId: string, taskId: string): Promise<boolean> {
+  const res = await db.delete(tasks).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId))).returning();
+  return res.length > 0;
+}
+
+async listDeadlines(userId: string, caseId: string): Promise<Deadline[]> {
+  const rows = await db.select().from(deadlines)
+    .where(and(eq(deadlines.userId, userId), eq(deadlines.caseId, caseId)))
+    .orderBy(asc(deadlines.dueDate));
+  return rows;
+}
+
+async createDeadline(userId: string, caseId: string, data: InsertDeadline): Promise<Deadline> {
+  const [row] = await db.insert(deadlines)
+    .values({
+      userId,
+      caseId,
+      title: data.title,
+      notes: data.notes ?? null,
+      status: data.status ?? "upcoming",
+      dueDate: data.dueDate,
+      updatedAt: new Date(),
+    })
+    .returning();
+  return row;
+}
+
+async updateDeadline(userId: string, deadlineId: string, data: UpdateDeadline): Promise<Deadline | undefined> {
+  const [row] = await db.update(deadlines)
+    .set({
+      ...("title" in data ? { title: data.title } : {}),
+      ...("notes" in data ? { notes: data.notes ?? null } : {}),
+      ...("status" in data ? { status: data.status } : {}),
+      ...("dueDate" in data ? { dueDate: data.dueDate } : {}),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(deadlines.id, deadlineId), eq(deadlines.userId, userId)))
+    .returning();
+  return row;
+}
+
+async deleteDeadline(userId: string, deadlineId: string): Promise<boolean> {
+  const res = await db.delete(deadlines).where(and(eq(deadlines.id, deadlineId), eq(deadlines.userId, userId))).returning();
+  return res.length > 0;
+}
+
+===========================================================
+D) BACKEND: ROUTES
+===========================================================
+
+FILE: server/routes.ts
+
+1) Update shared schema imports to include:
+insertTaskSchema, updateTaskSchema, tasks,
+insertDeadlineSchema, updateDeadlineSchema, deadlines
+
+2) Add health endpoints near other /api/health/* routes:
+
+app.get("/api/health/tasks", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1 FROM tasks LIMIT 1");
+    return res.json({ ok: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return res.status(500).json({ ok: false, error: "Tasks table unavailable" });
+  }
+});
+
+app.get("/api/health/deadlines", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1 FROM deadlines LIMIT 1");
+    return res.json({ ok: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return res.status(500).json({ ok: false, error: "Deadlines table unavailable" });
+  }
+});
+
+3) Add endpoints (pattern-match timeline/evidence ownership checks):
+
+TASKS:
+GET    /api/cases/:caseId/tasks
+POST   /api/cases/:caseId/tasks
+PATCH  /api/tasks/:taskId
+DELETE /api/tasks/:taskId
+
+DEADLINES:
+GET    /api/cases/:caseId/deadlines
+POST   /api/cases/:caseId/deadlines
+PATCH  /api/deadlines/:deadlineId
+DELETE /api/deadlines/:deadlineId
+
+Implementation requirements:
+- All requireAuth
+- For list/create: verify case ownership via storage.getCase(caseId, userId), 404 if not found
+- Use Zod schemas; return structured validation errors { error:"Validation failed", fields:{...} } like timeline improvements
+- On update/delete: enforce ownership via storage update/delete methods (they check userId)
+
+===========================================================
+E) FRONTEND: APP TASKS PAGE (CRUD)
+===========================================================
+
+FILE: client/src/pages/AppTasks.tsx
+
+Replace the skeleton with a working module (copy patterns from AppTimeline/AppEvidence):
+- Fetch current case GET /api/cases/:caseId
+- Fetch tasks GET /api/cases/:caseId/tasks
+- Simple form: title, description, due date (optional), priority (1/2/3)
+- List tasks with:
+  - checkbox toggle completed (PATCH /api/tasks/:taskId { status })
+  - edit button (inline) for title/description/dueDate/priority
+  - delete button
+- Keep styling consistent with existing app pages
+- Must not change overall layout wrapper pattern (use AppLayout + case header like other modules)
+
+===========================================================
+F) FRONTEND: APP DEADLINES PAGE (CRUD)
+===========================================================
+
+FILE: client/src/pages/AppDeadlines.tsx
+
+Replace the skeleton with a working module:
+- Fetch current case GET /api/cases/:caseId
+- Fetch deadlines GET /api/cases/:caseId/deadlines
+- Create form: title, due date (required), notes (optional)
+- List deadlines sorted by due date; show status pill (upcoming/done)
+- Actions:
+  - Mark done / mark upcoming toggle (PATCH /api/deadlines/:deadlineId { status })
+  - Edit inline (title, dueDate, notes)
+  - Delete
+
+===========================================================
+G) ROUTING IS ALREADY PRESENT
+===========================================================
+Do NOT add new routes if the skeleton routes already exist.
+Just ensure the pages now work.
+
+===========================================================
+H) FINAL
+===========================================================
+After implementing:
+1) Restart workflow
+2) Run quick local tests:
+   - GET /api/health/tasks
+   - GET /api/health/deadlines
+3) Publish
+4) Confirm on civilla.ai:
+   - /app/tasks/:caseId works
+   - /app/deadlines/:caseId works
+
+DELIVERABLE BACK TO PAIGE:
+- Exact files changed + line ranges
+- Confirm endpoints work
+- Confirm ownership enforcement
+- Confirm no marketing UI changed

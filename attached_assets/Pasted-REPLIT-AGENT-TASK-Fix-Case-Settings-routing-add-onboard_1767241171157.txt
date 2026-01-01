@@ -1,0 +1,80 @@
+REPLIT AGENT TASK: Fix Case Settings routing, add onboarding entry point, close Lexi on outside click, update dashboard title copy, convert AppNavbar menu to hover
+
+SCOPE: Client-side fixes + route wiring only. No backend required unless the Case Settings page doesn’t exist yet.
+
+A) FIX "CASE SETTINGS" MENU ROUTE
+1) Find the AppNavbar dropdown menu items.
+   Likely file: client/src/components/AppNavbar.tsx (or similar).
+2) Locate the Case Settings item. It is currently navigating to the case dashboard route.
+3) Update it to navigate to:
+   /app/case-settings/:caseId
+   (If your app uses a different pattern like /app/cases/:caseId/settings, use that instead — but be consistent with Router routes.)
+
+4) Ensure there is a matching route in your router:
+   - Find routing file (likely client/src/App.tsx or client/src/router.tsx).
+   - Add route:
+     path="/app/case-settings/:caseId"
+     element={<AppCaseSettings />}  (or whatever component exists/you create below)
+
+5) If AppCaseSettings page does not exist, create a placeholder:
+   File: client/src/pages/AppCaseSettings.tsx
+   - Use AppLayout
+   - Show heading "Case Settings"
+   - Show basic case fields (title, state, county, caseType) as read-only for now (or editable if already built elsewhere)
+   - This prevents dead routing and confirms nav works.
+
+B) ONBOARDING: DEFINE WHERE IT STARTS
+Goal: After login, if user has no cases, send them to create case page.
+
+1) Identify the first authenticated landing page after login:
+   - likely /app/dashboard or /app/cases
+2) Add a guard:
+   - If cases query returns empty array, redirect to:
+     /app/cases/new   (or whatever your create-case route is)
+3) If /app/cases/new does not exist, route them to /app/cases and open the create-case dialog automatically if you already have one.
+
+C) LEXI: CLICK OUTSIDE CLOSES PANEL
+1) Locate Lexi panel component (or where it is rendered globally in AppLayout).
+2) When Lexi is open, render a full-screen overlay BEHIND Lexi but ABOVE the page:
+   <div className="fixed inset-0 bg-black/0 z-40" onClick={() => setIsLexiOpen(false)} />
+   - z-index: overlay should be less than Lexi panel (Lexi panel should be z-50)
+   - overlay background should be transparent (bg-black/0) so it doesn’t dim.
+
+3) Ensure Lexi panel container has z-50 and is positioned fixed on right.
+
+D) DASHBOARD COPY CHANGE
+1) Find the dashboard/case workspace page component (likely client/src/pages/AppCase.tsx).
+2) Replace:
+   "You're in your Case Workspace"
+   with:
+   "Your Case Workspace"
+3) Capitalization exactly: "Your Case Workspace"
+4) Leave the subtitle line as-is unless there is another instruction.
+
+E) APPNAVBAR MENU: HOVER TO OPEN (DESKTOP) + CLICK STILL WORKS (MOBILE)
+1) In AppNavbar dropdown:
+   - Add state: const [open, setOpen] = useState(false)
+2) On the menu trigger wrapper (NOT the button alone), implement:
+   onMouseEnter={() => setOpen(true)}
+   onMouseLeave={() => setOpen(false)}
+3) Keep click toggle for mobile:
+   onClick={() => setOpen(v => !v)}
+4) Ensure dropdown renders when open === true.
+5) Add a small close delay OPTIONAL to prevent flicker when moving mouse from button to dropdown:
+   - Use a timeout ref:
+     - onMouseLeave => set timeout 150ms to close
+     - onMouseEnter => clear timeout
+6) Make sure accessibility remains:
+   - pressing Escape closes
+   - focus/blur does not instantly close if user tabs into dropdown (optional, but try not to break)
+
+DELIVERABLES
+- List files changed
+- Confirm Case Settings now routes to Case Settings page (not dashboard)
+- Confirm Lexi closes when clicking outside panel
+- Confirm dashboard title reads "Your Case Workspace"
+- Confirm hover menu works on desktop and tap works on mobile
+- Provide screenshots of:
+  - dropdown open on hover
+  - case settings page loaded
+  - Lexi open with click-outside closing
