@@ -136,7 +136,7 @@ export default function AppNavbar() {
         { label: "Exhibits", href: `/app/exhibits/${caseId}`, icon: Image },
         { label: "Case To-Do", href: `/app/tasks/${caseId}`, icon: CheckSquare },
         { label: "Deadlines", href: `/app/deadlines/${caseId}`, icon: Clock },
-        { label: "Pattern Analysis", href: `/app/patterns/${caseId}`, icon: TrendingUp },
+        { label: "Pattern Analysis", href: `/app/messages/${caseId}`, icon: TrendingUp },
         { label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings },
       );
     }

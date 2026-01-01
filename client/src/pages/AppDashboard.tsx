@@ -62,7 +62,7 @@ const getModuleCards = (caseId: string) => [
     title: "Pattern Analysis",
     description: "Spot trends across your case",
     icon: TrendingUp,
-    href: `/app/patterns/${caseId}`,
+    href: `/app/messages/${caseId}`,
   },
   {
     title: "Contacts",

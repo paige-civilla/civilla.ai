@@ -215,10 +215,10 @@ export default function AppCase() {
       Icon: Clock,
     },
     {
-      key: "patterns",
+      key: "messages",
       title: "Pattern Analysis",
       subtitle: "Spot trends across your case",
-      href: caseId ? `/app/patterns/${caseId}` : "/app",
+      href: caseId ? `/app/messages/${caseId}` : "/app",
       comingSoon: false,
       Icon: TrendingUp,
     },
