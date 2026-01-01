@@ -1,0 +1,95 @@
+REPLIT AGENT TASK: Change Lexi toggle from pill button to vertical edge bar (text vertical)
+
+GOAL
+- The Lexi toggle should NOT look like a button.
+- It should be a green vertical bar that hugs the right edge.
+- Text should read “Lexi” vertically (rotate head to read).
+- Keep existing open/close behavior (toggle the right-side Lexi panel).
+- Do NOT change Lexi panel layout or chat logic. This is UI-only.
+
+WHAT TO DO
+1) Find the Lexi toggle trigger element (the thing that currently renders like “Lexi ←” as a pill).
+   Search terms to locate it:
+   - "Lexi" and "toggle"
+   - "Lexi ←"
+   - "setLexiOpen"
+   - "isLexiOpen"
+   - "lexi-toggle"
+   - "LexiPanel"
+   Files are likely in one of:
+   - client/src/components/*
+   - client/src/layouts/*
+   - client/src/AppLayout.tsx
+   - client/src/components/Lexi*.tsx
+
+2) Replace the CURRENT toggle JSX with the following JSX exactly.
+   IMPORTANT:
+   - Keep the SAME onClick handler you already have (toggle open/close).
+   - Keep the SAME state variable you already have (isLexiOpen or open).
+   - This replaces ONLY the trigger.
+
+REPLACEMENT JSX (use Tailwind; no custom CSS file needed)
+
+--- START REPLACEMENT ---
+
+<div
+  role="button"
+  tabIndex={0}
+  aria-label={isLexiOpen ? "Hide Lexi" : "Show Lexi"}
+  data-testid="lexi-toggle"
+  onClick={() => setIsLexiOpen((v) => !v)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") setIsLexiOpen((v) => !v);
+  }}
+  className={[
+    // position: hug the right edge, vertically centered
+    "fixed right-0 top-1/2 -translate-y-1/2 z-50",
+
+    // bar shape: NOT a pill button; it’s a side grab bar
+    "h-36 w-10 bg-bush text-white shadow-lg",
+    "rounded-l-xl", // only rounded on left side
+
+    // layout
+    "flex items-center justify-center",
+    "cursor-pointer select-none",
+
+    // subtle hover/focus
+    "hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-bush/40",
+  ].join(" ")}
+>
+  <span
+    className={[
+      "font-heading font-semibold tracking-wide",
+      "text-sm",
+
+      // vertical text
+      "[writing-mode:vertical-rl]",
+      "[text-orientation:mixed]",
+      "rotate-180", // makes it read top-to-bottom as Lexi
+      "leading-none",
+    ].join(" ")}
+  >
+    Lexi
+  </span>
+</div>
+
+--- END REPLACEMENT ---
+
+3) If your state setter is not named setIsLexiOpen, DO NOT rename the state.
+   Instead, replace setIsLexiOpen with whatever your setter is (example: setOpenLexi).
+   Likewise, replace isLexiOpen with whatever your open state is (example: lexiOpen).
+
+4) Remove any extra arrow text/icon from the trigger (the bar should only say “Lexi” vertically).
+   The open/close affordance is the slide-in panel itself.
+
+5) Verify:
+   - Bar is flush to the right edge and vertically centered.
+   - Clicking toggles Lexi panel open/closed.
+   - Tab focus works; Enter/Space toggles.
+   - Bar does not overlap the Lexi panel when open (it can remain visible or you may hide it when open):
+     Optional improvement:
+       Add: {isLexiOpen ? "hidden" : ""} to the class list if you want it hidden while open.
+
+DELIVERABLE
+- Reply with: the file name changed + the exact before/after snippet location.
+- Screenshot of the new Lexi vertical bar on a page inside /app after login.

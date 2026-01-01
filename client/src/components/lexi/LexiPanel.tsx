@@ -146,15 +146,38 @@ export default function LexiPanel() {
 
   return (
     <>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={open ? "Hide Lexi" : "Show Lexi"}
+        data-testid="lexi-toggle"
         onClick={() => setOpen((v) => !v)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-[9999] bg-bush text-white px-3 py-2 rounded-l-lg shadow-lg font-sans text-sm"
-        data-testid="lexi-edge-tab"
-        aria-label={open ? "Close Lexi panel" : "Open Lexi panel"}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") setOpen((v) => !v);
+        }}
+        className={[
+          "fixed right-0 top-1/2 -translate-y-1/2 z-50",
+          "h-36 w-10 bg-bush text-white shadow-lg",
+          "rounded-l-xl",
+          "flex items-center justify-center",
+          "cursor-pointer select-none",
+          "hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-bush/40",
+          open ? "hidden" : "",
+        ].join(" ")}
       >
-        {open ? "→" : "Lexi ←"}
-      </button>
+        <span
+          className={[
+            "font-heading font-semibold tracking-wide",
+            "text-sm",
+            "[writing-mode:vertical-rl]",
+            "[text-orientation:mixed]",
+            "rotate-180",
+            "leading-none",
+          ].join(" ")}
+        >
+          Lexi
+        </span>
+      </div>
 
       <div
         className={[
