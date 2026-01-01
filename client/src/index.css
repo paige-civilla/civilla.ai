@@ -11,6 +11,9 @@
 :root {
   --civilla-nav-h: 0px;
   
+  /* App theme background (authenticated pages) */
+  --app-bg: #eef2f3;
+  
   /* App UI light blue/gray palette (authenticated pages only) */
   --app-surface: 210 17% 93%;         /* #E9EFF2 - light blue/gray */
   --app-surface-2: 204 18% 89%;       /* #DFE8EC - slightly deeper for borders/hover */
@@ -82,7 +85,13 @@ html,
 body {
   max-width: 100%;
   overflow-x: hidden;
-  background: #F3F6F7;
+  background: var(--app-bg);
+}
+
+/* Ensure app shell uses the same bg */
+#root {
+  min-height: 100%;
+  background: var(--app-bg);
 }
 
 /* Core text wrapping rules - allow wrapping but not mid-word */

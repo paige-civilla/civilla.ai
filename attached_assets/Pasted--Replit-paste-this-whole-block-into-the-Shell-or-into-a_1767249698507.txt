@@ -1,0 +1,220 @@
+# Replit: paste this whole block into the Shell (or into a single “Run command”)
+# It will:
+# 1) Fix the app background color so it matches the new light blue/gray theme
+# 2) Update the Dashboard: remove “Case Workspace” mini title + remove “Modules”
+# 3) Turn “View all cases” into a real button
+# 4) Add an “Upcoming” list under the calendar (next 7 items from Deadlines + Case To-Do)
+# 5) Let users check items off from the Dashboard (updates via existing PATCH routes)
+
+apply_patch <<'PATCH'
+*** Begin Patch
+*** Update File: client/src/index.css
+@@
+ :root {
++  /* App theme background (authenticated pages) */
++  --app-bg: #eef2f3; /* light blue/gray */
+ }
+ 
+ html, body {
+   height: 100%;
+ }
+ 
+ body {
+-  background: #fff;
++  background: var(--app-bg);
+ }
++
++/* Ensure app shell uses the same bg */
++#root {
++  min-height: 100%;
++  background: var(--app-bg);
++}
+*** End Patch
+PATCH
+
+apply_patch <<'PATCH'
+*** Begin Patch
+*** Update File: client/src/pages/AppDashboard.tsx
+@@
+-import React from "react";
++import React, { useMemo } from "react";
++import { useMutation, useQuery } from "@tanstack/react-query";
++import { apiRequest, queryClient } from "@/lib/queryClient";
++import { Checkbox } from "@/components/ui/checkbox";
++import { Button } from "@/components/ui/button";
+@@
+ export default function AppDashboard() {
+   // existing hooks/vars here (caseId/currentCase/etc)
+ 
++  // --- Upcoming list (Deadlines + Case To-Do) ---
++  const { data: tasksData } = useQuery<any>({
++    queryKey: ["/api/cases", caseId, "tasks"],
++    enabled: !!caseId,
++  });
++  const { data: deadlinesData } = useQuery<any>({
++    queryKey: ["/api/cases", caseId, "deadlines"],
++    enabled: !!caseId,
++  });
++
++  // NOTE: field names may vary slightly depending on your schema.
++  // Tasks: { id, title, dueDate?, completed? }
++  // Deadlines: { id, title, dueDate, isDone? }  (if yours is "completed" instead, change below)
++  const upcomingItems = useMemo(() => {
++    const tasks = (tasksData?.tasks ?? tasksData ?? []).map((t: any) => ({
++      kind: "task" as const,
++      id: t.id,
++      title: t.title ?? t.name ?? "Untitled task",
++      dueDate: t.dueDate ?? t.due_date ?? null,
++      done: !!(t.completed ?? t.isDone ?? t.done),
++    }));
++    const deadlines = (deadlinesData?.deadlines ?? deadlinesData ?? []).map((d: any) => ({
++      kind: "deadline" as const,
++      id: d.id,
++      title: d.title ?? "Untitled deadline",
++      dueDate: d.dueDate ?? d.due_date ?? null,
++      done: !!(d.isDone ?? d.completed ?? d.done),
++    }));
++
++    const all = [...tasks, ...deadlines]
++      .filter((i) => !i.done)
++      .filter((i) => i.dueDate) // only show dated items in Upcoming
++      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
++
++    return all.slice(0, 7);
++  }, [tasksData, deadlinesData]);
++
++  const toggleTaskMutation = useMutation({
++    mutationFn: async (payload: { id: string; completed: boolean }) => {
++      return apiRequest("PATCH", `/api/tasks/${payload.id}`, { completed: payload.completed });
++    },
++    onSuccess: () => {
++      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "tasks"] });
++    },
++  });
++
++  const toggleDeadlineMutation = useMutation({
++    mutationFn: async (payload: { id: string; isDone: boolean }) => {
++      // If your deadlines table uses "completed" instead of "isDone", change the body to: { completed: payload.isDone }
++      return apiRequest("PATCH", `/api/deadlines/${payload.id}`, { isDone: payload.isDone });
++    },
++    onSuccess: () => {
++      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "deadlines"] });
++    },
++  });
++
++  const formatShortDate = (value: any) => {
++    try {
++      const d = new Date(value);
++      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
++    } catch {
++      return "";
++    }
++  };
++
+   return (
+     <div className="w-full">
+@@
+-      <div className="flex items-start justify-between">
+-        <div>
+-          <p className="text-sm text-neutral-darkest/60">Case Workspace</p>
+-          <h1 className="font-heading font-bold text-5xl md:text-6xl text-neutral-darkest">
++      <div className="flex items-start justify-between">
++        <div>
++          <h1 className="font-heading font-bold text-5xl md:text-6xl text-neutral-darkest">
+             {currentCase?.title ?? "Case Dashboard"}
+           </h1>
+         </div>
+-        <div className="text-right">
+-          <a className="inline-flex items-center gap-2 text-bush font-semibold" href="/app/cases">
+-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-bush/10">🏷️</span>
+-            View all cases
+-          </a>
+-        </div>
++        <div className="text-right">
++          <Button
++            variant="outline"
++            className="font-sans"
++            onClick={() => (window.location.href = "/app/cases")}
++            data-testid="button-view-all-cases"
++          >
++            View all cases
++          </Button>
++        </div>
+       </div>
+@@
+-      <h2 className="font-heading font-bold text-2xl text-neutral-darkest mt-8">Modules</h2>
++      {/* Removed the "Modules" heading (requested) */}
+@@
+-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
++      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+         {/* Left column: Calendar */}
+         <div className="space-y-4">
+           <div className="rounded-xl border bg-white p-4">
+             {/* existing calendar component / markup stays here */}
+             {/** Calendar already renders above **/}
+           </div>
++
++          {/* Upcoming list under the calendar */}
++          <div className="rounded-xl border bg-white p-4" data-testid="panel-upcoming">
++            <div className="flex items-center justify-between mb-2">
++              <h3 className="font-heading font-bold text-lg text-neutral-darkest">Upcoming</h3>
++              <p className="text-xs text-neutral-darkest/60">Next 7 items</p>
++            </div>
++            {upcomingItems.length === 0 ? (
++              <p className="text-sm text-neutral-darkest/60">
++                Nothing upcoming with dates yet. Add a deadline or a dated Case To-Do.
++              </p>
++            ) : (
++              <div className="space-y-2">
++                {upcomingItems.map((item) => (
++                  <div
++                    key={`${item.kind}-${item.id}`}
++                    className="flex items-start gap-3 rounded-lg border border-neutral-light/60 p-3 hover:bg-neutral-lightest/40 transition"
++                  >
++                    <Checkbox
++                      checked={false}
++                      onCheckedChange={(checked) => {
++                        const isChecked = !!checked;
++                        if (item.kind === "task") {
++                          toggleTaskMutation.mutate({ id: item.id, completed: isChecked });
++                        } else {
++                          toggleDeadlineMutation.mutate({ id: item.id, isDone: isChecked });
++                        }
++                      }}
++                      aria-label="Mark complete"
++                    />
++                    <div className="flex-1">
++                      <div className="flex items-center justify-between gap-3">
++                        <p className="text-sm font-semibold text-neutral-darkest">{item.title}</p>
++                        <p className="text-xs text-neutral-darkest/60 whitespace-nowrap">
++                          {formatShortDate(item.dueDate)}
++                        </p>
++                      </div>
++                      <p className="text-xs text-neutral-darkest/60 mt-1">
++                        {item.kind === "deadline" ? "Deadline" : "Case To-Do"}
++                      </p>
++                    </div>
++                  </div>
++                ))}
++              </div>
++            )}
++          </div>
+         </div>
+ 
+         {/* Right column: Modules grid (existing) */}
+         <div>
+           {/* keep existing module tiles grid here */}
+         </div>
+       </div>
+     </div>
+   );
+ }
+*** End Patch
+PATCH
+
+echo "Done. Now: refresh the Dashboard and confirm:
+1) Background matches app theme
+2) No 'Case Workspace' mini-title above the big title
+3) 'View all cases' is a button
+4) 'Modules' heading removed
+5) Calendar has 'Upcoming' underneath with checkboxes that mark items done."

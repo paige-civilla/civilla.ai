@@ -5,6 +5,7 @@ import { Briefcase, FileText, Calendar, MessageSquare, Users, FolderOpen, FileSt
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, Task, Deadline } from "@shared/schema";
 
@@ -189,19 +190,18 @@ export default function AppDashboard() {
         <div className="flex flex-col items-start max-w-container w-full">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full mb-8">
             <div>
-              <p className="font-sans text-sm text-neutral-darkest/60 mb-1">Case Workspace</p>
               <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
                 {primaryCase.title}
               </h1>
             </div>
-            <Link
-              href="/app/cases"
-              className="inline-flex items-center gap-2 text-sm text-bush font-medium"
-              data-testid="link-view-all-cases"
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/app/cases")}
+              data-testid="button-view-all-cases"
             >
-              <Briefcase className="w-4 h-4" />
+              <Briefcase className="w-4 h-4 mr-2" />
               View all cases
-            </Link>
+            </Button>
           </div>
 
           <div className="w-full flex flex-col lg:flex-row gap-8">
