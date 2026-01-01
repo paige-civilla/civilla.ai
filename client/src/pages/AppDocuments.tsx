@@ -776,7 +776,7 @@ export default function AppDocuments() {
                 data-testid="tab-step-3-filing"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">3</span>
-                Court Filing (DOCX)
+                Court-Formatted Documents
               </TabsTrigger>
             </TabsList>
 
