@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -14,6 +14,7 @@ export default function AppCases() {
   const [caseType, setCaseType] = useState("");
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [autoOpenChecked, setAutoOpenChecked] = useState(false);
 
   const handleSelectCase = (caseId: string) => {
     localStorage.setItem("selectedCaseId", caseId);
@@ -63,6 +64,13 @@ export default function AppCases() {
   const cases = casesData?.cases || [];
   const canCreateCase = user ? cases.length < user.casesAllowed : false;
   const noCases = cases.length === 0;
+
+  useEffect(() => {
+    if (!casesLoading && noCases && canCreateCase && !autoOpenChecked) {
+      setShowForm(true);
+      setAutoOpenChecked(true);
+    }
+  }, [casesLoading, noCases, canCreateCase, autoOpenChecked]);
 
   return (
     <AppLayout>

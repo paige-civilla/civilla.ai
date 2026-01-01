@@ -32,6 +32,7 @@ import AppTasks from "@/pages/AppTasks";
 import AppDeadlines from "@/pages/AppDeadlines";
 import AppMessages from "@/pages/AppMessages";
 import AppContacts from "@/pages/AppContacts";
+import AppCaseSettings from "@/pages/AppCaseSettings";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/app/cases" component={AppCases} />
       <Route path="/app/dashboard/:caseId" component={AppDashboard} />
       <Route path="/app/case/:caseId" component={AppCase} />
+      <Route path="/app/case-settings/:caseId" component={AppCaseSettings} />
       <Route path="/app/documents/:caseId" component={AppDocuments} />
       <Route path="/app/timeline/:caseId" component={AppTimeline} />
       <Route path="/app/evidence/:caseId" component={AppEvidence} />

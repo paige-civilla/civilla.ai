@@ -179,9 +179,18 @@ export default function LexiPanel() {
         </span>
       </div>
 
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/0 z-40"
+          onClick={() => setOpen(false)}
+          data-testid="lexi-overlay"
+          aria-hidden="true"
+        />
+      )}
+
       <div
         className={[
-          "fixed top-0 right-0 h-screen z-[9998] bg-white border-l border-neutral-light shadow-xl",
+          "fixed top-0 right-0 h-screen z-50 bg-white border-l border-neutral-light shadow-xl",
           "w-[380px] max-w-[92vw]",
           "transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "translate-x-full",

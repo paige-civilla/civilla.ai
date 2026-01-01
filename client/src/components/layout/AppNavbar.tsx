@@ -50,8 +50,23 @@ export default function AppNavbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFixedNavShell(shellRef);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsMenuOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsMenuOpen(false);
+    }, 150);
+  };
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -89,7 +104,7 @@ export default function AppNavbar() {
         { label: "Tasks", href: `/app/tasks/${caseId}`, icon: CheckSquare },
         { label: "Deadlines", href: `/app/deadlines/${caseId}`, icon: Clock },
         { label: "Messages", href: `/app/messages/${caseId}`, icon: MessageSquare },
-        { label: "Case Settings", href: `/app/case/${caseId}`, icon: Settings },
+        { label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings },
       );
     }
     return links;
@@ -146,11 +161,15 @@ export default function AppNavbar() {
                 />
               </Link>
             </div>
-            <div className="flex items-center justify-center gap-2 relative">
+            <div 
+              className="flex items-center justify-center gap-2 relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               <button 
                 ref={menuButtonRef}
                 className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsMenuOpen((v) => !v)}
                 aria-label="Open menu"
                 aria-expanded={isMenuOpen}
                 data-testid="button-menu-app"
@@ -181,6 +200,8 @@ export default function AppNavbar() {
             ref={menuRef}
             className="absolute left-0 right-0 top-full mt-2 z-[9999]"
             data-testid="dropdown-menu-app"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             <div className="mx-auto max-w-6xl px-3">
               <div

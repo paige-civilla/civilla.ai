@@ -100,7 +100,7 @@ export default function AppDashboard() {
         <div className="flex flex-col items-start max-w-container w-full">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full mb-8">
             <div>
-              <p className="font-sans text-sm text-neutral-darkest/60 mb-1">Case Workspace</p>
+              <p className="font-sans text-sm text-neutral-darkest/60 mb-1">Your Case Workspace</p>
               <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
                 {primaryCase.title}
               </h1>
@@ -122,7 +122,7 @@ export default function AppDashboard() {
               </div>
               <div className="flex-1">
                 <p className="font-heading font-bold text-lg text-neutral-darkest">
-                  Case Workspace
+                  Your Case Workspace
                 </p>
                 <p className="font-sans text-sm text-neutral-darkest/70 mt-1">
                   This is your central hub for managing your case. Access documents, track deadlines, and stay organized.
