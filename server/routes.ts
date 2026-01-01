@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -1942,6 +1942,303 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Onboarding complete error:", error);
       res.status(500).json({ error: "Failed to complete onboarding" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/contacts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const contacts = await storage.listContacts(userId, caseId);
+      res.json({ contacts });
+    } catch (error) {
+      console.error("List contacts error:", error);
+      res.status(500).json({ error: "Failed to list contacts" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/contacts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertContactSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const contact = await storage.createContact(userId, caseId, parseResult.data);
+      res.status(201).json({ contact });
+    } catch (error) {
+      console.error("Create contact error:", error);
+      res.status(500).json({ error: "Failed to create contact" });
+    }
+  });
+
+  app.patch("/api/contacts/:contactId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { contactId } = req.params;
+
+      const parseResult = updateContactSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateContact(userId, contactId, parseResult.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json({ contact: updated });
+    } catch (error) {
+      console.error("Update contact error:", error);
+      res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
+  app.delete("/api/contacts/:contactId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { contactId } = req.params;
+
+      const deleted = await storage.deleteContact(userId, contactId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json({ message: "Contact deleted" });
+    } catch (error) {
+      console.error("Delete contact error:", error);
+      res.status(500).json({ error: "Failed to delete contact" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/communications", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const communications = await storage.listCommunications(userId, caseId);
+      res.json({ communications });
+    } catch (error) {
+      console.error("List communications error:", error);
+      res.status(500).json({ error: "Failed to list communications" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/communications", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertCommunicationSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const communication = await storage.createCommunication(userId, caseId, parseResult.data);
+      res.status(201).json({ communication });
+    } catch (error) {
+      console.error("Create communication error:", error);
+      res.status(500).json({ error: "Failed to create communication" });
+    }
+  });
+
+  app.patch("/api/communications/:commId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { commId } = req.params;
+
+      const parseResult = updateCommunicationSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateCommunication(userId, commId, parseResult.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Communication not found" });
+      }
+
+      res.json({ communication: updated });
+    } catch (error) {
+      console.error("Update communication error:", error);
+      res.status(500).json({ error: "Failed to update communication" });
+    }
+  });
+
+  app.delete("/api/communications/:commId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { commId } = req.params;
+
+      const deleted = await storage.deleteCommunication(userId, commId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Communication not found" });
+      }
+
+      res.json({ message: "Communication deleted" });
+    } catch (error) {
+      console.error("Delete communication error:", error);
+      res.status(500).json({ error: "Failed to delete communication" });
+    }
+  });
+
+  app.post("/api/communications/:commId/push-to-timeline", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { commId } = req.params;
+
+      const comm = await storage.getCommunication(userId, commId);
+      if (!comm) {
+        return res.status(404).json({ error: "Communication not found" });
+      }
+
+      if (comm.timelineEventId) {
+        return res.status(400).json({ error: "Already added to timeline" });
+      }
+
+      let contactName = "Unknown Contact";
+      if (comm.contactId) {
+        const contact = await storage.getContact(userId, comm.contactId);
+        if (contact) {
+          contactName = contact.name;
+        }
+      }
+
+      const notes = [
+        comm.subject ? `Subject: ${comm.subject}` : null,
+        comm.summary,
+        `Channel: ${comm.channel} | Status: ${comm.status}`,
+      ].filter(Boolean).join("\n\n");
+
+      const timelineEvent = await storage.createTimelineEvent(comm.caseId, userId, {
+        eventDate: comm.occurredAt,
+        title: `Communication: ${contactName}`,
+        category: "communication",
+        notes,
+      });
+
+      await storage.updateCommunication(userId, commId, {
+        timelineEventId: timelineEvent.id,
+      });
+
+      res.json({ timelineEvent });
+    } catch (error) {
+      console.error("Push to timeline error:", error);
+      res.status(500).json({ error: "Failed to push to timeline" });
+    }
+  });
+
+  app.post("/api/communications/:commId/push-to-calendar", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { commId } = req.params;
+
+      const comm = await storage.getCommunication(userId, commId);
+      if (!comm) {
+        return res.status(404).json({ error: "Communication not found" });
+      }
+
+      if (comm.calendarItemId) {
+        return res.status(400).json({ error: "Already added to calendar" });
+      }
+
+      if (!comm.followUpAt && !comm.needsFollowUp) {
+        return res.status(400).json({ error: "No follow-up date set" });
+      }
+
+      let contactName = "Unknown Contact";
+      if (comm.contactId) {
+        const contact = await storage.getContact(userId, comm.contactId);
+        if (contact) {
+          contactName = contact.name;
+        }
+      }
+
+      const calendarItem = await storage.createCaseCalendarItem(userId, comm.caseId, {
+        title: `Follow up: ${contactName}`,
+        startDate: comm.followUpAt || new Date(),
+        notes: comm.subject || comm.summary.slice(0, 200),
+      });
+
+      await storage.updateCommunication(userId, commId, {
+        calendarItemId: calendarItem.id,
+      });
+
+      res.json({ calendarItem });
+    } catch (error) {
+      console.error("Push to calendar error:", error);
+      res.status(500).json({ error: "Failed to push to calendar" });
+    }
+  });
+
+  app.post("/api/communications/:commId/mark-resolved", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { commId } = req.params;
+
+      const comm = await storage.getCommunication(userId, commId);
+      if (!comm) {
+        return res.status(404).json({ error: "Communication not found" });
+      }
+
+      const updated = await storage.updateCommunication(userId, commId, {
+        status: "resolved",
+        needsFollowUp: false,
+      });
+
+      if (comm.calendarItemId) {
+        await storage.updateCaseCalendarItem(userId, comm.calendarItemId, {
+          isDone: true,
+        });
+      }
+
+      res.json({ communication: updated });
+    } catch (error) {
+      console.error("Mark resolved error:", error);
+      res.status(500).json({ error: "Failed to mark resolved" });
     }
   });
 
