@@ -61,7 +61,7 @@ function StepStrip({ activeStep }: { activeStep: 1 | 2 | 3 }) {
     <div className="w-full flex flex-col gap-2 md:flex-row md:items-center md:gap-3 mt-3">
       {Item(1, "Draft: Create or edit your document")}
       {Item(2, "Review: Confirm case details, role, and date")}
-      {Item(3, "Download: Court-formatted DOCX is generated")}
+      {Item(3, "Download: Court-Formatted Documents")}
     </div>
   );
 }
@@ -776,7 +776,7 @@ export default function AppDocuments() {
                 data-testid="tab-step-3-filing"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">3</span>
-                Step 3: Court-Ready Document
+                Step 3: Court-Formatted Documents
               </TabsTrigger>
             </TabsList>
 
@@ -921,7 +921,7 @@ export default function AppDocuments() {
 
             <TabsContent value="filing" className="mt-6">
               <div className="mb-4">
-                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Court-Ready Document</h2>
+                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Court-Formatted Documents</h2>
                 <p className="font-sans text-sm text-neutral-darkest/70">These documents are formatted for court. You can download them as needed.</p>
                 <p className="font-sans text-xs text-neutral-darkest/60 mt-1">Civilla does not file documents with the court.</p>
               </div>
