@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import AppNavbar from "./AppNavbar";
 import Footer from "@/components/Footer";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
+import LexiPanel from "@/components/lexi/LexiPanel";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -42,6 +43,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
       <Footer />
+      <LexiPanel />
     </div>
   );
 }
