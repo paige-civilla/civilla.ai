@@ -300,5 +300,36 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_deadlines_case_status ON deadlines(case_id, status)`
   ]);
 
+  await initTable("calendar_categories", `
+    CREATE TABLE IF NOT EXISTS calendar_categories (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL DEFAULT '#7BA3A8',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_calendar_categories_user_case ON calendar_categories(user_id, case_id)`
+  ]);
+
+  await initTable("case_calendar_items", `
+    CREATE TABLE IF NOT EXISTS case_calendar_items (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      start_date TIMESTAMP NOT NULL,
+      is_done BOOLEAN NOT NULL DEFAULT false,
+      category_id VARCHAR(255),
+      color_override TEXT,
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_calendar_items_user_case_date ON case_calendar_items(user_id, case_id, start_date)`
+  ]);
+
   console.log("Database table initialization complete");
 }

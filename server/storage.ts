@@ -12,6 +12,8 @@ import {
   caseChildren,
   tasks,
   deadlines,
+  calendarCategories,
+  caseCalendarItems,
   type User,
   type InsertUser,
   type Case,
@@ -38,6 +40,11 @@ import {
   type Deadline,
   type InsertDeadline,
   type UpdateDeadline,
+  type CalendarCategory,
+  type InsertCalendarCategory,
+  type CaseCalendarItem,
+  type InsertCaseCalendarItem,
+  type UpdateCaseCalendarItem,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -96,6 +103,14 @@ export interface IStorage {
   createDeadline(userId: string, caseId: string, data: InsertDeadline): Promise<Deadline>;
   updateDeadline(userId: string, deadlineId: string, data: UpdateDeadline): Promise<Deadline | undefined>;
   deleteDeadline(userId: string, deadlineId: string): Promise<boolean>;
+
+  listCalendarCategories(userId: string, caseId: string): Promise<CalendarCategory[]>;
+  createCalendarCategory(userId: string, caseId: string, data: InsertCalendarCategory): Promise<CalendarCategory>;
+
+  listCaseCalendarItems(userId: string, caseId: string): Promise<CaseCalendarItem[]>;
+  createCaseCalendarItem(userId: string, caseId: string, data: InsertCaseCalendarItem): Promise<CaseCalendarItem>;
+  updateCaseCalendarItem(userId: string, itemId: string, data: UpdateCaseCalendarItem): Promise<CaseCalendarItem | undefined>;
+  deleteCaseCalendarItem(userId: string, itemId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -686,6 +701,69 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDeadline(userId: string, deadlineId: string): Promise<boolean> {
     const res = await db.delete(deadlines).where(and(eq(deadlines.id, deadlineId), eq(deadlines.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  async listCalendarCategories(userId: string, caseId: string): Promise<CalendarCategory[]> {
+    const rows = await db.select().from(calendarCategories)
+      .where(and(eq(calendarCategories.userId, userId), eq(calendarCategories.caseId, caseId)))
+      .orderBy(asc(calendarCategories.name));
+    return rows;
+  }
+
+  async createCalendarCategory(userId: string, caseId: string, data: InsertCalendarCategory): Promise<CalendarCategory> {
+    const [row] = await db.insert(calendarCategories)
+      .values({
+        userId,
+        caseId,
+        name: data.name,
+        color: data.color ?? "#7BA3A8",
+      })
+      .returning();
+    return row;
+  }
+
+  async listCaseCalendarItems(userId: string, caseId: string): Promise<CaseCalendarItem[]> {
+    const rows = await db.select().from(caseCalendarItems)
+      .where(and(eq(caseCalendarItems.userId, userId), eq(caseCalendarItems.caseId, caseId)))
+      .orderBy(asc(caseCalendarItems.startDate));
+    return rows;
+  }
+
+  async createCaseCalendarItem(userId: string, caseId: string, data: InsertCaseCalendarItem): Promise<CaseCalendarItem> {
+    const [row] = await db.insert(caseCalendarItems)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        startDate: data.startDate,
+        categoryId: data.categoryId ?? null,
+        colorOverride: data.colorOverride ?? null,
+        notes: data.notes ?? null,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return row;
+  }
+
+  async updateCaseCalendarItem(userId: string, itemId: string, data: UpdateCaseCalendarItem): Promise<CaseCalendarItem | undefined> {
+    const [row] = await db.update(caseCalendarItems)
+      .set({
+        ...("title" in data ? { title: data.title } : {}),
+        ...("startDate" in data ? { startDate: data.startDate } : {}),
+        ...("isDone" in data ? { isDone: data.isDone } : {}),
+        ...("categoryId" in data ? { categoryId: data.categoryId ?? null } : {}),
+        ...("colorOverride" in data ? { colorOverride: data.colorOverride ?? null } : {}),
+        ...("notes" in data ? { notes: data.notes ?? null } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(caseCalendarItems.id, itemId), eq(caseCalendarItems.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteCaseCalendarItem(userId: string, itemId: string): Promise<boolean> {
+    const res = await db.delete(caseCalendarItems).where(and(eq(caseCalendarItems.id, itemId), eq(caseCalendarItems.userId, userId))).returning();
     return res.length > 0;
   }
 }
