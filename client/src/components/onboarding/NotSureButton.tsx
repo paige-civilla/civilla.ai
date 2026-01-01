@@ -32,7 +32,7 @@ export function NotSureButton({
       size="sm"
       onClick={onClick}
       disabled={disabled}
-      className={`text-xs text-neutral-darkest/60 hover:text-bush p-0 h-auto mt-1 ${className}`}
+      className={`text-xs text-neutral-darkest/60 hover:text-primary p-0 h-auto mt-1 ${className}`}
       data-testid="button-not-sure"
     >
       <HelpCircle className="w-3 h-3 mr-1" />

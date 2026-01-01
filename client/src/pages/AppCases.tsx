@@ -86,7 +86,7 @@ export default function AppCases() {
             {canCreateCase && !showForm && !noCases && (
               <button
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 bg-bush text-white font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow"
                 data-testid="button-new-case"
               >
                 <Plus className="w-4 h-4" />
@@ -99,7 +99,7 @@ export default function AppCases() {
             <div className="w-full bg-muted-green/30 border border-bush/20 rounded-lg p-4 mb-6">
               <p className="font-sans text-sm text-neutral-darkest">
                 You've reached your limit of {user?.casesAllowed} case(s).{" "}
-                <Link href="/plans" className="text-bush font-medium underline" data-testid="link-upgrade">
+                <Link href="/plans" className="text-primary font-medium underline" data-testid="link-upgrade">
                   Upgrade to create more
                 </Link>
               </p>
@@ -181,7 +181,7 @@ export default function AppCases() {
                       type="checkbox"
                       checked={hasChildren}
                       onChange={(e) => setHasChildren(e.target.checked)}
-                      className="w-4 h-4 rounded border-neutral-darkest/30 text-bush focus:ring-bush"
+                      className="w-4 h-4 rounded border-neutral-darkest/30 text-primary focus:ring-bush"
                       data-testid="checkbox-has-children"
                     />
                     <span className="font-sans text-sm text-neutral-darkest">
@@ -193,7 +193,7 @@ export default function AppCases() {
                   <button
                     type="submit"
                     disabled={createCaseMutation.isPending}
-                    className="bg-bush text-white font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
+                    className="bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
                     data-testid="button-create-case"
                   >
                     {createCaseMutation.isPending ? "Creating..." : "Create Case"}
@@ -217,8 +217,8 @@ export default function AppCases() {
             </div>
           ) : noCases ? (
             <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="w-8 h-8 text-bush" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-8 h-8 text-primary" />
               </div>
               <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
                 Create your first case
@@ -228,7 +228,7 @@ export default function AppCases() {
               </p>
               <button
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 bg-bush text-white font-bold text-sm px-6 py-3 rounded-md button-inset-shadow"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-6 py-3 rounded-md button-inset-shadow"
                 data-testid="button-create-first-case"
               >
                 <Plus className="w-4 h-4" />
@@ -246,7 +246,7 @@ export default function AppCases() {
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center flex-shrink-0">
-                      <Briefcase className="w-5 h-5 text-bush" />
+                      <Briefcase className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-heading font-bold text-lg text-neutral-darkest">{c.title}</h3>

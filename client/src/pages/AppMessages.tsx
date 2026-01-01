@@ -47,7 +47,7 @@ export default function AppMessages() {
             <p className="font-sans text-neutral-darkest/70 mb-4">Case not found or you don't have access.</p>
             <Link
               href="/app/cases"
-              className="inline-flex items-center gap-2 text-sm text-bush font-medium"
+              className="inline-flex items-center gap-2 text-sm text-primary font-medium"
               data-testid="link-back-to-cases"
             >
               <Briefcase className="w-4 h-4" />
@@ -65,7 +65,7 @@ export default function AppMessages() {
         <div className="flex flex-col items-start max-w-container w-full">
           <Link
             href={`/app/dashboard/${caseId}`}
-            className="inline-flex items-center gap-2 text-sm text-bush font-medium mb-6"
+            className="inline-flex items-center gap-2 text-sm text-primary font-medium mb-6"
             data-testid="link-back-to-dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -87,8 +87,8 @@ export default function AppMessages() {
           </div>
 
           <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
-              <MessageSquare className="w-8 h-8 text-bush" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <MessageSquare className="w-8 h-8 text-primary" />
             </div>
             <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
               Messages

@@ -86,7 +86,7 @@ export function ScrollablePolicyModal({
 
         <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
           {(reachedBottom || hasScrolled) ? (
-            <div className="flex items-center gap-2 text-bush font-medium text-sm">
+            <div className="flex items-center gap-2 text-primary font-medium text-sm">
               <Check className="w-4 h-4" />
               <span>You can now agree to this document</span>
             </div>

@@ -218,7 +218,7 @@ export default function AppNavbar() {
               </button>
               <button 
                 onClick={handleQuickExit}
-                className="ml-2 p-1.5 rounded-md bg-bush"
+                className="ml-2 p-1.5 rounded-md bg-primary"
                 aria-label="Quick exit"
                 data-testid="button-quick-exit-app"
               >
@@ -249,7 +249,7 @@ export default function AppNavbar() {
               >
                 {authData?.user && (
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-full bg-bush flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                       <User className="w-4 h-4 text-white" />
                     </div>
                     <div className="font-sans text-sm text-neutral-darkest/70">

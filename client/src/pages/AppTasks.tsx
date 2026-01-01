@@ -128,7 +128,7 @@ export default function AppTasks() {
             <p className="font-sans text-neutral-darkest/70 mb-4">Case not found or you don't have access.</p>
             <Link
               href="/app/cases"
-              className="inline-flex items-center gap-2 text-sm text-bush font-medium"
+              className="inline-flex items-center gap-2 text-sm text-primary font-medium"
               data-testid="link-back-to-cases"
             >
               <Briefcase className="w-4 h-4" />
@@ -161,7 +161,7 @@ export default function AppTasks() {
         <div className="flex flex-col items-start max-w-container w-full">
           <Link
             href={`/app/dashboard/${caseId}`}
-            className="inline-flex items-center gap-2 text-sm text-bush font-medium mb-6"
+            className="inline-flex items-center gap-2 text-sm text-primary font-medium mb-6"
             data-testid="link-back-to-dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -182,7 +182,7 @@ export default function AppTasks() {
             </div>
             <Button
               onClick={() => setIsCreateOpen(true)}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-add-task"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -196,8 +196,8 @@ export default function AppTasks() {
             </div>
           ) : tasks.length === 0 ? (
             <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
-                <CheckSquare className="w-8 h-8 text-bush" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <CheckSquare className="w-8 h-8 text-primary" />
               </div>
               <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
                 No To-Do Items Yet
@@ -207,7 +207,7 @@ export default function AppTasks() {
               </p>
               <Button
                 onClick={() => setIsCreateOpen(true)}
-                className="bg-bush text-white"
+                className="bg-primary text-primary-foreground"
                 data-testid="button-add-first-task"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -331,7 +331,7 @@ function TaskCard({
           onClick={onToggleStatus}
           className={cn(
             "w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
-            isCompleted ? "bg-bush border-bush text-white" : "border-neutral-darkest/30"
+            isCompleted ? "bg-primary border-primary text-primary-foreground" : "border-neutral-darkest/30"
           )}
           data-testid={`button-toggle-task-${task.id}`}
         >
@@ -527,7 +527,7 @@ function TaskFormDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-task">
                 Cancel
               </Button>
-              <Button type="submit" className="bg-bush text-white" disabled={isLoading} data-testid="button-save-task">
+              <Button type="submit" className="bg-primary text-primary-foreground" disabled={isLoading} data-testid="button-save-task">
                 {isLoading ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>

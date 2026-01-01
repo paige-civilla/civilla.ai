@@ -237,7 +237,7 @@ export default function AppEvidence() {
             <p className="font-sans text-neutral-darkest/70 mb-4">Case not found or you don't have access.</p>
             <Link
               href="/app/cases"
-              className="inline-flex items-center gap-2 text-sm text-bush font-medium"
+              className="inline-flex items-center gap-2 text-sm text-primary font-medium"
               data-testid="link-back-to-cases"
             >
               <Briefcase className="w-4 h-4" />
@@ -255,7 +255,7 @@ export default function AppEvidence() {
         <div className="flex flex-col items-start max-w-container w-full">
           <Link
             href={`/app/dashboard/${caseId}`}
-            className="inline-flex items-center gap-2 text-sm text-bush font-medium mb-6"
+            className="inline-flex items-center gap-2 text-sm text-primary font-medium mb-6"
             data-testid="link-back-to-dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -348,8 +348,8 @@ export default function AppEvidence() {
             </div>
           ) : rawFiles.length === 0 ? (
             <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
-                <FolderOpen className="w-8 h-8 text-bush" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <FolderOpen className="w-8 h-8 text-primary" />
               </div>
               <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
                 No Evidence Files Yet
@@ -381,8 +381,8 @@ export default function AppEvidence() {
                   <Card key={file.id} className="w-full" data-testid={`card-evidence-${file.id}`}>
                     <CardContent className="py-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-bush/10 flex items-center justify-center flex-shrink-0">
-                          <FileIcon className="w-5 h-5 text-bush" />
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <FileIcon className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleExpand(file)}>
                           <p className="font-sans font-medium text-neutral-darkest truncate" data-testid={`text-filename-${file.id}`}>
@@ -392,7 +392,7 @@ export default function AppEvidence() {
                             <span>{formatFileSize(Number(file.sizeBytes))}</span>
                             <span>{formatDate(file.createdAt)}</span>
                             {file.category && (
-                              <span className="bg-bush/10 text-bush px-2 py-0.5 rounded">
+                              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
                                 {getCategoryLabel(file.category)}
                               </span>
                             )}

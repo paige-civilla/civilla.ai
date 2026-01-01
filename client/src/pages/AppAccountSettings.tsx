@@ -90,7 +90,7 @@ export default function AppAccountSettings() {
       <div className="px-4 md:px-8 py-8">
         <div className="rounded-2xl bg-[#e7ebea] p-6 md:p-8 mb-10">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-bush text-white flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
               <Settings className="w-6 h-6" />
             </div>
             <div>
@@ -109,7 +109,7 @@ export default function AppAccountSettings() {
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-lg font-heading font-bold text-neutral-darkest">
                 <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
-                  <User className="w-5 h-5 text-bush" />
+                  <User className="w-5 h-5 text-primary" />
                 </div>
                 Profile Information
               </CardTitle>
@@ -219,7 +219,7 @@ export default function AppAccountSettings() {
                 <div className="flex justify-end">
                   <Button 
                     type="submit" 
-                    className="bg-bush text-white"
+                    className="bg-primary text-primary-foreground"
                     disabled={updateProfileMutation.isPending}
                     data-testid="button-save-profile"
                   >
@@ -234,7 +234,7 @@ export default function AppAccountSettings() {
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-lg font-heading font-bold text-neutral-darkest">
                 <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-bush" />
+                  <CreditCard className="w-5 h-5 text-primary" />
                 </div>
                 Subscription
               </CardTitle>

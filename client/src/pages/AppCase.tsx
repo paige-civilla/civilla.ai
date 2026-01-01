@@ -247,7 +247,7 @@ export default function AppCase() {
       <div className="px-4 md:px-8 py-8">
         <div className="rounded-2xl bg-[#e7ebea] p-6 md:p-8 mb-10">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-bush text-white flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
               <span className="text-lg font-semibold"> </span>
             </div>
             <div>
@@ -278,7 +278,7 @@ export default function AppCase() {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-[#f4f6f5] flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-bush" />
+                      <Icon className="w-6 h-6 text-primary" />
                     </div>
 
                     {comingSoon && (
@@ -311,7 +311,7 @@ export default function AppCase() {
             <div className="flex items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
-                  <Baby className="w-5 h-5 text-bush" />
+                  <Baby className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Children</h2>
@@ -320,7 +320,7 @@ export default function AppCase() {
               </div>
               <Button
                 onClick={openAddChildDialog}
-                className="bg-bush text-white"
+                className="bg-primary text-primary-foreground"
                 data-testid="button-add-child"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -460,7 +460,7 @@ export default function AppCase() {
             <Button
               onClick={handleChildSubmit}
               disabled={createChildMutation.isPending || updateChildMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-save-child"
             >
               {createChildMutation.isPending || updateChildMutation.isPending ? "Saving..." : "Save"}

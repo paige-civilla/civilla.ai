@@ -283,7 +283,7 @@ export default function AppCaseSettings() {
       <div className="px-4 md:px-8 py-8">
         <div className="rounded-2xl bg-[#e7ebea] p-6 md:p-8 mb-10">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-bush text-white flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
               <Settings className="w-6 h-6" />
             </div>
             <div>
@@ -301,7 +301,7 @@ export default function AppCaseSettings() {
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
-                <User className="w-5 h-5 text-bush" />
+                <User className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <h2 className="font-heading font-bold text-xl text-neutral-darkest">Profile & Autofill</h2>
@@ -423,7 +423,7 @@ export default function AppCaseSettings() {
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
-                <Baby className="w-5 h-5 text-bush" />
+                <Baby className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <h2 className="font-heading font-bold text-xl text-neutral-darkest">Children</h2>
@@ -450,7 +450,7 @@ export default function AppCaseSettings() {
               <div className="flex justify-end mb-4">
                 <Button
                   onClick={openAddChildDialog}
-                  className="bg-bush text-white"
+                  className="bg-primary text-primary-foreground"
                   data-testid="button-add-child"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -602,7 +602,7 @@ export default function AppCaseSettings() {
             <Button
               onClick={handleCaseSubmit}
               disabled={updateCaseMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-save-case"
             >
               {updateCaseMutation.isPending ? "Saving..." : "Save"}
@@ -669,7 +669,7 @@ export default function AppCaseSettings() {
             <Button
               onClick={handleChildSubmit}
               disabled={createChildMutation.isPending || updateChildMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-save-child"
             >
               {createChildMutation.isPending || updateChildMutation.isPending ? "Saving..." : "Save"}

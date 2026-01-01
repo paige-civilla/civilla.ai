@@ -287,7 +287,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
                             className={[
                               "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mb-1",
                               isToday(day)
-                                ? "bg-bush text-white"
+                                ? "bg-primary text-primary-foreground"
                                 : "text-neutral-darkest",
                             ].join(" ")}
                           >
@@ -394,7 +394,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
             <Button
               onClick={handleSaveColors}
               disabled={updateColorsMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-save-colors"
             >
               {updateColorsMutation.isPending ? "Saving..." : "Save Colors"}
@@ -456,7 +456,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
             </Button>
             {selectedItem && (
               <a href={getTypeRoute(selectedItem)}>
-                <Button className="bg-bush text-white" data-testid="button-open-item-page">
+                <Button className="bg-primary text-primary-foreground" data-testid="button-open-item-page">
                   Open in {getTypeLabel(selectedItem.type)}s
                 </Button>
               </a>

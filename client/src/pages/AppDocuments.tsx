@@ -47,7 +47,7 @@ function StepStrip({ activeStep }: { activeStep: 1 | 2 | 3 }) {
   const on = "bg-white text-neutral-darkest border-neutral-darkest/20 shadow-sm";
   const off = "bg-transparent text-neutral-darkest/60 border-neutral-darkest/10";
   const dotBase = "flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold";
-  const dotOn = "bg-bush text-white border-bush";
+  const dotOn = "bg-primary text-primary-foreground border-primary";
   const dotOff = "bg-transparent text-neutral-darkest/50 border-neutral-darkest/20";
 
   const Item = (n: 1 | 2 | 3, label: string) => (
@@ -711,7 +711,7 @@ export default function AppDocuments() {
             <p className="font-sans text-neutral-darkest/70 mb-4">Case not found or you don't have access.</p>
             <Link
               href="/app/cases"
-              className="inline-flex items-center gap-2 text-sm text-bush font-medium"
+              className="inline-flex items-center gap-2 text-sm text-primary font-medium"
               data-testid="link-back-to-cases"
             >
               <Briefcase className="w-4 h-4" />
@@ -729,7 +729,7 @@ export default function AppDocuments() {
         <div className="flex flex-col items-start max-w-container w-full">
           <Link
             href={`/app/dashboard/${caseId}`}
-            className="inline-flex items-center gap-2 text-sm text-bush font-medium mb-6"
+            className="inline-flex items-center gap-2 text-sm text-primary font-medium mb-6"
             data-testid="link-back-to-dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -754,28 +754,28 @@ export default function AppDocuments() {
             <TabsList className="w-full grid grid-cols-1 md:grid-cols-3 gap-2 bg-transparent p-0 h-auto">
               <TabsTrigger
                 value="draft"
-                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-bush data-[state=active]:bg-bush/5"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-primary data-[state=active]:bg-primary/5"
                 data-testid="tab-step-1-draft"
               >
-                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">1</span>
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">1</span>
                 Step 1: Draft Your Document
               </TabsTrigger>
 
               <TabsTrigger
                 value="review"
-                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-bush data-[state=active]:bg-bush/5"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-primary data-[state=active]:bg-primary/5"
                 data-testid="tab-step-2-review"
               >
-                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">2</span>
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">2</span>
                 Step 2: Review & Edit
               </TabsTrigger>
 
               <TabsTrigger
                 value="filing"
-                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-bush data-[state=active]:bg-bush/5"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-primary data-[state=active]:bg-primary/5"
                 data-testid="tab-step-3-filing"
               >
-                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">3</span>
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">3</span>
                 Step 3: Court-Formatted Documents
               </TabsTrigger>
             </TabsList>
@@ -790,7 +790,7 @@ export default function AppDocuments() {
                 </div>
                 <Button
                   onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-bush text-white font-sans"
+                  className="bg-primary text-primary-foreground font-sans"
                   data-testid="button-create-document"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -803,8 +803,8 @@ export default function AppDocuments() {
                 </div>
               ) : documents.length === 0 ? (
                 <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
-                    <FileText className="w-8 h-8 text-bush" />
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <FileText className="w-8 h-8 text-primary" />
                   </div>
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Documents Yet</h2>
                   <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
@@ -812,7 +812,7 @@ export default function AppDocuments() {
                   </p>
                   <Button
                     onClick={() => setIsCreateDialogOpen(true)}
-                    className="bg-bush text-white font-sans"
+                    className="bg-primary text-primary-foreground font-sans"
                     data-testid="button-create-first-document"
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -825,8 +825,8 @@ export default function AppDocuments() {
                 <Card key={doc.id} className="overflow-visible" data-testid={`card-document-${doc.id}`}>
                   <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded bg-bush/10 flex items-center justify-center flex-shrink-0">
-                        <FileType className="w-5 h-5 text-bush" />
+                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FileType className="w-5 h-5 text-primary" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3
@@ -931,8 +931,8 @@ export default function AppDocuments() {
                 </div>
               ) : generatedDocuments.length === 0 ? (
                 <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
-                    <History className="w-8 h-8 text-bush" />
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <History className="w-8 h-8 text-primary" />
                   </div>
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Court Filings Yet</h2>
                   <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
@@ -940,7 +940,7 @@ export default function AppDocuments() {
                   </p>
                   <Button
                     onClick={() => { setDocStep("review"); }}
-                    className="bg-bush text-white font-sans"
+                    className="bg-primary text-primary-foreground font-sans"
                     data-testid="button-go-to-step-2"
                   >
                     <FileDown className="w-4 h-4 mr-2" />
@@ -953,8 +953,8 @@ export default function AppDocuments() {
                     <Card key={genDoc.id} className="overflow-visible" data-testid={`card-generated-doc-${genDoc.id}`}>
                       <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-10 h-10 rounded bg-bush/10 flex items-center justify-center flex-shrink-0">
-                            <FileDown className="w-5 h-5 text-bush" />
+                          <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <FileDown className="w-5 h-5 text-primary" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="font-heading font-bold text-lg text-neutral-darkest truncate" data-testid={`text-generated-doc-title-${genDoc.id}`}>
@@ -1027,7 +1027,7 @@ export default function AppDocuments() {
             <Button
               onClick={handleCreate}
               disabled={createMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-confirm-create"
             >
               {createMutation.isPending ? "Creating..." : "Create"}
@@ -1081,7 +1081,7 @@ export default function AppDocuments() {
               <Button
                 onClick={handleSave}
                 disabled={updateMutation.isPending}
-                className="bg-bush text-white"
+                className="bg-primary text-primary-foreground"
                 data-testid="button-save-document"
               >
                 <Save className="w-4 h-4 mr-2" />
@@ -1150,7 +1150,7 @@ export default function AppDocuments() {
             <Button
               onClick={() => selectedCourtDocType && openReviewModal(selectedCourtDocType as CourtDocType)}
               disabled={!selectedCourtDocType}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-confirm-court-doc"
             >
               <Edit3 className="w-4 h-4 mr-2" />
@@ -1190,7 +1190,7 @@ export default function AppDocuments() {
             <Button
               onClick={handleAutofillConsentAccept}
               disabled={updateProfileMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-accept-autofill"
             >
               {updateProfileMutation.isPending ? "Saving..." : "Use Autofill"}
@@ -1542,7 +1542,7 @@ export default function AppDocuments() {
             <Button
               onClick={handleFinalDownload}
               disabled={isDownloadingCourtDoc || !dateConfirmed}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-download-final"
             >
               <FileDown className="w-4 h-4 mr-2" />
@@ -1692,7 +1692,7 @@ export default function AppDocuments() {
             <Button
               onClick={handleSaveProfile}
               disabled={updateProfileMutation.isPending}
-              className="bg-bush text-white"
+              className="bg-primary text-primary-foreground"
               data-testid="button-save-autofill"
             >
               {updateProfileMutation.isPending ? "Saving..." : "Save"}

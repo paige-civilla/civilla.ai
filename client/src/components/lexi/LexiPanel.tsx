@@ -157,7 +157,7 @@ export default function LexiPanel() {
         }}
         className={[
           "fixed right-0 top-1/2 -translate-y-1/2 z-50",
-          "h-36 w-10 bg-bush text-white shadow-lg",
+          "h-36 w-10 bg-primary text-primary-foreground shadow-lg",
           "rounded-l-xl",
           "flex items-center justify-center",
           "cursor-pointer select-none",
@@ -201,7 +201,7 @@ export default function LexiPanel() {
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-light">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-bush/10 flex items-center justify-center text-bush font-semibold">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
                 L
               </div>
               <div>
@@ -230,7 +230,7 @@ export default function LexiPanel() {
                 className={[
                   "rounded-lg px-3 py-2 whitespace-pre-wrap text-sm",
                   m.role === "user"
-                    ? "ml-8 bg-bush text-white"
+                    ? "ml-8 bg-primary text-primary-foreground"
                     : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
                 ].join(" ")}
               >
@@ -254,7 +254,7 @@ export default function LexiPanel() {
                 type="button"
                 onClick={send}
                 disabled={sending || !input.trim()}
-                className="rounded-md bg-bush text-white px-4 py-2 font-sans text-sm disabled:opacity-50"
+                className="rounded-md bg-primary text-primary-foreground px-4 py-2 font-sans text-sm disabled:opacity-50"
                 data-testid="lexi-send"
               >
                 Send

@@ -184,7 +184,7 @@ export default function AppOnboarding() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-bush" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -416,11 +416,11 @@ export default function AppOnboarding() {
                     <div key={s.id} className="flex-1 flex flex-col items-center">
                       <div className={`
                         w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors
-                        ${isComplete ? 'bg-bush text-white' : isActive ? 'bg-bush/20 text-bush border-2 border-bush' : 'bg-neutral-darkest/10 text-neutral-darkest/40'}
+                        ${isComplete ? 'bg-primary text-primary-foreground' : isActive ? 'bg-primary/20 text-primary border-2 border-primary' : 'bg-neutral-darkest/10 text-neutral-darkest/40'}
                       `}>
                         {isComplete ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                       </div>
-                      <span className={`text-xs font-medium text-center ${isActive ? 'text-bush' : 'text-neutral-darkest/60'}`}>
+                      <span className={`text-xs font-medium text-center ${isActive ? 'text-primary' : 'text-neutral-darkest/60'}`}>
                         {s.title}
                       </span>
                       {idx < displaySteps.length - 1 && (
@@ -437,8 +437,8 @@ export default function AppOnboarding() {
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Your Information</h2>
                   {hasDeferredFieldsInStep(1) && (
-                    <div className="flex items-center gap-2 p-3 bg-bush/10 border border-bush/20 rounded-md text-sm text-neutral-darkest">
-                      <Info className="w-4 h-4 text-bush flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-md text-sm text-neutral-darkest">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Some info was skipped. You can finish later in Account Settings.</span>
                     </div>
                   )}
@@ -572,8 +572,8 @@ export default function AppOnboarding() {
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Your Address</h2>
                   {hasDeferredFieldsInStep(2) && (
-                    <div className="flex items-center gap-2 p-3 bg-bush/10 border border-bush/20 rounded-md text-sm text-neutral-darkest">
-                      <Info className="w-4 h-4 text-bush flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-md text-sm text-neutral-darkest">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Some info was skipped. You can finish later in Account Settings.</span>
                     </div>
                   )}
@@ -664,8 +664,8 @@ export default function AppOnboarding() {
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Case Details</h2>
                   {hasDeferredFieldsInStep(3) && (
-                    <div className="flex items-center gap-2 p-3 bg-bush/10 border border-bush/20 rounded-md text-sm text-neutral-darkest">
-                      <Info className="w-4 h-4 text-bush flex-shrink-0" />
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-md text-sm text-neutral-darkest">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0" />
                       <span>Some info was skipped. You can finish later in Account Settings.</span>
                     </div>
                   )}
@@ -885,7 +885,7 @@ export default function AppOnboarding() {
                           <h3 className="font-medium text-neutral-darkest">Terms of Service</h3>
                           <p className="text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledTos ? (
-                              <span className="text-bush flex items-center gap-1">
+                              <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
                               </span>
                             ) : (
@@ -928,7 +928,7 @@ export default function AppOnboarding() {
                           <h3 className="font-medium text-neutral-darkest">Privacy Policy</h3>
                           <p className="text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledPrivacy ? (
-                              <span className="text-bush flex items-center gap-1">
+                              <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
                               </span>
                             ) : (
@@ -971,7 +971,7 @@ export default function AppOnboarding() {
                           <h3 className="font-medium text-neutral-darkest">Not a Law Firm Disclosure</h3>
                           <p className="text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledNotLawFirm ? (
-                              <span className="text-bush flex items-center gap-1">
+                              <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
                               </span>
                             ) : (
@@ -1014,7 +1014,7 @@ export default function AppOnboarding() {
                           <h3 className="font-medium text-neutral-darkest">User Responsibility</h3>
                           <p className="text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledResponsibility ? (
-                              <span className="text-bush flex items-center gap-1">
+                              <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
                               </span>
                             ) : (
@@ -1077,7 +1077,7 @@ export default function AppOnboarding() {
                     type="button"
                     onClick={handleNext}
                     disabled={!canProceed()}
-                    className="bg-bush hover:bg-bush/90"
+                    className="bg-primary hover:bg-primary/90"
                     data-testid="button-next"
                   >
                     Next
@@ -1088,7 +1088,7 @@ export default function AppOnboarding() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={!canProceed() || completeMutation.isPending}
-                    className="bg-bush hover:bg-bush/90"
+                    className="bg-primary hover:bg-primary/90"
                     data-testid="button-complete-onboarding"
                   >
                     {completeMutation.isPending ? (
