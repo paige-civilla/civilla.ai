@@ -206,7 +206,7 @@ export default function AppDashboard() {
 
           <div className="w-full flex flex-col lg:flex-row gap-8">
             <div className="lg:w-[380px] flex-shrink-0">
-              <div className="bg-white rounded-lg border border-[hsl(var(--app-panel-border))] overflow-hidden">
+              <div className="bg-[hsl(var(--app-surface))] rounded-lg border border-[hsl(var(--app-panel-border))] overflow-hidden">
                 <CaseMonthCalendar caseId={primaryCase.id} />
                 
                 <div className="px-4 pb-4">
@@ -231,7 +231,7 @@ export default function AppDashboard() {
                           return (
                             <div
                               key={`${item.kind}-${item.id}`}
-                              className="flex items-start gap-3 rounded-md border border-neutral-darkest/10 bg-[#F3F6F7] p-3"
+                              className="flex items-start gap-3 rounded-md border border-neutral-darkest/10 bg-white/60 p-3"
                               data-testid={`upcoming-item-${item.kind}-${item.id}`}
                             >
                               <Checkbox
@@ -266,7 +266,7 @@ export default function AppDashboard() {
             </div>
 
             <div className="flex-1">
-              <div className="w-full bg-[#e7ebea] rounded-lg p-6 md:p-8 mb-8">
+              <div className="w-full bg-[hsl(var(--app-surface))] rounded-lg p-6 md:p-8 mb-8 border border-[hsl(var(--app-panel-border))]">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-bush flex items-center justify-center flex-shrink-0">
                     <Briefcase className="w-6 h-6 text-white" />
@@ -288,7 +288,7 @@ export default function AppDashboard() {
                     <Link
                       key={module.title}
                       href={module.href}
-                      className="relative bg-white border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
+                      className="relative bg-[hsl(var(--app-surface))] border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
                       data-testid={`module-card-${module.title.toLowerCase()}`}
                     >
                       <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center mb-3">
