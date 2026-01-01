@@ -186,7 +186,7 @@ export default function AppTasks() {
               data-testid="button-add-task"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Task
+              Add To-Do
             </Button>
           </div>
 
@@ -200,7 +200,7 @@ export default function AppTasks() {
                 <CheckSquare className="w-8 h-8 text-bush" />
               </div>
               <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
-                No Tasks Yet
+                No To-Do Items Yet
               </h2>
               <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
                 Keep track of what needs to be done for your case.
@@ -211,7 +211,7 @@ export default function AppTasks() {
                 data-testid="button-add-first-task"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Your First Task
+                Add Your First To-Do
               </Button>
             </div>
           ) : (
@@ -219,7 +219,7 @@ export default function AppTasks() {
               {openTasks.length > 0 && (
                 <div>
                   <h2 className="font-heading font-semibold text-lg text-neutral-darkest mb-4">
-                    Open Tasks ({openTasks.length})
+                    Open To-Do Items ({openTasks.length})
                   </h2>
                   <div className="space-y-3">
                     {openTasks.map((task) => (
@@ -268,7 +268,7 @@ export default function AppTasks() {
         onOpenChange={setIsCreateOpen}
         onSubmit={(data) => createMutation.mutate(data)}
         isLoading={createMutation.isPending}
-        title="Add Task"
+        title="Add To-Do"
       />
 
       <TaskFormDialog
@@ -276,14 +276,14 @@ export default function AppTasks() {
         onOpenChange={(open) => !open && setEditTask(null)}
         onSubmit={(data) => editTask && updateMutation.mutate({ taskId: editTask.id, data })}
         isLoading={updateMutation.isPending}
-        title="Edit Task"
+        title="Edit To-Do"
         defaultValues={editTask || undefined}
       />
 
       <Dialog open={!!deleteConfirmTask} onOpenChange={(open) => !open && setDeleteConfirmTask(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>Delete To-Do</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-neutral-darkest/70">
             Are you sure you want to delete "{deleteConfirmTask?.title}"? This action cannot be undone.
