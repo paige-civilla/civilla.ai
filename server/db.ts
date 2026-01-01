@@ -244,5 +244,44 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_case_children_user_case ON case_children(user_id, case_id)`
   ]);
 
+  await initTable("tasks", `
+    CREATE TABLE IF NOT EXISTS tasks (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      status TEXT NOT NULL DEFAULT 'open',
+      due_date TIMESTAMP,
+      priority INTEGER NOT NULL DEFAULT 2,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_tasks_case_id ON tasks(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_tasks_case_due ON tasks(case_id, due_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_tasks_case_status ON tasks(case_id, status)`
+  ]);
+
+  await initTable("deadlines", `
+    CREATE TABLE IF NOT EXISTS deadlines (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      notes TEXT,
+      status TEXT NOT NULL DEFAULT 'upcoming',
+      due_date TIMESTAMP NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_deadlines_case_id ON deadlines(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_deadlines_user_id ON deadlines(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_deadlines_case_due ON deadlines(case_id, due_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_deadlines_case_status ON deadlines(case_id, status)`
+  ]);
+
   console.log("Database table initialization complete");
 }

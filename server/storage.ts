@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, asc } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -10,6 +10,8 @@ import {
   userProfiles,
   generatedDocuments,
   caseChildren,
+  tasks,
+  deadlines,
   type User,
   type InsertUser,
   type Case,
@@ -30,6 +32,12 @@ import {
   type CaseChild,
   type InsertCaseChild,
   type UpdateCaseChild,
+  type Task,
+  type InsertTask,
+  type UpdateTask,
+  type Deadline,
+  type InsertDeadline,
+  type UpdateDeadline,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -77,6 +85,16 @@ export interface IStorage {
   createCaseChild(caseId: string, userId: string, data: InsertCaseChild): Promise<CaseChild>;
   updateCaseChild(childId: string, userId: string, data: UpdateCaseChild): Promise<CaseChild | undefined>;
   deleteCaseChild(childId: string, userId: string): Promise<boolean>;
+
+  listTasks(userId: string, caseId: string): Promise<Task[]>;
+  createTask(userId: string, caseId: string, data: InsertTask): Promise<Task>;
+  updateTask(userId: string, taskId: string, data: UpdateTask): Promise<Task | undefined>;
+  deleteTask(userId: string, taskId: string): Promise<boolean>;
+
+  listDeadlines(userId: string, caseId: string): Promise<Deadline[]>;
+  createDeadline(userId: string, caseId: string, data: InsertDeadline): Promise<Deadline>;
+  updateDeadline(userId: string, deadlineId: string, data: UpdateDeadline): Promise<Deadline | undefined>;
+  deleteDeadline(userId: string, deadlineId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -553,6 +571,90 @@ export class DatabaseStorage implements IStorage {
       .delete(caseChildren)
       .where(and(eq(caseChildren.id, childId), eq(caseChildren.userId, userId)));
     return true;
+  }
+
+  async listTasks(userId: string, caseId: string): Promise<Task[]> {
+    const rows = await db.select().from(tasks)
+      .where(and(eq(tasks.userId, userId), eq(tasks.caseId, caseId)))
+      .orderBy(desc(tasks.createdAt));
+    return rows;
+  }
+
+  async createTask(userId: string, caseId: string, data: InsertTask): Promise<Task> {
+    const [row] = await db.insert(tasks)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        description: data.description ?? null,
+        status: data.status ?? "open",
+        dueDate: data.dueDate ?? null,
+        priority: data.priority ?? 2,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return row;
+  }
+
+  async updateTask(userId: string, taskId: string, data: UpdateTask): Promise<Task | undefined> {
+    const [row] = await db.update(tasks)
+      .set({
+        ...("title" in data ? { title: data.title } : {}),
+        ...("description" in data ? { description: data.description ?? null } : {}),
+        ...("status" in data ? { status: data.status } : {}),
+        ...("dueDate" in data ? { dueDate: data.dueDate ?? null } : {}),
+        ...("priority" in data ? { priority: data.priority } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteTask(userId: string, taskId: string): Promise<boolean> {
+    const res = await db.delete(tasks).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  async listDeadlines(userId: string, caseId: string): Promise<Deadline[]> {
+    const rows = await db.select().from(deadlines)
+      .where(and(eq(deadlines.userId, userId), eq(deadlines.caseId, caseId)))
+      .orderBy(asc(deadlines.dueDate));
+    return rows;
+  }
+
+  async createDeadline(userId: string, caseId: string, data: InsertDeadline): Promise<Deadline> {
+    const [row] = await db.insert(deadlines)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        notes: data.notes ?? null,
+        status: data.status ?? "upcoming",
+        dueDate: data.dueDate,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return row;
+  }
+
+  async updateDeadline(userId: string, deadlineId: string, data: UpdateDeadline): Promise<Deadline | undefined> {
+    const [row] = await db.update(deadlines)
+      .set({
+        ...("title" in data ? { title: data.title } : {}),
+        ...("notes" in data ? { notes: data.notes ?? null } : {}),
+        ...("status" in data ? { status: data.status } : {}),
+        ...("dueDate" in data ? { dueDate: data.dueDate } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(deadlines.id, deadlineId), eq(deadlines.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteDeadline(userId: string, deadlineId: string): Promise<boolean> {
+    const res = await db.delete(deadlines).where(and(eq(deadlines.id, deadlineId), eq(deadlines.userId, userId))).returning();
+    return res.length > 0;
   }
 }
 

@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
@@ -1189,6 +1189,186 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete case child error:", error);
       res.status(500).json({ error: "Failed to delete case child" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/tasks", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const tasks = await storage.listTasks(userId, caseId);
+      res.json({ tasks });
+    } catch (error) {
+      console.error("List tasks error:", error);
+      res.status(500).json({ error: "Failed to list tasks" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/tasks", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertTaskSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const task = await storage.createTask(userId, caseId, parseResult.data);
+      res.status(201).json({ task });
+    } catch (error) {
+      console.error("Create task error:", error);
+      res.status(500).json({ error: "Failed to create task" });
+    }
+  });
+
+  app.patch("/api/tasks/:taskId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { taskId } = req.params;
+
+      const parseResult = updateTaskSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateTask(userId, taskId, parseResult.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      res.json({ task: updated });
+    } catch (error) {
+      console.error("Update task error:", error);
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
+  app.delete("/api/tasks/:taskId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { taskId } = req.params;
+
+      const deleted = await storage.deleteTask(userId, taskId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      res.json({ message: "Task deleted" });
+    } catch (error) {
+      console.error("Delete task error:", error);
+      res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/deadlines", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const deadlines = await storage.listDeadlines(userId, caseId);
+      res.json({ deadlines });
+    } catch (error) {
+      console.error("List deadlines error:", error);
+      res.status(500).json({ error: "Failed to list deadlines" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/deadlines", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertDeadlineSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const deadline = await storage.createDeadline(userId, caseId, parseResult.data);
+      res.status(201).json({ deadline });
+    } catch (error) {
+      console.error("Create deadline error:", error);
+      res.status(500).json({ error: "Failed to create deadline" });
+    }
+  });
+
+  app.patch("/api/deadlines/:deadlineId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { deadlineId } = req.params;
+
+      const parseResult = updateDeadlineSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateDeadline(userId, deadlineId, parseResult.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Deadline not found" });
+      }
+
+      res.json({ deadline: updated });
+    } catch (error) {
+      console.error("Update deadline error:", error);
+      res.status(500).json({ error: "Failed to update deadline" });
+    }
+  });
+
+  app.delete("/api/deadlines/:deadlineId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { deadlineId } = req.params;
+
+      const deleted = await storage.deleteDeadline(userId, deadlineId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Deadline not found" });
+      }
+
+      res.json({ message: "Deadline deleted" });
+    } catch (error) {
+      console.error("Delete deadline error:", error);
+      res.status(500).json({ error: "Failed to delete deadline" });
     }
   });
 

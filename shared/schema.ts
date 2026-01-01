@@ -122,6 +122,12 @@ export const insertAuthIdentitySchema = createInsertSchema(authIdentities).pick(
 export type InsertAuthIdentity = z.infer<typeof insertAuthIdentitySchema>;
 export type AuthIdentity = typeof authIdentities.$inferSelect;
 
+export const taskStatuses = ["open", "completed"] as const;
+export type TaskStatus = typeof taskStatuses[number];
+
+export const deadlineStatuses = ["upcoming", "done"] as const;
+export type DeadlineStatus = typeof deadlineStatuses[number];
+
 export const timelineEventCategories = [
   "court",
   "filing",
@@ -403,3 +409,91 @@ export const updateCaseChildSchema = z.object({
 export type InsertCaseChild = z.infer<typeof insertCaseChildSchema>;
 export type UpdateCaseChild = z.infer<typeof updateCaseChildSchema>;
 export type CaseChild = typeof caseChildren.$inferSelect;
+
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("open"),
+  dueDate: timestamp("due_date"),
+  priority: integer("priority").notNull().default(2),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("tasks_case_idx").on(table.caseId),
+  userIdx: index("tasks_user_idx").on(table.userId),
+  caseDueIdx: index("tasks_case_due_idx").on(table.caseId, table.dueDate),
+  caseStatusIdx: index("tasks_case_status_idx").on(table.caseId, table.status),
+}));
+
+export const insertTaskSchema = createInsertSchema(tasks)
+  .pick({
+    title: true,
+    description: true,
+    status: true,
+    dueDate: true,
+    priority: true,
+  })
+  .extend({
+    title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+    description: z.string().max(5000, "Description must be 5,000 characters or less").optional().nullable(),
+    status: z.enum(taskStatuses).optional().default("open"),
+    dueDate: z.coerce.date().optional().nullable(),
+    priority: z.number().int().min(1).max(3).optional().default(2),
+  });
+
+export const updateTaskSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  status: z.enum(taskStatuses).optional(),
+  dueDate: z.coerce.date().optional().nullable(),
+  priority: z.number().int().min(1).max(3).optional(),
+});
+
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type UpdateTask = z.infer<typeof updateTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
+
+export const deadlines = pgTable("deadlines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  notes: text("notes"),
+  status: text("status").notNull().default("upcoming"),
+  dueDate: timestamp("due_date").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("deadlines_case_idx").on(table.caseId),
+  userIdx: index("deadlines_user_idx").on(table.userId),
+  caseDueIdx: index("deadlines_case_due_idx").on(table.caseId, table.dueDate),
+  caseStatusIdx: index("deadlines_case_status_idx").on(table.caseId, table.status),
+}));
+
+export const insertDeadlineSchema = createInsertSchema(deadlines)
+  .pick({
+    title: true,
+    notes: true,
+    status: true,
+    dueDate: true,
+  })
+  .extend({
+    title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+    notes: z.string().max(10000, "Notes must be 10,000 characters or less").optional().nullable(),
+    status: z.enum(deadlineStatuses).optional().default("upcoming"),
+    dueDate: z.coerce.date({ required_error: "Due date is required" }),
+  });
+
+export const updateDeadlineSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  notes: z.string().max(10000).optional().nullable(),
+  status: z.enum(deadlineStatuses).optional(),
+  dueDate: z.coerce.date().optional(),
+});
+
+export type InsertDeadline = z.infer<typeof insertDeadlineSchema>;
+export type UpdateDeadline = z.infer<typeof updateDeadlineSchema>;
+export type Deadline = typeof deadlines.$inferSelect;
