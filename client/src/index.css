@@ -11,66 +11,144 @@
 :root {
   --civilla-nav-h: 0px;
   
-  /* App theme background (authenticated pages) - off-white/cream like marketing */
-  --app-bg: hsl(40 28% 98%);
-  
-  /* App UI light blue/gray palette (authenticated pages only) */
-  --app-surface: 210 17% 93%;         /* #E9EFF2 - light blue/gray for navbar/footer/cards */
-  --app-surface-2: 204 18% 89%;       /* #DFE8EC - slightly deeper for borders/hover */
-  --app-panel: 200 14% 97%;           /* #F4F7F8 - dropdown/panels */
-  --app-panel-border: 200 18% 82%;    /* #C9D6DC - border */
-  
-  /* Input field light green background */
+  /* Input field light green background - preserved across themes */
   --input-bg: #EEF7F1;
 }
 
+/* ---------------------------
+   MARKETING THEME (PRE-LOGIN)
+   Warm cream + bush green
+--------------------------- */
+.theme-marketing {
+  --background: 40 37.5% 96.9%;      /* #FAF8F4 warm cream */
+  --foreground: 20 17% 3%;           /* near-black */
+  --primary: 158 52% 15%;            /* #0F3B2E green brand */
+  --primary-foreground: 40 37.5% 96.9%;
+  --muted: 158 10% 83%;              /* #CFD7D5 */
+  --muted-foreground: 20 10% 35%;
+  --border: 158 8% 75%;
+  --input: 158 10% 83%;
+  --card: 40 28% 98%;
+  --card-foreground: 20 17% 3%;
+  --popover: 40 28% 92%;
+  --popover-foreground: 20 17% 3%;
+  --ring: 158 52% 15%;
+  --destructive: 0 72% 28%;          /* #7A1F1F */
+  --destructive-foreground: 40 37.5% 96.9%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 20 17% 3%;
+  --accent: 158 10% 83%;
+  --accent-foreground: 20 17% 3%;
+}
+
+/* MARKETING DARK MODE */
+.theme-marketing.dark {
+  --background: 165 12% 8%;          /* deep green-black */
+  --foreground: 40 25% 94%;
+  --primary: 158 52% 30%;            /* brighter green accent */
+  --primary-foreground: 165 12% 8%;
+  --muted: 165 10% 18%;
+  --muted-foreground: 165 8% 60%;
+  --border: 165 10% 22%;
+  --input: 165 10% 18%;
+  --card: 165 10% 12%;
+  --card-foreground: 40 25% 94%;
+  --popover: 165 10% 14%;
+  --popover-foreground: 40 25% 94%;
+  --ring: 158 52% 30%;
+  --destructive: 0 60% 35%;
+  --destructive-foreground: 40 25% 94%;
+  --secondary: 165 8% 16%;
+  --secondary-foreground: 40 25% 94%;
+  --accent: 165 10% 20%;
+  --accent-foreground: 40 25% 94%;
+}
+
 /* =========================================================
-   Authenticated App Theme (scoped): only applies inside AppLayout
-   Colors provided by Paige:
-   - App background: #FAF8F4
-   - App navbar/footer: #E4ECED
-   - Module tiles: #A2BEC2 (borders/text: #243032)
-   - Input fill: #CFD7D5
-   - Primary button: #314143 (hover slightly darker)
-   - Destructive (delete): burgundy
+   APP THEME (POST-LOGIN)
+   Cool modern: background is cool-white, cards are white, borders #A2BEC2
+   Primary: dark blue #314143
 ========================================================= */
 .app-shell {
-  /* Core semantic tokens */
-  --background: 40 37.5% 96.9%;          /* #FAF8F4 */
-  --foreground: 188.6 16.3% 16.9%;       /* #243032 */
+  /* Background: cool near-white (NOT warm cream) */
+  --background: 192 23% 96%;              /* cool near-white */
+  --foreground: 188.6 16.3% 16.9%;        /* #243032 */
 
-  --card: 40 37.5% 96.9%;                 /* #FAF8F4 */
+  /* Cards & surfaces: pure white */
+  --card: 0 0% 100%;                      /* pure white */
   --card-foreground: 188.6 16.3% 16.9%;   /* #243032 */
 
-  --popover: 40 37.5% 96.9%;
+  --popover: 0 0% 100%;                   /* pure white */
   --popover-foreground: 188.6 16.3% 16.9%;
 
+  /* Muted: light blue-gray */
   --muted: 186.7 20% 91.2%;               /* #E4ECED */
   --muted-foreground: 188.6 12% 32%;
 
+  /* Borders: blue-gray */
   --border: 187.5 20.8% 69.8%;            /* #A2BEC2 */
   --input: 165 9.1% 82.7%;                /* #CFD7D5 */
   --ring: 186.7 15.5% 22.7%;              /* near primary */
 
-  /* Primary = Dark Blue #314143 (NOT green) */
+  /* Primary = Dark Blue #314143 */
   --primary: 186.7 15.5% 22.7%;           /* #314143 */
   --primary-hover: 187.1 16.2% 20.6%;     /* slightly darker */
-  --primary-foreground: 40 37.5% 96.9%;   /* #FAF8F4 */
+  --primary-foreground: 40 37.5% 96.9%;   /* light text on primary */
+
+  /* Secondary */
+  --secondary: 186.7 15% 90%;
+  --secondary-foreground: 188.6 16.3% 16.9%;
+
+  /* Accent */
+  --accent: 186.7 20% 91.2%;
+  --accent-foreground: 188.6 16.3% 16.9%;
 
   /* Destructive = Burgundy */
   --destructive: 350.2 60.5% 29.8%;       /* burgundy #7A1E2D */
   --destructive-hover: 349.7 60.3% 24.7%; /* darker burgundy #651926 */
   --destructive-foreground: 40 37.5% 96.9%;
 
-  /* App-specific aliases for easy reference */
-  --app-primary: 186.7 15.5% 22.7%;           /* #314143 dark blue */
-  --app-primary-hover: 187.1 16.2% 20.6%;     /* darker */
-  --app-primary-foreground: 40 37.5% 96.9%;   /* #FAF8F4 */
-  --app-surface: 186.7 20% 91.2%;             /* #E4ECED navbar/footer */
-  --app-panel: 40 37.5% 96.9%;                /* #FAF8F4 */
-  --app-input: 165 9.1% 82.7%;                /* #CFD7D5 */
-  --app-border: 187.5 20.8% 69.8%;            /* #A2BEC2 */
-  --app-text: 188.6 16.3% 16.9%;              /* #243032 */
+  /* App-specific aliases */
+  --app-surface: 186.7 20% 91.2%;         /* #E4ECED navbar/footer */
+  --app-surface-2: 186.7 18% 88%;         /* slightly darker for hover */
+  --app-panel-border: 187.5 20.8% 69.8%;  /* #A2BEC2 */
+}
+
+/* APP DARK MODE */
+.app-shell.dark {
+  --background: 200 12% 10%;              /* deep blue-gray */
+  --foreground: 40 25% 94%;
+
+  --card: 200 10% 14%;
+  --card-foreground: 40 25% 94%;
+
+  --popover: 200 10% 14%;
+  --popover-foreground: 40 25% 94%;
+
+  --muted: 200 10% 16%;
+  --muted-foreground: 200 8% 60%;
+
+  --border: 200 10% 22%;
+  --input: 200 10% 18%;
+  --ring: 186 22% 60%;
+
+  --primary: 186 22% 60%;                 /* lighter slate-blue accent */
+  --primary-hover: 186 22% 55%;
+  --primary-foreground: 200 12% 10%;
+
+  --secondary: 200 10% 18%;
+  --secondary-foreground: 40 25% 94%;
+
+  --accent: 200 10% 20%;
+  --accent-foreground: 40 25% 94%;
+
+  --destructive: 350 55% 45%;
+  --destructive-hover: 350 55% 38%;
+  --destructive-foreground: 40 25% 94%;
+
+  --app-surface: 200 10% 14%;
+  --app-surface-2: 200 10% 18%;
+  --app-panel-border: 200 10% 28%;
 }
 
 /* Autofill background fix - prevent browser yellow on autofilled inputs */
@@ -134,13 +212,18 @@ html,
 body {
   max-width: 100%;
   overflow-x: hidden;
-  background: var(--app-bg);
 }
 
-/* Ensure app shell uses the same bg */
+/* Theme containers apply their own backgrounds */
+.theme-marketing,
+.app-shell {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Ensure root and body inherit properly */
 #root {
   min-height: 100%;
-  background: var(--app-bg);
 }
 
 /* Core text wrapping rules - allow wrapping but not mid-word */

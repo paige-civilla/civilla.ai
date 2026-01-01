@@ -5,9 +5,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { PasswordField } from "@/components/ui/PasswordField";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Login() {
   const [, setLocation] = useLocation();
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -54,7 +56,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className={`theme-marketing flex flex-col min-h-screen ${theme === "dark" ? "dark" : ""}`}>
       <NavbarCream />
       
       <section className="flex-1 w-full flex flex-col items-center justify-center px-5 py-10 md:py-16">

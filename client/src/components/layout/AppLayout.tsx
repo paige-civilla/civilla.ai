@@ -5,6 +5,7 @@ import AppNavbar from "./AppNavbar";
 import AppFooter from "./AppFooter";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import LexiPanel from "@/components/lexi/LexiPanel";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [location, setLocation] = useLocation();
+  const { theme } = useTheme();
   useIdleLogout({ idleMs: 15 * 60 * 1000, logoutEndpoint: '/api/auth/logout', redirectTo: '/' });
 
   const { data: authData, isLoading: authLoading, isError: authError } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
@@ -49,9 +51,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return null;
   }
 
-  // NOTE: .app-shell scopes the "inside the app" theme (logged-in pages only)
   return (
-    <div className="app-shell flex flex-col min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]" data-testid="app-layout">
+    <div 
+      className={`app-shell flex flex-col min-h-screen ${theme === "dark" ? "dark" : ""}`} 
+      data-testid="app-layout"
+    >
       <AppNavbar />
       <main className="flex-1 w-full">
         {children}

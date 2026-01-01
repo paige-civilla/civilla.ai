@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, CreditCard, Settings } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User, CreditCard, Settings, Palette } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface UserProfile {
   fullName: string | null;
@@ -27,6 +29,7 @@ interface UserProfile {
 
 export default function AppAccountSettings() {
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -227,6 +230,41 @@ export default function AppAccountSettings() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg font-heading font-bold text-neutral-darkest">
+                <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
+                  <Palette className="w-5 h-5 text-primary" />
+                </div>
+                Appearance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-sans font-medium text-neutral-darkest">Theme</p>
+                    <p className="font-sans text-sm text-neutral-darkest/60">
+                      Choose between light and dark mode
+                    </p>
+                  </div>
+                  <Select
+                    value={theme}
+                    onValueChange={(val) => setTheme(val as "light" | "dark")}
+                  >
+                    <SelectTrigger className="w-32" data-testid="select-theme">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

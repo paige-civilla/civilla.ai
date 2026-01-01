@@ -7,10 +7,16 @@ import StepsSection from "@/components/StepsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Home() {
+  const { theme } = useTheme();
+  
   return (
-    <div className="flex flex-col items-start w-full min-h-screen bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream" data-testid="page-home">
+    <div 
+      className={`theme-marketing flex flex-col items-start w-full min-h-screen ${theme === "dark" ? "dark" : ""}`} 
+      data-testid="page-home"
+    >
       <Navbar />
       <Hero />
       <ToolsSection />
