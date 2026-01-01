@@ -789,7 +789,7 @@ export default function AppDocuments() {
             <TabsContent value="editable">
               <div className="mb-4">
                 <h2 className="font-heading font-bold text-lg text-neutral-darkest">Step 1 of 3: Draft Documents</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">Editable drafts you can work on anytime. Not court-formatted.</p>
+                <p className="font-sans text-sm text-neutral-darkest/60">Create or edit your draft here. This is not court-formatted.</p>
               </div>
               {docsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -884,7 +884,7 @@ export default function AppDocuments() {
             <TabsContent value="history">
               <div className="mb-4">
                 <h2 className="font-heading font-bold text-lg text-neutral-darkest">Step 3 of 3: Court Filings (DOCX)</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">Court-formatted files you generated here. Download again anytime.</p>
+                <p className="font-sans text-sm text-neutral-darkest/60">These are your generated court-formatted DOCX files. Re-download anytime.</p>
               </div>
               {genDocsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -1173,7 +1173,7 @@ export default function AppDocuments() {
           <DialogHeader>
             <DialogTitle>Step 2 of 3: Review & Confirm</DialogTitle>
             <DialogDescription>
-              Review the information below and make any changes before downloading.
+              Review and confirm these details before generating your court-formatted DOCX.
             </DialogDescription>
           </DialogHeader>
           {reviewPayload && (
