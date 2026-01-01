@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus } from "lucide-react";
+import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, MessageSquare } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -70,10 +70,16 @@ const getModuleCards = (caseId: string) => [
     icon: Users,
     href: `/app/contacts/${caseId}`,
   },
+  {
+    title: "Communications",
+    description: "Log calls, emails, and meetings",
+    icon: MessageSquare,
+    href: `/app/communications/${caseId}`,
+  },
 ];
 
 type UpcomingEvent = {
-  kind: "deadline" | "todo" | "calendar";
+  kind: "deadline" | "todo" | "calendar" | "communication";
   id: string;
   title: string;
   date: string;
@@ -293,6 +299,15 @@ export default function AppDashboard() {
     });
   };
 
+  const resolveCommunicationMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest("POST", `/api/cases/${caseId}/communications/${id}/resolve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "communications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "dashboard"] });
+    },
+  });
+
   const handleToggleItem = (item: UpcomingEvent) => {
     if (item.kind === "todo") {
       toggleTaskMutation.mutate({ id: item.id, status: "completed" });
@@ -300,6 +315,8 @@ export default function AppDashboard() {
       toggleDeadlineMutation.mutate({ id: item.id, status: "done" });
     } else if (item.kind === "calendar") {
       toggleCalendarItemMutation.mutate({ id: item.id, isDone: true });
+    } else if (item.kind === "communication") {
+      resolveCommunicationMutation.mutate(item.id);
     }
   };
 

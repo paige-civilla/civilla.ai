@@ -1630,11 +1630,12 @@ export async function registerRoutes(
       const monthStart = new Date(Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0));
       const monthEnd = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
 
-      const [allDeadlines, allTasks, allCalendarItems, categories] = await Promise.all([
+      const [allDeadlines, allTasks, allCalendarItems, categories, allCommunications] = await Promise.all([
         storage.listDeadlines(userId, caseId),
         storage.listTasks(userId, caseId),
         storage.listCaseCalendarItems(userId, caseId),
         storage.listCalendarCategories(userId, caseId),
+        storage.listCaseCommunications(userId, caseId),
       ]);
 
       const categoryMap = new Map(categories.map(c => [c.id, c]));
@@ -1642,9 +1643,10 @@ export async function registerRoutes(
       const defaultDeadlineColor = "#E57373";
       const defaultTodoColor = "#64B5F6";
       const defaultCalendarColor = "#7BA3A8";
+      const defaultCommunicationColor = "#9575CD";
 
       type CalendarEvent = {
-        kind: "deadline" | "todo" | "calendar";
+        kind: "deadline" | "todo" | "calendar" | "communication";
         id: string;
         title: string;
         date: string;
@@ -1701,7 +1703,35 @@ export async function registerRoutes(
         }
       }
 
+      for (const comm of allCommunications) {
+        if (comm.followUpDate && comm.status !== "resolved") {
+          const followUpDate = new Date(comm.followUpDate);
+          if (followUpDate >= monthStart && followUpDate <= monthEnd) {
+            events.push({
+              kind: "communication",
+              id: comm.id,
+              title: `Follow-up: ${comm.subject}`,
+              date: followUpDate.toISOString(),
+              isDone: comm.status === "resolved",
+              color: defaultCommunicationColor,
+            });
+          }
+        }
+      }
+
       const now = new Date();
+
+      const communicationUpcoming = allCommunications
+        .filter(c => c.followUpDate && c.status !== "resolved")
+        .map(c => ({
+          kind: "communication" as const,
+          id: c.id,
+          title: `Follow-up: ${c.subject}`,
+          date: new Date(c.followUpDate!).toISOString(),
+          isDone: c.status === "resolved",
+          color: defaultCommunicationColor,
+        }));
+
       const upcoming = [...allDeadlines, ...allTasks, ...allCalendarItems]
         .map(item => {
           if ("dueDate" in item && "status" in item && item.status !== undefined) {
@@ -1741,7 +1771,9 @@ export async function registerRoutes(
           }
           return null;
         })
-        .filter((e): e is NonNullable<typeof e> => e !== null && !e.isDone && new Date(e.date) >= now)
+        .filter((e): e is NonNullable<typeof e> => e !== null && !e.isDone && new Date(e.date) >= now);
+
+      const allUpcoming = [...upcoming, ...communicationUpcoming.filter(c => !c.isDone && new Date(c.date) >= now)]
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 7);
 
@@ -1749,7 +1781,7 @@ export async function registerRoutes(
         monthStart: monthStart.toISOString(),
         monthEnd: monthEnd.toISOString(),
         events,
-        upcoming,
+        upcoming: allUpcoming,
         categories,
       });
     } catch (error) {
