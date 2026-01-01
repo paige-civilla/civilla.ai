@@ -110,9 +110,9 @@ export default function AppDashboard() {
   });
 
   const upcomingItems: UpcomingUnified[] = useMemo(() => {
-    const normalize = (d?: string | null) => {
+    const normalize = (d?: Date | string | null) => {
       if (!d) return null;
-      const dt = new Date(d);
+      const dt = d instanceof Date ? d : new Date(d);
       if (Number.isNaN(dt.getTime())) return null;
       return dt.toISOString();
     };
