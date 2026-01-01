@@ -183,7 +183,7 @@ export default function AppNavbar() {
 
   return (
     <div ref={shellRef} className="civilla-nav-shell">
-      <nav className="bg-[hsl(var(--app-surface))] border-b border-[hsl(var(--app-panel-border))] w-full relative" data-testid="navbar-app">
+      <nav className="bg-[#314143] border-b border-[#1E2020] w-full relative" data-testid="navbar-app">
         <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-4 w-full max-w-container">
             <div className="flex items-center">
@@ -202,7 +202,7 @@ export default function AppNavbar() {
             >
               <button 
                 ref={menuButtonRef}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
+                className="inline-flex items-center justify-center rounded-md p-1.5 border border-[#F2F2F2]/30 hover:border-[#F2F2F2]/50 hover:bg-[#F2F2F2]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2F2F2]/40"
                 onClick={() => { clearTimers(); setIsMenuOpen((v) => !v); }}
                 aria-label="Open menu"
                 aria-expanded={isMenuOpen}
@@ -210,20 +210,20 @@ export default function AppNavbar() {
               >
                 <span className="flex items-center gap-1.5">
                   {isMenuOpen ? (
-                    <X className="h-4 w-4 text-foreground" aria-hidden="true" />
+                    <X className="h-4 w-4 text-[#F2F2F2]" aria-hidden="true" />
                   ) : (
-                    <Menu className="h-4 w-4 text-foreground" aria-hidden="true" />
+                    <Menu className="h-4 w-4 text-[#F2F2F2]" aria-hidden="true" />
                   )}
-                  <span className="text-xs font-medium text-foreground">Menu</span>
+                  <span className="text-xs font-medium text-[#F2F2F2]">Menu</span>
                 </span>
               </button>
               <button 
                 onClick={handleQuickExit}
-                className="ml-2 p-1.5 rounded-md bg-primary"
+                className="ml-2 p-1.5 rounded-md bg-[#F2F2F2]/20 hover:bg-[#F2F2F2]/30 transition-colors"
                 aria-label="Quick exit"
                 data-testid="button-quick-exit-app"
               >
-                <LogOut className="w-4 h-4 text-white" />
+                <LogOut className="w-4 h-4 text-[#F2F2F2]" />
               </button>
               
               {/* Grace area bridge between trigger and menu */}

@@ -245,7 +245,7 @@ export default function AppCase() {
   return (
     <AppLayout>
       <div className="px-4 md:px-8 py-8">
-        <div className="rounded-2xl bg-[#e7ebea] p-6 md:p-8 mb-10">
+        <div className="rounded-2xl bg-[#A2BEC2] border border-[#1E2020] p-6 md:p-8 mb-10">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
               <span className="text-lg font-semibold"> </span>
@@ -271,25 +271,25 @@ export default function AppCase() {
             const Tile = (
               <Card
                 className={[
-                  "h-full rounded-2xl bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))]",
-                  comingSoon ? "opacity-70" : "cursor-pointer hover:bg-[hsl(var(--app-surface-2))] transition-colors",
+                  "h-full rounded-2xl bg-[#A2BEC2] border border-[#1E2020]",
+                  comingSoon ? "opacity-70" : "cursor-pointer hover:bg-[#92AEB2] transition-colors",
                 ].join(" ")}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-[#f4f6f5] flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 rounded-2xl bg-[#F2F2F2] flex items-center justify-center">
+                      <Icon className="w-6 h-6 text-[#314143]" />
                     </div>
 
                     {comingSoon && (
-                      <span className="px-3 py-1 rounded-full text-xs bg-neutral-100 text-neutral-600">
+                      <span className="px-3 py-1 rounded-full text-xs bg-[#F2F2F2] text-[#1E2020]">
                         Coming soon
                       </span>
                     )}
                   </div>
 
-                  <h2 className="mt-6 font-heading font-bold text-lg text-neutral-darkest">{title}</h2>
-                  <p className="mt-2 font-sans text-sm text-neutral-darkest/60">{subtitle}</p>
+                  <h2 className="mt-6 font-heading font-bold text-lg text-[#1E2020]">{title}</h2>
+                  <p className="mt-2 font-sans text-sm text-[#1E2020]/70">{subtitle}</p>
                 </CardContent>
               </Card>
             );

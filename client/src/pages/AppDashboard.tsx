@@ -371,7 +371,7 @@ export default function AppDashboard() {
 
           <div className="w-full flex flex-col lg:flex-row gap-8">
             <div className="lg:w-[380px] flex-shrink-0">
-              <div className="bg-card rounded-lg border border-[#A2BEC2] overflow-hidden">
+              <div className="bg-white rounded-lg border border-[#1E2020] overflow-hidden">
                 <CaseMonthCalendar caseId={primaryCase.id} />
                 
                 <div className="px-4 pb-4">
