@@ -1,0 +1,148 @@
+# Adds 15-minute inactivity auto-logout (client-side) and wires it into AppLayout (or App.tsx fallback).
+# Paste this whole block into Replit Shell and run.
+
+python - <<'PY'
+from pathlib import Path
+import re
+
+IDLE_MS = 15 * 60 * 1000  # 15 minutes
+
+# 1) Create a reusable hook
+hook_path = Path("client/src/hooks/useIdleLogout.ts")
+hook_path.parent.mkdir(parents=True, exist_ok=True)
+
+hook_code = f"""import {{ useEffect, useRef }} from "react";
+
+/**
+ * Auto-logout after inactivity.
+ * - Resets timer on: mouse, keyboard, touch, scroll
+ * - Logs out on: {IDLE_MS/60000:.0f} minutes idle
+ */
+export function useIdleLogout(options?: {{
+  idleMs?: number;
+  logoutEndpoint?: string;   // default: /api/logout
+  redirectTo?: string;       // default: /
+}}) {{
+  const idleMs = options?.idleMs ?? {IDLE_MS};
+  const logoutEndpoint = options?.logoutEndpoint ?? "/api/logout";
+  const redirectTo = options?.redirectTo ?? "/";
+
+  const timerRef = useRef<number | null>(null);
+  const isLoggingOutRef = useRef(false);
+
+  useEffect(() => {{
+    const clearTimer = () => {{
+      if (timerRef.current) {{
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }}
+    }};
+
+    const doLogout = async () => {{
+      if (isLoggingOutRef.current) return;
+      isLoggingOutRef.current = true;
+      try {{
+        await fetch(logoutEndpoint, {{
+          method: "POST",
+          credentials: "include",
+          headers: {{
+            "Content-Type": "application/json",
+          }},
+        }});
+      }} catch {{
+        // Even if the request fails, force redirect to exit the app UI.
+      }} finally {{
+        window.location.href = redirectTo;
+      }}
+    }};
+
+    const reset = () => {{
+      if (isLoggingOutRef.current) return;
+      clearTimer();
+      timerRef.current = window.setTimeout(doLogout, idleMs);
+    }};
+
+    // Activity events
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
+    events.forEach((e) => window.addEventListener(e, reset, {{ passive: true }}));
+
+    // If the tab becomes visible again, reset timer
+    const onVis = () => {{
+      if (!document.hidden) reset();
+    }};
+    document.addEventListener("visibilitychange", onVis);
+
+    // Start the timer immediately
+    reset();
+
+    return () => {{
+      clearTimer();
+      events.forEach((e) => window.removeEventListener(e, reset));
+      document.removeEventListener("visibilitychange", onVis);
+    }};
+  }}, [idleMs, logoutEndpoint, redirectTo]);
+}}
+"""
+hook_path.write_text(hook_code, encoding="utf-8")
+print(f"OK: wrote {hook_path}")
+
+# 2) Try to wire it into AppLayout first; if not found, use App.tsx as fallback
+candidates = [
+  Path("client/src/components/layout/AppLayout.tsx"),
+  Path("client/src/components/AppLayout.tsx"),
+  Path("client/src/App.tsx"),
+]
+
+target = None
+for p in candidates:
+  if p.exists():
+    target = p
+    break
+
+if not target:
+  raise SystemExit("Could not find AppLayout.tsx or App.tsx to wire the idle logout into. Tell me your layout file path and I’ll adjust the patch.")
+
+src = target.read_text(encoding="utf-8")
+orig = src
+
+# Add import for hook if missing
+if "useIdleLogout" not in src:
+  # Find last import line and insert after it
+  m = list(re.finditer(r'^\s*import .*?;\s*$', src, flags=re.M))
+  if m:
+    insert_at = m[-1].end()
+    src = src[:insert_at] + f'\nimport {{ useIdleLogout }} from "@/hooks/useIdleLogout";\n' + src[insert_at:]
+  else:
+    # No imports? Put at top
+    src = f'import {{ useIdleLogout }} from "@/hooks/useIdleLogout";\n' + src
+
+# Insert hook call inside the main component body.
+# We’ll look for the first component function and inject right after its opening brace.
+def inject_after_component_open(text: str) -> str:
+  # Matches: function X(...) {   OR   const X = (...) => {
+  patterns = [
+    r'(export\s+default\s+function\s+\w+\s*\([^)]*\)\s*\{)',
+    r'(export\s+function\s+\w+\s*\([^)]*\)\s*\{)',
+    r'(function\s+\w+\s*\([^)]*\)\s*\{)',
+    r'(const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*\{)',
+  ]
+  for pat in patterns:
+    m = re.search(pat, text)
+    if m:
+      start = m.end()
+      # Avoid double-inserting
+      if "useIdleLogout(" in text[m.start():m.start()+400]:
+        return text
+      return text[:start] + "\n  useIdleLogout({ idleMs: 15 * 60 * 1000, logoutEndpoint: '/api/logout', redirectTo: '/' });\n" + text[start:]
+  return text
+
+src = inject_after_component_open(src)
+
+if src == orig:
+  print(f"NOTE: No changes applied to {target} (it may already be wired, or component pattern not matched).")
+else:
+  target.write_text(src, encoding="utf-8")
+  print(f"OK: wired idle logout into {target}")
+
+print("Done. Refresh the app and stay idle for 15 minutes to confirm logout triggers.")
+PY

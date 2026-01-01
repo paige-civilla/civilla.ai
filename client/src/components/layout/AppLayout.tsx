@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import AppNavbar from "./AppNavbar";
 import Footer from "@/components/Footer";
+import { useIdleLogout } from "@/hooks/useIdleLogout";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [, setLocation] = useLocation();
+  useIdleLogout({ idleMs: 15 * 60 * 1000, logoutEndpoint: '/api/logout', redirectTo: '/' });
 
   const { data: authData, isLoading, isError } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -23,8 +25,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream dark:bg-neutral-darkest flex items-center justify-center">
-        <p className="font-sans text-neutral-darkest/60 dark:text-cream/60">Loading...</p>
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="font-sans text-neutral-darkest/60">Loading...</p>
       </div>
     );
   }
@@ -34,7 +36,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream dark:bg-neutral-darkest text-neutral-darkest dark:text-cream" data-testid="app-layout">
+    <div className="flex flex-col min-h-screen bg-cream text-neutral-darkest" data-testid="app-layout">
       <AppNavbar />
       <main className="flex-1 w-full">
         {children}
