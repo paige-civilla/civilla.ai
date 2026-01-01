@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Briefcase, FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
-import type { Case } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Case, Task, Deadline } from "@shared/schema";
 
 const getModuleCards = (caseId: string) => [
   {
@@ -57,6 +59,15 @@ const getModuleCards = (caseId: string) => [
   },
 ];
 
+type UpcomingUnified = {
+  kind: "task" | "deadline";
+  id: string;
+  title: string;
+  dateISO: string;
+  completed: boolean;
+  subtitle: string;
+};
+
 export default function AppDashboard() {
   const [, setLocation] = useLocation();
   const params = useParams<{ caseId: string }>();
@@ -66,6 +77,83 @@ export default function AppDashboard() {
     queryKey: ["/api/cases", caseId],
     enabled: !!caseId,
   });
+
+  const { data: tasksData } = useQuery<{ tasks: Task[] }>({
+    queryKey: ["/api/cases", caseId, "tasks"],
+    enabled: !!caseId,
+  });
+
+  const { data: deadlinesData } = useQuery<{ deadlines: Deadline[] }>({
+    queryKey: ["/api/cases", caseId, "deadlines"],
+    enabled: !!caseId,
+  });
+
+  const tasks = tasksData?.tasks || [];
+  const deadlines = deadlinesData?.deadlines || [];
+
+  const toggleTaskMutation = useMutation({
+    mutationFn: async (payload: { id: string; status: string }) => {
+      return apiRequest("PATCH", `/api/tasks/${payload.id}`, { status: payload.status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "tasks"] });
+    },
+  });
+
+  const toggleDeadlineMutation = useMutation({
+    mutationFn: async (payload: { id: string; status: string }) => {
+      return apiRequest("PATCH", `/api/deadlines/${payload.id}`, { status: payload.status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "deadlines"] });
+    },
+  });
+
+  const upcomingItems: UpcomingUnified[] = useMemo(() => {
+    const normalize = (d?: string | null) => {
+      if (!d) return null;
+      const dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return null;
+      return dt.toISOString();
+    };
+
+    const taskUnified: UpcomingUnified[] = tasks
+      .map((t) => {
+        const iso = normalize(t.dueDate);
+        if (!iso) return null;
+        return {
+          kind: "task" as const,
+          id: t.id,
+          title: t.title,
+          dateISO: iso,
+          completed: t.status === "completed",
+          subtitle: "Case To-Do",
+        };
+      })
+      .filter(Boolean) as UpcomingUnified[];
+
+    const deadlineUnified: UpcomingUnified[] = deadlines
+      .map((d) => {
+        const iso = normalize(d.dueDate);
+        if (!iso) return null;
+        return {
+          kind: "deadline" as const,
+          id: d.id,
+          title: d.title,
+          dateISO: iso,
+          completed: d.status === "done",
+          subtitle: "Deadline",
+        };
+      })
+      .filter(Boolean) as UpcomingUnified[];
+
+    const combined = [...taskUnified, ...deadlineUnified]
+      .filter((x) => !x.completed)
+      .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime())
+      .slice(0, 7);
+
+    return combined;
+  }, [tasks, deadlines]);
 
   const primaryCase = caseData?.case;
 
@@ -118,7 +206,63 @@ export default function AppDashboard() {
 
           <div className="w-full flex flex-col lg:flex-row gap-8">
             <div className="lg:w-[380px] flex-shrink-0">
-              <CaseMonthCalendar caseId={primaryCase.id} />
+              <div className="bg-white rounded-lg border border-[hsl(var(--app-panel-border))] overflow-hidden">
+                <CaseMonthCalendar caseId={primaryCase.id} />
+                
+                <div className="px-4 pb-4">
+                  <div className="border-t border-neutral-darkest/10 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-heading font-semibold text-neutral-darkest">Upcoming</h3>
+                      <span className="text-xs text-neutral-darkest/60">Next 7</span>
+                    </div>
+
+                    {upcomingItems.length === 0 ? (
+                      <p className="text-sm text-neutral-darkest/60">
+                        Nothing upcoming yet. Add a deadline or a Case To-Do with a due date.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {upcomingItems.map((item) => {
+                          const dateLabel = new Date(item.dateISO).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          });
+
+                          return (
+                            <div
+                              key={`${item.kind}-${item.id}`}
+                              className="flex items-start gap-3 rounded-md border border-neutral-darkest/10 bg-[#F3F6F7] p-3"
+                              data-testid={`upcoming-item-${item.kind}-${item.id}`}
+                            >
+                              <Checkbox
+                                checked={false}
+                                onCheckedChange={(val) => {
+                                  const checked = val === true;
+                                  if (!checked) return;
+                                  if (item.kind === "task") {
+                                    toggleTaskMutation.mutate({ id: item.id, status: "completed" });
+                                  }
+                                  if (item.kind === "deadline") {
+                                    toggleDeadlineMutation.mutate({ id: item.id, status: "done" });
+                                  }
+                                }}
+                                data-testid={`checkbox-upcoming-${item.kind}-${item.id}`}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="font-sans font-medium text-sm text-neutral-darkest leading-tight truncate">{item.title}</p>
+                                  <span className="text-xs text-neutral-darkest/60 whitespace-nowrap flex-shrink-0">{dateLabel}</span>
+                                </div>
+                                <p className="text-xs text-neutral-darkest/60 mt-1">{item.subtitle}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex-1">
@@ -139,15 +283,12 @@ export default function AppDashboard() {
               </div>
 
               <div className="w-full">
-                <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-4">
-                  Modules
-                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {getModuleCards(primaryCase.id).map((module) => (
                     <Link
                       key={module.title}
                       href={module.href}
-                      className="relative bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
+                      className="relative bg-white border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
                       data-testid={`module-card-${module.title.toLowerCase()}`}
                     >
                       <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center mb-3">

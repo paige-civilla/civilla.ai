@@ -82,6 +82,7 @@ html,
 body {
   max-width: 100%;
   overflow-x: hidden;
+  background: #F3F6F7;
 }
 
 /* Core text wrapping rules - allow wrapping but not mid-word */

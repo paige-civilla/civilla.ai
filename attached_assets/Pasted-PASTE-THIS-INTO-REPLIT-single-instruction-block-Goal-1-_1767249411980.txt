@@ -1,0 +1,243 @@
+PASTE THIS INTO REPLIT (single instruction block)
+
+Goal:
+1) Fix the “weird yellow/gray” overall background so the app uses the same light blue/gray theme everywhere (while keeping the light-green input fields).
+2) On the Dashboard calendar card: replace the dead space underneath with an “Upcoming” checklist (next 7 items).
+3) Checking an item off updates the real source record (Tasks or Deadlines) so it stays “done” everywhere.
+4) Remove the word “Modules” above the module tiles on the dashboard.
+
+────────────────────────────────────────────────────────
+A) GLOBAL BACKGROUND + CARD COLORS (keep input light-green)
+────────────────────────────────────────────────────────
+Edit: client/src/index.css
+
+1) Add these variables (or update them if they already exist):
+:root {
+  --app-page-bg: #F3F6F7;        /* light blue/gray page */
+  --app-panel-bg: #FFFFFF;       /* cards/panels */
+  --app-panel-border: #D9E2E1;   /* subtle border */
+}
+
+2) Force the app background to use the theme (this is what removes the “yellowish/odd” page background):
+html, body {
+  background: var(--app-page-bg);
+}
+
+3) Ensure common container panels/cards are truly white (optional but usually needed if something is inheriting odd color):
+/* If you have generic panel wrappers, this helps */
+.app-panel, .app-card {
+  background: var(--app-panel-bg);
+  border-color: var(--app-panel-border);
+}
+
+IMPORTANT:
+- Do NOT change the input/textarea light-green you already added. This step is only the page + panel background.
+
+────────────────────────────────────────────────────────
+B) DASHBOARD: “Upcoming” LIST UNDER CALENDAR (next 7)
+────────────────────────────────────────────────────────
+Edit: client/src/pages/AppDashboard.tsx
+
+1) At the top of the file, add imports (adjust paths if your file differs):
+import { useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+2) Add these types near the top (or inside the component):
+type TaskItem = {
+  id: string;
+  title: string;
+  description?: string | null;
+  dueDate?: string | null;
+  priority?: "high" | "medium" | "low" | null;
+  completed?: boolean; // if your schema uses isCompleted, swap below too
+};
+
+type DeadlineItem = {
+  id: string;
+  title: string;
+  dueDate: string;
+  notes?: string | null;
+  completed?: boolean; // if your schema uses isDone, swap below too
+};
+
+type UpcomingUnified = {
+  kind: "task" | "deadline";
+  id: string;
+  title: string;
+  dateISO: string;         // normalized date
+  completed: boolean;
+  subtitle?: string;
+};
+
+3) Inside the Dashboard component, you already have caseId/currentCase. Use that caseId.
+
+Add these queries (right after you have caseId available):
+const { data: tasksData } = useQuery<{ tasks: TaskItem[] }>({
+  queryKey: ["/api/cases", caseId, "tasks"],
+  enabled: !!caseId,
+});
+
+const { data: deadlinesData } = useQuery<{ deadlines: DeadlineItem[] }>({
+  queryKey: ["/api/cases", caseId, "deadlines"],
+  enabled: !!caseId,
+});
+
+const tasks = tasksData?.tasks || [];
+const deadlines = deadlinesData?.deadlines || [];
+
+4) Add mutations to toggle completion so it syncs across modules:
+const toggleTaskMutation = useMutation({
+  mutationFn: async (payload: { id: string; completed: boolean }) => {
+    return apiRequest("PATCH", `/api/tasks/${payload.id}`, { completed: payload.completed });
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "tasks"] });
+  },
+});
+
+const toggleDeadlineMutation = useMutation({
+  mutationFn: async (payload: { id: string; completed: boolean }) => {
+    return apiRequest("PATCH", `/api/deadlines/${payload.id}`, { completed: payload.completed });
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "deadlines"] });
+  },
+});
+
+NOTE:
+- If your backend uses different field names:
+  - tasks: use isCompleted instead of completed
+  - deadlines: use isDone instead of completed
+Update both the mutation body AND the UI reading in step 5.
+
+5) Build the “upcoming” list (next 7 not completed; include completed if you want dopamine, but default is upcoming):
+const upcomingItems: UpcomingUnified[] = useMemo(() => {
+  const normalize = (d?: string | null) => {
+    if (!d) return null;
+    // Accept ISO or date-like strings
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return null;
+    return dt.toISOString();
+  };
+
+  const taskUnified: UpcomingUnified[] = tasks
+    .map((t) => {
+      const iso = normalize(t.dueDate);
+      if (!iso) return null;
+      return {
+        kind: "task",
+        id: t.id,
+        title: t.title,
+        dateISO: iso,
+        completed: !!t.completed,
+        subtitle: "Case To-Do",
+      };
+    })
+    .filter(Boolean) as UpcomingUnified[];
+
+  const deadlineUnified: UpcomingUnified[] = deadlines
+    .map((d) => {
+      const iso = normalize(d.dueDate);
+      if (!iso) return null;
+      return {
+        kind: "deadline",
+        id: d.id,
+        title: d.title,
+        dateISO: iso,
+        completed: !!d.completed,
+        subtitle: "Deadline",
+      };
+    })
+    .filter(Boolean) as UpcomingUnified[];
+
+  const combined = [...taskUnified, ...deadlineUnified]
+    .filter((x) => !x.completed)
+    .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime())
+    .slice(0, 7);
+
+  return combined;
+}, [tasks, deadlines]);
+
+6) UNDER the calendar UI (inside the left column card), replace the dead space with:
+
+<CardContent className="pt-0">
+  <div className="mt-4 border-t border-neutral-light pt-4">
+    <div className="flex items-center justify-between mb-2">
+      <h3 className="font-heading font-semibold text-neutral-darkest">Upcoming</h3>
+      <span className="text-xs text-neutral-darkest/60">Next 7</span>
+    </div>
+
+    {upcomingItems.length === 0 ? (
+      <p className="text-sm text-neutral-darkest/60">
+        Nothing upcoming yet. Add a deadline or a Case To-Do with a due date.
+      </p>
+    ) : (
+      <div className="space-y-2">
+        {upcomingItems.map((item) => {
+          const dateLabel = new Date(item.dateISO).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+
+          return (
+            <div
+              key={`${item.kind}-${item.id}`}
+              className="flex items-start gap-3 rounded-md border border-neutral-light bg-white p-3"
+            >
+              <Checkbox
+                checked={false}
+                onCheckedChange={(val) => {
+                  const checked = val === true;
+                  if (!checked) return;
+                  if (item.kind === "task") toggleTaskMutation.mutate({ id: item.id, completed: true });
+                  if (item.kind === "deadline") toggleDeadlineMutation.mutate({ id: item.id, completed: true });
+                }}
+              />
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-sans font-medium text-neutral-darkest leading-tight">{item.title}</p>
+                  <span className="text-xs text-neutral-darkest/60 whitespace-nowrap">{dateLabel}</span>
+                </div>
+                <p className="text-xs text-neutral-darkest/60 mt-1">{item.subtitle}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</CardContent>
+
+Result:
+- User checks an item and it becomes “done” in the real Tasks/Deadlines module too, because we PATCH the real record.
+- That’s the “dopamine rush” checklist, and it’s consistent across modules.
+
+────────────────────────────────────────────────────────
+C) REMOVE “Modules” HEADING ON DASHBOARD
+────────────────────────────────────────────────────────
+Edit: client/src/pages/AppDashboard.tsx
+
+Find the heading that says:
+<h2>Modules</h2>  (or similar)
+
+Delete it entirely. Keep the tile grid.
+
+────────────────────────────────────────────────────────
+D) OPTIONAL (better dopamine): show “Recently completed” under Upcoming
+────────────────────────────────────────────────────────
+If you want, I can add a second mini list under Upcoming that shows the last 3 completed items (so users see progress), but do the steps above first.
+
+────────────────────────────────────────────────────────
+IMPORTANT NOTE (field-name check)
+────────────────────────────────────────────────────────
+If tasks/deadlines use different completion field names in your project:
+- Search in client/src/pages/AppTasks.tsx and client/src/pages/AppDeadlines.tsx for the field used (completed/isDone/isCompleted).
+- Make the Dashboard match that EXACT field name in:
+  1) the types
+  2) the “completed” reads
+  3) the PATCH body
+
+That’s the only place this can break.
