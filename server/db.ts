@@ -229,5 +229,20 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_gen_docs_user_case_created_at ON generated_documents(user_id, case_id, created_at DESC)`
   ]);
 
+  await initTable("case_children", `
+    CREATE TABLE IF NOT EXISTS case_children (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      first_name TEXT NOT NULL,
+      last_name TEXT,
+      date_of_birth TEXT NOT NULL,
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_case_children_user_case ON case_children(user_id, case_id)`
+  ]);
+
   console.log("Database table initialization complete");
 }

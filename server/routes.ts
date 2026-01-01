@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
@@ -1093,6 +1093,102 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get generated document error:", error);
       res.status(500).json({ error: "Failed to get generated document" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/children", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const children = await storage.listCaseChildren(caseId, userId);
+      res.json({ children });
+    } catch (error) {
+      console.error("List case children error:", error);
+      res.status(500).json({ error: "Failed to list case children" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/children", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertCaseChildSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const child = await storage.createCaseChild(caseId, userId, parseResult.data);
+      res.status(201).json({ child });
+    } catch (error) {
+      console.error("Create case child error:", error);
+      res.status(500).json({ error: "Failed to create case child" });
+    }
+  });
+
+  app.patch("/api/children/:childId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { childId } = req.params;
+
+      const existing = await storage.getCaseChild(childId, userId);
+      if (!existing) {
+        return res.status(404).json({ error: "Child not found" });
+      }
+
+      const parseResult = updateCaseChildSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateCaseChild(childId, userId, parseResult.data);
+      res.json({ child: updated });
+    } catch (error) {
+      console.error("Update case child error:", error);
+      res.status(500).json({ error: "Failed to update case child" });
+    }
+  });
+
+  app.delete("/api/children/:childId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { childId } = req.params;
+
+      const existing = await storage.getCaseChild(childId, userId);
+      if (!existing) {
+        return res.status(404).json({ error: "Child not found" });
+      }
+
+      const deleted = await storage.deleteCaseChild(childId, userId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete child" });
+      }
+
+      res.json({ message: "Child deleted" });
+    } catch (error) {
+      console.error("Delete case child error:", error);
+      res.status(500).json({ error: "Failed to delete case child" });
     }
   });
 

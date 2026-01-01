@@ -9,6 +9,7 @@ import {
   documents,
   userProfiles,
   generatedDocuments,
+  caseChildren,
   type User,
   type InsertUser,
   type Case,
@@ -26,6 +27,9 @@ import {
   type UpsertUserProfile,
   type GeneratedDocument,
   type GenerateDocumentPayload,
+  type CaseChild,
+  type InsertCaseChild,
+  type UpdateCaseChild,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -67,6 +71,12 @@ export interface IStorage {
   listGeneratedDocuments(userId: string, caseId: string): Promise<GeneratedDocument[]>;
   createGeneratedDocument(userId: string, caseId: string, templateType: string, title: string, payloadJson: GenerateDocumentPayload): Promise<GeneratedDocument>;
   getGeneratedDocument(userId: string, docId: string): Promise<GeneratedDocument | undefined>;
+
+  listCaseChildren(caseId: string, userId: string): Promise<CaseChild[]>;
+  getCaseChild(childId: string, userId: string): Promise<CaseChild | undefined>;
+  createCaseChild(caseId: string, userId: string, data: InsertCaseChild): Promise<CaseChild>;
+  updateCaseChild(childId: string, userId: string, data: UpdateCaseChild): Promise<CaseChild | undefined>;
+  deleteCaseChild(childId: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -479,6 +489,70 @@ export class DatabaseStorage implements IStorage {
       .from(generatedDocuments)
       .where(and(eq(generatedDocuments.id, docId), eq(generatedDocuments.userId, userId)));
     return doc;
+  }
+
+  async listCaseChildren(caseId: string, userId: string): Promise<CaseChild[]> {
+    const caseRecord = await this.getCase(caseId, userId);
+    if (!caseRecord) {
+      return [];
+    }
+    return db
+      .select()
+      .from(caseChildren)
+      .where(and(eq(caseChildren.caseId, caseId), eq(caseChildren.userId, userId)))
+      .orderBy(desc(caseChildren.createdAt));
+  }
+
+  async getCaseChild(childId: string, userId: string): Promise<CaseChild | undefined> {
+    const [child] = await db
+      .select()
+      .from(caseChildren)
+      .where(and(eq(caseChildren.id, childId), eq(caseChildren.userId, userId)));
+    return child;
+  }
+
+  async createCaseChild(caseId: string, userId: string, data: InsertCaseChild): Promise<CaseChild> {
+    const [child] = await db
+      .insert(caseChildren)
+      .values({
+        userId,
+        caseId,
+        firstName: data.firstName,
+        lastName: data.lastName ?? null,
+        dateOfBirth: data.dateOfBirth,
+        notes: data.notes ?? null,
+      })
+      .returning();
+    return child;
+  }
+
+  async updateCaseChild(childId: string, userId: string, data: UpdateCaseChild): Promise<CaseChild | undefined> {
+    const existing = await this.getCaseChild(childId, userId);
+    if (!existing) {
+      return undefined;
+    }
+    const [updated] = await db
+      .update(caseChildren)
+      .set({
+        firstName: data.firstName ?? existing.firstName,
+        lastName: data.lastName !== undefined ? data.lastName : existing.lastName,
+        dateOfBirth: data.dateOfBirth ?? existing.dateOfBirth,
+        notes: data.notes !== undefined ? data.notes : existing.notes,
+      })
+      .where(and(eq(caseChildren.id, childId), eq(caseChildren.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteCaseChild(childId: string, userId: string): Promise<boolean> {
+    const existing = await this.getCaseChild(childId, userId);
+    if (!existing) {
+      return false;
+    }
+    await db
+      .delete(caseChildren)
+      .where(and(eq(caseChildren.id, childId), eq(caseChildren.userId, userId)));
+    return true;
   }
 }
 
