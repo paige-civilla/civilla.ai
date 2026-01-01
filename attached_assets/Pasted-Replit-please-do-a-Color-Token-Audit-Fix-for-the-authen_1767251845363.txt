@@ -1,0 +1,86 @@
+Replit — please do a “Color Token Audit + Fix” for the authenticated app UI.
+
+GOAL (based on Paige’s screenshot):
+- Inside the logged-in app, any remaining DARK GREEN “primary” buttons (and similar primary UI accents) should use the APP PRIMARY DARK BLUE instead.
+- We also need you to report back with a clear list of color tokens + where colors are hardcoded, separated by:
+  1) Marketing (pre-login) pages
+  2) App (post-login) pages
+
+APP COLOR TOKENS (use these as the source of truth inside the app scope):
+- App background: #FAF8F4
+- App navbar/footer/panels: #E4ECED
+- App module tiles: #A2BEC2
+- App module borders/text: #243032
+- App input fill: #CFD7D5
+- App primary button (use a DARK BLUE tone, not green). If you already created a variable for it, use that. If not, create one (see below).
+
+STEP 1 — Add/confirm “scoped tokens” in client/src/index.css
+- Ensure there is a clear “APP scope” selector (whatever you’re using for the authenticated layout, e.g. [data-scope="app"]).
+- Under that app scope, define CSS variables for:
+  --app-primary
+  --app-primary-hover
+  --app-primary-foreground
+  --app-surface
+  --app-panel
+  --app-input
+  --app-border
+  --app-text
+
+If you already have tokens like --bush, etc., DO NOT delete them. Just ensure the authenticated app uses the app tokens for primary actions.
+
+Pick a DARK BLUE that fits Paige’s palette (must be “dark dark blue”, not green) and set:
+- --app-primary = (dark blue)
+- --app-primary-hover = slightly darker
+- --app-primary-foreground = #FAF8F4 or white, whichever passes contrast best
+
+STEP 2 — Fix the “dark green buttons” inside the app
+We need to eliminate any app primary button styling that still uses:
+- bg-bush
+- text-bush
+- border-bush
+- hover:bg-bush/...
+- any hardcoded green hex in authenticated components
+
+Do this safely:
+A) Create/confirm a reusable “AppPrimaryButton” style OR update the existing shared Button variant:
+- If the app uses shadcn Button variants, add/adjust a variant (e.g. variant="appPrimary") that uses the app tokens:
+  background: var(--app-primary)
+  hover background: var(--app-primary-hover)
+  text: var(--app-primary-foreground)
+
+B) Replace usages across authenticated pages:
+- Search and replace in client/src/pages and client/src/components (authenticated only):
+  rg -n "bg-bush|text-bush|border-bush|#0F3B2E|bush" client/src
+- Update those primary-action buttons to use the new app primary button variant/class.
+
+IMPORTANT:
+- Marketing pages (pre-login) can keep the green vibe. Only change authenticated pages/components.
+
+STEP 3 — Audit and report: “colors I still need to know about”
+After changes, output a report in your response with TWO SECTIONS:
+
+SECTION A: Marketing (pre-login)
+- List every hardcoded hex color found under marketing routes/components
+- List any token names used (CSS variables or Tailwind custom colors)
+- Identify the “Primary”, “Primary Hover”, “Background”, “Surface”, “Border”, “Text”, “Input” colors currently used
+
+SECTION B: App (post-login)
+- Same list as above, but for authenticated app components/pages
+- Specifically list any remaining green/bush usage (should be none for primary actions)
+
+To generate the lists, run:
+- rg -n "#[0-9A-Fa-f]{3,8}" client/src
+- rg -n "bg-bush|text-bush|border-bush|bush" client/src
+Then categorize hits by whether the file is used pre-login vs post-login.
+
+STEP 4 — Confirm by touching at least these UI spots (app side):
+- The Case Workspace banner and any CTA buttons
+- The “View all cases” button
+- The Documents “Prepare Court Filing (DOCX)” button
+- Any “Save”, “Create”, “Next” buttons in onboarding/account settings
+
+DELIVERABLE
+- Implement the app primary dark blue token + apply it to all authenticated primary buttons.
+- Return the color audit report (Marketing vs App) and name any additional colors you think Paige should specify next (e.g., destructive/burgundy, warning, success, muted text).
+
+Do NOT change any locked components noted in replit.md (if applicable). Only adjust styling via tokens/variants/classes so it is consistent and maintainable.

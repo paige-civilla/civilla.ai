@@ -35,6 +35,7 @@
    - Destructive (delete): burgundy
 ========================================================= */
 .app-shell {
+  /* Core semantic tokens */
   --background: 40 37.5% 96.9%;          /* #FAF8F4 */
   --foreground: 188.6 16.3% 16.9%;       /* #243032 */
 
@@ -51,13 +52,25 @@
   --input: 165 9.1% 82.7%;                /* #CFD7D5 */
   --ring: 186.7 15.5% 22.7%;              /* near primary */
 
+  /* Primary = Dark Blue #314143 (NOT green) */
   --primary: 186.7 15.5% 22.7%;           /* #314143 */
   --primary-hover: 187.1 16.2% 20.6%;     /* slightly darker */
   --primary-foreground: 40 37.5% 96.9%;   /* #FAF8F4 */
 
+  /* Destructive = Burgundy */
   --destructive: 350.2 60.5% 29.8%;       /* burgundy #7A1E2D */
   --destructive-hover: 349.7 60.3% 24.7%; /* darker burgundy #651926 */
   --destructive-foreground: 40 37.5% 96.9%;
+
+  /* App-specific aliases for easy reference */
+  --app-primary: 186.7 15.5% 22.7%;           /* #314143 dark blue */
+  --app-primary-hover: 187.1 16.2% 20.6%;     /* darker */
+  --app-primary-foreground: 40 37.5% 96.9%;   /* #FAF8F4 */
+  --app-surface: 186.7 20% 91.2%;             /* #E4ECED navbar/footer */
+  --app-panel: 40 37.5% 96.9%;                /* #FAF8F4 */
+  --app-input: 165 9.1% 82.7%;                /* #CFD7D5 */
+  --app-border: 187.5 20.8% 69.8%;            /* #A2BEC2 */
+  --app-text: 188.6 16.3% 16.9%;              /* #243032 */
 }
 
 /* Autofill background fix - prevent browser yellow on autofilled inputs */
