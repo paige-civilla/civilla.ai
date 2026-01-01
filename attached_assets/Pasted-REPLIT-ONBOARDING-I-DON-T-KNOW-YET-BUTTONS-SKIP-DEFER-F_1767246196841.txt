@@ -1,0 +1,145 @@
+REPLIT — ONBOARDING “I DON’T KNOW YET” BUTTONS (SKIP/DEFER FIELDS)
+
+AUTONOMY: HIGH
+GOAL:
+In onboarding, for any question where a user might not know the answer, add a button that says:
+- “I don’t know yet” (or “Don’t have this yet”)
+When clicked:
+- The field becomes optional for now (stores NULL/empty)
+- The step can still be completed
+- The user sees a small note: “You can add this later in Settings.”
+Also add a “Complete later” option only for non-legal gating steps (NOT for the required agreements).
+
+IMPORTANT:
+The “Terms/Privacy/Not legal advice/Release” scroll-and-accept gates remain REQUIRED.
+Users cannot proceed past those without completing them.
+
+========================================
+A) DEFINE WHAT CAN BE “NOT SURE”
+========================================
+
+In onboarding, mark these as “deferrable” (show the button):
+
+Profile / Contact:
+- Address line 2
+- Phone
+- City / State / Zip (if you split them)
+- Party role label (if user doesn’t know exact label)
+
+Case info:
+- Case number
+- Judicial district (if asked)
+- Judge name (if asked)
+- Attorney bar number / firm info (if attorney)
+
+Children section:
+- Child middle name (if present)
+- Child school (if asked)
+- Child doctor (if asked)
+- Any optional notes fields
+
+Do NOT allow “Not sure” for:
+- Full name (required)
+- County + State (required)
+- At least one party name (petitioner/respondent) if we require them for documents
+- Agreement scroll-and-accept steps (must be completed)
+
+========================================
+B) IMPLEMENTATION PATTERN (FRONTEND)
+========================================
+
+1) Add a reusable component:
+client/src/components/onboarding/NotSureButton.tsx
+
+Props:
+- label?: string (default “I don’t know yet”)
+- onClick: () => void
+- disabled?: boolean
+
+Render as a small ghost button under the input.
+
+2) On each deferrable field in onboarding UI:
+- Render <NotSureButton />
+- On click:
+  - Set that field value to "" (empty string) OR null in local onboarding state
+  - Set a “deferredFields[fieldName] = true” flag so we can show a small inline hint:
+    “Saved as ‘not provided’. You can add this later.”
+
+3) When submitting onboarding:
+- For deferred fields, send null (preferred) instead of empty string.
+
+========================================
+C) BACKEND STORAGE RULES
+========================================
+
+1) Ensure schema allows null for deferrable fields.
+If any currently require non-null, change them to optional/nullable:
+- caseNumber (nullable)
+- district (nullable)
+- phone (nullable)
+- etc.
+
+2) Add a single JSON field to user_profiles to track deferred onboarding fields:
+- onboarding_deferred JSONB (optional) default '{}'
+
+Update:
+shared/schema.ts userProfiles table:
+- onboardingDeferred: jsonb("onboarding_deferred")
+
+Update:
+upsertUserProfileSchema:
+- onboardingDeferred: z.record(z.boolean()).optional()
+
+Update db.ts init/migrations:
+- addColumnIfNotExists("user_profiles", "onboarding_deferred", "JSONB NOT NULL DEFAULT '{}'")
+
+3) When onboarding saves profile:
+- Include onboardingDeferred flags so “Account Settings” can show prompts later.
+
+========================================
+D) UX REQUIREMENT
+========================================
+
+1) Next to any step that contains deferred info, show a small banner:
+“Some info was skipped. You can finish later in Account Settings.”
+
+2) Add “Finish onboarding later” link ONLY after agreements are completed and user is inside the app:
+- It should save whatever is currently filled
+- Mark onboardingStatus = "partial"
+- Allow user into app, but show a persistent top banner until completed:
+  “Finish onboarding to enable document autofill.”
+
+========================================
+E) WHERE USERS EDIT LATER
+========================================
+
+Add a new page (or section) inside Account Settings:
+- “Profile & Autofill”
+- “Case Details”
+- “Children”
+
+Show any deferred fields with a “Missing” badge.
+
+========================================
+F) ACCEPTANCE TESTS
+========================================
+
+1) User clicks “I don’t know yet” for Case Number:
+- Can proceed
+- Case number stored as null
+- Deferred flag saved
+
+2) User clicks “I don’t know yet” for Phone:
+- Can proceed
+- Phone stored as null
+- Deferred flag saved
+
+3) User tries to skip Terms/Privacy scroll-and-accept:
+- Cannot proceed
+
+4) After onboarding, Account Settings shows “Missing” badges for deferred fields.
+
+DELIVERABLE:
+- List files changed
+- Screenshot of onboarding input showing the “I don’t know yet” button and the “Saved as not provided” hint
+- Confirm deferred fields persist after refresh

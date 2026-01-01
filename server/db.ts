@@ -212,6 +212,8 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("user_profiles", "calendar_task_color", "TEXT NOT NULL DEFAULT '#2E7D32'");
   await addColumnIfNotExists("user_profiles", "calendar_deadline_color", "TEXT NOT NULL DEFAULT '#C62828'");
   await addColumnIfNotExists("user_profiles", "calendar_timeline_color", "TEXT NOT NULL DEFAULT '#1565C0'");
+  await addColumnIfNotExists("user_profiles", "onboarding_deferred", "JSONB NOT NULL DEFAULT '{}'");
+  await addColumnIfNotExists("user_profiles", "onboarding_status", "TEXT NOT NULL DEFAULT 'incomplete'");
 
   await initTable("documents", `
     CREATE TABLE IF NOT EXISTS documents (

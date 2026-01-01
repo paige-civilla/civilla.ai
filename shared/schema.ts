@@ -49,6 +49,8 @@ export const userProfiles = pgTable("user_profiles", {
   calendarTaskColor: text("calendar_task_color").notNull().default("#2E7D32"),
   calendarDeadlineColor: text("calendar_deadline_color").notNull().default("#C62828"),
   calendarTimelineColor: text("calendar_timeline_color").notNull().default("#1565C0"),
+  onboardingDeferred: jsonb("onboarding_deferred").notNull().default({}),
+  onboardingStatus: text("onboarding_status").notNull().default("incomplete"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -81,6 +83,8 @@ export const upsertUserProfileSchema = z.object({
   calendarTaskColor: z.string().max(20).optional(),
   calendarDeadlineColor: z.string().max(20).optional(),
   calendarTimelineColor: z.string().max(20).optional(),
+  onboardingDeferred: z.record(z.boolean()).optional(),
+  onboardingStatus: z.enum(["incomplete", "partial", "complete"]).optional(),
 });
 
 export type UpsertUserProfile = z.infer<typeof upsertUserProfileSchema>;
