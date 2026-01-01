@@ -1,0 +1,157 @@
+REPLIT TASK: Split Marketing vs App theming cleanly, fix App background to cool-white, make Calendar/cards white with blue-gray border, and implement Dark Mode for BOTH marketing and app using scoped CSS variables.
+
+IMPORTANT GOAL:
+- Marketing (pre-login) keeps warm cream (#FAF8F4) + bush green (#0F3B2E).
+- App (post-login) becomes cool modern: background is cool-white, cards/calendar are white, borders are #A2BEC2, primary is #314143.
+- Dark mode exists for BOTH, but the palettes differ (marketing dark uses green accents; app dark uses blue accents).
+
+STEP 1 — ADD THEME TOKENS (CSS VARIABLES)
+Edit: client/src/index.css
+
+1) Keep your existing :root tokens for Marketing defaults.
+2) Add TWO scoped theme containers:
+   - .theme-marketing  (used on pre-login)
+   - .app-shell        (used on post-login; you already have this)
+3) Add dark-mode variants:
+   - .theme-marketing.dark
+   - .app-shell.dark
+4) Add a new token: --app-background (cool white) and --app-surface (white)
+   so the app background is no longer warm tan.
+
+Paste/merge these blocks (do not delete your existing tokens; integrate carefully):
+
+/* ---------------------------
+   MARKETING THEME (DEFAULT)
+--------------------------- */
+.theme-marketing {
+  --background: 40 37.5% 96.9%;      /* #FAF8F4 */
+  --foreground: 20 17% 3%;           /* near-black */
+  --primary: 158 52% 15%;            /* green brand */
+  --primary-foreground: 40 37.5% 96.9%;
+  --muted: 158 10% 83%;              /* #CFD7D5 */
+  --border: 158 8% 75%;
+  --input: 158 10% 83%;
+  --destructive: 0 72% 28%;          /* #7A1F1F */
+  --destructive-foreground: 40 37.5% 96.9%;
+}
+
+/* MARKETING DARK MODE */
+.theme-marketing.dark {
+  --background: 165 12% 8%;          /* deep green-black */
+  --foreground: 40 25% 94%;
+  --primary: 158 52% 30%;            /* brighter green accent */
+  --primary-foreground: 165 12% 8%;
+  --muted: 165 10% 18%;
+  --border: 165 10% 22%;
+  --input: 165 10% 18%;
+  --destructive: 0 60% 35%;
+  --destructive-foreground: 40 25% 94%;
+}
+
+/* ---------------------------
+   APP THEME (POST-LOGIN)
+--------------------------- */
+.app-shell {
+  /* Primary / text */
+  --primary: 186.7 15.5% 22.7%;        /* #314143 */
+  --primary-hover: 187.1 16.2% 20.6%;
+  --primary-foreground: 40 37.5% 96.9%;/* #FAF8F4 text-on-primary */
+
+  /* NEW: make app background COOL, not warm */
+  --background: 192 23% 96%;           /* cool near-white (replaces tan vibe) */
+  /* Surfaces */
+  --muted: 186.7 20% 91.2%;            /* #E4ECED */
+  --card: 0 0% 100%;                   /* pure white cards/calendar */
+  --popover: 0 0% 100%;
+
+  /* Borders */
+  --border: 187.5 20.8% 69.8%;         /* #A2BEC2 */
+  --input: 165 9.1% 82.7%;             /* #CFD7D5 */
+
+  /* Text */
+  --foreground: 188.6 16.3% 16.9%;     /* #243032 */
+
+  /* Destructive */
+  --destructive: 350.2 60.5% 29.8%;    /* #7A1E2D */
+  --destructive-hover: 349.7 60.3% 24.7%;
+  --destructive-foreground: 40 37.5% 96.9%;
+}
+
+/* APP DARK MODE */
+.app-shell.dark {
+  --background: 200 12% 10%;           /* deep blue-gray */
+  --foreground: 40 25% 94%;
+
+  --primary: 186 22% 60%;              /* lighter slate-blue accent */
+  --primary-foreground: 200 12% 10%;
+  --muted: 200 10% 16%;
+  --card: 200 10% 14%;
+  --popover: 200 10% 14%;
+  --border: 200 10% 22%;
+  --input: 200 10% 18%;
+
+  --destructive: 350 55% 45%;
+  --destructive-hover: 350 55% 38%;
+  --destructive-foreground: 40 25% 94%;
+}
+
+/* Ensure body uses the right background token */
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+STEP 2 — APPLY THE RIGHT THEME WRAPPER
+A) Marketing pages (pre-login):
+Wrap the top-level layout container with className="theme-marketing" (and toggle .dark later).
+B) App pages (post-login):
+Ensure the authenticated shell wrapper uses className="app-shell" (it already does). Confirm this is on the outermost div after login.
+
+STEP 3 — FIX THE SPECIFIC UI ISSUES YOU POINTED OUT
+A) Calendar + cards should be WHITE, with border = #A2BEC2
+Update CaseMonthCalendar wrapper classes:
+- background: use bg-card
+- border: border-border (token)
+- remove any bg-background on the calendar container itself.
+
+B) Module tiles should NOT be filled with muted blue-gray.
+They should be white cards with border + subtle hover:
+- bg-card
+- border border-border
+- hover:bg-muted/40 or hover:border-primary/60
+
+C) Replace the remaining warm tan sections inside app:
+Search and replace inside app pages only:
+- bg-background is fine now (it will be cool-white due to app-shell variable)
+- If any hardcoded cream (#FAF8F4) exists inside app pages, replace with bg-background or bg-card depending on usage.
+
+STEP 4 — DARK MODE TOGGLE (BOTH THEMES)
+1) Add a setting in Account Settings: “Appearance: Light / Dark”
+2) Store preference in localStorage: civilla_theme = "light" | "dark"
+3) On app load, apply "dark" class to:
+- theme-marketing container for pre-login routes
+- app-shell container for post-login routes
+This allows two distinct dark palettes.
+
+Implementation detail:
+- If user is authenticated, toggle .app-shell.dark
+- If not authenticated, toggle .theme-marketing.dark
+
+STEP 5 — REMOVE THE DASHBOARD TEXT YOU HIGHLIGHTED
+In AppDashboard.tsx:
+- Remove the small “Case Workspace” label above the big case title.
+- Keep the big title only.
+Also convert “View all cases” into a Button (outline) instead of plain text.
+
+STEP 6 — KEEP YOUR EXISTING INPUT BG
+Do NOT change the input bg color you liked.
+Keep:
+- inputs bg #EEF7F1 (light green)
+Also keep autofill override.
+
+ACCEPTANCE TESTS:
+1) App background is cool-white (no tan vibe).
+2) Calendar is white, border is #A2BEC2, looks clean.
+3) Module tiles are white with border, not filled tan/cream.
+4) Marketing pages unchanged (still warm cream + green).
+5) Toggle dark mode: marketing dark and app dark both work and look coherent.
