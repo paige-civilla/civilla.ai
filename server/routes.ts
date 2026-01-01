@@ -1529,7 +1529,7 @@ export async function registerRoutes(
       title: z.string().min(1, "Case title is required"),
       state: z.string().min(1, "State is required"),
       county: z.string().min(1, "County is required"),
-      caseNumber: z.string().min(1, "Case number is required"),
+      caseNumber: z.string().optional(),
       caseType: z.string().optional(),
       hasChildren: z.boolean(),
     }),
@@ -1554,6 +1554,7 @@ export async function registerRoutes(
       privacy: z.string(),
       disclaimers: z.string(),
     }),
+    deferredFields: z.record(z.boolean()).optional(),
   });
 
   app.post("/api/onboarding/complete", requireAuth, async (req, res) => {
@@ -1570,23 +1571,24 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const { profile, case: caseData, children, agreements, versions } = parseResult.data;
+      const { profile, case: caseData, children, agreements, versions, deferredFields } = parseResult.data;
 
       const now = new Date();
+      const hasDeferredFields = deferredFields && Object.keys(deferredFields).some(k => deferredFields[k]);
 
       await storage.upsertUserProfile(userId, {
         fullName: profile.fullName,
         email: profile.email,
-        phone: profile.phone,
+        phone: deferredFields?.phone ? null : (profile.phone || null),
         addressLine1: profile.addressLine1,
-        addressLine2: profile.addressLine2,
-        city: profile.city,
-        state: profile.state,
-        zip: profile.zip,
+        addressLine2: deferredFields?.addressLine2 ? null : (profile.addressLine2 || null),
+        city: deferredFields?.city ? null : (profile.city || null),
+        state: deferredFields?.state ? null : (profile.state || null),
+        zip: deferredFields?.zip ? null : (profile.zip || null),
         partyRole: profile.partyRole,
         isSelfRepresented: profile.isSelfRepresented,
-        barNumber: profile.barNumber,
-        firmName: profile.firmName,
+        barNumber: deferredFields?.barNumber ? null : (profile.barNumber || null),
+        firmName: deferredFields?.firmName ? null : (profile.firmName || null),
         petitionerName: profile.petitionerName,
         respondentName: profile.respondentName,
         onboardingCompletedAt: now,
@@ -1596,16 +1598,21 @@ export async function registerRoutes(
         tosVersion: versions.tos,
         privacyVersion: versions.privacy,
         disclaimersVersion: versions.disclaimers,
+        onboardingDeferred: deferredFields || {},
+        onboardingStatus: hasDeferredFields ? "partial" : "complete",
       });
 
       const existingCases = await storage.getCasesByUserId(userId);
       let targetCase;
+      
+      const caseNumberValue = deferredFields?.caseNumber ? null : (caseData.caseNumber || null);
       
       if (existingCases.length > 0) {
         targetCase = await storage.updateCase(existingCases[0].id, userId, {
           title: caseData.title,
           state: caseData.state,
           county: caseData.county,
+          caseNumber: caseNumberValue,
           caseType: caseData.caseType,
           hasChildren: caseData.hasChildren,
         });
@@ -1614,6 +1621,7 @@ export async function registerRoutes(
           title: caseData.title,
           state: caseData.state,
           county: caseData.county,
+          caseNumber: caseNumberValue,
           caseType: caseData.caseType,
           hasChildren: caseData.hasChildren,
         });

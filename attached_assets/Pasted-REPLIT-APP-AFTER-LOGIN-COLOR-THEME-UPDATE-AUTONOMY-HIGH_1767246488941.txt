@@ -1,0 +1,123 @@
+REPLIT — APP (AFTER LOGIN) COLOR THEME UPDATE
+
+AUTONOMY: HIGH
+SCOPE: APP-ONLY (after login). DO NOT change public marketing pages.
+
+GOAL:
+Make the authenticated app UI use the lighter blue/gray palette:
+- AppNavbar background
+- App Footer background
+- AppNavbar dropdown background
+- Case Workspace module tiles (and any module tile grid used inside app)
+
+CONSTRAINTS:
+- Do NOT redesign layout
+- Do NOT change copy
+- Keep contrast readable
+- Use existing design tokens if present (preferred), otherwise add minimal CSS vars
+- No changes to NavbarCream / public navbar styles
+
+========================
+1) DEFINE THE “APP LIGHT BLUE/GRAY” COLORS (TOKENS)
+========================
+Check if the project uses CSS variables in:
+- client/src/index.css
+or Tailwind theme tokens.
+
+If there are existing tokens like:
+--neutral-lightest / --neutral-light / --popover / --surface
+Reuse them.
+
+If not, add ONLY these variables to :root in client/src/index.css:
+
+:root {
+  --app-surface: #E9EFF2;         /* light blue/gray */
+  --app-surface-2: #DFE8EC;       /* slightly deeper for borders/hover */
+  --app-panel: #F4F7F8;           /* dropdown/panels */
+  --app-panel-border: #C9D6DC;    /* border */
+}
+
+Do NOT remove any existing variables.
+
+========================
+2) APP NAVBAR BACKGROUND
+========================
+Locate authenticated navbar component:
+- client/src/components/layout/AppNavbar.tsx
+
+Set the nav container background to the app surface.
+Examples (choose the one matching the codebase style):
+
+Option A (Tailwind arbitrary):
+className="... bg-[var(--app-surface)] ..."
+
+Option B (if it uses bg-neutral-lightest etc):
+replace with bg-[var(--app-surface)]
+
+Also ensure border uses the panel border:
+border-b border-[var(--app-panel-border)]
+
+========================
+3) APP NAVBAR DROPDOWN BACKGROUND + BORDER
+========================
+In AppNavbar.tsx, find the dropdown panel container.
+Set:
+- background: var(--app-panel)
+- border: var(--app-panel-border)
+- shadow stays as-is
+- ensure it still has proper z-index and scroll behavior
+
+Example:
+className="... bg-[var(--app-panel)] border border-[var(--app-panel-border)] ..."
+
+If the dropdown items have hover background, use app-surface-2 for hover:
+hover:bg-[var(--app-surface-2)]
+
+========================
+4) APP FOOTER BACKGROUND
+========================
+Locate the authenticated footer component (NOT public footer), likely one of:
+- client/src/components/layout/AppFooter.tsx
+- client/src/components/layout/AppLayout.tsx (footer inside)
+- client/src/components/AppFooter.tsx
+
+Set footer background:
+bg-[var(--app-surface)]
+border-t border-[var(--app-panel-border)]
+
+If there is only one Footer.tsx used everywhere:
+Do NOT change global footer styling.
+Instead, create an AppFooter component and only use it inside AppLayout (authenticated layout).
+
+========================
+5) MODULE TILE COLORS (CASE WORKSPACE + OTHER MODULE GRIDS)
+========================
+Find the case workspace tiles component/page:
+- client/src/pages/AppCase.tsx (or wherever the tile grid is rendered)
+
+Update each tile card:
+- background: var(--app-panel) (or var(--app-surface) if you prefer flatter)
+- border: var(--app-panel-border)
+- hover: var(--app-surface-2)
+- keep text/icon colors readable
+
+Example card class:
+"bg-[var(--app-panel)] border border-[var(--app-panel-border)] hover:bg-[var(--app-surface-2)] transition"
+
+If tiles have “Coming soon”:
+keep same styling but disable pointer and reduce opacity.
+
+========================
+6) ACCEPTANCE TESTS
+========================
+After running:
+- Login -> verify AppNavbar is light blue/gray
+- Open dropdown -> background is light panel, not beige, fits the new palette
+- Any app footer after login matches navbar background
+- Case Workspace tiles match palette and still look clickable
+
+DELIVERABLE:
+Report:
+- Files edited
+- What variables/tokens used
+- Screenshots of (1) navbar, (2) dropdown open, (3) module tiles, (4) footer

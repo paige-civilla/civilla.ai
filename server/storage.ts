@@ -145,6 +145,7 @@ export class DatabaseStorage implements IStorage {
         title: caseData.title,
         state: caseData.state,
         county: caseData.county,
+        caseNumber: caseData.caseNumber,
         caseType: caseData.caseType,
         hasChildren: caseData.hasChildren ?? false,
       })
@@ -163,6 +164,7 @@ export class DatabaseStorage implements IStorage {
         title: caseData.title ?? existingCase.title,
         state: caseData.state ?? existingCase.state,
         county: caseData.county ?? existingCase.county,
+        caseNumber: caseData.caseNumber !== undefined ? caseData.caseNumber : existingCase.caseNumber,
         caseType: caseData.caseType ?? existingCase.caseType,
         hasChildren: caseData.hasChildren ?? existingCase.hasChildren,
         updatedAt: new Date(),

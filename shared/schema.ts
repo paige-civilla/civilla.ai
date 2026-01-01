@@ -114,6 +114,7 @@ export const cases = pgTable("cases", {
   title: text("title").notNull(),
   state: text("state"),
   county: text("county"),
+  caseNumber: text("case_number"),
   caseType: text("case_type"),
   hasChildren: boolean("has_children").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -124,6 +125,7 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   title: true,
   state: true,
   county: true,
+  caseNumber: true,
   caseType: true,
   hasChildren: true,
 });

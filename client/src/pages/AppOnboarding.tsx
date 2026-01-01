@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollablePolicyModal } from "@/components/onboarding/ScrollablePolicyModal";
+import { NotSureButton } from "@/components/onboarding/NotSureButton";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -18,7 +19,8 @@ import {
   FileText,
   Plus,
   Trash2,
-  Loader2
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import AppNavbar from "@/components/layout/AppNavbar";
 import Footer from "@/components/Footer";
@@ -114,12 +116,24 @@ const initialData: OnboardingData = {
   },
 };
 
+const DEFERRABLE_FIELDS = [
+  "phone",
+  "addressLine2",
+  "city",
+  "state",
+  "zip",
+  "caseNumber",
+  "firmName",
+  "barNumber",
+] as const;
+
 export default function AppOnboarding() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [policyModal, setPolicyModal] = useState<string | null>(null);
+  const [deferredFields, setDeferredFields] = useState<Record<string, boolean>>({});
 
   const { data: authData, isLoading: authLoading, isError: authError } = useQuery<{ user: { id: string; email: string } }>({
     queryKey: ["/api/auth/me"],
@@ -182,6 +196,9 @@ export default function AppOnboarding() {
       profile: { ...prev.profile, [field]: value }
     }));
     setErrors(prev => ({ ...prev, [field]: "" }));
+    if (deferredFields[field]) {
+      setDeferredFields(prev => ({ ...prev, [field]: false }));
+    }
   };
 
   const updateCase = (field: keyof OnboardingData["case"], value: string | boolean) => {
@@ -190,6 +207,38 @@ export default function AppOnboarding() {
       case: { ...prev.case, [field]: value }
     }));
     setErrors(prev => ({ ...prev, [field]: "" }));
+    if (deferredFields[field]) {
+      setDeferredFields(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const deferField = (field: string, isProfileField: boolean = true) => {
+    setDeferredFields(prev => ({ ...prev, [field]: true }));
+    if (isProfileField) {
+      setData(prev => ({
+        ...prev,
+        profile: { ...prev.profile, [field]: "" }
+      }));
+    } else {
+      setData(prev => ({
+        ...prev,
+        case: { ...prev.case, [field]: "" }
+      }));
+    }
+    setErrors(prev => ({ ...prev, [field]: "" }));
+  };
+
+  const hasDeferredFieldsInStep = (stepNum: number): boolean => {
+    if (stepNum === 1) {
+      return !!(deferredFields.phone || deferredFields.firmName || deferredFields.barNumber);
+    }
+    if (stepNum === 2) {
+      return !!(deferredFields.addressLine2 || deferredFields.city || deferredFields.state || deferredFields.zip);
+    }
+    if (stepNum === 3) {
+      return !!deferredFields.caseNumber;
+    }
+    return false;
   };
 
   const updateAgreement = (field: keyof OnboardingData["agreements"], value: boolean) => {
@@ -238,7 +287,7 @@ export default function AppOnboarding() {
       if (!data.case.title.trim()) newErrors.title = "Case title is required";
       if (!data.case.state.trim()) newErrors.caseState = "State is required";
       if (!data.case.county.trim()) newErrors.county = "County is required";
-      if (!data.case.caseNumber.trim()) newErrors.caseNumber = "Case number is required";
+      if (!data.case.caseNumber.trim() && !deferredFields.caseNumber) newErrors.caseNumber = "Case number is required";
       if (!data.profile.petitionerName.trim()) newErrors.petitionerName = "Petitioner name is required";
       if (!data.profile.respondentName.trim()) newErrors.respondentName = "Respondent name is required";
     }
@@ -276,8 +325,9 @@ export default function AppOnboarding() {
       return !!data.profile.addressLine1.trim();
     }
     if (step === 3) {
+      const caseNumberOk = !!data.case.caseNumber.trim() || deferredFields.caseNumber;
       return !!data.case.title.trim() && !!data.case.state.trim() && 
-             !!data.case.county.trim() && !!data.case.caseNumber.trim() &&
+             !!data.case.county.trim() && caseNumberOk &&
              !!data.profile.petitionerName.trim() && !!data.profile.respondentName.trim();
     }
     if (step === 4) {
@@ -322,6 +372,7 @@ export default function AppOnboarding() {
       children: data.case.hasChildren ? data.children : [],
       agreements: data.agreements,
       versions: policiesData.versions,
+      deferredFields,
     });
   };
 
@@ -412,7 +463,12 @@ export default function AppOnboarding() {
                         value={data.profile.phone}
                         onChange={e => updateProfile("phone", e.target.value)}
                         placeholder="(555) 555-5555"
+                        disabled={deferredFields.phone}
                         data-testid="input-phone"
+                      />
+                      <NotSureButton 
+                        onClick={() => deferField("phone")} 
+                        isDeferred={deferredFields.phone}
                       />
                     </div>
 
@@ -470,7 +526,12 @@ export default function AppOnboarding() {
                             value={data.profile.firmName}
                             onChange={e => updateProfile("firmName", e.target.value)}
                             placeholder="Firm name"
+                            disabled={deferredFields.firmName}
                             data-testid="input-firm-name"
+                          />
+                          <NotSureButton 
+                            onClick={() => deferField("firmName")} 
+                            isDeferred={deferredFields.firmName}
                           />
                         </div>
                         <div>
@@ -480,7 +541,12 @@ export default function AppOnboarding() {
                             value={data.profile.barNumber}
                             onChange={e => updateProfile("barNumber", e.target.value)}
                             placeholder="Bar number"
+                            disabled={deferredFields.barNumber}
                             data-testid="input-bar-number"
+                          />
+                          <NotSureButton 
+                            onClick={() => deferField("barNumber")} 
+                            isDeferred={deferredFields.barNumber}
                           />
                         </div>
                       </>
@@ -514,7 +580,13 @@ export default function AppOnboarding() {
                         value={data.profile.addressLine2}
                         onChange={e => updateProfile("addressLine2", e.target.value)}
                         placeholder="Apt 4B"
+                        disabled={deferredFields.addressLine2}
                         data-testid="input-address-line2"
+                      />
+                      <NotSureButton 
+                        label="Don't have this"
+                        onClick={() => deferField("addressLine2")} 
+                        isDeferred={deferredFields.addressLine2}
                       />
                     </div>
 
@@ -525,7 +597,12 @@ export default function AppOnboarding() {
                         value={data.profile.city}
                         onChange={e => updateProfile("city", e.target.value)}
                         placeholder="City"
+                        disabled={deferredFields.city}
                         data-testid="input-city"
+                      />
+                      <NotSureButton 
+                        onClick={() => deferField("city")} 
+                        isDeferred={deferredFields.city}
                       />
                     </div>
 
@@ -536,7 +613,12 @@ export default function AppOnboarding() {
                         value={data.profile.state}
                         onChange={e => updateProfile("state", e.target.value)}
                         placeholder="State"
+                        disabled={deferredFields.state}
                         data-testid="input-profile-state"
+                      />
+                      <NotSureButton 
+                        onClick={() => deferField("state")} 
+                        isDeferred={deferredFields.state}
                       />
                     </div>
 
@@ -547,7 +629,12 @@ export default function AppOnboarding() {
                         value={data.profile.zip}
                         onChange={e => updateProfile("zip", e.target.value)}
                         placeholder="12345"
+                        disabled={deferredFields.zip}
                         data-testid="input-zip"
+                      />
+                      <NotSureButton 
+                        onClick={() => deferField("zip")} 
+                        isDeferred={deferredFields.zip}
                       />
                     </div>
                   </div>
@@ -599,16 +686,21 @@ export default function AppOnboarding() {
                     </div>
 
                     <div>
-                      <Label htmlFor="caseNumber">Case Number *</Label>
+                      <Label htmlFor="caseNumber">Case Number {deferredFields.caseNumber ? "" : "*"}</Label>
                       <Input
                         id="caseNumber"
                         value={data.case.caseNumber}
                         onChange={e => updateCase("caseNumber", e.target.value)}
                         placeholder="e.g., CV-2024-12345"
                         className={errors.caseNumber ? "border-destructive" : ""}
+                        disabled={deferredFields.caseNumber}
                         data-testid="input-case-number"
                       />
                       {errors.caseNumber && <p className="text-sm text-destructive mt-1">{errors.caseNumber}</p>}
+                      <NotSureButton 
+                        onClick={() => deferField("caseNumber", false)} 
+                        isDeferred={deferredFields.caseNumber}
+                      />
                     </div>
 
                     <div>
