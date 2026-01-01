@@ -359,7 +359,8 @@ export default function AppDashboard() {
               </h1>
             </div>
             <Button
-              variant="outline"
+              size="sm"
+              className="bg-[#314143] text-[#F2F2F2] hover:bg-[#27363A] border border-[#1E2020]"
               onClick={() => setLocation("/app/cases")}
               data-testid="button-view-all-cases"
             >
@@ -447,16 +448,16 @@ export default function AppDashboard() {
                     <Link
                       key={module.title}
                       href={module.href}
-                      className="relative bg-card border border-[#A2BEC2] rounded-lg p-5 hover:bg-muted cursor-pointer block transition-colors"
+                      className="relative bg-[#A2BEC2] border border-[#1E2020] rounded-lg p-5 hover:bg-[#92AEB2] cursor-pointer block transition-colors"
                       data-testid={`module-card-${module.title.toLowerCase()}`}
                     >
-                      <div className="w-10 h-10 rounded-md bg-[hsl(var(--muted))] flex items-center justify-center mb-3">
-                        <module.icon className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-3">
+                        <module.icon className="w-5 h-5 text-[#314143]" />
                       </div>
-                      <h3 className="font-heading font-bold text-base text-neutral-darkest mb-1">
+                      <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1">
                         {module.title}
                       </h3>
-                      <p className="font-sans text-sm text-neutral-darkest/60">
+                      <p className="font-sans text-sm text-[#1E2020]/70">
                         {module.description}
                       </p>
                     </Link>

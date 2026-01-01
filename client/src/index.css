@@ -66,52 +66,53 @@
 
 /* =========================================================
    APP THEME (POST-LOGIN)
-   Cool modern: background is cool-white, cards are white, borders #A2BEC2
-   Primary: dark blue #314143
+   Background: #F2F2F2, Cards/Tiles: #A2BEC2, Borders/Text: #1E2020
+   Primary (nav/footer/buttons): #314143 with text #F2F2F2
 ========================================================= */
 .app-shell {
-  /* Background: cool near-white (NOT warm cream) */
-  --background: 192 23% 96%;              /* cool near-white */
-  --foreground: 188.6 16.3% 16.9%;        /* #243032 */
+  /* Background: #F2F2F2 neutral light gray */
+  --background: 0 0% 95%;                 /* #F2F2F2 */
+  --foreground: 180 3% 12%;               /* #1E2020 */
 
-  /* Cards & surfaces: pure white */
-  --card: 0 0% 100%;                      /* pure white */
-  --card-foreground: 188.6 16.3% 16.9%;   /* #243032 */
+  /* Cards & surfaces: #A2BEC2 blue-gray tiles */
+  --card: 187.5 20.8% 69.8%;              /* #A2BEC2 */
+  --card-foreground: 180 3% 12%;          /* #1E2020 */
 
-  --popover: 0 0% 100%;                   /* pure white */
-  --popover-foreground: 188.6 16.3% 16.9%;
+  --popover: 0 0% 100%;                   /* pure white for menus */
+  --popover-foreground: 180 3% 12%;       /* #1E2020 */
 
-  /* Muted: light blue-gray */
-  --muted: 186.7 20% 91.2%;               /* #E4ECED */
-  --muted-foreground: 188.6 12% 32%;
+  /* Muted: slightly darker than background */
+  --muted: 186.7 20% 86%;                 /* subtle blue-gray */
+  --muted-foreground: 180 3% 25%;
 
-  /* Borders: blue-gray */
-  --border: 187.5 20.8% 69.8%;            /* #A2BEC2 */
+  /* Borders: #1E2020 dark */
+  --border: 180 3% 12%;                   /* #1E2020 */
   --input: 165 9.1% 82.7%;                /* #CFD7D5 */
   --ring: 186.7 15.5% 22.7%;              /* near primary */
 
   /* Primary = Dark Blue #314143 */
   --primary: 186.7 15.5% 22.7%;           /* #314143 */
-  --primary-hover: 187.1 16.2% 20.6%;     /* slightly darker */
-  --primary-foreground: 40 37.5% 96.9%;   /* light text on primary */
+  --primary-hover: 187.1 16.2% 18%;       /* #27363A darker */
+  --primary-foreground: 0 0% 95%;         /* #F2F2F2 */
 
   /* Secondary */
-  --secondary: 186.7 15% 90%;
-  --secondary-foreground: 188.6 16.3% 16.9%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 180 3% 12%;     /* #1E2020 */
 
   /* Accent */
-  --accent: 186.7 20% 91.2%;
-  --accent-foreground: 188.6 16.3% 16.9%;
+  --accent: 186.7 20% 86%;
+  --accent-foreground: 180 3% 12%;        /* #1E2020 */
 
   /* Destructive = Burgundy */
   --destructive: 350.2 60.5% 29.8%;       /* burgundy #7A1E2D */
   --destructive-hover: 349.7 60.3% 24.7%; /* darker burgundy #651926 */
-  --destructive-foreground: 40 37.5% 96.9%;
+  --destructive-foreground: 0 0% 95%;     /* #F2F2F2 */
 
   /* App-specific aliases */
-  --app-surface: 186.7 20% 91.2%;         /* #E4ECED navbar/footer */
-  --app-surface-2: 186.7 18% 88%;         /* slightly darker for hover */
-  --app-panel-border: 187.5 20.8% 69.8%;  /* #A2BEC2 */
+  --app-surface: 186.7 15.5% 22.7%;       /* #314143 navbar/footer */
+  --app-surface-2: 187.1 16.2% 18%;       /* #27363A hover */
+  --app-panel-border: 180 3% 12%;         /* #1E2020 */
+  --app-tile-bg: 187.5 20.8% 69.8%;       /* #A2BEC2 for module tiles */
 }
 
 /* APP DARK MODE */

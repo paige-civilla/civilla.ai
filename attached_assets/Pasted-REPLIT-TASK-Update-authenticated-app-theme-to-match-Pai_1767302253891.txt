@@ -1,0 +1,80 @@
+REPLIT TASK: Update authenticated app theme to match Paige’s new spec:
+- Buttons/Nav/Footer/Lexi rail: #314143 with text #F2F2F2
+- App page background: #F2F2F2 (remove light blue wash)
+- Module tile/card backgrounds: #A2BEC2
+- Borders and dark text: #1E2020
+- “View all cases” becomes a real primary button
+
+IMPORTANT:
+- Only apply to authenticated “app” pages (inside .app-shell / theme-app).
+- Do NOT change marketing/pre-login pages.
+
+1) Update app theme tokens (preferred approach)
+Open: client/src/index.css
+Find the .theme-app (or .app-shell scope) CSS variables.
+Set/confirm these tokens:
+
+.theme-app {
+  --background: 0 0% 95%;                 /* #F2F2F2 */
+  --foreground: 180 3% 12%;               /* close to #1E2020 */
+  --primary: 186 15% 23%;                 /* #314143 */
+  --primary-foreground: 0 0% 95%;         /* #F2F2F2 */
+  --border: 180 3% 12%;                   /* #1E2020 */
+  --card: 186 20% 64%;                    /* #A2BEC2 */
+  --card-foreground: 180 3% 12%;          /* #1E2020 */
+}
+
+If your file uses hex instead of HSL, set directly via Tailwind classes instead (see step 2).
+
+2) Fix any hardcoded “light blue” backgrounds on app pages
+Search in client/src for: bg-muted, bg-[#e4eced], bg-[#E4ECED], bg-slate, “muted” wrappers.
+Replace the APP PAGE background wrappers with:
+- bg-[#F2F2F2]
+
+Replace module tiles/cards (the clickable module boxes) background with:
+- bg-[#A2BEC2]
+and borders with:
+- border-[#1E2020]
+and text with:
+- text-[#1E2020]
+
+Files likely:
+- client/src/pages/AppDashboard.tsx
+- client/src/pages/AppCase.tsx
+- client/src/components/CaseMonthCalendar.tsx (calendar card wrapper)
+- any “module tile” component
+
+3) Ensure all primary buttons, navbar, footer use #314143
+Search for usage of bg-bush or bg-green in authenticated components:
+rg -n "bg-bush|text-bush|bush" client/src/pages client/src/components/layout client/src/components
+
+Replace in app-only components with:
+- bg-[#314143] text-[#F2F2F2]
+Hover state:
+- hover:bg-[#27363A] (or pick a slightly darker variant)
+
+Targets:
+- client/src/components/layout/AppNavbar.tsx
+- client/src/components/layout/AppFooter.tsx (or wherever footer is)
+- Lexi rail/button component (LexiPanel toggle)
+- any primary action buttons inside app pages
+
+4) Make “View all cases” a real button (not plain text/link)
+Open: client/src/pages/AppCase.tsx (or AppDashboard.tsx if it’s there)
+Find the “View all cases” element and convert to a <Button> using the primary style:
+
+<Button asChild className="bg-[#314143] text-[#F2F2F2] hover:bg-[#27363A] border border-[#1E2020]">
+  <Link to="/app/cases">View all cases</Link>
+</Button>
+
+Make it smaller:
+- add size="sm" if your Button supports it, or add className "h-9 px-3 text-sm"
+
+5) Verify (visual QA)
+- App background is #F2F2F2, not blue.
+- Module tiles are #A2BEC2 with #1E2020 border and text.
+- Navbar/footer/buttons/Lexi rail are #314143 with #F2F2F2 text.
+- “View all cases” is a small primary button and readable.
+
+Do NOT change:
+- Navbar.tsx / NavbarCream.tsx marketing pages.
