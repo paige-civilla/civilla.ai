@@ -1,0 +1,48 @@
+Replit, choose the simplest routing: KEEP the existing route /app/messages/:caseId but replace the page content and all labels from “Messages” to “Pattern Analysis”. Do NOT add a new /app/patterns route yet and do NOT add redirects yet.
+
+Implement Parts A + B + C exactly as described below, with this routing decision applied.
+
+PART A — Dashboard calendar “Upcoming” list + cross-module completion sync
+[KEEP EXACTLY AS PREVIOUS BLOCK: items 1–5]
+
+PART B — Categories + create-from-dashboard + user-defined colors
+[KEEP EXACTLY AS PREVIOUS BLOCK: items 6–10]
+
+PART C — Pattern Analysis placed where Messages is (rename + wiring), no AI
+11) Rename all UI labels:
+- App navbar dropdown item label “Messages” -> “Pattern Analysis”
+- Dashboard module tile “Messages” -> “Pattern Analysis”
+- Case workspace module tile “Messages” -> “Pattern Analysis”
+
+12) Routing decision (IMPORTANT):
+- KEEP route /app/messages/:caseId
+- KEEP any API routes that might exist for messages, but do not use them in the UI
+- Render the new Pattern Analysis page component at /app/messages/:caseId
+
+13) Implement Pattern Analysis page with real data hooks (no AI):
+- Page title: Pattern Analysis
+- Subtitle: Spot trends across tasks, deadlines, and timeline over time.
+- Sections:
+  A) By Category summary:
+     - counts of upcoming items by category across tasks+deadlines+calendar_items
+  B) Overdue / At Risk:
+     - overdue deadlines + overdue to-dos
+  C) Recent Activity:
+     - last 10 created/updated items across tasks/deadlines/calendar_items/timeline_events (if timeline exists)
+
+14) Ensure Pattern Analysis uses APP theme tokens:
+- No bg-bush in authenticated app pages
+- Primary buttons use bg-primary/text-primary-foreground
+
+DELIVERABLES
+- Dashboard shows month calendar with dots + “Upcoming” list underneath (no dead space).
+- Checking off an item in Upcoming updates the source module and reflects everywhere.
+- Users can add items from dashboard and create categories with a color wheel.
+- “Modules” heading removed, “Case Workspace” small label removed, “View all cases” is a button.
+- /app/messages/:caseId now shows Pattern Analysis with real data.
+
+After implementation, provide screenshots of:
+- Dashboard with Upcoming list populated
+- Creating a new category + calendar item from dashboard
+- Toggling completion from dashboard and seeing it in the source module
+- Pattern Analysis page populated

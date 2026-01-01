@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, Pencil, Trash2, Baby } from "lucide-react";
+import { FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, Pencil, Trash2, Baby } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -215,12 +215,12 @@ export default function AppCase() {
       Icon: Clock,
     },
     {
-      key: "messages",
-      title: "Messages",
-      subtitle: "Secure communication center",
-      href: caseId ? `/app/messages/${caseId}` : "/app",
+      key: "patterns",
+      title: "Pattern Analysis",
+      subtitle: "Spot trends across your case",
+      href: caseId ? `/app/patterns/${caseId}` : "/app",
       comingSoon: false,
-      Icon: MessageSquare,
+      Icon: TrendingUp,
     },
     {
       key: "contacts",

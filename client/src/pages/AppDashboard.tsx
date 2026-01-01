@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Briefcase, FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus } from "lucide-react";
+import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -59,10 +59,10 @@ const getModuleCards = (caseId: string) => [
     href: `/app/deadlines/${caseId}`,
   },
   {
-    title: "Messages",
-    description: "Secure communication center",
-    icon: MessageSquare,
-    href: `/app/messages/${caseId}`,
+    title: "Pattern Analysis",
+    description: "Spot trends across your case",
+    icon: TrendingUp,
+    href: `/app/patterns/${caseId}`,
   },
   {
     title: "Contacts",

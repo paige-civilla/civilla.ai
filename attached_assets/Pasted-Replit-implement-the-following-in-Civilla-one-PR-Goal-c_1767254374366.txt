@@ -1,0 +1,137 @@
+Replit, implement the following in Civilla (one PR). Goal: complete unified calendar UX and add Pattern Analysis in place of Messages (rename label + route wiring). Do not add OpenAI/AI yet. This is foundation UX + data wiring only.
+
+PART A — Dashboard calendar “Upcoming” list + cross-module completion sync
+
+1) Add/confirm a unified dashboard aggregation endpoint (if it already exists, extend it):
+   - GET /api/cases/:caseId/dashboard/agenda
+   Return:
+   {
+     items: Array<{
+       id: string,
+       sourceType: "deadline" | "todo" | "calendar",
+       title: string,
+       date: string (ISO yyyy-mm-dd or full ISO),
+       categoryId?: string | null,
+       categoryName?: string | null,
+       color?: string | null,   // hex for dot/badge
+       isDone: boolean,
+       notes?: string | null
+     }>
+   }
+   Behavior:
+   - Pull next 7 upcoming items (date >= today) sorted by date asc then createdAt asc
+   - Include deadlines, tasks (with dueDate), and calendar_items
+   - For tasks without a dueDate, do NOT include in agenda
+   - Each item must include isDone based on its true table field
+
+2) Ensure completion can be toggled from dashboard for each type using existing endpoints:
+   - Deadlines: PATCH /api/deadlines/:deadlineId { isDone: boolean } (or your existing shape)
+   - Tasks: PATCH /api/tasks/:taskId { completed: boolean }
+   - Calendar items: create PATCH /api/calendar-items/:itemId { isDone: boolean } (if not present)
+   IMPORTANT: Dashboard must call the SAME PATCH endpoints the modules use so state stays consistent.
+
+3) Add a dashboard UI block under the month calendar:
+   - Heading: "Upcoming"
+   - List up to 7 items from /api/cases/:caseId/dashboard/agenda
+   - Each row shows:
+     - checkbox (toggles isDone)
+     - colored dot or badge based on item color (deadlines red default, todos blue default, calendar uses category color)
+     - title
+     - date label (e.g., "Jan 3")
+     - small type label (Deadline / To-Do / Calendar)
+   - When checkbox toggled:
+     - optimistic update
+     - call correct PATCH endpoint based on sourceType
+     - invalidate:
+       - agenda query
+       - calendar query (the dots)
+       - tasks list query
+       - deadlines list query
+
+4) Remove the "Modules" heading above the module tiles on the dashboard.
+   Also remove the small "Case Workspace" label above the large case title (keep the big title only).
+
+5) Make "View all cases" a real button (outline style) instead of plain text, aligned to the right.
+
+PART B — Categories + create-from-dashboard + user-defined colors
+
+6) Add a calendar_categories table (if not already implemented):
+   - id (uuid text), userId, caseId
+   - name (text)
+   - color (text hex, e.g. #7BA3A8)
+   - createdAt
+   Index: (caseId, createdAt)
+
+7) Add calendar_items table if not already present:
+   - id, userId, caseId
+   - title, date, notes
+   - categoryId nullable FK to calendar_categories
+   - isDone boolean default false
+   - createdAt
+   Index: (caseId, date)
+
+8) API routes:
+   - GET /api/cases/:caseId/calendar-categories
+   - POST /api/cases/:caseId/calendar-categories { name, color }
+   - POST /api/cases/:caseId/calendar-items { title, date, notes?, categoryId? }
+   - PATCH /api/calendar-items/:itemId { isDone?, title?, date?, notes?, categoryId? }
+   - DELETE /api/calendar-items/:itemId
+
+9) Dashboard “+ Add” flow:
+   - Button near calendar header: "+ Add"
+   - Modal form fields:
+     - Type (radio): Deadline / Case To-Do / Calendar Item
+     - Title (required)
+     - Date (required)
+     - Category dropdown (populated from calendar-categories)
+     - "Create new category" inline:
+       - Name
+       - Color picker input type="color" (color wheel)
+     - Notes optional
+   - On submit:
+     - If Deadline: create via existing deadline POST endpoint
+     - If Case To-Do: create task with dueDate via tasks POST endpoint
+     - If Calendar Item: POST calendar-items
+   - After create:
+     - close modal
+     - invalidate agenda + calendar + relevant module list queries
+
+10) Ensure multiple categories per case are supported. Items reference one category each. Users can create unlimited categories.
+
+PART C — Pattern Analysis placed where Messages is (rename + routing), no AI
+
+11) Rename Messages module label in the App navbar + dashboard tile + case workspace tile:
+   - "Messages" becomes "Pattern Analysis"
+   - Icon can remain the same or use a chart icon if available
+
+12) Keep route wiring mostly the same:
+   - If you currently have /app/messages/:caseId, keep the route but render Pattern Analysis page there
+   - Alternatively, create /app/patterns/:caseId and make /app/messages/:caseId redirect to it
+   Choose the least invasive option that requires minimal routing changes.
+
+13) Implement Pattern Analysis page as a placeholder with real data hooks (no AI):
+   - Title: "Pattern Analysis"
+   - Subtitle: "Spot trends across tasks, deadlines, and timeline over time."
+   - Sections:
+     A) “By Category” summary:
+        - counts of upcoming items by category (from agenda + calendar items + deadlines + tasks)
+     B) “Overdue / At Risk”:
+        - list overdue deadlines and overdue to-dos
+     C) “Recent Activity”:
+        - last 10 created/updated items across tasks/deadlines/calendar items/timeline events (if timeline exists)
+   This page should prove the pattern module is useful immediately without using AI.
+
+14) Make sure Pattern Analysis is accessible from everywhere inside the app after login and uses the app theme tokens (no bush green buttons in app pages).
+
+DELIVERABLES
+- Dashboard shows month calendar with dots + an "Upcoming" list underneath (no dead space).
+- Checking off an item in Upcoming updates the source module and removes/moves the item everywhere.
+- Users can add items from dashboard and create categories with a color wheel.
+- “Modules” heading removed, “Case Workspace” small label removed, “View all cases” is a button.
+- Messages is renamed/replaced with Pattern Analysis and routed correctly.
+
+After implementation, provide screenshots of:
+- Dashboard with Upcoming list populated
+- Adding a new category + new calendar item from dashboard
+- Toggling completion of a deadline from dashboard and showing it as done in Deadlines module
+- Pattern Analysis page showing real counts/lists
