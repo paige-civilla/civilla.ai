@@ -37,6 +37,15 @@ export const userProfiles = pgTable("user_profiles", {
   defaultRole: text("default_role").notNull().default("self_represented"),
   barNumber: text("bar_number"),
   firmName: text("firm_name"),
+  petitionerName: text("petitioner_name"),
+  respondentName: text("respondent_name"),
+  onboardingCompletedAt: timestamp("onboarding_completed_at"),
+  tosAcceptedAt: timestamp("tos_accepted_at"),
+  privacyAcceptedAt: timestamp("privacy_accepted_at"),
+  disclaimersAcceptedAt: timestamp("disclaimers_accepted_at"),
+  tosVersion: text("tos_version").notNull().default("v1"),
+  privacyVersion: text("privacy_version").notNull().default("v1"),
+  disclaimersVersion: text("disclaimers_version").notNull().default("v1"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -57,6 +66,15 @@ export const upsertUserProfileSchema = z.object({
   defaultRole: z.enum(["self_represented", "attorney"]).optional(),
   barNumber: z.string().max(50).optional().nullable(),
   firmName: z.string().max(200).optional().nullable(),
+  petitionerName: z.string().max(200).optional().nullable(),
+  respondentName: z.string().max(200).optional().nullable(),
+  onboardingCompletedAt: z.date().optional().nullable(),
+  tosAcceptedAt: z.date().optional().nullable(),
+  privacyAcceptedAt: z.date().optional().nullable(),
+  disclaimersAcceptedAt: z.date().optional().nullable(),
+  tosVersion: z.string().max(10).optional(),
+  privacyVersion: z.string().max(10).optional(),
+  disclaimersVersion: z.string().max(10).optional(),
 });
 
 export type UpsertUserProfile = z.infer<typeof upsertUserProfileSchema>;

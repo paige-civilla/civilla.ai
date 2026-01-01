@@ -199,6 +199,15 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("user_profiles", "default_role", "TEXT NOT NULL DEFAULT 'self_represented'");
   await addColumnIfNotExists("user_profiles", "bar_number", "TEXT");
   await addColumnIfNotExists("user_profiles", "firm_name", "TEXT");
+  await addColumnIfNotExists("user_profiles", "petitioner_name", "TEXT");
+  await addColumnIfNotExists("user_profiles", "respondent_name", "TEXT");
+  await addColumnIfNotExists("user_profiles", "onboarding_completed_at", "TIMESTAMP");
+  await addColumnIfNotExists("user_profiles", "tos_accepted_at", "TIMESTAMP");
+  await addColumnIfNotExists("user_profiles", "privacy_accepted_at", "TIMESTAMP");
+  await addColumnIfNotExists("user_profiles", "disclaimers_accepted_at", "TIMESTAMP");
+  await addColumnIfNotExists("user_profiles", "tos_version", "TEXT NOT NULL DEFAULT 'v1'");
+  await addColumnIfNotExists("user_profiles", "privacy_version", "TEXT NOT NULL DEFAULT 'v1'");
+  await addColumnIfNotExists("user_profiles", "disclaimers_version", "TEXT NOT NULL DEFAULT 'v1'");
   await addColumnIfNotExists("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
 
   await initTable("documents", `

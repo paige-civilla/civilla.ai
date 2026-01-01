@@ -447,6 +447,15 @@ export class DatabaseStorage implements IStorage {
           partyRole: data.partyRole !== undefined ? data.partyRole : existing.partyRole,
           isSelfRepresented: data.isSelfRepresented !== undefined ? data.isSelfRepresented : existing.isSelfRepresented,
           autoFillEnabled: data.autoFillEnabled !== undefined ? data.autoFillEnabled : existing.autoFillEnabled,
+          petitionerName: data.petitionerName !== undefined ? data.petitionerName : existing.petitionerName,
+          respondentName: data.respondentName !== undefined ? data.respondentName : existing.respondentName,
+          onboardingCompletedAt: data.onboardingCompletedAt !== undefined ? data.onboardingCompletedAt : existing.onboardingCompletedAt,
+          tosAcceptedAt: data.tosAcceptedAt !== undefined ? data.tosAcceptedAt : existing.tosAcceptedAt,
+          privacyAcceptedAt: data.privacyAcceptedAt !== undefined ? data.privacyAcceptedAt : existing.privacyAcceptedAt,
+          disclaimersAcceptedAt: data.disclaimersAcceptedAt !== undefined ? data.disclaimersAcceptedAt : existing.disclaimersAcceptedAt,
+          tosVersion: data.tosVersion !== undefined ? data.tosVersion : existing.tosVersion,
+          privacyVersion: data.privacyVersion !== undefined ? data.privacyVersion : existing.privacyVersion,
+          disclaimersVersion: data.disclaimersVersion !== undefined ? data.disclaimersVersion : existing.disclaimersVersion,
           updatedAt: new Date(),
         })
         .where(eq(userProfiles.userId, userId))
@@ -468,6 +477,15 @@ export class DatabaseStorage implements IStorage {
           partyRole: data.partyRole ?? null,
           isSelfRepresented: data.isSelfRepresented ?? true,
           autoFillEnabled: data.autoFillEnabled ?? true,
+          petitionerName: data.petitionerName ?? null,
+          respondentName: data.respondentName ?? null,
+          onboardingCompletedAt: data.onboardingCompletedAt ?? null,
+          tosAcceptedAt: data.tosAcceptedAt ?? null,
+          privacyAcceptedAt: data.privacyAcceptedAt ?? null,
+          disclaimersAcceptedAt: data.disclaimersAcceptedAt ?? null,
+          tosVersion: data.tosVersion ?? "v1",
+          privacyVersion: data.privacyVersion ?? "v1",
+          disclaimersVersion: data.disclaimersVersion ?? "v1",
         })
         .returning();
       return created;

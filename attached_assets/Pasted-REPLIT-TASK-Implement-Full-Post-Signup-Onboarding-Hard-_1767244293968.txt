@@ -1,0 +1,266 @@
+REPLIT TASK: Implement Full Post-Signup Onboarding + Hard Gate + Scroll-to-Agree Modals (ONE PASS)
+
+CONTEXT
+- Goal: After a user creates an account (and on any login until complete), force a full onboarding wizard that:
+  1) Collects profile + case info + optional children info
+  2) Saves everything to DB
+  3) Requires 4 agreements (Terms, Privacy, Not a Law Firm, User Responsibility) with “scroll to bottom to enable”
+  4) Hard-gates the app: no module pages until onboarding is complete
+  5) Persists consent timestamps + versions so we can force re-consent if policy text changes later
+
+IMPORTANT RULES
+- Do NOT change navbar/marketing pages.
+- This is inside the logged-in app only (/app/*).
+- User must be able to logout even if onboarding is incomplete.
+- Keep the UI simple and calm; avoid legalese beyond what we already have.
+
+========================================================
+A) DATABASE + SCHEMA CHANGES
+========================================================
+
+1) Update shared/schema.ts
+
+A1. user_profiles: add these columns (if not present already, confirm):
+- onboarding_completed_at: timestamp nullable
+- tos_accepted_at: timestamp nullable
+- privacy_accepted_at: timestamp nullable
+- disclaimers_accepted_at: timestamp nullable
+- tos_version: text NOT NULL default 'v1'
+- privacy_version: text NOT NULL default 'v1'
+- disclaimers_version: text NOT NULL default 'v1'
+
+A2. Extend upsertUserProfileSchema to allow writing:
+- onboardingCompletedAt (nullable) OR a boolean “onboardingComplete” (pick one; recommended timestamps)
+- tosAcceptedAt, privacyAcceptedAt, disclaimersAcceptedAt (timestamps)
+- tosVersion, privacyVersion, disclaimersVersion (strings)
+
+A3. cases table: add a gating helper
+- hasChildren: boolean NOT NULL default false
+
+A4. case_children: if it exists already, keep. If not, create (you said it exists now). Confirm fields include:
+- id, userId, caseId, firstName, lastName, dateOfBirth, notes, createdAt, updatedAt (optional)
+
+2) Update server/db.ts initDbTables()
+- In CREATE TABLE user_profiles: include the new columns above with defaults.
+- Add addColumnIfNotExists for all new columns so existing prod DBs migrate safely:
+  user_profiles.onboarding_completed_at TIMESTAMP
+  user_profiles.tos_accepted_at TIMESTAMP
+  user_profiles.privacy_accepted_at TIMESTAMP
+  user_profiles.disclaimers_accepted_at TIMESTAMP
+  user_profiles.tos_version TEXT NOT NULL DEFAULT 'v1'
+  user_profiles.privacy_version TEXT NOT NULL DEFAULT 'v1'
+  user_profiles.disclaimers_version TEXT NOT NULL DEFAULT 'v1'
+- Add cases.has_children BOOLEAN NOT NULL DEFAULT false via addColumnIfNotExists
+
+========================================================
+B) BACKEND ROUTES + STORAGE
+========================================================
+
+3) Update server/storage.ts
+Add/confirm these methods (ownership enforced by userId):
+- getUserProfile(userId)
+- upsertUserProfile(userId, data)
+Already present; extend to include new fields.
+
+Add case update method if not present:
+- updateCase(userId, caseId, data) allowing hasChildren update
+
+Add case_children CRUD if not already present (you likely already have it):
+- listCaseChildren(userId, caseId)
+- createCaseChild(userId, caseId, child)
+- updateCaseChild(userId, childId, child)
+- deleteCaseChild(userId, childId)
+
+4) Update server/routes.ts
+Add endpoints (all requireAuth):
+- GET /api/onboarding/status
+  returns:
+    {
+      ok: true,
+      onboardingComplete: boolean,
+      requiredVersions: { tos:'v1', privacy:'v1', disclaimers:'v1' },
+      accepted: { tosAcceptedAt, privacyAcceptedAt, disclaimersAcceptedAt, tosVersion, privacyVersion, disclaimersVersion }
+    }
+
+- GET /api/onboarding/policies
+  returns the full text to show in modals (pulled from the existing Terms + Privacy pages content files, or defined as constants for now):
+    {
+      tosText: string,
+      privacyText: string,
+      notLawFirmText: string,          // short disclosure
+      responsibilityText: string       // short disclosure
+      versions: { tos:'v1', privacy:'v1', disclaimers:'v1' }
+    }
+  NOTE: Do NOT scrape HTML. Just export the policy strings from a server/constants file or reuse the same strings used in the page components (copy once into a shared constant to keep in sync).
+
+- POST /api/onboarding/complete
+  Body includes the full onboarding payload (see section C). Validate with Zod.
+  Must:
+    1) Upsert user profile fields
+    2) Upsert case fields (including hasChildren)
+    3) If hasChildren true and children[] provided:
+        - Create/replace children for that case (simplest: delete existing for that case/user then insert the new list)
+    4) Write acceptance timestamps + versions
+    5) Set onboarding_completed_at = NOW()
+  Return: { ok:true }
+
+Validation rules:
+- Must have at minimum:
+  profile.fullName
+  profile.addressLine1
+  profile.city/state/zip (allow optional city/state if you want, but addressLine1 should be required for court docs)
+  case.state, case.county, case.caseNumber, parties.petitioner/respondent names (if you already capture those in docs flow, use them)
+- Agreements required: must confirm four booleans all true
+- Must confirm each modal was scrolled: client enforces, but also require server booleans like scrolledTos/scrolledPrivacy/etc true for defense-in-depth.
+
+========================================================
+C) FRONTEND ONBOARDING UI (WIZARD)
+========================================================
+
+5) Create new page:
+client/src/pages/AppOnboarding.tsx
+
+Route:
+- Add /app/onboarding in App router.
+
+This page is a wizard with steps:
+Step 0: Heads up
+  Title: “Quick setup (about 5–8 minutes)”
+  Text: “This is a bit of information up front, but it saves time later by auto-filling documents and keeping your case organized.”
+  Button: Start
+
+Step 1: Your Info
+  fullName, email (prefill from auth me), phone
+
+Step 2: Address
+  addressLine1, addressLine2, city, state, zip
+
+Step 3: Case Basics
+  state, county, caseNumber, caseType (optional), caseTitle (optional)
+  Question: “Are there children involved in this case?” yes/no
+  Save yes/no into case.hasChildren
+
+Step 4: Children (ONLY if hasChildren true)
+  Add child list UI:
+   - First name
+   - Last name
+   - Date of birth
+   - Notes (optional)
+  Allow add/remove multiple children
+  (Keep it minimal now; we can expand fields later.)
+
+Step 5: Other Party + Party Roles
+  petitioner name, respondent name
+  partyRole (Petitioner/Respondent) for the current user (dropdown)
+  isSelfRepresented toggle
+  If attorney selected later, collect firm/bar # (you already have fields)
+
+Step 6: Agreements (HARD REQUIRED)
+  Show 4 agreement rows:
+   - Terms of Service (View)
+   - Privacy Policy (View)
+   - Not a Law Firm / No Legal Advice (View)
+   - User Responsibility (View)
+  Each row:
+   - “View” opens modal with scroll container
+   - Checkbox remains disabled until scrolled to bottom
+   - After modal scrolls to bottom, enable that row’s checkbox
+  All 4 must be checked to enable “Finish Setup”
+
+Finish:
+  POST /api/onboarding/complete with all payload + versions + timestamps
+  On success: redirect to /app/cases (or /app/case/:caseId if you want)
+
+6) Implement reusable modal component:
+client/src/components/onboarding/ScrollablePolicyModal.tsx
+Props:
+- open, onOpenChange
+- title
+- text
+- onScrolledToBottom() callback
+Requirements:
+- Detect scroll position (scrollTop + clientHeight >= scrollHeight - 4)
+- When reached, call callback and show “You can now agree” text
+- Do not auto-check; just unlock checkbox.
+
+========================================================
+D) HARD GATE THE APP UNTIL ONBOARDING COMPLETE
+========================================================
+
+7) Add an onboarding guard in the logged-in app shell:
+Wherever AppLayout is applied (likely client/src/components/layout/AppLayout.tsx or App.tsx):
+- On mount, call GET /api/onboarding/status
+- If onboardingComplete is false:
+   - Allow only routes:
+     /app/onboarding
+     /app/logout or existing logout action
+   - Redirect any other /app/* route to /app/onboarding
+- Also enforce re-consent:
+   If accepted versions don’t match required versions from /api/onboarding/status:
+     treat as incomplete and force onboarding agreements step.
+
+Do NOT break logout:
+- Keep the logout button visible and working even during onboarding.
+
+========================================================
+E) INTEGRATIONS WITH EXISTING DOCUMENTS AUTO-FILL
+========================================================
+
+8) Update Documents page logic (client/src/pages/AppDocuments.tsx)
+- It already uses /api/profile for autofill.
+- Confirm onboarding writes profile fields into user_profiles so the existing autofill works.
+- Confirm petitioner/respondent/case info are saved somewhere the DOCX generator reads from.
+  If DOCX generator only uses what user enters in Review modal, keep it as-is. Onboarding just reduces typing.
+
+========================================================
+F) ACCEPTANCE TESTS (YOU MUST RUN)
+========================================================
+
+After publish, test on civilla.ai:
+
+1) New user registers:
+- Immediately lands on /app/onboarding
+- Cannot access /app/cases directly (redirected back to onboarding)
+
+2) Wizard:
+- Can progress through steps
+- If “has children = no”, Children step is skipped
+- If “has children = yes”, Children step appears and requires at least one child
+
+3) Agreements:
+- Each checkbox is disabled until the user opens its modal and scrolls to bottom
+- Must do all 4 before “Finish setup” enables
+
+4) Completion:
+- Finishing redirects to /app/cases
+- Refresh browser on /app/documents/:caseId works and onboarding does NOT reappear
+
+5) Returning user:
+- Can login and use app
+- If you change required versions to v2 later, user is forced back through agreements
+
+========================================================
+G) VERSIONS (SET THESE CONSTANTS NOW)
+========================================================
+
+Create: server/policyVersions.ts
+export const POLICY_VERSIONS = {
+  tos: "v1",
+  privacy: "v1",
+  disclaimers: "v1",
+};
+
+Use these in:
+- /api/onboarding/status
+- /api/onboarding/policies
+- onboarding complete write
+
+========================================================
+DELIVERABLE
+- Implement all changes above
+- Publish
+- Reply back with:
+  1) Files changed list
+  2) Confirmation onboarding guard works
+  3) Screenshot of Agreements step with 4 items
+  4) Confirm children step appears only when hasChildren = yes
