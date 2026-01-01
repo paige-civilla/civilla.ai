@@ -719,16 +719,17 @@ export default function AppDocuments() {
                 {currentCase.caseType && <span>{currentCase.caseType}</span>}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => setIsCourtDocDialogOpen(true)}
-                variant="outline"
-                className="font-sans"
-                data-testid="button-download-court-docx"
-              >
-                <FileDown className="w-4 h-4 mr-2" />
-                Download DOCX (Court Format)
-              </Button>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => setIsCourtDocDialogOpen(true)}
+                  variant="outline"
+                  className="font-sans"
+                  data-testid="button-download-court-docx"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Prepare Court Filing (DOCX)
+                </Button>
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
                 className="bg-bush text-white font-sans"
@@ -737,6 +738,10 @@ export default function AppDocuments() {
                 <Plus className="w-4 h-4 mr-2" />
                 New Document
               </Button>
+              </div>
+              <p className="font-sans text-xs text-neutral-darkest/60 max-w-xs text-right">
+                Review details, confirm date and role, then generate a court-formatted DOCX.
+              </p>
             </div>
           </div>
 
@@ -744,15 +749,19 @@ export default function AppDocuments() {
             <TabsList className="mb-4">
               <TabsTrigger value="editable" data-testid="tab-editable-documents">
                 <FileText className="w-4 h-4 mr-2" />
-                My Documents ({documents.length})
+                Draft Documents ({documents.length})
               </TabsTrigger>
               <TabsTrigger value="history" data-testid="tab-document-history">
                 <History className="w-4 h-4 mr-2" />
-                Download History ({generatedDocuments.length})
+                Court Filings (DOCX) ({generatedDocuments.length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="editable">
+              <div className="mb-4">
+                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Draft Documents</h2>
+                <p className="font-sans text-sm text-neutral-darkest/60">Working versions you can edit anytime. These are not court-formatted.</p>
+              </div>
               {docsLoading ? (
                 <div className="w-full py-12 text-center">
                   <p className="font-sans text-neutral-darkest/60">Loading documents...</p>
@@ -844,6 +853,10 @@ export default function AppDocuments() {
             </TabsContent>
 
             <TabsContent value="history">
+              <div className="mb-4">
+                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Court Filings (DOCX)</h2>
+                <p className="font-sans text-sm text-neutral-darkest/60">Previously generated court-formatted DOCX versions you can re-download.</p>
+              </div>
               {genDocsLoading ? (
                 <div className="w-full py-12 text-center">
                   <p className="font-sans text-neutral-darkest/60">Loading history...</p>
@@ -853,7 +866,7 @@ export default function AppDocuments() {
                   <div className="w-16 h-16 rounded-full bg-bush/10 flex items-center justify-center mb-4">
                     <History className="w-8 h-8 text-bush" />
                   </div>
-                  <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Download History</h2>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Court Filings Yet</h2>
                   <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-4">
                     Documents you generate and download will appear here for easy re-downloading.
                   </p>
@@ -863,7 +876,7 @@ export default function AppDocuments() {
                     data-testid="button-download-court-docx-history"
                   >
                     <FileDown className="w-4 h-4 mr-2" />
-                    Generate Court Document
+                    Prepare Court Filing
                   </Button>
                 </div>
               ) : (
@@ -891,8 +904,8 @@ export default function AppDocuments() {
                             onClick={() => handleRedownloadFromHistory(genDoc)}
                             data-testid={`button-redownload-${genDoc.id}`}
                           >
-                            <Edit3 className="w-4 h-4 mr-2" />
-                            Review & Download
+                            <FileDown className="w-4 h-4 mr-2" />
+                            Re-download DOCX
                           </Button>
                         </div>
                       </CardHeader>
@@ -1134,6 +1147,19 @@ export default function AppDocuments() {
               Review the information below and make any changes before downloading.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex items-center justify-between p-3 bg-neutral-lightest/50 rounded-md border border-neutral-light mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-neutral-darkest/50">Draft</span>
+              <span className="text-neutral-darkest/30">→</span>
+              <span className="text-xs font-medium text-bush">Review</span>
+              <span className="text-neutral-darkest/30">→</span>
+              <span className="text-xs text-neutral-darkest/50">Court Filing</span>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium text-neutral-darkest">Step 2 of 3</p>
+              <p className="text-xs text-neutral-darkest/60">Reviewing details before generating DOCX</p>
+            </div>
+          </div>
           {reviewPayload && (
             <ScrollArea className="flex-1 pr-4">
               <div className="flex flex-col gap-4 py-4">

@@ -1,0 +1,79 @@
+TASK: Documents UX Clarity Pass (Labels + Step Indicator + Layout Separation)
+
+AUTONOMY: LOW
+SCOPE: UI COPY + SMALL LAYOUT ONLY (NO BACKEND CHANGES)
+GOAL:
+Make the Documents experience understandable to non-developers by clearly separating:
+1) Draft editing
+2) Review & confirm
+3) Court-formatted DOCX output
+and by renaming confusing labels/buttons.
+
+CONSTRAINTS:
+- Do NOT change any API routes or backend logic
+- Do NOT change existing data models
+- Do NOT remove existing features
+- Keep current styling system (Tailwind/shadcn) and Civilla colors
+- Minimal refactor: prefer small targeted edits in the existing page
+- Ensure no TS errors and no console errors
+
+PRIMARY FILE:
+- client/src/pages/AppDocuments.tsx
+
+IMPLEMENTATION STEPS:
+
+A) RENAME TABS (COPY ONLY)
+1) Find the Tabs triggers for the two sections:
+   - Change "My Documents" to "Draft Documents"
+   - Change "Download History" to "Court Filings (DOCX)"
+2) Keep the tab values the same (do not change internal keys). Only change visible text.
+
+B) RENAME MAIN ACTION BUTTON (COPY ONLY)
+1) Locate the button that opens the court DOCX flow (currently something like "Download DOCX (Court Format)" or similar).
+2) Change its visible label to:
+   "Prepare Court Filing (DOCX)"
+3) Add a small helper text directly under or near this button (font-sans text-xs/ text-sm, muted) that says:
+   "Review details, confirm date and role, then generate a court-formatted DOCX."
+4) Do not change the click handler or modal behavior.
+
+C) ADD STEP INDICATOR INSIDE THE REVIEW & EDIT MODAL (SMALL UI ADD)
+1) Inside the existing Review & Edit modal DialogContent, at the very top under the DialogHeader (or within it),
+   add a small non-interactive step indicator that visually shows:
+   "Draft → Review → Court Filing"
+   with a secondary line:
+   "Step 2 of 3"
+   and a subtle hint:
+   "You are reviewing details before generating the DOCX."
+2) Make it lightweight: a small bordered pill or muted row; no new components required.
+3) Must not change any modal logic or state transitions.
+
+D) VISUALLY SEPARATE DRAFTS VS FILINGS (LIGHT RESTRUCTURE ONLY)
+1) Keep Tabs, but ensure each tab content has:
+   - A section header (h2 or similar) matching the tab label
+   - A 1-sentence description:
+     Draft Documents description:
+       "Working versions you can edit anytime. These are not court-formatted."
+     Court Filings (DOCX) description:
+       "Previously generated court-formatted DOCX versions you can re-download."
+2) Do NOT change how documents load. Only wrap existing lists with these headers and descriptions.
+
+E) OPTIONAL: BUTTON MICRO-COPY IN LIST ITEMS (IF EASY, NO LOGIC CHANGE)
+If the draft list has an action that generates DOCX, rename the visible label (only the text) to:
+- "Prepare Court Filing"
+If the history list has a redownload action, rename visible label to:
+- "Re-download DOCX"
+Do not change handlers.
+
+ACCEPTANCE TESTS (YOU MUST VERIFY):
+1) Documents page renders with no errors
+2) Tabs show: "Draft Documents" and "Court Filings (DOCX)"
+3) Main action says "Prepare Court Filing (DOCX)" and shows helper text
+4) Opening the Review & Edit modal shows the step indicator and "Step 2 of 3"
+5) No backend changes, no route changes, no API changes
+6) Build passes
+
+DELIVERABLE:
+Reply with:
+- Exact file(s) edited
+- Line ranges for each change (A, B, C, D, optional E)
+- Confirmation that only UI copy/layout changed and all tests above pass
