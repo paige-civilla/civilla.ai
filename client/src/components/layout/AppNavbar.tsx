@@ -44,29 +44,55 @@ const getStaticMenuLinks = () => [
   { label: "Cases", href: "/app/cases", icon: Briefcase },
 ];
 
+const OPEN_DELAY = 80;   // small "hover intent" delay
+const CLOSE_DELAY = 350; // grace period before closing
+
 export default function AppNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTimerRef = useRef<number | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
 
   useFixedNavShell(shellRef);
 
-  const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setIsMenuOpen(true);
+  const clearTimers = () => {
+    if (openTimerRef.current) window.clearTimeout(openTimerRef.current);
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    openTimerRef.current = null;
+    closeTimerRef.current = null;
   };
 
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setIsMenuOpen(false);
-    }, 150);
+  const scheduleOpen = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    if (isMenuOpen) return;
+    if (openTimerRef.current) return;
+    openTimerRef.current = window.setTimeout(() => {
+      setIsMenuOpen(true);
+      openTimerRef.current = null;
+    }, OPEN_DELAY);
   };
+
+  const scheduleClose = () => {
+    if (openTimerRef.current) {
+      window.clearTimeout(openTimerRef.current);
+      openTimerRef.current = null;
+    }
+    if (!isMenuOpen) return;
+    if (closeTimerRef.current) return;
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsMenuOpen(false);
+      closeTimerRef.current = null;
+    }, CLOSE_DELAY);
+  };
+
+  // Cleanup timers on unmount
+  useEffect(() => () => clearTimers(), []);
 
   const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
@@ -170,13 +196,13 @@ export default function AppNavbar() {
             </div>
             <div 
               className="flex items-center justify-center gap-2 relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
+              onMouseEnter={scheduleOpen}
+              onMouseLeave={scheduleClose}
             >
               <button 
                 ref={menuButtonRef}
                 className="inline-flex items-center justify-center rounded-md p-1.5 border border-neutral-darkest/20 hover:border-neutral-darkest/35 hover:bg-neutral-darkest/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-darkest/40"
-                onClick={() => setIsMenuOpen((v) => !v)}
+                onClick={() => { clearTimers(); setIsMenuOpen((v) => !v); }}
                 aria-label="Open menu"
                 aria-expanded={isMenuOpen}
                 data-testid="button-menu-app"
@@ -198,6 +224,11 @@ export default function AppNavbar() {
               >
                 <LogOut className="w-4 h-4 text-white" />
               </button>
+              
+              {/* Grace area bridge between trigger and menu */}
+              {isMenuOpen && (
+                <div className="absolute left-0 right-0 top-full h-3" />
+              )}
             </div>
           </div>
         </div>
@@ -207,8 +238,8 @@ export default function AppNavbar() {
             ref={menuRef}
             className="absolute left-0 right-0 top-full mt-2 z-[9999]"
             data-testid="dropdown-menu-app"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={scheduleOpen}
+            onMouseLeave={scheduleClose}
           >
             <div className="mx-auto max-w-6xl px-3">
               <div
@@ -222,7 +253,7 @@ export default function AppNavbar() {
                       <User className="w-4 h-4 text-white" />
                     </div>
                     <div className="font-sans text-sm text-neutral-darkest/70">
-                      {authData.user.email}
+                      {displayName}
                     </div>
                   </div>
                 )}
@@ -246,21 +277,35 @@ export default function AppNavbar() {
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[hsl(var(--app-panel-border))] flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsMenuOpen(false);
-                      await apiRequest("POST", "/api/auth/logout", {});
-                      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-                      setLocation("/");
-                    }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
-                    data-testid="button-logout-menu"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    <span>Log out</span>
-                  </button>
+                <div className="mt-4 pt-3 border-t border-[hsl(var(--app-panel-border))] flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setLocation("/app/account");
+                      }}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
+                      data-testid="menu-link-account-settings"
+                    >
+                      <Settings className="h-5 w-5" />
+                      <span>Account Settings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsMenuOpen(false);
+                        await apiRequest("POST", "/api/auth/logout", {});
+                        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+                        setLocation("/");
+                      }}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
+                      data-testid="button-logout-menu"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span>Log out</span>
+                    </button>
+                  </div>
 
                   <button
                     type="button"
