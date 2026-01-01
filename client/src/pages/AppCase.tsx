@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, Pencil, Trash2, Baby } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CaseChild } from "@shared/schema";
@@ -260,7 +261,12 @@ export default function AppCase() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <CaseMonthCalendar caseId={caseId} />
+          </div>
+          <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {modules.map(({ key, title, subtitle, href, comingSoon, Icon }) => {
             const Tile = (
               <Card
@@ -296,6 +302,8 @@ export default function AppCase() {
               </Link>
             );
           })}
+            </div>
+          </div>
         </div>
 
         {caseRecord?.hasChildren && (
