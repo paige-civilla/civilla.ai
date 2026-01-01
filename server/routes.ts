@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -1412,7 +1412,7 @@ export async function registerRoutes(
       const [allDeadlines, allTasks, allTimeline] = await Promise.all([
         storage.listDeadlines(userId, caseId),
         storage.listTasks(userId, caseId),
-        storage.getTimelineEvents(caseId, userId),
+        storage.listTimelineEvents(caseId, userId),
       ]);
 
       const items: Array<{
@@ -1468,6 +1468,293 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Calendar fetch error:", error);
       res.status(500).json({ error: "Failed to fetch calendar items" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/calendar/categories", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const categories = await storage.listCalendarCategories(userId, caseId);
+      res.json({ categories });
+    } catch (error) {
+      console.error("List calendar categories error:", error);
+      res.status(500).json({ error: "Failed to list categories" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/calendar/categories", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertCalendarCategorySchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const category = await storage.createCalendarCategory(userId, caseId, parseResult.data);
+      res.status(201).json({ category });
+    } catch (error) {
+      console.error("Create calendar category error:", error);
+      res.status(500).json({ error: "Failed to create category" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/calendar/items", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const items = await storage.listCaseCalendarItems(userId, caseId);
+      res.json({ items });
+    } catch (error) {
+      console.error("List calendar items error:", error);
+      res.status(500).json({ error: "Failed to list calendar items" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/calendar/items", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertCaseCalendarItemSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const item = await storage.createCaseCalendarItem(userId, caseId, parseResult.data);
+      res.status(201).json({ item });
+    } catch (error) {
+      console.error("Create calendar item error:", error);
+      res.status(500).json({ error: "Failed to create calendar item" });
+    }
+  });
+
+  app.patch("/api/calendar/items/:itemId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { itemId } = req.params;
+
+      const parseResult = updateCaseCalendarItemSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateCaseCalendarItem(userId, itemId, parseResult.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Calendar item not found" });
+      }
+
+      res.json({ item: updated });
+    } catch (error) {
+      console.error("Update calendar item error:", error);
+      res.status(500).json({ error: "Failed to update calendar item" });
+    }
+  });
+
+  app.delete("/api/calendar/items/:itemId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { itemId } = req.params;
+
+      const deleted = await storage.deleteCaseCalendarItem(userId, itemId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Calendar item not found" });
+      }
+
+      res.json({ message: "Calendar item deleted" });
+    } catch (error) {
+      console.error("Delete calendar item error:", error);
+      res.status(500).json({ error: "Failed to delete calendar item" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/dashboard/calendar", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { month } = req.query;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const monthStr = typeof month === "string" ? month : new Date().toISOString().slice(0, 7);
+      const [yearStr, monthNumStr] = monthStr.split("-");
+      const year = parseInt(yearStr, 10);
+      const monthNum = parseInt(monthNumStr, 10);
+
+      if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+        return res.status(400).json({ error: "Invalid month format. Use YYYY-MM" });
+      }
+
+      const monthStart = new Date(Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0));
+      const monthEnd = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
+
+      const [allDeadlines, allTasks, allCalendarItems, categories] = await Promise.all([
+        storage.listDeadlines(userId, caseId),
+        storage.listTasks(userId, caseId),
+        storage.listCaseCalendarItems(userId, caseId),
+        storage.listCalendarCategories(userId, caseId),
+      ]);
+
+      const categoryMap = new Map(categories.map(c => [c.id, c]));
+
+      const defaultDeadlineColor = "#E57373";
+      const defaultTodoColor = "#64B5F6";
+      const defaultCalendarColor = "#7BA3A8";
+
+      type CalendarEvent = {
+        kind: "deadline" | "todo" | "calendar";
+        id: string;
+        title: string;
+        date: string;
+        isDone: boolean;
+        color: string;
+        categoryName?: string;
+      };
+
+      const events: CalendarEvent[] = [];
+
+      for (const d of allDeadlines) {
+        const dueDate = new Date(d.dueDate);
+        if (dueDate >= monthStart && dueDate <= monthEnd) {
+          events.push({
+            kind: "deadline",
+            id: d.id,
+            title: d.title,
+            date: dueDate.toISOString(),
+            isDone: d.status === "done",
+            color: defaultDeadlineColor,
+          });
+        }
+      }
+
+      for (const t of allTasks) {
+        if (t.dueDate) {
+          const dueDate = new Date(t.dueDate);
+          if (dueDate >= monthStart && dueDate <= monthEnd) {
+            events.push({
+              kind: "todo",
+              id: t.id,
+              title: t.title,
+              date: dueDate.toISOString(),
+              isDone: t.status === "completed",
+              color: defaultTodoColor,
+            });
+          }
+        }
+      }
+
+      for (const item of allCalendarItems) {
+        const startDate = new Date(item.startDate);
+        if (startDate >= monthStart && startDate <= monthEnd) {
+          const category = item.categoryId ? categoryMap.get(item.categoryId) : null;
+          events.push({
+            kind: "calendar",
+            id: item.id,
+            title: item.title,
+            date: startDate.toISOString(),
+            isDone: item.isDone,
+            color: item.colorOverride ?? category?.color ?? defaultCalendarColor,
+            categoryName: category?.name,
+          });
+        }
+      }
+
+      const now = new Date();
+      const upcoming = [...allDeadlines, ...allTasks, ...allCalendarItems]
+        .map(item => {
+          if ("dueDate" in item && "status" in item && item.status !== undefined) {
+            if ("priority" in item) {
+              const t = item as any;
+              return t.dueDate ? {
+                kind: "todo" as const,
+                id: t.id,
+                title: t.title,
+                date: new Date(t.dueDate).toISOString(),
+                isDone: t.status === "completed",
+                color: defaultTodoColor,
+              } : null;
+            } else {
+              const d = item as any;
+              return {
+                kind: "deadline" as const,
+                id: d.id,
+                title: d.title,
+                date: new Date(d.dueDate).toISOString(),
+                isDone: d.status === "done",
+                color: defaultDeadlineColor,
+              };
+            }
+          } else if ("startDate" in item) {
+            const c = item as any;
+            const category = c.categoryId ? categoryMap.get(c.categoryId) : null;
+            return {
+              kind: "calendar" as const,
+              id: c.id,
+              title: c.title,
+              date: new Date(c.startDate).toISOString(),
+              isDone: c.isDone,
+              color: c.colorOverride ?? category?.color ?? defaultCalendarColor,
+              categoryName: category?.name,
+            };
+          }
+          return null;
+        })
+        .filter((e): e is NonNullable<typeof e> => e !== null && !e.isDone && new Date(e.date) >= now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(0, 7);
+
+      res.json({
+        monthStart: monthStart.toISOString(),
+        monthEnd: monthEnd.toISOString(),
+        events,
+        upcoming,
+        categories,
+      });
+    } catch (error) {
+      console.error("Dashboard calendar fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard calendar" });
     }
   });
 
