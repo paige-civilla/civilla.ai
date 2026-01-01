@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, TrendingUp, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import logoColor from "@assets/noBgColor-2_1766294100143.png";
+import logoSymbol from "@assets/symbol_1767301386741.png";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -187,11 +187,11 @@ export default function AppNavbar() {
         <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-4 w-full max-w-container">
             <div className="flex items-center">
-              <Link href="/app" className="relative h-7 w-auto" data-testid="link-logo-app">
+              <Link href="/app" className="relative h-7 w-7" aria-label="Civilla" data-testid="link-logo-app">
                 <img 
-                  src={logoColor} 
-                  alt="civilla.ai" 
-                  className="h-full w-auto object-contain"
+                  src={logoSymbol} 
+                  alt="Civilla" 
+                  className="h-full w-full object-contain"
                 />
               </Link>
             </div>
