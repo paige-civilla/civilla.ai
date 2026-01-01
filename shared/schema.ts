@@ -529,3 +529,59 @@ export const updateDeadlineSchema = z.object({
 export type InsertDeadline = z.infer<typeof insertDeadlineSchema>;
 export type UpdateDeadline = z.infer<typeof updateDeadlineSchema>;
 export type Deadline = typeof deadlines.$inferSelect;
+
+export const calendarCategories = pgTable("calendar_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#7BA3A8"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("calendar_categories_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertCalendarCategorySchema = z.object({
+  name: z.string().min(1, "Name is required").max(60, "Name must be 60 characters or less"),
+  color: z.string().min(4).max(20).optional().default("#7BA3A8"),
+});
+
+export type InsertCalendarCategory = z.infer<typeof insertCalendarCategorySchema>;
+export type CalendarCategory = typeof calendarCategories.$inferSelect;
+
+export const caseCalendarItems = pgTable("case_calendar_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  isDone: boolean("is_done").notNull().default(false),
+  categoryId: varchar("category_id").references(() => calendarCategories.id),
+  colorOverride: text("color_override"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseDateIdx: index("calendar_items_user_case_date_idx").on(table.userId, table.caseId, table.startDate),
+}));
+
+export const insertCaseCalendarItemSchema = z.object({
+  title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
+  startDate: z.coerce.date({ required_error: "Date is required" }),
+  categoryId: z.string().optional().nullable(),
+  colorOverride: z.string().optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export const updateCaseCalendarItemSchema = z.object({
+  title: z.string().min(1).max(120).optional(),
+  startDate: z.coerce.date().optional(),
+  isDone: z.boolean().optional(),
+  categoryId: z.string().optional().nullable(),
+  colorOverride: z.string().optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export type InsertCaseCalendarItem = z.infer<typeof insertCaseCalendarItemSchema>;
+export type UpdateCaseCalendarItem = z.infer<typeof updateCaseCalendarItemSchema>;
+export type CaseCalendarItem = typeof caseCalendarItems.$inferSelect;

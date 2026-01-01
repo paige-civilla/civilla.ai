@@ -1,0 +1,272 @@
+REPLIT — DO THIS NEXT (C): Unified “Calendar + Upcoming + Mark Done Sync” + Add-from-Dashboard + Custom Categories + Color Picker
+
+GOAL
+- Dashboard calendar shows: Deadlines + Case To-Do + user-created Calendar Items
+- “Upcoming” list under calendar shows next 7 items (from all three sources)
+- Checking off an item updates the real source (Deadlines/To-Do/Calendar Item) so it stays in sync everywhere
+- From the dashboard, user can add:
+  1) a Deadline
+  2) a Case To-Do
+  3) a Calendar Item
+- Calendar Items support categories:
+  - choose existing category
+  - create a new category
+  - choose a color via a color wheel (simple + best UX). Also include a small “Suggested colors” row for quick picks.
+
+------------------------------------------------------------
+1) BACKEND — SCHEMA: add calendar_categories + case_calendar_items
+------------------------------------------------------------
+EDIT: shared/schema.ts
+
+A) Add new tables near other case tables (after tasks/deadlines if present; if not, put near documents/timeline)
+
+Add to exports:
+
+export const calendarCategories = pgTable("calendar_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#7BA3A8"), // safe default
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("calendar_categories_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const caseCalendarItems = pgTable("case_calendar_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  startDate: timestamp("start_date").notNull(),  // use date-only semantics in UI, timestamp in DB
+  isDone: boolean("is_done").notNull().default(false),
+  categoryId: varchar("category_id").references(() => calendarCategories.id),
+  colorOverride: text("color_override"), // optional item-specific override
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseDateIdx: index("calendar_items_user_case_date_idx").on(table.userId, table.caseId, table.startDate),
+}));
+
+B) Add Zod schemas + types:
+
+export const insertCalendarCategorySchema = z.object({
+  name: z.string().min(1).max(60),
+  color: z.string().min(4).max(20).optional(), // accept hex
+});
+
+export const insertCaseCalendarItemSchema = z.object({
+  title: z.string().min(1).max(120),
+  startDate: z.coerce.date(),
+  categoryId: z.string().optional().nullable(),
+  colorOverride: z.string().optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export const updateCaseCalendarItemSchema = z.object({
+  title: z.string().min(1).max(120).optional(),
+  startDate: z.coerce.date().optional(),
+  isDone: z.boolean().optional(),
+  categoryId: z.string().optional().nullable(),
+  colorOverride: z.string().optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export type CalendarCategory = typeof calendarCategories.$inferSelect;
+export type CaseCalendarItem = typeof caseCalendarItems.$inferSelect;
+export type InsertCalendarCategory = z.infer<typeof insertCalendarCategorySchema>;
+export type InsertCaseCalendarItem = z.infer<typeof insertCaseCalendarItemSchema>;
+export type UpdateCaseCalendarItem = z.infer<typeof updateCaseCalendarItemSchema>;
+
+Also export them from @shared/schema so frontend can import.
+
+------------------------------------------------------------
+2) BACKEND — DB INIT: create tables
+------------------------------------------------------------
+EDIT: server/db.ts inside initDbTables()
+
+Add after tasks/deadlines init (or after documents if you don’t have tasks/deadlines there):
+
+await initTable("calendar_categories", `
+  CREATE TABLE IF NOT EXISTS calendar_categories (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    user_id VARCHAR(255) NOT NULL,
+    case_id VARCHAR(255) NOT NULL,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#7BA3A8',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )
+`, [
+  `CREATE INDEX IF NOT EXISTS idx_calendar_categories_user_case ON calendar_categories(user_id, case_id)`
+]);
+
+await initTable("case_calendar_items", `
+  CREATE TABLE IF NOT EXISTS case_calendar_items (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    user_id VARCHAR(255) NOT NULL,
+    case_id VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
+    start_date TIMESTAMP NOT NULL,
+    is_done BOOLEAN NOT NULL DEFAULT false,
+    category_id VARCHAR(255),
+    color_override TEXT,
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )
+`, [
+  `CREATE INDEX IF NOT EXISTS idx_calendar_items_user_case_date ON case_calendar_items(user_id, case_id, start_date)`
+]);
+
+------------------------------------------------------------
+3) BACKEND — STORAGE: CRUD methods
+------------------------------------------------------------
+EDIT: server/storage.ts
+
+A) Import the new tables + types from @shared/schema:
+- calendarCategories, caseCalendarItems
+- type CalendarCategory, CaseCalendarItem
+- type InsertCalendarCategory, InsertCaseCalendarItem, UpdateCaseCalendarItem
+
+B) Add interface methods in IStorage:
+
+listCalendarCategories(userId: string, caseId: string): Promise<CalendarCategory[]>;
+createCalendarCategory(userId: string, caseId: string, data: InsertCalendarCategory): Promise<CalendarCategory>;
+
+listCaseCalendarItems(userId: string, caseId: string): Promise<CaseCalendarItem[]>;
+createCaseCalendarItem(userId: string, caseId: string, data: InsertCaseCalendarItem): Promise<CaseCalendarItem>;
+updateCaseCalendarItem(userId: string, itemId: string, data: UpdateCaseCalendarItem): Promise<CaseCalendarItem>;
+deleteCaseCalendarItem(userId: string, itemId: string): Promise<void>;
+
+C) Implement in DatabaseStorage using drizzle patterns you used for tasks/deadlines:
+- list: select where userId+caseId orderBy startDate
+- create: insert returning
+- update: update where id+userId returning
+- delete: delete where id+userId
+
+------------------------------------------------------------
+4) BACKEND — ROUTES: endpoints for categories + calendar items
+------------------------------------------------------------
+EDIT: server/routes.ts
+
+A) Import new schemas from @shared/schema:
+insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema
+
+B) Add routes (keep consistent with your existing patterns):
+
+// Categories
+GET  /api/cases/:caseId/calendar-categories
+POST /api/cases/:caseId/calendar-categories
+
+// Calendar Items
+GET    /api/cases/:caseId/calendar-items
+POST   /api/cases/:caseId/calendar-items
+PATCH  /api/calendar-items/:itemId
+DELETE /api/calendar-items/:itemId
+
+Each route must requireAuth, verify case belongs to user (like your other case routes), and use storage methods.
+
+------------------------------------------------------------
+5) FRONTEND — DASHBOARD: Calendar + Upcoming + Add modal + Done sync
+------------------------------------------------------------
+You said the calendar is already rendering on the dashboard, but we need:
+- remove dead space: add “Upcoming” list (next 7)
+- checkboxes that mark done and sync
+- “Add” button: create Deadline / Case To-Do / Calendar Item
+- category + color picker
+
+A) Find the calendar component file:
+Run:
+  rg -n "CaseMonthCalendar" client/src
+
+Edit the file that renders the month calendar (likely client/src/components/.../CaseMonthCalendar.tsx).
+If the dashboard calendar is directly in AppDashboard.tsx, keep the UI there and only use calendar component for the grid.
+
+B) Add these queries on Dashboard (or inside calendar component if it owns the data):
+
+- deadlines: GET /api/cases/:caseId/deadlines
+- todos: GET /api/cases/:caseId/tasks
+- calendar items: GET /api/cases/:caseId/calendar-items
+- categories: GET /api/cases/:caseId/calendar-categories
+
+Then create a computed list:
+- normalize all into a single array:
+  {
+    id, kind: "deadline"|"todo"|"calendar",
+    title,
+    date,
+    isDone,
+    color,
+    categoryName
+  }
+
+Rules:
+- Deadlines use a fixed color default (ex: #7BA3A8) unless you later add category mapping to deadlines (not now).
+- To-Do uses a different fixed color (ex: #8C5B3F or a muted blue) unless you add category mapping later.
+- Calendar Items:
+  color = colorOverride ?? category.color ?? "#7BA3A8"
+
+Upcoming list:
+- filter items with date >= today (or include overdue with “Overdue” label if you want dopamine urgency)
+- sort by date asc
+- take first 7
+
+Checkbox behavior:
+- if kind === "deadline": PATCH /api/deadlines/:id { isDone: true/false } (use your existing API field)
+- if kind === "todo": PATCH /api/tasks/:id { completed: true/false } (or whatever your tasks schema uses)
+- if kind === "calendar": PATCH /api/calendar-items/:id { isDone: true/false }
+
+After mutation: invalidate all four queries so every module stays synced.
+
+C) Add “Add” button + modal (on dashboard next to calendar header)
+- Button label: “Add”
+- Modal fields:
+  1) Type (select): Deadline / Case To-Do / Calendar Item
+  2) Title (text)
+  3) Date (date picker)
+  4) Category (only if Calendar Item): dropdown of categories + “Create new”
+  5) Color (only if Calendar Item): color wheel input + quick swatches row
+  6) Notes (optional)
+  Submit creates:
+   - Deadline: POST /api/cases/:caseId/deadlines
+   - Case To-Do: POST /api/cases/:caseId/tasks
+   - Calendar Item: POST /api/cases/:caseId/calendar-items (with categoryId/colorOverride)
+
+Category create:
+- inside modal: “New category name” + color picker
+- POST /api/cases/:caseId/calendar-categories then select it
+
+Color UI decision:
+YES — use a color wheel. It’s the simplest and most flexible.
+Implementation: <input type="color" ... />
+Also add 10 clickable swatches for quick picks (pastels + bolds). Users who hate wheels can still click.
+
+------------------------------------------------------------
+6) UI POLISH REQUESTS INCLUDED
+------------------------------------------------------------
+- Remove “Modules” heading on dashboard
+- Remove small “Case Workspace” label above the big case title
+- Make “View all cases” a proper button
+
+Edit: client/src/pages/AppDashboard.tsx (or wherever those render)
+- delete the “Modules” heading line
+- delete the small “Case Workspace” text line
+- replace “View all cases” text link with <Button variant="outline">View all cases</Button>
+
+------------------------------------------------------------
+7) TEST PLAN (fast)
+------------------------------------------------------------
+- Dashboard: add a Calendar Item with custom category + color
+- It appears on calendar grid + Upcoming list
+- Check it off in Upcoming; it becomes done and no longer shows as upcoming
+- Add Deadline; it appears; mark done; it becomes done in Deadlines module too
+- Add Case To-Do; mark done; it becomes completed in Case To-Do module too
+
+If anything doesn’t sync, it’s just a missing query invalidate or mismatch in PATCH payload fields.
+
+IMPLEMENTATION NOTE
+If your task fields use (completed) vs (isDone) or deadline fields differ, match your existing schema:
+- open the existing PATCH routes for tasks/deadlines and reuse the exact payload keys.
+
+END
