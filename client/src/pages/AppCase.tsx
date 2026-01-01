@@ -28,7 +28,7 @@ import { FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckS
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { CaseChild } from "@shared/schema";
+import type { Case, CaseChild } from "@shared/schema";
 
 export default function AppCase() {
   const params = useParams() as { caseId?: string };
@@ -44,6 +44,13 @@ export default function AppCase() {
     dateOfBirth: "",
     notes: "",
   });
+
+  const { data: caseData } = useQuery<{ case: Case }>({
+    queryKey: ["/api/cases", caseId],
+    enabled: !!caseId,
+  });
+
+  const caseRecord = caseData?.case;
 
   const { data: childrenData, isLoading: childrenLoading } = useQuery<{ children: CaseChild[] }>({
     queryKey: ["/api/cases", caseId, "children"],
@@ -222,6 +229,14 @@ export default function AppCase() {
       comingSoon: false,
       Icon: Users,
     },
+    ...(caseRecord?.hasChildren ? [{
+      key: "children",
+      title: "Children",
+      subtitle: "Manage children involved in this case",
+      href: caseId ? `/app/case-settings/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: Baby,
+    }] : []),
   ];
 
   const children = childrenData?.children || [];
@@ -283,94 +298,96 @@ export default function AppCase() {
           })}
         </div>
 
-        <div className="mt-10 border-t pt-8">
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
-                <Baby className="w-5 h-5 text-bush" />
+        {caseRecord?.hasChildren && (
+          <div className="mt-10 border-t pt-8">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
+                  <Baby className="w-5 h-5 text-bush" />
+                </div>
+                <div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Children</h2>
+                  <p className="font-sans text-sm text-neutral-darkest/60">Manage children involved in this case</p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Children</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">Manage children involved in this case</p>
-              </div>
+              <Button
+                onClick={openAddChildDialog}
+                className="bg-bush text-white"
+                data-testid="button-add-child"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Child
+              </Button>
             </div>
-            <Button
-              onClick={openAddChildDialog}
-              className="bg-bush text-white"
-              data-testid="button-add-child"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Child
-            </Button>
-          </div>
 
-          {childrenLoading ? (
-            <p className="font-sans text-sm text-neutral-darkest/60">Loading...</p>
-          ) : children.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="p-8 text-center">
-                <Baby className="w-12 h-12 text-neutral-darkest/30 mx-auto mb-4" />
-                <p className="font-sans text-neutral-darkest/60 mb-4">
-                  No children added to this case yet.
-                </p>
-                <Button
-                  onClick={openAddChildDialog}
-                  variant="outline"
-                  data-testid="button-add-first-child"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Child
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {children.map((child) => {
-                const age = calculateAge(child.dateOfBirth);
-                return (
-                  <Card key={child.id} className="bg-white" data-testid={`card-child-${child.id}`}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <h3 className="font-heading font-bold text-base text-neutral-darkest">
-                            {child.firstName} {child.lastName || ""}
-                          </h3>
-                          <p className="font-sans text-sm text-neutral-darkest/60 mt-1">
-                            Born: {formatDob(child.dateOfBirth)}
-                            {age !== null && ` (${age} years old)`}
-                          </p>
-                          {child.notes && (
-                            <p className="font-sans text-sm text-neutral-darkest/50 mt-2 line-clamp-2">
-                              {child.notes}
+            {childrenLoading ? (
+              <p className="font-sans text-sm text-neutral-darkest/60">Loading...</p>
+            ) : children.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="p-8 text-center">
+                  <Baby className="w-12 h-12 text-neutral-darkest/30 mx-auto mb-4" />
+                  <p className="font-sans text-neutral-darkest/60 mb-4">
+                    No children added to this case yet.
+                  </p>
+                  <Button
+                    onClick={openAddChildDialog}
+                    variant="outline"
+                    data-testid="button-add-first-child"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First Child
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {children.map((child) => {
+                  const age = calculateAge(child.dateOfBirth);
+                  return (
+                    <Card key={child.id} className="bg-white" data-testid={`card-child-${child.id}`}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <h3 className="font-heading font-bold text-base text-neutral-darkest">
+                              {child.firstName} {child.lastName || ""}
+                            </h3>
+                            <p className="font-sans text-sm text-neutral-darkest/60 mt-1">
+                              Born: {formatDob(child.dateOfBirth)}
+                              {age !== null && ` (${age} years old)`}
                             </p>
-                          )}
+                            {child.notes && (
+                              <p className="font-sans text-sm text-neutral-darkest/50 mt-2 line-clamp-2">
+                                {child.notes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openEditChildDialog(child)}
+                              data-testid={`button-edit-child-${child.id}`}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setDeleteChildId(child.id)}
+                              data-testid={`button-delete-child-${child.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => openEditChildDialog(child)}
-                            data-testid={`button-edit-child-${child.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setDeleteChildId(child.id)}
-                            data-testid={`button-delete-child-${child.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-10 border-t pt-8">
           <h2 className="font-heading font-bold text-xl text-neutral-darkest">Case Details</h2>

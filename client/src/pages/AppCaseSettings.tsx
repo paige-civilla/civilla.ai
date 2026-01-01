@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -142,6 +143,19 @@ export default function AppCaseSettings() {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       toast({ title: "Case updated successfully" });
       setEditCaseDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update case", variant: "destructive" });
+    },
+  });
+
+  const toggleHasChildrenMutation = useMutation({
+    mutationFn: async (hasChildren: boolean) => {
+      return apiRequest("PATCH", `/api/cases/${caseId}`, { hasChildren });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
     },
     onError: () => {
       toast({ title: "Failed to update case", variant: "destructive" });
@@ -309,81 +323,105 @@ export default function AppCaseSettings() {
                 <p className="font-sans text-sm text-neutral-darkest/60">Manage children involved in this case</p>
               </div>
             </div>
-            <Button
-              onClick={openAddChildDialog}
-              className="bg-bush text-white"
-              data-testid="button-add-child"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Child
-            </Button>
           </div>
 
-          {childrenLoading ? (
-            <p className="font-sans text-sm text-neutral-darkest/60">Loading...</p>
-          ) : children.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="p-8 text-center">
-                <Baby className="w-12 h-12 text-neutral-darkest/30 mx-auto mb-4" />
-                <p className="font-sans text-neutral-darkest/60 mb-4">
-                  No children added to this case yet.
-                </p>
+          <div className="flex items-center gap-3 mb-6">
+            <Switch
+              id="has-children-toggle"
+              checked={caseRecord?.hasChildren ?? false}
+              onCheckedChange={(checked) => toggleHasChildrenMutation.mutate(checked)}
+              disabled={toggleHasChildrenMutation.isPending}
+              data-testid="switch-has-children"
+            />
+            <Label htmlFor="has-children-toggle" className="font-sans text-sm text-neutral-darkest cursor-pointer">
+              This case involves children
+            </Label>
+          </div>
+
+          {caseRecord?.hasChildren ? (
+            <>
+              <div className="flex justify-end mb-4">
                 <Button
                   onClick={openAddChildDialog}
-                  variant="outline"
-                  data-testid="button-add-first-child"
+                  className="bg-bush text-white"
+                  data-testid="button-add-child"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add First Child
+                  Add Child
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+
+              {childrenLoading ? (
+                <p className="font-sans text-sm text-neutral-darkest/60">Loading...</p>
+              ) : children.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="p-8 text-center">
+                    <Baby className="w-12 h-12 text-neutral-darkest/30 mx-auto mb-4" />
+                    <p className="font-sans text-neutral-darkest/60 mb-4">
+                      No children added to this case yet.
+                    </p>
+                    <Button
+                      onClick={openAddChildDialog}
+                      variant="outline"
+                      data-testid="button-add-first-child"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add First Child
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {children.map((child) => {
+                    const age = calculateAge(child.dateOfBirth);
+                    return (
+                      <Card key={child.id} className="bg-white" data-testid={`card-child-${child.id}`}>
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="font-heading font-bold text-base text-neutral-darkest">
+                                {child.firstName} {child.lastName || ""}
+                              </h3>
+                              <p className="font-sans text-sm text-neutral-darkest/60 mt-1">
+                                Born: {formatDob(child.dateOfBirth)}
+                                {age !== null && ` (${age} years old)`}
+                              </p>
+                              {child.notes && (
+                                <p className="font-sans text-sm text-neutral-darkest/50 mt-2 line-clamp-2">
+                                  {child.notes}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => openEditChildDialog(child)}
+                                data-testid={`button-edit-child-${child.id}`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setDeleteChildId(child.id)}
+                                data-testid={`button-delete-child-${child.id}`}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {children.map((child) => {
-                const age = calculateAge(child.dateOfBirth);
-                return (
-                  <Card key={child.id} className="bg-white" data-testid={`card-child-${child.id}`}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <h3 className="font-heading font-bold text-base text-neutral-darkest">
-                            {child.firstName} {child.lastName || ""}
-                          </h3>
-                          <p className="font-sans text-sm text-neutral-darkest/60 mt-1">
-                            Born: {formatDob(child.dateOfBirth)}
-                            {age !== null && ` (${age} years old)`}
-                          </p>
-                          {child.notes && (
-                            <p className="font-sans text-sm text-neutral-darkest/50 mt-2 line-clamp-2">
-                              {child.notes}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => openEditChildDialog(child)}
-                            data-testid={`button-edit-child-${child.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setDeleteChildId(child.id)}
-                            data-testid={`button-delete-child-${child.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <p className="font-sans text-sm text-neutral-darkest/60">
+              Turn on "This case involves children" to add child information.
+            </p>
           )}
         </div>
       </div>
