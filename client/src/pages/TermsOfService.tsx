@@ -115,7 +115,7 @@ const termsContent = [
  {
  id: "contact",
  title: "17. Contact",
- content: `Questions about these Terms? Contact us at hello@civilla.ai or through the Contact page.`,
+ content: `Questions about these Terms? Contact us at Admin@civilla.ai or through the Contact page.`,
  hasContactLink: true
  }
 ];
@@ -186,10 +186,10 @@ export default function TermsOfService() {
  <>
  Questions about these Terms? Contact us at{" "}
  <a 
- href="mailto:hello@civilla.ai" 
+ href="mailto:Admin@civilla.ai" 
  className="underline underline-offset-4 decoration-neutral-darkest/40 hover:decoration-neutral-darkest transition-colors"
  >
- hello@civilla.ai
+ Admin@civilla.ai
  </a>{" "}
  or through the{" "}
  <Link 

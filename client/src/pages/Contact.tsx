@@ -3,10 +3,10 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 
-const SUPPORT_EMAIL = "hello@civilla.ai";
-const SUPPORT_PHONE_DISPLAY = "+1 (844) 248-4552";
-const SUPPORT_PHONE_TEL = "+18442484552";
-const SUPPORT_LOCATION = "Oakland, California, United States";
+const SUPPORT_EMAIL = "Admin@civilla.ai";
+const SUPPORT_PHONE_DISPLAY = "+1 (346) 248-4552";
+const SUPPORT_PHONE_TEL = "+13462484552";
+const SUPPORT_LOCATION = "Idaho Falls, Idaho";
 
 type Reason =
   | "General Support"

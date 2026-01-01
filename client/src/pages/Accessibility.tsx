@@ -29,7 +29,7 @@ export default function Accessibility() {
       `What happened:\n${formData.description}`
     );
     
-    window.location.href = `mailto:hello@civilla.ai?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:Admin@civilla.ai?subject=${subject}&body=${body}`;
   };
 
   const accessibilityFeatures = [
@@ -114,11 +114,11 @@ export default function Accessibility() {
               </p>
             </div>
             <a 
-              href="mailto:hello@civilla.ai?subject=Accessibility%20accommodation%20request"
+              href="mailto:Admin@civilla.ai?subject=Accessibility%20accommodation%20request"
               className="flex items-center gap-2 font-arimo font-bold text-base md:text-lg text-white underline underline-offset-4 decoration-white/40 hover:decoration-white transition-colors w-fit"
               data-testid="link-accommodation-email"
             >
-              hello@civilla.ai
+              Admin@civilla.ai
               <ChevronRight className="w-5 h-5" />
             </a>
           </div>
