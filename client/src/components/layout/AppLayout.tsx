@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import AppNavbar from "./AppNavbar";
-import Footer from "@/components/Footer";
+import AppFooter from "./AppFooter";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import LexiPanel from "@/components/lexi/LexiPanel";
 
@@ -55,7 +55,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <main className="flex-1 w-full">
         {children}
       </main>
-      <Footer />
+      <AppFooter />
       <LexiPanel />
     </div>
   );

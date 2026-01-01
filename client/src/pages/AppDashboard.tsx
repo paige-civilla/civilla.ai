@@ -140,7 +140,7 @@ export default function AppDashboard() {
                 <Link
                   key={module.title}
                   href={module.href}
-                  className="relative bg-white border border-neutral-darkest/10 rounded-lg p-5 hover:border-neutral-darkest/20 cursor-pointer block"
+                  className="relative bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
                   data-testid={`module-card-${module.title.toLowerCase()}`}
                 >
                   <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center mb-3">

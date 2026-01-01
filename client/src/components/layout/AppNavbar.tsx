@@ -149,7 +149,7 @@ export default function AppNavbar() {
 
   return (
     <div ref={shellRef} className="civilla-nav-shell">
-      <nav className="bg-cream w-full relative" data-testid="navbar-app">
+      <nav className="bg-[hsl(var(--app-surface))] border-b border-[hsl(var(--app-panel-border))] w-full relative" data-testid="navbar-app">
         <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-4 w-full max-w-container">
             <div className="flex items-center">
@@ -205,7 +205,7 @@ export default function AppNavbar() {
           >
             <div className="mx-auto max-w-6xl px-3">
               <div
-                className="bg-popover border border-popover-border rounded-xl shadow-xl p-4"
+                className="bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-xl shadow-xl p-4"
                 role="menu"
                 aria-label="App menu"
               >
@@ -229,7 +229,7 @@ export default function AppNavbar() {
                         setIsMenuOpen(false);
                         setLocation(item.href);
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-sans text-sm text-neutral-darkest hover:bg-neutral-100 border border-transparent hover:border-neutral-200"
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
                       role="menuitem"
                       data-testid={`menu-link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                     >
@@ -239,7 +239,7 @@ export default function AppNavbar() {
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-popover-border flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-[hsl(var(--app-panel-border))] flex items-center justify-between">
                   <button
                     type="button"
                     onClick={async () => {
@@ -248,7 +248,7 @@ export default function AppNavbar() {
                       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
                       setLocation("/");
                     }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-neutral-100 border border-transparent hover:border-neutral-200"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
                     data-testid="button-logout-menu"
                   >
                     <LogOut className="h-5 w-5" />
@@ -258,7 +258,7 @@ export default function AppNavbar() {
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen(false)}
-                    className="rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest/70 hover:bg-neutral-100"
+                    className="rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest/70 hover:bg-[hsl(var(--app-surface-2))]"
                     data-testid="button-close-menu"
                   >
                     Close

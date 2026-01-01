@@ -10,6 +10,12 @@
 
 :root {
   --civilla-nav-h: 0px;
+  
+  /* App UI light blue/gray palette (authenticated pages only) */
+  --app-surface: 210 17% 93%;         /* #E9EFF2 - light blue/gray */
+  --app-surface-2: 204 18% 89%;       /* #DFE8EC - slightly deeper for borders/hover */
+  --app-panel: 200 14% 97%;           /* #F4F7F8 - dropdown/panels */
+  --app-panel-border: 200 18% 82%;    /* #C9D6DC - border */
 }
 
 /* Only add top padding when JS sets the attribute */

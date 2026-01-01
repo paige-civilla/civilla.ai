@@ -271,8 +271,8 @@ export default function AppCase() {
             const Tile = (
               <Card
                 className={[
-                  "h-full rounded-2xl border bg-white",
-                  comingSoon ? "opacity-70" : "cursor-pointer hover:shadow-md transition-shadow",
+                  "h-full rounded-2xl bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))]",
+                  comingSoon ? "opacity-70" : "cursor-pointer hover:bg-[hsl(var(--app-surface-2))] transition-colors",
                 ].join(" ")}
               >
                 <CardContent className="p-6">

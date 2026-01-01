@@ -1,0 +1,123 @@
+REPLIT — ADD ACCOUNT SETTINGS + SHOW FULL NAME IN APP NAVBAR + AUTO-LOGOUT (UNLOAD + 5 MIN IDLE)
+
+AUTONOMY: HIGH
+SCOPE: Authenticated app only (after login). Do not change public pages.
+
+GOALS
+A) Add Account Settings page inside the app
+B) In AppNavbar, show user's Full Name (first + last) instead of email
+C) Auto-logout:
+   1) When the user leaves the site (tab close, refresh, navigate away) => logout immediately (best-effort)
+   2) If user is idle for 5 minutes => logout + redirect to HOME "/"
+
+IMPORTANT NOTES
+- “Logout on navigate away” is best-effort in browsers (network calls can be canceled). Use sendBeacon/keepalive.
+- Idle logout should only apply when authenticated inside the app.
+
+ASSUMPTIONS (use current code if different)
+- Logout endpoint: POST /api/auth/logout
+- Current session endpoint: GET /api/auth/me
+- User profile endpoint exists: GET /api/profile returns { profile: { fullName, ... } }
+  If fullName is missing, fall back to email.
+
+========================================================
+STEP 1) Create Account Settings page (UI only for now)
+========================================================
+Create file:
+client/src/pages/AppAccountSettings.tsx
+
+Requirements:
+- Wrap with AppLayout (same as other app pages)
+- Title: "Account Settings"
+- Sections:
+  - Profile (Full Name, Email, Phone, Address fields) populated from /api/profile if available
+  - Save button (use existing profile upsert endpoint if you have it; otherwise show "Coming soon" but keep layout)
+  - Subscription section placeholder ("Manage your plan" + "Coming soon")
+- Use the same Card/Button components you already use elsewhere.
+
+If you already have profile editing on Documents page, reuse the same upsert mutation and fields here.
+
+========================================================
+STEP 2) Add route + menu link to Account Settings
+========================================================
+A) Add route in client/src/App.tsx (wouter switch) for:
+  /app/account -> <AppAccountSettings />
+
+B) Add link in the authenticated AppNavbar dropdown (client/src/components/layout/AppNavbar.tsx):
+  Label: "Account Settings"
+  Route: /app/account
+Place it near Case Settings / Log out.
+
+========================================================
+STEP 3) Show Full Name in AppNavbar instead of email
+========================================================
+In client/src/components/layout/AppNavbar.tsx:
+- Wherever it currently displays user.email, replace with:
+  1) profile.fullName if present
+  2) else email
+- If fullName exists, display it exactly (no fancy parsing needed).
+- Ensure AppNavbar fetches profile (GET /api/profile) if it doesn't already.
+  If it already fetches /api/auth/me only, add a second query for /api/profile.
+
+Example logic:
+const displayName = profile?.fullName?.trim() || user?.email || "Account";
+
+========================================================
+STEP 4) Implement Auto-Logout system (Idle + Unload)
+========================================================
+Create a reusable hook:
+client/src/hooks/useAutoLogout.ts
+
+Behavior:
+- Only run if the app is in authenticated area (AppLayout mount is fine).
+- Idle timeout: 5 minutes (300000 ms)
+- Reset timer on activity events:
+  mousemove, mousedown, keydown, touchstart, scroll, pointerdown
+- On idle timeout:
+  POST /api/auth/logout
+  then redirect to HOME: window.location.href = "/"
+
+- On leaving the site / tab close / refresh / navigate away:
+  Use pagehide + beforeunload + visibilitychange (hidden) to attempt logout.
+  Do NOT show prompts.
+  Use sendBeacon if available, else fetch with keepalive:true.
+
+Implementation details:
+- Use a ref for timer id
+- Provide a function doLogout({ reason }) that:
+  - guards against double-run
+  - tries navigator.sendBeacon("/api/auth/logout", Blob(["{}"], {type:"application/json"}))
+  - also tries fetch("/api/auth/logout", { method:"POST", credentials:"include", keepalive:true })
+- For idle logout: doLogout then redirect "/"
+- For unload: call doLogout but DO NOT redirect (browser is leaving anyway)
+
+========================================================
+STEP 5) Wire the hook into the authenticated layout
+========================================================
+In the authenticated layout component (likely one of these):
+- client/src/components/layout/AppLayout.tsx
+or wherever AppNavbar is used for logged-in pages
+
+Call:
+useAutoLogout({ idleMs: 300000, logoutEndpoint: "/api/auth/logout", redirectTo: "/" });
+
+Make sure the hook is ONLY mounted for authenticated pages (inside AppLayout).
+
+========================================================
+ACCEPTANCE TESTS
+========================================================
+1) Login -> AppNavbar shows full name (if profile fullName exists), otherwise email.
+2) Dropdown includes "Account Settings" and route works.
+3) Leave the site (refresh, close tab, navigate to a different domain):
+   - Best-effort logout request is sent (check network/logs).
+4) Stay on an app page and do nothing for 5 minutes:
+   - You get logged out and redirected to "/"
+5) Move mouse or type before 5 minutes:
+   - Timer resets; no logout.
+
+DELIVERABLE
+After implementing, paste:
+- Replit file change summary
+- A screenshot of AppNavbar showing Full Name
+- A screenshot of Account Settings page
+- Confirmation that idle logout redirects to "/"
