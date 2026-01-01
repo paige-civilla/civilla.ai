@@ -5,6 +5,7 @@ import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
 import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema } from "@shared/schema";
+import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
@@ -1374,6 +1375,185 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete deadline error:", error);
       res.status(500).json({ error: "Failed to delete deadline" });
+    }
+  });
+
+  app.get("/api/onboarding/status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const profile = await storage.getUserProfile(userId);
+      
+      const onboardingComplete = !!profile?.onboardingCompletedAt;
+      const versionsMatch = 
+        profile?.tosVersion === POLICY_VERSIONS.tos &&
+        profile?.privacyVersion === POLICY_VERSIONS.privacy &&
+        profile?.disclaimersVersion === POLICY_VERSIONS.disclaimers;
+      
+      res.json({
+        ok: true,
+        onboardingComplete: onboardingComplete && versionsMatch,
+        requiredVersions: POLICY_VERSIONS,
+        accepted: {
+          tosAcceptedAt: profile?.tosAcceptedAt,
+          privacyAcceptedAt: profile?.privacyAcceptedAt,
+          disclaimersAcceptedAt: profile?.disclaimersAcceptedAt,
+          tosVersion: profile?.tosVersion,
+          privacyVersion: profile?.privacyVersion,
+          disclaimersVersion: profile?.disclaimersVersion,
+        },
+      });
+    } catch (error) {
+      console.error("Onboarding status error:", error);
+      res.status(500).json({ error: "Failed to get onboarding status" });
+    }
+  });
+
+  app.get("/api/onboarding/policies", requireAuth, async (req, res) => {
+    try {
+      res.json({
+        tosText: TOS_TEXT,
+        privacyText: PRIVACY_TEXT,
+        notLawFirmText: NOT_LAW_FIRM_TEXT,
+        responsibilityText: RESPONSIBILITY_TEXT,
+        versions: POLICY_VERSIONS,
+      });
+    } catch (error) {
+      console.error("Onboarding policies error:", error);
+      res.status(500).json({ error: "Failed to get policies" });
+    }
+  });
+
+  const onboardingCompleteSchema = z.object({
+    profile: z.object({
+      fullName: z.string().min(1, "Full name is required"),
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+      addressLine1: z.string().min(1, "Address is required"),
+      addressLine2: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      zip: z.string().optional(),
+      partyRole: z.string().min(1, "Party role is required"),
+      isSelfRepresented: z.boolean(),
+      barNumber: z.string().optional(),
+      firmName: z.string().optional(),
+      petitionerName: z.string().min(1, "Petitioner name is required"),
+      respondentName: z.string().min(1, "Respondent name is required"),
+    }),
+    case: z.object({
+      title: z.string().min(1, "Case title is required"),
+      state: z.string().min(1, "State is required"),
+      county: z.string().min(1, "County is required"),
+      caseNumber: z.string().min(1, "Case number is required"),
+      caseType: z.string().optional(),
+      hasChildren: z.boolean(),
+    }),
+    children: z.array(z.object({
+      firstName: z.string().min(1, "First name is required"),
+      lastName: z.string().optional(),
+      dateOfBirth: z.string().min(1, "Date of birth is required"),
+      notes: z.string().optional(),
+    })).optional(),
+    agreements: z.object({
+      tosAccepted: z.boolean().refine(v => v === true, "Terms of Service must be accepted"),
+      privacyAccepted: z.boolean().refine(v => v === true, "Privacy Policy must be accepted"),
+      notLawFirmAccepted: z.boolean().refine(v => v === true, "Not a Law Firm disclosure must be accepted"),
+      responsibilityAccepted: z.boolean().refine(v => v === true, "User Responsibility must be accepted"),
+      scrolledTos: z.boolean().refine(v => v === true, "Must read Terms of Service"),
+      scrolledPrivacy: z.boolean().refine(v => v === true, "Must read Privacy Policy"),
+      scrolledNotLawFirm: z.boolean().refine(v => v === true, "Must read Not a Law Firm disclosure"),
+      scrolledResponsibility: z.boolean().refine(v => v === true, "Must read User Responsibility"),
+    }),
+    versions: z.object({
+      tos: z.string(),
+      privacy: z.string(),
+      disclaimers: z.string(),
+    }),
+  });
+
+  app.post("/api/onboarding/complete", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const parseResult = onboardingCompleteSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const path = err.path.join(".");
+          fields[path] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const { profile, case: caseData, children, agreements, versions } = parseResult.data;
+
+      const now = new Date();
+
+      await storage.upsertUserProfile(userId, {
+        fullName: profile.fullName,
+        email: profile.email,
+        phone: profile.phone,
+        addressLine1: profile.addressLine1,
+        addressLine2: profile.addressLine2,
+        city: profile.city,
+        state: profile.state,
+        zip: profile.zip,
+        partyRole: profile.partyRole,
+        isSelfRepresented: profile.isSelfRepresented,
+        barNumber: profile.barNumber,
+        firmName: profile.firmName,
+        petitionerName: profile.petitionerName,
+        respondentName: profile.respondentName,
+        onboardingCompletedAt: now,
+        tosAcceptedAt: now,
+        privacyAcceptedAt: now,
+        disclaimersAcceptedAt: now,
+        tosVersion: versions.tos,
+        privacyVersion: versions.privacy,
+        disclaimersVersion: versions.disclaimers,
+      });
+
+      const existingCases = await storage.getCasesByUserId(userId);
+      let targetCase;
+      
+      if (existingCases.length > 0) {
+        targetCase = await storage.updateCase(existingCases[0].id, userId, {
+          title: caseData.title,
+          state: caseData.state,
+          county: caseData.county,
+          caseType: caseData.caseType,
+          hasChildren: caseData.hasChildren,
+        });
+      } else {
+        targetCase = await storage.createCase(userId, {
+          title: caseData.title,
+          state: caseData.state,
+          county: caseData.county,
+          caseType: caseData.caseType,
+          hasChildren: caseData.hasChildren,
+        });
+      }
+
+      if (!targetCase) {
+        return res.status(500).json({ error: "Failed to create/update case" });
+      }
+
+      if (caseData.hasChildren && children && children.length > 0) {
+        await storage.deleteAllCaseChildren(targetCase.id, userId);
+        for (const child of children) {
+          await storage.createCaseChild(targetCase.id, userId, {
+            firstName: child.firstName,
+            lastName: child.lastName,
+            dateOfBirth: child.dateOfBirth,
+            notes: child.notes,
+          });
+        }
+      }
+
+      res.json({ ok: true, caseId: targetCase.id });
+    } catch (error) {
+      console.error("Onboarding complete error:", error);
+      res.status(500).json({ error: "Failed to complete onboarding" });
     }
   });
 

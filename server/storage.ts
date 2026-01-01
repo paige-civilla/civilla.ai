@@ -85,6 +85,7 @@ export interface IStorage {
   createCaseChild(caseId: string, userId: string, data: InsertCaseChild): Promise<CaseChild>;
   updateCaseChild(childId: string, userId: string, data: UpdateCaseChild): Promise<CaseChild | undefined>;
   deleteCaseChild(childId: string, userId: string): Promise<boolean>;
+  deleteAllCaseChildren(caseId: string, userId: string): Promise<number>;
 
   listTasks(userId: string, caseId: string): Promise<Task[]>;
   createTask(userId: string, caseId: string, data: InsertTask): Promise<Task>;
@@ -591,6 +592,15 @@ export class DatabaseStorage implements IStorage {
       .delete(caseChildren)
       .where(and(eq(caseChildren.id, childId), eq(caseChildren.userId, userId)));
     return true;
+  }
+
+  async deleteAllCaseChildren(caseId: string, userId: string): Promise<number> {
+    const existing = await this.listCaseChildren(caseId, userId);
+    if (existing.length === 0) return 0;
+    await db
+      .delete(caseChildren)
+      .where(and(eq(caseChildren.caseId, caseId), eq(caseChildren.userId, userId)));
+    return existing.length;
   }
 
   async listTasks(userId: string, caseId: string): Promise<Task[]> {
