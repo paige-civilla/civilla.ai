@@ -11,7 +11,7 @@ export function useIdleLogout(options?: {
   redirectTo?: string;       // default: /
 }) {
   const idleMs = options?.idleMs ?? 900000;
-  const logoutEndpoint = options?.logoutEndpoint ?? "/api/logout";
+  const logoutEndpoint = options?.logoutEndpoint ?? "/api/auth/logout";
   const redirectTo = options?.redirectTo ?? "/";
 
   const timerRef = useRef<number | null>(null);

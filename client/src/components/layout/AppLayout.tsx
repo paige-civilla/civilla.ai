@@ -11,7 +11,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [, setLocation] = useLocation();
-  useIdleLogout({ idleMs: 15 * 60 * 1000, logoutEndpoint: '/api/logout', redirectTo: '/' });
+  useIdleLogout({ idleMs: 15 * 60 * 1000, logoutEndpoint: '/api/auth/logout', redirectTo: '/' });
 
   const { data: authData, isLoading, isError } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
