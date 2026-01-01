@@ -24,6 +24,42 @@
   --input-bg: #EEF7F1;
 }
 
+/* =========================================================
+   Authenticated App Theme (scoped): only applies inside AppLayout
+   Colors provided by Paige:
+   - App background: #FAF8F4
+   - App navbar/footer: #E4ECED
+   - Module tiles: #A2BEC2 (borders/text: #243032)
+   - Input fill: #CFD7D5
+   - Primary button: #314143 (hover slightly darker)
+   - Destructive (delete): burgundy
+========================================================= */
+.app-shell {
+  --background: 40 37.5% 96.9%;          /* #FAF8F4 */
+  --foreground: 188.6 16.3% 16.9%;       /* #243032 */
+
+  --card: 40 37.5% 96.9%;                 /* #FAF8F4 */
+  --card-foreground: 188.6 16.3% 16.9%;   /* #243032 */
+
+  --popover: 40 37.5% 96.9%;
+  --popover-foreground: 188.6 16.3% 16.9%;
+
+  --muted: 186.7 20% 91.2%;               /* #E4ECED */
+  --muted-foreground: 188.6 12% 32%;
+
+  --border: 187.5 20.8% 69.8%;            /* #A2BEC2 */
+  --input: 165 9.1% 82.7%;                /* #CFD7D5 */
+  --ring: 186.7 15.5% 22.7%;              /* near primary */
+
+  --primary: 186.7 15.5% 22.7%;           /* #314143 */
+  --primary-hover: 187.1 16.2% 20.6%;     /* slightly darker */
+  --primary-foreground: 40 37.5% 96.9%;   /* #FAF8F4 */
+
+  --destructive: 350.2 60.5% 29.8%;       /* burgundy #7A1E2D */
+  --destructive-hover: 349.7 60.3% 24.7%; /* darker burgundy #651926 */
+  --destructive-foreground: 40 37.5% 96.9%;
+}
+
 /* Autofill background fix - prevent browser yellow on autofilled inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

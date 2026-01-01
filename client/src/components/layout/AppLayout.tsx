@@ -49,8 +49,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return null;
   }
 
+  // NOTE: .app-shell scopes the "inside the app" theme (logged-in pages only)
   return (
-    <div className="flex flex-col min-h-screen bg-cream text-neutral-darkest" data-testid="app-layout">
+    <div className="app-shell flex flex-col min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]" data-testid="app-layout">
       <AppNavbar />
       <main className="flex-1 w-full">
         {children}

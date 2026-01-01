@@ -1,0 +1,92 @@
+apply_patch <<'PATCH'
+*** Begin Patch
+*** Update File: client/src/components/layout/AppLayout.tsx
+@@
+-export function AppLayout({ children }: { children: React.ReactNode }) {
+-  return (
+-    <div className="min-h-screen flex flex-col">
++export function AppLayout({ children }: { children: React.ReactNode }) {
++  // NOTE: .app-shell scopes the “inside the app” theme (logged-in pages only)
++  return (
++    <div className="app-shell min-h-screen flex flex-col">
+       <AppNavbar />
+       <main className="flex-1">{children}</main>
+       <AppFooter />
+     </div>
+   );
+ }
+*** End Patch
+PATCH
+
+apply_patch <<'PATCH'
+*** Begin Patch
+*** Update File: client/src/index.css
+@@
+ :root {
+   /* existing tokens... */
+ }
+ 
++/* =========================================================
++   Authenticated App Theme (scoped): only applies inside AppLayout
++   Colors provided by Paige:
++   - App background: #FAF8F4
++   - App navbar/footer: #E4ECED
++   - Module tiles: #A2BEC2 (borders/text: #243032)
++   - Input fill: #CFD7D5
++   - Primary button: #314143 (hover slightly darker)
++   - Destructive (delete): burgundy
++========================================================= */
++.app-shell {
++  --background: 40 37.5% 96.9%;          /* #FAF8F4 */
++  --foreground: 188.6 16.3% 16.9%;       /* #243032 */
++
++  --card: 40 37.5% 96.9%;                 /* #FAF8F4 */
++  --card-foreground: 188.6 16.3% 16.9%;   /* #243032 */
++
++  --popover: 40 37.5% 96.9%;
++  --popover-foreground: 188.6 16.3% 16.9%;
++
++  --muted: 186.7 20% 91.2%;               /* #E4ECED */
++  --muted-foreground: 188.6 12% 32%;
++
++  --border: 187.5 20.8% 69.8%;            /* #A2BEC2 */
++  --input: 165 9.1% 82.7%;                /* #CFD7D5 */
++  --ring: 186.7 15.5% 22.7%;              /* near primary */
++
++  --primary: 186.7 15.5% 22.7%;           /* #314143 */
++  --primary-hover: 187.1 16.2% 20.6%;     /* slightly darker */
++  --primary-foreground: 40 37.5% 96.9%;   /* #FAF8F4 */
++
++  --destructive: 350.2 60.5% 29.8%;       /* burgundy #7A1E2D */
++  --destructive-hover: 349.7 60.3% 24.7%; /* darker burgundy #651926 */
++  --destructive-foreground: 40 37.5% 96.9%;
++}
++
+*** End Patch
+PATCH
+
+apply_patch <<'PATCH'
+*** Begin Patch
+*** Update File: client/src/components/ui/button.tsx
+@@
+ const buttonVariants = cva(
+   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background",
+   {
+     variants: {
+       variant: {
+-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
++        // App theme uses explicit hover tokens (softer + consistent)
++        default: "bg-primary text-primary-foreground hover:bg-[hsl(var(--primary-hover))]",
++        destructive: "bg-destructive text-destructive-foreground hover:bg-[hsl(var(--destructive-hover))]",
+         outline:
+           "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+         secondary:
+           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+         ghost: "hover:bg-accent hover:text-accent-foreground",
+         link: "text-primary underline-offset-4 hover:underline",
+       },
+*** End Patch
+PATCH
+
+echo "Done. App-only theme is now scoped to .app-shell, primary hover is softer, and destructive buttons are burgundy."
