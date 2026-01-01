@@ -22,7 +22,7 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
-- 2025-01-01: Documents UX Clarity Pass - Renamed tabs, added step indicator, section headers, and helper text
+- 2025-01-01: Enhanced Documents UX - Added StepStrip component with visual 1-2-3 workflow, step numbers in headings, improved button labels
 - 2024-12-30: Slice 4B(A) - Updated courtDocx.ts with new payload structure (filer object with attorney nested)
 - 2024-12-30: New caption table format: party block left (55%), court/case block right (45%)
 - 2024-12-30: Simplified /api/templates/docx route with flexible payload acceptance

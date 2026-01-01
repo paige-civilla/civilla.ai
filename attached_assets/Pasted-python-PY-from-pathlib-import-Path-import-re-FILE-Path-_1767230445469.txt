@@ -1,0 +1,118 @@
+python - <<'PY'
+from pathlib import Path
+import re
+
+FILE = Path("client/src/pages/AppDocuments.tsx")
+s = FILE.read_text(encoding="utf-8")
+
+orig = s
+
+# 1) Add a tiny StepStrip component (once) near the top of the file (after imports is safest).
+if "function StepStrip" not in s and "const StepStrip" not in s:
+  # Insert after the last import line block
+  m = re.search(r"(import[\s\S]+?\n)(\n)(?=(interface|type|const|function|export|//))", s)
+  if not m:
+    raise SystemExit("Could not find import block to insert StepStrip. Please paste the top of AppDocuments.tsx here.")
+  insert_at = m.end(1) + 1
+  step_strip = """
+// --- UX: Simple 1-2-3 court-filing steps (beginner-friendly) ---
+function StepStrip({ activeStep }: { activeStep: 1 | 2 | 3 }) {
+  const base = "flex items-center gap-2 rounded-full border px-3 py-2 text-sm";
+  const on = "bg-white text-neutral-darkest border-neutral-darkest/20 shadow-sm";
+  const off = "bg-transparent text-neutral-darkest/60 border-neutral-darkest/10";
+  const dotBase = "flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold";
+  const dotOn = "bg-bush text-white border-bush";
+  const dotOff = "bg-transparent text-neutral-darkest/50 border-neutral-darkest/20";
+
+  const Item = (n: 1 | 2 | 3, label: string) => (
+    <div className={`${base} ${activeStep === n ? on : off}`}>
+      <div className={`${dotBase} ${activeStep === n ? dotOn : dotOff}`}>{n}</div>
+      <div className="font-sans">{label}</div>
+    </div>
+  );
+
+  return (
+    <div className="w-full flex flex-col gap-2 md:flex-row md:items-center md:gap-3 mt-3">
+      {Item(1, "Draft: Create or edit your document")}
+      {Item(2, "Review: Confirm case details, role, and date")}
+      {Item(3, "Download: Court-formatted DOCX is generated")}
+    </div>
+  );
+}
+// --- UX: Simple 1-2-3 court-filing steps (end) ---
+"""
+  s = s[:insert_at] + step_strip + "\n" + s[insert_at:]
+
+# 2) Determine where "review modal open" state is referenced so we can compute active step.
+# We'll set: step 2 when review modal open, otherwise step 1 when Draft tab active, else step 3.
+# We'll insert a small derived value near other state/derived vars.
+if "const activeStep:" not in s:
+  # Anchor near tabs state if present; otherwise near other derived consts inside component
+  anchor = re.search(r"(const\s+\[\s*activeTab\s*,\s*setActiveTab\s*\]\s*=\s*useState<.*?>\([\"']draft[\"']\);\s*)", s)
+  if anchor:
+    insert_pos = anchor.end(1)
+    s = s[:insert_pos] + "\n  const activeStep: 1 | 2 | 3 = isReviewModalOpen ? 2 : (activeTab === \"draft\" ? 1 : 3);\n" + s[insert_pos:]
+  else:
+    # Fallback: insert after other useState declarations for review modal
+    anchor2 = re.search(r"(const\s+\[\s*isReviewModalOpen\s*,\s*setIsReviewModalOpen\s*\]\s*=\s*useState\([^\)]*\);\s*)", s)
+    if not anchor2:
+      raise SystemExit("Could not find where to insert activeStep. Please paste the top portion of AppDocuments.tsx (state section).")
+    insert_pos = anchor2.end(1)
+    s = s[:insert_pos] + "\n  const activeStep: 1 | 2 | 3 = isReviewModalOpen ? 2 : 1;\n" + s[insert_pos:]
+
+# 3) Update top-right button label + helper text (keep your current layout, copy-only).
+s = s.replace("Download DOCX (Court Format)", "Prepare Court Filing (DOCX)")
+
+# Replace/ensure the helper line under the button (we’ll match a common sentence fragment).
+s = re.sub(
+  r"Review details, confirm date and role, then generate a\s*court-formatted DOCX\.",
+  "Use steps 1–3 below to create a draft, review your details, and download a court-formatted DOCX.",
+  s
+)
+
+# 4) Ensure tab labels are beginner-clear (copy only).
+s = s.replace("My Documents (", "Draft Documents (")
+s = s.replace("Download History (", "Court Filings (DOCX) (")
+
+# 5) Add the StepStrip under the two buttons (once).
+# We’ll insert right after the helper text line that mentions steps 1–3 (best visual placement).
+if "StepStrip activeStep" not in s:
+  m = re.search(r"(Use steps 1–3 below to create a draft, review your details, and download a court-formatted DOCX\.\s*</p>)", s)
+  if not m:
+    # Fallback: insert after the two top buttons container (common class "flex" row)
+    m2 = re.search(r"(Prepare Court Filing \(DOCX\)[\s\S]{0,1200}New Document[\s\S]{0,800}</div>\s*</div>)", s)
+    if not m2:
+      raise SystemExit("Could not find where to place StepStrip. Please paste the header/button JSX area from AppDocuments.tsx.")
+    insert_pos = m2.end(1)
+    s = s[:insert_pos] + "\n        <StepStrip activeStep={activeStep} />\n" + s[insert_pos:]
+  else:
+    insert_pos = m.end(1)
+    s = s[:insert_pos] + "\n        <StepStrip activeStep={activeStep} />\n" + s[insert_pos:]
+
+# 6) Add/adjust section headings/subtitles inside each tab to reinforce Step 1 vs Step 3.
+# Draft tab heading
+s = s.replace("Draft Documents", "Step 1 of 3: Draft Documents", 1)
+# If there is a description line about drafts, keep but make simpler.
+s = s.replace("Working versions you can edit anytime. These are not court-formatted.", "Editable drafts you can work on anytime. Not court-formatted.")
+
+# Court filings tab heading
+s = s.replace("Court Filings (DOCX)", "Step 3 of 3: Court Filings (DOCX)", 1)
+s = s.replace("Previously generated court-formatted DOCX versions you can re-download.", "Court-formatted files you generated here. Download again anytime.")
+
+# 7) Review modal title + download button text (Step 2 and Step 3).
+s = s.replace("Review & Edit Document", "Step 2 of 3: Review & Confirm")
+# Change the primary action label inside modal:
+s = s.replace("Download Court-Formatted DOCX", "Step 3: Download Court-Formatted DOCX")
+s = s.replace("Download DOCX", "Step 3: Download Court-Formatted DOCX")
+
+# 8) Re-download button wording (clean + consistent)
+s = s.replace("Re-download DOCX", "Re-download Court-Formatted DOCX")
+
+# Write file if changed
+if s == orig:
+  print("No changes applied (patterns not found or already updated).")
+else:
+  FILE.write_text(s, encoding="utf-8")
+  print("OK: Applied UX step clarity updates to AppDocuments.tsx")
+
+PY

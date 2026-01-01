@@ -41,6 +41,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, Edit3, ChevronDown, ChevronUp } from "lucide-react";
 
+// --- UX: Simple 1-2-3 court-filing steps (beginner-friendly) ---
+function StepStrip({ activeStep }: { activeStep: 1 | 2 | 3 }) {
+  const base = "flex items-center gap-2 rounded-full border px-3 py-2 text-sm";
+  const on = "bg-white text-neutral-darkest border-neutral-darkest/20 shadow-sm";
+  const off = "bg-transparent text-neutral-darkest/60 border-neutral-darkest/10";
+  const dotBase = "flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold";
+  const dotOn = "bg-bush text-white border-bush";
+  const dotOff = "bg-transparent text-neutral-darkest/50 border-neutral-darkest/20";
+
+  const Item = (n: 1 | 2 | 3, label: string) => (
+    <div className={`${base} ${activeStep === n ? on : off}`}>
+      <div className={`${dotBase} ${activeStep === n ? dotOn : dotOff}`}>{n}</div>
+      <div className="font-sans">{label}</div>
+    </div>
+  );
+
+  return (
+    <div className="w-full flex flex-col gap-2 md:flex-row md:items-center md:gap-3 mt-3">
+      {Item(1, "Draft: Create or edit your document")}
+      {Item(2, "Review: Confirm case details, role, and date")}
+      {Item(3, "Download: Court-formatted DOCX is generated")}
+    </div>
+  );
+}
+// --- end StepStrip ---
+
 interface DocumentTemplate {
   key: string;
   title: string;
@@ -280,6 +306,7 @@ export default function AppDocuments() {
   const [selectedCourtDocType, setSelectedCourtDocType] = useState("");
   
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const activeStep: 1 | 2 | 3 = isReviewModalOpen ? 2 : 1;
   const [reviewPayload, setReviewPayload] = useState<GenerateDocumentPayload | null>(null);
   const [reviewDocType, setReviewDocType] = useState<CourtDocType | null>(null);
   const [isBodyExpanded, setIsBodyExpanded] = useState(false);
@@ -740,12 +767,14 @@ export default function AppDocuments() {
               </Button>
               </div>
               <p className="font-sans text-xs text-neutral-darkest/60 max-w-xs text-right">
-                Review details, confirm date and role, then generate a court-formatted DOCX.
+                Use steps 1-3 below to create a draft, review your details, and download a court-formatted DOCX.
               </p>
             </div>
           </div>
 
-          <Tabs defaultValue="editable" className="w-full">
+          <StepStrip activeStep={activeStep} />
+
+          <Tabs defaultValue="editable" className="w-full mt-4">
             <TabsList className="mb-4">
               <TabsTrigger value="editable" data-testid="tab-editable-documents">
                 <FileText className="w-4 h-4 mr-2" />
@@ -759,8 +788,8 @@ export default function AppDocuments() {
 
             <TabsContent value="editable">
               <div className="mb-4">
-                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Draft Documents</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">Working versions you can edit anytime. These are not court-formatted.</p>
+                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Step 1 of 3: Draft Documents</h2>
+                <p className="font-sans text-sm text-neutral-darkest/60">Editable drafts you can work on anytime. Not court-formatted.</p>
               </div>
               {docsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -854,8 +883,8 @@ export default function AppDocuments() {
 
             <TabsContent value="history">
               <div className="mb-4">
-                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Court Filings (DOCX)</h2>
-                <p className="font-sans text-sm text-neutral-darkest/60">Previously generated court-formatted DOCX versions you can re-download.</p>
+                <h2 className="font-heading font-bold text-lg text-neutral-darkest">Step 3 of 3: Court Filings (DOCX)</h2>
+                <p className="font-sans text-sm text-neutral-darkest/60">Court-formatted files you generated here. Download again anytime.</p>
               </div>
               {genDocsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -905,7 +934,7 @@ export default function AppDocuments() {
                             data-testid={`button-redownload-${genDoc.id}`}
                           >
                             <FileDown className="w-4 h-4 mr-2" />
-                            Re-download DOCX
+                            Re-download Court-Formatted DOCX
                           </Button>
                         </div>
                       </CardHeader>
@@ -1142,24 +1171,11 @@ export default function AppDocuments() {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Review & Edit Document</DialogTitle>
+            <DialogTitle>Step 2 of 3: Review & Confirm</DialogTitle>
             <DialogDescription>
               Review the information below and make any changes before downloading.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center justify-between p-3 bg-neutral-lightest/50 rounded-md border border-neutral-light mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-neutral-darkest/50">Draft</span>
-              <span className="text-neutral-darkest/30">→</span>
-              <span className="text-xs font-medium text-bush">Review</span>
-              <span className="text-neutral-darkest/30">→</span>
-              <span className="text-xs text-neutral-darkest/50">Court Filing</span>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-medium text-neutral-darkest">Step 2 of 3</p>
-              <p className="text-xs text-neutral-darkest/60">Reviewing details before generating DOCX</p>
-            </div>
-          </div>
           {reviewPayload && (
             <ScrollArea className="flex-1 pr-4">
               <div className="flex flex-col gap-4 py-4">
@@ -1491,7 +1507,7 @@ export default function AppDocuments() {
               data-testid="button-download-final"
             >
               <FileDown className="w-4 h-4 mr-2" />
-              {isDownloadingCourtDoc ? "Downloading..." : "Download DOCX"}
+              {isDownloadingCourtDoc ? "Downloading..." : "Step 3: Download Court-Formatted DOCX"}
             </Button>
           </DialogFooter>
         </DialogContent>
