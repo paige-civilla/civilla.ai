@@ -1,0 +1,212 @@
+REPLIT TASK: Implement Dashboard Calendar + Upcoming + Categories (with color), Add-from-dashboard, and cross-module “done” syncing across Calendar Items, Deadlines, and Case To-Do.
+
+GOAL (User-facing):
+1) Calendar shows a full month like a normal calendar app.
+2) Under the calendar, show “Upcoming” (next 7 items) with checkboxes (dopamine list).
+3) Users can add items directly from the dashboard (Deadline, Case To-Do, Calendar Item).
+4) Users can classify Calendar Items using Categories (multiple categories allowed), create categories, and choose colors.
+5) Checking an item done in Upcoming or the calendar updates the source module (deadline/task/calendar item) and reflects everywhere.
+6) Remove “Modules” heading + remove the small “Case Workspace” subtitle above the big case title.
+7) Make “View all cases” a proper button.
+
+IMPLEMENTATION (Backend + Frontend):
+
+A) DATABASE + SCHEMA (Drizzle)
+1) shared/schema.ts
+Add two new tables:
+
+- calendarCategories (case-scoped categories)
+  fields:
+    id (uuid text)
+    userId (fk)
+    caseId (fk)
+    name (text, required, max 60)
+    color (text hex, required, ex: #7BA3A8)
+    createdAt
+
+- calendarItems (freeform calendar items created from dashboard)
+  fields:
+    id (uuid text)
+    userId (fk)
+    caseId (fk)
+    title (text required max 120)
+    description (text optional)
+    startDate (timestamp required)   // date/time ok, but month grid uses date portion
+    endDate (timestamp optional)
+    categoryId (fk optional -> calendarCategories.id)
+    colorOverride (text hex optional) // if user wants per-item color override
+    isDone (boolean default false)
+    createdAt, updatedAt
+
+Add Zod schemas:
+- insertCalendarCategorySchema
+- updateCalendarCategorySchema
+- insertCalendarItemSchema
+- updateCalendarItemSchema
+
+Return/export types:
+- CalendarCategory
+- CalendarItem
+
+2) server/db.ts
+In initDbTables():
+- initTable("calendar_categories", CREATE TABLE ...)
+- initTable("calendar_items", CREATE TABLE ...)
+Add indexes:
+- categories: (user_id, case_id)
+- items: (user_id, case_id, start_date)
+- items: (case_id, is_done)
+
+B) STORAGE METHODS
+server/storage.ts
+Add interface + implementation methods:
+- listCalendarCategories(userId, caseId)
+- createCalendarCategory(userId, caseId, name, color)
+- updateCalendarCategory(userId, categoryId, data)
+- deleteCalendarCategory(userId, categoryId)
+
+- listCalendarItems(userId, caseId, rangeStart?, rangeEnd?)   // for month view + upcoming
+- createCalendarItem(userId, caseId, data)
+- updateCalendarItem(userId, itemId, data)
+- deleteCalendarItem(userId, itemId)
+
+C) API ROUTES
+server/routes.ts
+Add routes (requireAuth):
+
+Categories:
+GET  /api/cases/:caseId/calendar/categories
+POST /api/cases/:caseId/calendar/categories
+PATCH /api/calendar/categories/:categoryId
+DELETE /api/calendar/categories/:categoryId
+
+Items:
+GET  /api/cases/:caseId/calendar/items?start=ISO&end=ISO
+POST /api/cases/:caseId/calendar/items
+PATCH /api/calendar/items/:itemId
+DELETE /api/calendar/items/:itemId
+
+Dashboard Aggregation (single payload for calendar + upcoming):
+GET /api/cases/:caseId/dashboard/calendar?month=YYYY-MM
+Return:
+{
+  monthStart, monthEnd,
+  events: [
+    {
+      kind: "deadline" | "todo" | "calendar",
+      id,
+      title,
+      date,              // ISO date (start)
+      isDone,
+      color,             // computed
+      categoryName?      // for calendar items
+    }
+  ],
+  upcoming: same shape, next 7 not-done sorted by date
+}
+
+COMPUTING COLOR:
+- calendar item:
+  colorOverride ?? category.color ?? defaultCalendarColor
+- deadline: defaultDeadlineColor (use a calm but distinct shade)
+- todo: defaultTodoColor (different distinct shade)
+
+D) FRONTEND — DASHBOARD LAYOUT + UX
+1) client/src/pages/AppDashboard.tsx
+- Remove the small “Case Workspace” subtitle above the big case title.
+- Make “View all cases” a Button component (outline style).
+- Remove the “Modules” heading above the module grid.
+
+Calendar column (left):
+- Keep month grid calendar.
+- Under it add a card titled “Upcoming”
+  - Show next 7 upcoming items from new dashboard endpoint
+  - Each row has:
+    - colored dot
+    - title
+    - date
+    - checkbox to mark done
+  - When checked:
+    - call the correct endpoint based on kind:
+      - kind="deadline" -> PATCH /api/deadlines/:id { isDone: true } (or whatever existing boolean is)
+      - kind="todo" -> PATCH /api/tasks/:id { completed: true }
+      - kind="calendar" -> PATCH /api/calendar/items/:id { isDone: true }
+    - then refresh queries so it disappears from upcoming and updates calendar UI.
+
+2) Add button “Add” near calendar header (or within the calendar card)
+Click opens modal: “Add to Calendar”
+Step 1: Choose type (3 big buttons):
+- Deadline
+- Case To-Do
+- Calendar Item
+
+Step 2: Show fields based on type:
+Deadline:
+- Title (required)
+- Due date (required)
+- Notes (optional)
+
+Case To-Do:
+- Title (required)
+- Due date (optional)
+- Priority (optional)
+- Notes/description (optional)
+
+Calendar Item:
+- Title (required)
+- Date (required)
+- Optional time
+- Category dropdown (optional)
+- “Create new category” link/button
+- Color picker:
+  - input type="color" (wheel)
+  - plus a small row of preset swatches: bold + pastel sets
+  - store selected hex
+- Description (optional)
+
+3) Category manager (within the Calendar Item form):
+- Category dropdown includes:
+  - “No category”
+  - existing categories
+  - “+ Create category”
+If “Create category”:
+- Name
+- Color wheel + presets
+- Save -> POST /api/cases/:caseId/calendar/categories
+- Auto-select the new category
+
+E) FRONTEND — CALENDAR RENDERING
+Wherever the month calendar component is (ex: CaseMonthCalendar):
+- Allow passing `events[]` for the month.
+- Each day cell can show up to 2–3 small colored pills or dots with truncated titles.
+- Clicking a day opens a small day drawer/modal listing that day’s events:
+  - each with checkbox to mark done
+  - same cross-module done behavior
+
+F) CROSS-MODULE “DONE” SYNC (IMPORTANT)
+Do NOT rename DB columns on existing tables right now.
+Instead, map in the dashboard aggregator:
+- tasks.completed -> isDone
+- deadlines.isDone (or whichever exists) -> isDone
+- calendarItems.isDone -> isDone
+
+When toggling done:
+- call the correct underlying endpoint.
+This keeps risk low and avoids migrations breaking production.
+
+G) POLISH ITEMS (FROM USER REQUEST)
+- Ensure dashboard background remains #FAF8F4.
+- Ensure app navbar/footer use #E4ECED.
+- Ensure primary buttons inside app use the dark blue theme (primary tokens), not bg-bush.
+- Ensure the input backgrounds remain #CFD7D5 and not yellow autofill.
+- Ensure hover menu grace already implemented remains unchanged.
+
+ACCEPTANCE TESTS (manual):
+1) Dashboard calendar shows month grid and events appear with colors.
+2) Upcoming shows next 7 items and checking one marks it done and removes it.
+3) Add Calendar Item + new Category works and shows correct color on calendar + upcoming.
+4) Add Deadline from dashboard creates real deadline and shows in Deadlines module + dashboard.
+5) Add Case To-Do from dashboard creates real task and shows in Case To-Do module + dashboard.
+6) “Modules” heading removed; “Case Workspace” subtitle removed; “View all cases” is a button.
+
+END TASK
