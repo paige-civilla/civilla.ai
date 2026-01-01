@@ -1,0 +1,196 @@
+REPLIT — IMPLEMENT PHASE 4B.1 + 4B.2 (Case Calendar Month View + User Color Preferences)
+
+AUTONOMY: HIGH
+GOAL:
+Inside the app (after login), show a Google-Calendar-style MONTH grid on the Case Workspace page (left side), populated with:
+- Deadlines (from deadlines table)
+- Tasks that have dueDate (from tasks table)
+- Optional: Timeline events (court/filing/etc) if they have an eventDate (from timeline_events table)
+Color-code each item by type, and allow the user to customize those colors (persist per user).
+
+CONSTRAINTS:
+- Keep existing Tasks and Deadlines pages working (do not remove or break them).
+- Do NOT build drag-and-drop or external calendar sync.
+- Calendar should be month view only (with next/prev month).
+- Must work per-case (only show items for current caseId).
+- Use existing auth/session protections.
+
+========================================
+A) DATA MODEL — USER CALENDAR COLOR PREFS
+========================================
+
+1) shared/schema.ts
+Add 3 new optional columns to user_profiles:
+- calendar_task_color (TEXT) default '#2E7D32' (or your bush green if you prefer)
+- calendar_deadline_color (TEXT) default '#C62828'
+- calendar_timeline_color (TEXT) default '#1565C0'
+
+Update:
+- userProfiles table definition
+- upsertUserProfileSchema to include:
+  calendarTaskColor, calendarDeadlineColor, calendarTimelineColor (all optional, max 20 chars)
+- UserProfile types update automatically
+
+2) server/db.ts
+In initDbTables():
+- Ensure CREATE TABLE user_profiles includes these columns (with defaults).
+- Add addColumnIfNotExists calls for existing DBs:
+  addColumnIfNotExists("user_profiles", "calendar_task_color", "TEXT NOT NULL DEFAULT '#2E7D32'")
+  addColumnIfNotExists("user_profiles", "calendar_deadline_color", "TEXT NOT NULL DEFAULT '#C62828'")
+  addColumnIfNotExists("user_profiles", "calendar_timeline_color", "TEXT NOT NULL DEFAULT '#1565C0'")
+
+3) server/routes.ts
+Confirm the existing profile endpoints already support upsert via upsertUserProfileSchema.
+If /api/profile PATCH already exists, no new endpoint needed.
+If not, add:
+- GET /api/profile (returns profile)
+- PATCH /api/profile (upserts profile with schema validation)
+
+Acceptance:
+- GET /api/profile returns these color fields (with defaults if not set)
+- PATCH /api/profile saves them
+
+========================================
+B) CALENDAR API — SINGLE FEED ENDPOINT
+========================================
+
+1) server/routes.ts
+Add a single endpoint for month calendar items:
+
+GET /api/cases/:caseId/calendar?month=YYYY-MM
+
+Auth required.
+Ownership required (storage.getCase(caseId, userId) check).
+
+Implementation details:
+- Parse query param month "YYYY-MM"
+- Compute start = first day of that month at 00:00
+- end = first day of next month at 00:00
+- Fetch:
+  a) deadlines for caseId where dueDate >= start and < end
+  b) tasks for caseId where dueDate is not null and dueDate >= start and < end
+  c) timeline events where eventDate >= start and < end AND category in ('court','filing','communication','incident','parenting_time','expense','medical','school','other') (we’ll include all for now; we can filter later in UI)
+Return shape:
+{
+  month: "YYYY-MM",
+  items: [
+    {
+      id: string,
+      type: "deadline" | "task" | "timeline",
+      title: string,
+      date: string (ISO date),
+      meta: { ... } // minimal: e.g. priority for tasks, category for timeline
+    }
+  ]
+}
+
+Notes:
+- Use existing storage methods if present; otherwise query db directly with drizzle.
+- Keep payload small.
+
+Acceptance:
+- Hitting the endpoint returns items in that month for that case only.
+
+========================================
+C) FRONTEND — MONTH VIEW CALENDAR COMPONENT
+========================================
+
+1) Create new component:
+client/src/components/calendar/CaseMonthCalendar.tsx
+
+Responsibilities:
+- Props: caseId: string
+- UI: month header (Month Year) + Prev/Next buttons
+- Month grid (7 columns Sun–Sat, 5–6 rows)
+- For each day cell:
+  - show day number
+  - show up to 3 items as “chips” (small rounded pill or line)
+  - if more than 3, show “+X more”
+- Clicking an item opens a small dialog (simple) showing:
+  - type
+  - title
+  - date
+  - and “Open in Tasks/Deadlines/Timeline” button (routes to the existing module page)
+
+Data fetching:
+- Use useQuery to call:
+  /api/cases/:caseId/calendar?month=YYYY-MM
+- Also fetch /api/profile for user color prefs
+
+Color rules:
+- task chip background uses profile.calendarTaskColor
+- deadline chip background uses profile.calendarDeadlineColor
+- timeline chip background uses profile.calendarTimelineColor
+
+Make sure text is readable:
+- Use white text on chips by default.
+- If you want: basic contrast fallback (optional).
+
+2) Add a small “Calendar Colors” button (inside the calendar header area)
+- Opens a dialog with three color inputs:
+  - Tasks color
+  - Deadlines color
+  - Timeline color
+Use <input type="color"> for simplicity.
+- Save button calls PATCH /api/profile to persist
+
+Acceptance:
+- User can pick colors, save, refresh page, colors persist.
+
+========================================
+D) PLACE CALENDAR ON CASE WORKSPACE (LEFT) + MODULE TILES (RIGHT)
+========================================
+
+1) Update the Case Workspace page (the page showing module tiles)
+You previously updated AppCase.tsx to show modules and children section.
+
+Modify layout to a 2-column responsive grid:
+- Left column: CaseMonthCalendar (full height card)
+- Right column: existing module tiles + children section
+
+Example layout:
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div className="lg:col-span-1">
+    <CaseMonthCalendar caseId={caseId} />
+  </div>
+  <div className="lg:col-span-2">
+    ...existing module tiles + children section...
+  </div>
+</div>
+
+Also update the header text:
+- Change “Your Case Workspace” to “Case Workspace” (Title Case)
+
+Acceptance:
+- Calendar appears on left on desktop
+- Stacks above tiles on mobile
+
+========================================
+E) QA TESTS (YOU MUST RUN)
+========================================
+
+1) Login and open Case Workspace
+- Calendar shows current month.
+- Prev/Next changes month and updates items.
+
+2) Create a Task with a due date in this month
+- It appears on the correct day.
+
+3) Create a Deadline for a date in this month
+- It appears on the correct day.
+
+4) Add a Timeline event (if included) dated in this month
+- It appears on the correct day (type=timeline).
+
+5) Open Calendar Colors, change colors, Save
+- Chips update immediately
+- Refresh page, still same colors
+
+6) Security:
+- If logged out, /api/cases/:caseId/calendar returns 401
+- If wrong caseId, returns 404
+
+DELIVERABLE:
+- Provide the list of files changed
+- Confirm the endpoint path and response shape
+- Provide 2 screenshots: calendar month view + color picker modal

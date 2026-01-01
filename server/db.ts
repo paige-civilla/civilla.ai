@@ -209,6 +209,9 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("user_profiles", "privacy_version", "TEXT NOT NULL DEFAULT 'v1'");
   await addColumnIfNotExists("user_profiles", "disclaimers_version", "TEXT NOT NULL DEFAULT 'v1'");
   await addColumnIfNotExists("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfNotExists("user_profiles", "calendar_task_color", "TEXT NOT NULL DEFAULT '#2E7D32'");
+  await addColumnIfNotExists("user_profiles", "calendar_deadline_color", "TEXT NOT NULL DEFAULT '#C62828'");
+  await addColumnIfNotExists("user_profiles", "calendar_timeline_color", "TEXT NOT NULL DEFAULT '#1565C0'");
 
   await initTable("documents", `
     CREATE TABLE IF NOT EXISTS documents (

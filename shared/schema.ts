@@ -46,6 +46,9 @@ export const userProfiles = pgTable("user_profiles", {
   tosVersion: text("tos_version").notNull().default("v1"),
   privacyVersion: text("privacy_version").notNull().default("v1"),
   disclaimersVersion: text("disclaimers_version").notNull().default("v1"),
+  calendarTaskColor: text("calendar_task_color").notNull().default("#2E7D32"),
+  calendarDeadlineColor: text("calendar_deadline_color").notNull().default("#C62828"),
+  calendarTimelineColor: text("calendar_timeline_color").notNull().default("#1565C0"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -75,6 +78,9 @@ export const upsertUserProfileSchema = z.object({
   tosVersion: z.string().max(10).optional(),
   privacyVersion: z.string().max(10).optional(),
   disclaimersVersion: z.string().max(10).optional(),
+  calendarTaskColor: z.string().max(20).optional(),
+  calendarDeadlineColor: z.string().max(20).optional(),
+  calendarTimelineColor: z.string().max(20).optional(),
 });
 
 export type UpsertUserProfile = z.infer<typeof upsertUserProfileSchema>;

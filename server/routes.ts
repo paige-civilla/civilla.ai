@@ -1378,6 +1378,91 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/cases/:caseId/calendar", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { month } = req.query;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const monthStr = typeof month === "string" ? month : new Date().toISOString().slice(0, 7);
+      const [yearStr, monthNumStr] = monthStr.split("-");
+      const year = parseInt(yearStr, 10);
+      const monthNum = parseInt(monthNumStr, 10);
+
+      if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+        return res.status(400).json({ error: "Invalid month format. Use YYYY-MM" });
+      }
+
+      const startOfMonth = new Date(Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0));
+      const startOfNextMonth = new Date(Date.UTC(year, monthNum, 1, 0, 0, 0, 0));
+
+      const [allDeadlines, allTasks, allTimeline] = await Promise.all([
+        storage.listDeadlines(userId, caseId),
+        storage.listTasks(userId, caseId),
+        storage.getTimelineEvents(caseId, userId),
+      ]);
+
+      const items: Array<{
+        id: string;
+        type: "deadline" | "task" | "timeline";
+        title: string;
+        date: string;
+        meta: Record<string, any>;
+      }> = [];
+
+      for (const d of allDeadlines) {
+        const dueDate = new Date(d.dueDate);
+        if (dueDate >= startOfMonth && dueDate < startOfNextMonth) {
+          items.push({
+            id: d.id,
+            type: "deadline",
+            title: d.title,
+            date: dueDate.toISOString(),
+            meta: { status: d.status, notes: d.notes },
+          });
+        }
+      }
+
+      for (const t of allTasks) {
+        if (t.dueDate) {
+          const dueDate = new Date(t.dueDate);
+          if (dueDate >= startOfMonth && dueDate < startOfNextMonth) {
+            items.push({
+              id: t.id,
+              type: "task",
+              title: t.title,
+              date: dueDate.toISOString(),
+              meta: { status: t.status, priority: t.priority },
+            });
+          }
+        }
+      }
+
+      for (const e of allTimeline) {
+        const eventDate = new Date(e.eventDate);
+        if (eventDate >= startOfMonth && eventDate < startOfNextMonth) {
+          items.push({
+            id: e.id,
+            type: "timeline",
+            title: e.title,
+            date: eventDate.toISOString(),
+            meta: { category: e.category },
+          });
+        }
+      }
+
+      res.json({ month: monthStr, items });
+    } catch (error) {
+      console.error("Calendar fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch calendar items" });
+    }
+  });
+
   app.get("/api/onboarding/status", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
