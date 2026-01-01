@@ -11,20 +11,33 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   useIdleLogout({ idleMs: 15 * 60 * 1000, logoutEndpoint: '/api/auth/logout', redirectTo: '/' });
 
-  const { data: authData, isLoading, isError } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+  const { data: authData, isLoading: authLoading, isError: authError } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
   });
 
+  const { data: onboardingData, isLoading: onboardingLoading } = useQuery<{ onboardingComplete: boolean }>({
+    queryKey: ["/api/onboarding/status"],
+    enabled: !!authData?.user,
+  });
+
   useEffect(() => {
-    if (!isLoading && (isError || !authData?.user)) {
+    if (!authLoading && (authError || !authData?.user)) {
       setLocation("/login");
     }
-  }, [isLoading, isError, authData, setLocation]);
+  }, [authLoading, authError, authData, setLocation]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!authLoading && !onboardingLoading && authData?.user && onboardingData) {
+      if (!onboardingData.onboardingComplete && !location.startsWith("/app/onboarding")) {
+        setLocation("/app/onboarding");
+      }
+    }
+  }, [authLoading, onboardingLoading, authData, onboardingData, location, setLocation]);
+
+  if (authLoading || onboardingLoading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <p className="font-sans text-neutral-darkest/60">Loading...</p>
@@ -32,7 +45,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  if (isError || !authData?.user) {
+  if (authError || !authData?.user) {
     return null;
   }
 

@@ -33,6 +33,7 @@ import AppDeadlines from "@/pages/AppDeadlines";
 import AppMessages from "@/pages/AppMessages";
 import AppContacts from "@/pages/AppContacts";
 import AppCaseSettings from "@/pages/AppCaseSettings";
+import AppOnboarding from "@/pages/AppOnboarding";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/careers" component={Careers} />
       <Route path="/wall-of-wins" component={WallOfWins} />
       <Route path="/faq" component={FAQPage} />
+      <Route path="/app/onboarding" component={AppOnboarding} />
       <Route path="/app/cases" component={AppCases} />
       <Route path="/app/dashboard/:caseId" component={AppDashboard} />
       <Route path="/app/case/:caseId" component={AppCase} />
