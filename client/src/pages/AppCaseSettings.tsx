@@ -26,11 +26,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Settings, Plus, Pencil, Trash2, Baby } from "lucide-react";
+import { Settings, Plus, Pencil, Trash2, Baby, User, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CaseChild } from "@shared/schema";
+
+interface UserProfile {
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  partyRole: string | null;
+  isSelfRepresented: boolean;
+  autoFillEnabled: boolean;
+  firmName: string | null;
+  barNumber: string | null;
+  onboardingDeferred: Record<string, boolean>;
+  onboardingStatus: string;
+}
 
 const US_STATES = [
   "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
@@ -80,6 +99,10 @@ export default function AppCaseSettings() {
   const { data: caseData, isLoading: caseLoading } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
     enabled: !!caseId,
+  });
+
+  const { data: profileData } = useQuery<{ profile: UserProfile }>({
+    queryKey: ["/api/profile"],
   });
 
   const { data: childrenData, isLoading: childrenLoading } = useQuery<{ children: CaseChild[] }>({
@@ -274,6 +297,81 @@ export default function AppCaseSettings() {
           </div>
         </div>
 
+        {profileData?.profile && (
+          <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
+                <User className="w-5 h-5 text-bush" />
+              </div>
+              <div>
+                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Profile & Autofill</h2>
+                <p className="font-sans text-sm text-neutral-darkest/60">Your personal information for document autofill</p>
+              </div>
+            </div>
+            {profileData.profile.onboardingStatus === "partial" && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-neutral-darkest mb-4">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>Some profile fields are missing. Complete them to enable full document autofill.</span>
+              </div>
+            )}
+            <Card className="bg-white">
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-neutral-darkest/60">Full Name</Label>
+                    <p className="font-sans text-neutral-darkest mt-1">{profileData.profile.fullName || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-neutral-darkest/60 flex items-center gap-2">
+                      Phone
+                      {profileData.profile.onboardingDeferred?.phone && !profileData.profile.phone && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Missing</Badge>
+                      )}
+                    </Label>
+                    <p className="font-sans text-neutral-darkest mt-1">{profileData.profile.phone || "Not provided"}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-neutral-darkest/60">Address</Label>
+                    <p className="font-sans text-neutral-darkest mt-1">
+                      {profileData.profile.addressLine1 || "Not provided"}
+                      {profileData.profile.addressLine2 && `, ${profileData.profile.addressLine2}`}
+                    </p>
+                    <p className="font-sans text-neutral-darkest">
+                      {[profileData.profile.city, profileData.profile.state, profileData.profile.zip].filter(Boolean).join(", ") || ""}
+                      {(profileData.profile.onboardingDeferred?.city || profileData.profile.onboardingDeferred?.state || profileData.profile.onboardingDeferred?.zip) && 
+                       (!profileData.profile.city || !profileData.profile.state || !profileData.profile.zip) && (
+                        <Badge variant="outline" className="ml-2 text-amber-600 border-amber-300 text-xs">Missing details</Badge>
+                      )}
+                    </p>
+                  </div>
+                  {!profileData.profile.isSelfRepresented && (
+                    <>
+                      <div>
+                        <Label className="text-neutral-darkest/60 flex items-center gap-2">
+                          Law Firm
+                          {profileData.profile.onboardingDeferred?.firmName && !profileData.profile.firmName && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Missing</Badge>
+                          )}
+                        </Label>
+                        <p className="font-sans text-neutral-darkest mt-1">{profileData.profile.firmName || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-neutral-darkest/60 flex items-center gap-2">
+                          Bar Number
+                          {profileData.profile.onboardingDeferred?.barNumber && !profileData.profile.barNumber && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Missing</Badge>
+                          )}
+                        </Label>
+                        <p className="font-sans text-neutral-darkest mt-1">{profileData.profile.barNumber || "Not provided"}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {caseRecord && (
           <div className="mb-10">
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -293,6 +391,15 @@ export default function AppCaseSettings() {
                   <div>
                     <Label className="text-neutral-darkest/60">Case Title</Label>
                     <p className="font-sans text-neutral-darkest mt-1">{caseRecord.title}</p>
+                  </div>
+                  <div>
+                    <Label className="text-neutral-darkest/60 flex items-center gap-2">
+                      Case Number
+                      {profileData?.profile?.onboardingDeferred?.caseNumber && !caseRecord.caseNumber && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Missing</Badge>
+                      )}
+                    </Label>
+                    <p className="font-sans text-neutral-darkest mt-1">{caseRecord.caseNumber || "Not specified"}</p>
                   </div>
                   <div>
                     <Label className="text-neutral-darkest/60">Case Type</Label>

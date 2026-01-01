@@ -338,6 +338,10 @@ export async function registerRoutes(
             partyRole: profile.partyRole,
             isSelfRepresented: profile.isSelfRepresented,
             autoFillEnabled: profile.autoFillEnabled,
+            firmName: profile.firmName,
+            barNumber: profile.barNumber,
+            onboardingDeferred: profile.onboardingDeferred || {},
+            onboardingStatus: profile.onboardingStatus,
           },
         });
       } else {
@@ -354,6 +358,10 @@ export async function registerRoutes(
             partyRole: null,
             isSelfRepresented: true,
             autoFillEnabled: true,
+            firmName: null,
+            barNumber: null,
+            onboardingDeferred: {},
+            onboardingStatus: "incomplete",
           },
         });
       }

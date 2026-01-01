@@ -20,7 +20,8 @@ import {
   Plus,
   Trash2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Info
 } from "lucide-react";
 import AppNavbar from "@/components/layout/AppNavbar";
 import Footer from "@/components/Footer";
@@ -429,6 +430,12 @@ export default function AppOnboarding() {
               {step === 1 && (
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Your Information</h2>
+                  {hasDeferredFieldsInStep(1) && (
+                    <div className="flex items-center gap-2 p-3 bg-bush/10 border border-bush/20 rounded-md text-sm text-neutral-darkest">
+                      <Info className="w-4 h-4 text-bush flex-shrink-0" />
+                      <span>Some info was skipped. You can finish later in Account Settings.</span>
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
@@ -558,6 +565,12 @@ export default function AppOnboarding() {
               {step === 2 && (
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Your Address</h2>
+                  {hasDeferredFieldsInStep(2) && (
+                    <div className="flex items-center gap-2 p-3 bg-bush/10 border border-bush/20 rounded-md text-sm text-neutral-darkest">
+                      <Info className="w-4 h-4 text-bush flex-shrink-0" />
+                      <span>Some info was skipped. You can finish later in Account Settings.</span>
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
@@ -644,6 +657,12 @@ export default function AppOnboarding() {
               {step === 3 && (
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Case Details</h2>
+                  {hasDeferredFieldsInStep(3) && (
+                    <div className="flex items-center gap-2 p-3 bg-bush/10 border border-bush/20 rounded-md text-sm text-neutral-darkest">
+                      <Info className="w-4 h-4 text-bush flex-shrink-0" />
+                      <span>Some info was skipped. You can finish later in Account Settings.</span>
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
