@@ -758,7 +758,7 @@ export default function AppDocuments() {
                 data-testid="tab-step-1-draft"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">1</span>
-                Draft
+                Step 1: Draft Your Document
               </TabsTrigger>
 
               <TabsTrigger
@@ -767,7 +767,7 @@ export default function AppDocuments() {
                 data-testid="tab-step-2-review"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">2</span>
-                Review
+                Step 2: Review & Edit
               </TabsTrigger>
 
               <TabsTrigger
@@ -776,16 +776,16 @@ export default function AppDocuments() {
                 data-testid="tab-step-3-filing"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-bush text-white text-xs font-semibold">3</span>
-                Court-Formatted Documents
+                Step 3: Court-Ready Document
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="draft" className="mt-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                 <div>
-                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 1: Create or edit your draft</h2>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 1: Draft Your Document</h2>
                   <p className="font-sans text-sm text-neutral-darkest/70">
-                    Drafts are your working documents. They are not court-formatted.
+                    Start with a working draft. You'll review everything before creating a court-formatted version.
                   </p>
                 </div>
                 <Button
@@ -890,9 +890,9 @@ export default function AppDocuments() {
             <TabsContent value="review" className="mt-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                 <div>
-                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 2: Review details before court format</h2>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 2: Review & Edit</h2>
                   <p className="font-sans text-sm text-neutral-darkest/70">
-                    Confirm your name, address, role (self-represented vs attorney), and the date before generating the DOCX.
+                    Review your information and make any changes before generating a court-formatted document.
                   </p>
                 </div>
                 <Button
@@ -902,7 +902,7 @@ export default function AppDocuments() {
                   data-testid="button-open-court-doc-dialog"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
-                  Prepare Court Filing (DOCX)
+                  Prepare Court-Formatted DOCX
                 </Button>
               </div>
 
@@ -921,8 +921,9 @@ export default function AppDocuments() {
 
             <TabsContent value="filing" className="mt-6">
               <div className="mb-4">
-                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Court-Formatted Documents</h2>
-                <p className="font-sans text-sm text-neutral-darkest/70">These are the generated court-formatted versions you can re-download anytime.</p>
+                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Court-Ready Document</h2>
+                <p className="font-sans text-sm text-neutral-darkest/70">These documents are formatted for court. You can download them as needed.</p>
+                <p className="font-sans text-xs text-neutral-darkest/60 mt-1">Civilla does not file documents with the court.</p>
               </div>
               {genDocsLoading ? (
                 <div className="w-full py-12 text-center">
@@ -972,7 +973,7 @@ export default function AppDocuments() {
                             data-testid={`button-redownload-${genDoc.id}`}
                           >
                             <FileDown className="w-4 h-4 mr-2" />
-                            Re-download Court-Formatted DOCX
+                            Download Court-Formatted DOCX
                           </Button>
                         </div>
                       </CardHeader>
@@ -1545,7 +1546,7 @@ export default function AppDocuments() {
               data-testid="button-download-final"
             >
               <FileDown className="w-4 h-4 mr-2" />
-              {isDownloadingCourtDoc ? "Downloading..." : "Step 3: Download Court-Formatted DOCX"}
+              {isDownloadingCourtDoc ? "Downloading..." : "Download Court-Formatted DOCX"}
             </Button>
           </DialogFooter>
         </DialogContent>

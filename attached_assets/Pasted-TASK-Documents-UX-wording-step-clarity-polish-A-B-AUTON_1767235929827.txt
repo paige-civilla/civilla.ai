@@ -1,0 +1,62 @@
+TASK: Documents UX wording + step clarity polish (A + B)
+
+AUTONOMY: LOW
+SCOPE: UI TEXT ONLY (no backend changes, no styling redesign)
+FILES: client/src/pages/AppDocuments.tsx only
+
+GOAL:
+Make the 3-step flow feel calm and outcome-based (not bossy), especially Step 3.
+Step titles should describe what the user has, not command them.
+
+WHAT TO CHANGE (exact copy):
+
+1) Step titles (Tabs triggers or headings)
+- Step 1 label -> "Step 1: Draft Your Document"
+- Step 2 label -> "Step 2: Review & Edit"
+- Step 3 label -> "Step 3: Court-Ready Document"
+  (Replace any existing “Court formatted/Download”, “Court formatted”, “Download”, or “Court Filing” step title text.)
+
+2) Helper text per step (short + reassuring)
+Step 1 helper (near Draft list / create doc area):
+"Start with a working draft. You’ll review everything before creating a court-formatted version."
+
+Step 2 helper (near the Prepare/Review action area):
+"Review your information and make any changes before generating a court-formatted document."
+
+Step 3 helper (near history / downloads):
+"These documents are formatted for court. You can download them as needed."
+Add one extra line beneath it (small helper text, same style family as other helper text):
+"Civilla does not file documents with the court."
+
+3) Button labels (actions are fine as verbs)
+- The button that opens the court-formatted flow should be:
+"Prepare Court-Formatted DOCX"
+(Replace any: “Prepare Court Filing (DOCX)”, “Download DOCX (Court Format)”, “Court formatted/Download”, etc.)
+
+- In the Review modal final action button should be:
+"Download Court-Formatted DOCX"
+(If it currently says “Step 3: Download Court-Formatted DOCX”, remove “Step 3:” from the button; steps are in the UI, not in the button.)
+
+- In history cards/buttons:
+Replace "Re-download Court-Formatted DOCX" with:
+"Download Court-Formatted DOCX"
+(Users don’t care if it’s “re-”. If you want to keep that meaning, use a smaller subtext like “Generated on {date}”.)
+
+IMPLEMENTATION NOTES (how to apply safely):
+- Only update strings / labels / helper text. Do not change layout structure beyond adding the two helper lines in Step 3.
+- Keep existing components (Tabs, Cards, Dialog) intact.
+- Do not change CSS classes except if needed to match existing helper text styling.
+- Make sure the wording appears consistently:
+  - Tabs triggers (top step bar)
+  - Step headers in each tab content
+  - Primary action buttons
+
+ACCEPTANCE TEST:
+- Open Documents page:
+  - Tabs show: “Step 1: Draft Your Document”, “Step 2: Review & Edit”, “Step 3: Court-Ready Document”
+- Step 2 primary button reads: “Prepare Court-Formatted DOCX”
+- Review modal final button reads: “Download Court-Formatted DOCX”
+- Step 3 includes:
+  - “These documents are formatted for court. You can download them as needed.”
+  - “Civilla does not file documents with the court.”
+- No TS errors, build passes.
