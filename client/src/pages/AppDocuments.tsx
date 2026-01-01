@@ -921,7 +921,7 @@ export default function AppDocuments() {
 
             <TabsContent value="filing" className="mt-6">
               <div className="mb-4">
-                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Your court-formatted DOCX files</h2>
+                <h2 className="font-heading font-bold text-xl text-neutral-darkest">Step 3: Court-Formatted Documents</h2>
                 <p className="font-sans text-sm text-neutral-darkest/70">These are the generated court-formatted versions you can re-download anytime.</p>
               </div>
               {genDocsLoading ? (
