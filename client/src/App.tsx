@@ -73,7 +73,8 @@ function Router() {
       <Route path="/app/exhibits/:caseId" component={AppExhibits} />
       <Route path="/app/tasks/:caseId" component={AppTasks} />
       <Route path="/app/deadlines/:caseId" component={AppDeadlines} />
-      <Route path="/app/messages/:caseId" component={AppPatterns} />
+      <Route path="/app/patterns/:caseId" component={AppPatterns} />
+      <Route path="/app/messages/:caseId">{({ caseId }) => <Redirect to={`/app/patterns/${caseId}`} />}</Route>
       <Route path="/app/contacts/:caseId" component={AppContacts} />
       <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
@@ -83,7 +84,8 @@ function Router() {
       <Route path="/app/exhibits">{() => <CaseRedirect targetPath="exhibits" />}</Route>
       <Route path="/app/tasks">{() => <CaseRedirect targetPath="tasks" />}</Route>
       <Route path="/app/deadlines">{() => <CaseRedirect targetPath="deadlines" />}</Route>
-      <Route path="/app/messages">{() => <CaseRedirect targetPath="messages" />}</Route>
+      <Route path="/app/patterns">{() => <CaseRedirect targetPath="patterns" />}</Route>
+      <Route path="/app/messages">{() => <CaseRedirect targetPath="patterns" />}</Route>
       <Route path="/app/contacts">{() => <CaseRedirect targetPath="contacts" />}</Route>
       <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />

@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import type { Case } from "@shared/schema";
 
 interface CaseRedirectProps {
-  targetPath: "dashboard" | "case" | "documents" | "timeline" | "evidence" | "exhibits" | "tasks" | "deadlines" | "messages" | "contacts";
+  targetPath: "dashboard" | "case" | "documents" | "timeline" | "evidence" | "exhibits" | "tasks" | "deadlines" | "patterns" | "contacts";
 }
 
 export default function CaseRedirect({ targetPath }: CaseRedirectProps) {
