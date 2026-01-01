@@ -1,9 +1,18 @@
+# Slice 4B (A): Court DOCX “pleading-perfect” formatting (margins, caption block, double spacing, page numbers)
+# Paste this into Replit Shell.
+
+set -e
+
+mkdir -p server
+
+cat > server/courtDocx.ts <<'EOF'
 import {
   AlignmentType,
   BorderStyle,
   Document,
   Footer,
   Header,
+  HeadingLevel,
   Packer,
   PageNumber,
   Paragraph,
@@ -41,14 +50,14 @@ export type CourtDocxPayload = {
   };
   document?: { title?: string; subtitle?: string };
   date?: string;
-  body?: string[];
+  body?: string[]; // paragraphs
 };
 
 const FONT = "Times New Roman";
-const FONT_SIZE = 24;
-const DOUBLE_LINE = 480;
-const PARA_AFTER = 0;
-const ONE_INCH = 1440;
+const FONT_SIZE = 24; // docx uses half-points (24 = 12pt)
+const DOUBLE_LINE = 480; // twips; 240=single, 480=double
+const PARA_AFTER = 0; // court docs typically avoid extra spacing when double-spaced
+const ONE_INCH = 1440; // twips
 
 function tr(text: string, opts?: { bold?: boolean; italics?: boolean }) {
   return new TextRun({
@@ -60,7 +69,7 @@ function tr(text: string, opts?: { bold?: boolean; italics?: boolean }) {
   });
 }
 
-function p(text?: string, opts?: { align?: (typeof AlignmentType)[keyof typeof AlignmentType]; bold?: boolean; italics?: boolean; keepNext?: boolean }) {
+function p(text?: string, opts?: { align?: AlignmentType; bold?: boolean; italics?: boolean; keepNext?: boolean }) {
   return new Paragraph({
     children: text ? [tr(text, { bold: opts?.bold, italics: opts?.italics })] : [],
     alignment: opts?.align ?? AlignmentType.LEFT,
@@ -70,6 +79,7 @@ function p(text?: string, opts?: { align?: (typeof AlignmentType)[keyof typeof A
 }
 
 function blank(lines = 1) {
+  // Add blank double-spaced lines reliably
   return Array.from({ length: lines }).map(() => p(" "));
 }
 
@@ -85,6 +95,7 @@ function captionTable(payload: CourtDocxPayload) {
   const courtCounty = payload.court?.county || "__________";
   const district = payload.court?.district || "__________";
 
+  // Left side (party block)
   const leftLines: Paragraph[] = [
     p(petitioner),
     p("Petitioner,"),
@@ -93,6 +104,7 @@ function captionTable(payload: CourtDocxPayload) {
     p("Respondent."),
   ];
 
+  // Right side (case block)
   const rightLines: Paragraph[] = [
     p(`IN THE DISTRICT COURT OF THE ${district} JUDICIAL DISTRICT`),
     p(`OF THE STATE OF ${courtState.toUpperCase()}, IN AND FOR THE COUNTY OF ${courtCounty.toUpperCase()}`),
@@ -196,6 +208,7 @@ function signatureBlock(payload: CourtDocxPayload) {
     if (phone) blocks.push(p(phone));
     if (email) blocks.push(p(email));
   } else {
+    // Attorney block
     if (attyLine) blocks.push(p(attyLine));
     if (firmLine) blocks.push(p(firmLine));
     if (barLine) blocks.push(p(barLine));
@@ -214,21 +227,40 @@ function footerWithPageNumbers() {
         spacing: { line: DOUBLE_LINE, after: 0 },
         children: [
           tr("Page "),
-          new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: FONT_SIZE }),
+          PageNumber.CURRENT,
           tr(" of "),
-          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: FONT_SIZE }),
+          PageNumber.TOTAL_PAGES,
         ],
       }),
     ],
   });
 }
 
+/**
+ * Creates a pleading-formatted DOCX:
+ * - 1" margins
+ * - Times New Roman 12pt
+ * - True double spacing
+ * - Caption block at top
+ * - Centered title
+ * - Footer with "Page X of Y"
+ */
 export async function buildCourtDocx(payload: CourtDocxPayload): Promise<Buffer> {
+  const bodyParas: Paragraph[] = [];
+
+  // Caption table
+  bodyParas.push(new Paragraph({ children: [], spacing: { line: DOUBLE_LINE, after: 0 } }));
+  bodyParas.push(new Paragraph({ children: [], spacing: { line: DOUBLE_LINE, after: 0 } }));
+  // Table must be a direct child in the section, so we place it in children array later.
+
+  // Title
   const titleParas = titleBlock(payload);
 
+  // Main body paragraphs (double spaced, no extra after spacing)
   const contentLines = payload.body && payload.body.length ? payload.body : [" "];
   const contentParas = contentLines.map((line) => p(line || " "));
 
+  // Signature
   const sigParas = signatureBlock(payload);
 
   const doc = new Document({
@@ -265,3 +297,58 @@ export async function buildCourtDocx(payload: CourtDocxPayload): Promise<Buffer>
 
   return await Packer.toBuffer(doc);
 }
+EOF
+
+# Ensure routes use the helper. This patch assumes your route file already exists with /api/templates/docx.
+# We replace the handler body by searching for "app.post(\"/api/templates/docx\"" and inserting buildCourtDocx usage.
+node <<'EOF'
+const fs = require("fs");
+
+const path = "server/routes.ts";
+let s = fs.readFileSync(path, "utf8");
+
+if (!s.includes("buildCourtDocx")) {
+  // Add import near top (safe, idempotent-ish)
+  s = s.replace(
+    /import\s+\{[^}]*\}\s+from\s+"\.\/db";\n/,
+    (m) => m + `import { buildCourtDocx } from "./courtDocx";\n`
+  );
+}
+
+const re = /app\.post\(\s*["']\/api\/templates\/docx["']\s*,([\s\S]*?)\)\s*;\n/;
+if (!re.test(s)) {
+  console.error("Could not find /api/templates/docx route in server/routes.ts. Please locate it and update manually to call buildCourtDocx(payload).");
+  process.exit(1);
+}
+
+s = s.replace(re, () => {
+  return `app.post("/api/templates/docx", requireAuth, async (req, res) => {
+  try {
+    // Expecting the client to send a payload that matches CourtDocxPayload shape.
+    // Do not copy any reference document text; we only format.
+    const payload = req.body || {};
+
+    const buf = await buildCourtDocx(payload);
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader("Content-Disposition", "attachment; filename=court-document.docx");
+    return res.status(200).send(buf);
+  } catch (err) {
+    console.error("DOCX generation error:", err);
+    return res.status(500).json({ error: "Failed to generate DOCX" });
+  }
+});\n`;
+});
+
+fs.writeFileSync(path, s);
+console.log("Updated server/routes.ts to use buildCourtDocx()");
+EOF
+
+echo ""
+echo "Slice 4B(A) applied."
+echo "Next: restart the Replit app, download a DOCX, and verify:"
+echo "- Times New Roman 12pt"
+echo "- Double spaced body"
+echo "- 1-inch margins"
+echo "- Caption block top-left and court/case block top-right"
+echo "- Footer shows 'Page X of Y'"

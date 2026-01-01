@@ -10,7 +10,7 @@ import { db } from "./db";
 import multer from "multer";
 import crypto from "crypto";
 import { isR2Configured, uploadToR2, getSignedDownloadUrl, deleteFromR2 } from "./r2";
-import { buildCourtDocxBuffer, type CourtDocxPayload } from "./courtDocx";
+import { buildCourtDocx, type CourtDocxPayload } from "./courtDocx";
 import {
   Document as DocxDocument,
   Packer,
@@ -1010,70 +1010,17 @@ export async function registerRoutes(
     }
   });
 
-  const courtDocxSchema = z.object({
-    court: z.object({
-      district: z.string(),
-      county: z.string(),
-      state: z.string(),
-    }),
-    case: z.object({
-      caseNumber: z.string(),
-    }),
-    parties: z.object({
-      petitioner: z.string(),
-      respondent: z.string(),
-    }),
-    document: z.object({
-      title: z.string(),
-      subtitle: z.string().optional(),
-    }),
-    contactBlock: z.object({
-      isRepresented: z.boolean(),
-      name: z.string(),
-      address: z.string(),
-      phone: z.string().optional(),
-      email: z.string().optional(),
-      barNumber: z.string().optional(),
-      firm: z.string().optional(),
-    }),
-    body: z.object({
-      paragraphs: z.array(z.string()),
-    }),
-    signature: z.object({
-      datedLine: z.string(),
-      signerName: z.string(),
-      signerTitle: z.string(),
-    }),
-    footer: z.object({
-      docName: z.string(),
-      showPageNumbers: z.boolean(),
-    }),
-  });
-
   app.post("/api/templates/docx", requireAuth, async (req, res) => {
     try {
-      const parseResult = courtDocxSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fieldErrors: Record<string, string> = {};
-        parseResult.error.errors.forEach((err) => {
-          const field = err.path.join(".");
-          fieldErrors[field] = err.message;
-        });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
-      }
-
-      const data = parseResult.data as CourtDocxPayload;
-      const buffer = await buildCourtDocxBuffer(data);
-
-      const sanitizedTitle = data.document.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "_").slice(0, 50);
-      const filename = `Civilla_${sanitizedTitle || "document"}.docx`;
+      const payload = req.body || {};
+      const buf = await buildCourtDocx(payload);
 
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Generate court DOCX error:", error);
-      res.status(500).json({ error: "Failed to generate court document" });
+      res.setHeader("Content-Disposition", "attachment; filename=court-document.docx");
+      return res.status(200).send(buf);
+    } catch (err) {
+      console.error("DOCX generation error:", err);
+      return res.status(500).json({ error: "Failed to generate DOCX" });
     }
   });
 
