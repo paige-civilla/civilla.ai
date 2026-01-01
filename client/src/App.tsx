@@ -31,6 +31,7 @@ import AppExhibits from "@/pages/AppExhibits";
 import AppTasks from "@/pages/AppTasks";
 import AppDeadlines from "@/pages/AppDeadlines";
 import AppMessages from "@/pages/AppMessages";
+import AppContacts from "@/pages/AppContacts";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/app/tasks/:caseId" component={AppTasks} />
       <Route path="/app/deadlines/:caseId" component={AppDeadlines} />
       <Route path="/app/messages/:caseId" component={AppMessages} />
+      <Route path="/app/contacts/:caseId" component={AppContacts} />
       <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
       <Route path="/app/documents">{() => <CaseRedirect targetPath="documents" />}</Route>
@@ -75,6 +77,7 @@ function Router() {
       <Route path="/app/tasks">{() => <CaseRedirect targetPath="tasks" />}</Route>
       <Route path="/app/deadlines">{() => <CaseRedirect targetPath="deadlines" />}</Route>
       <Route path="/app/messages">{() => <CaseRedirect targetPath="messages" />}</Route>
+      <Route path="/app/contacts">{() => <CaseRedirect targetPath="contacts" />}</Route>
       <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />
     </Switch>

@@ -1,38 +1,58 @@
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, FileText, Calendar, MessageSquare, Users, Lock } from "lucide-react";
+import { Briefcase, FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import type { Case } from "@shared/schema";
 
-const moduleCards = [
+const getModuleCards = (caseId: string) => [
   {
     title: "Documents",
     description: "Upload and organize your case documents",
     icon: FileText,
-    href: "#",
-    available: false,
+    href: `/app/documents/${caseId}`,
   },
   {
     title: "Timeline",
     description: "Track key dates and deadlines",
     icon: Calendar,
-    href: "#",
-    available: false,
+    href: `/app/timeline/${caseId}`,
+  },
+  {
+    title: "Evidence",
+    description: "Manage and organize case evidence",
+    icon: FolderOpen,
+    href: `/app/evidence/${caseId}`,
+  },
+  {
+    title: "Exhibits",
+    description: "Prepare exhibits for court filings",
+    icon: FileStack,
+    href: `/app/exhibits/${caseId}`,
+  },
+  {
+    title: "Tasks",
+    description: "Track your to-do items",
+    icon: CheckSquare,
+    href: `/app/tasks/${caseId}`,
+  },
+  {
+    title: "Deadlines",
+    description: "Never miss an important date",
+    icon: Clock,
+    href: `/app/deadlines/${caseId}`,
   },
   {
     title: "Messages",
     description: "Secure communication center",
     icon: MessageSquare,
-    href: "#",
-    available: false,
+    href: `/app/messages/${caseId}`,
   },
   {
     title: "Contacts",
     description: "Manage case-related contacts",
     icon: Users,
-    href: "#",
-    available: false,
+    href: `/app/contacts/${caseId}`,
   },
 ];
 
@@ -116,22 +136,13 @@ export default function AppDashboard() {
               Modules
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {moduleCards.map((module) => (
-                <div
+              {getModuleCards(primaryCase.id).map((module) => (
+                <Link
                   key={module.title}
-                  className={`relative bg-white border border-neutral-darkest/10 rounded-lg p-5 ${
-                    module.available ? "hover:border-neutral-darkest/20 cursor-pointer" : "opacity-70"
-                  }`}
+                  href={module.href}
+                  className="relative bg-white border border-neutral-darkest/10 rounded-lg p-5 hover:border-neutral-darkest/20 cursor-pointer block"
                   data-testid={`module-card-${module.title.toLowerCase()}`}
                 >
-                  {!module.available && (
-                    <div className="absolute top-3 right-3">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-neutral-darkest/50 bg-neutral-darkest/5 px-2 py-0.5 rounded">
-                        <Lock className="w-3 h-3" />
-                        Coming soon
-                      </span>
-                    </div>
-                  )}
                   <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center mb-3">
                     <module.icon className="w-5 h-5 text-bush" />
                   </div>
@@ -141,7 +152,7 @@ export default function AppDashboard() {
                   <p className="font-sans text-sm text-neutral-darkest/60">
                     {module.description}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

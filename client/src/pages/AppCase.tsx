@@ -69,7 +69,7 @@ export default function AppCase() {
       title: "Contacts",
       subtitle: "Manage case-related contacts",
       href: caseId ? `/app/contacts/${caseId}` : "/app",
-      comingSoon: true,
+      comingSoon: false,
       Icon: Users,
     },
   ];
