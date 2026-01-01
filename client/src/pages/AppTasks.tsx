@@ -170,7 +170,7 @@ export default function AppTasks() {
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full mb-8">
             <div>
-              <p className="font-sans text-sm text-neutral-darkest/60 mb-1">Tasks</p>
+              <p className="font-sans text-sm text-neutral-darkest/60 mb-1">Case To-Do</p>
               <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
                 {currentCase.title}
               </h1>

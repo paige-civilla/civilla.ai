@@ -200,7 +200,7 @@ export default function AppCase() {
     },
     {
       key: "tasks",
-      title: "Tasks",
+      title: "Case To-Do",
       subtitle: "Track your to-do items",
       href: caseId ? `/app/tasks/${caseId}` : "/app",
       comingSoon: false,

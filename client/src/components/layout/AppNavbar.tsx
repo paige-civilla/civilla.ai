@@ -134,7 +134,7 @@ export default function AppNavbar() {
         { label: "Timeline", href: `/app/timeline/${caseId}`, icon: Calendar },
         { label: "Evidence", href: `/app/evidence/${caseId}`, icon: FolderOpen },
         { label: "Exhibits", href: `/app/exhibits/${caseId}`, icon: Image },
-        { label: "Tasks", href: `/app/tasks/${caseId}`, icon: CheckSquare },
+        { label: "Case To-Do", href: `/app/tasks/${caseId}`, icon: CheckSquare },
         { label: "Deadlines", href: `/app/deadlines/${caseId}`, icon: Clock },
         { label: "Messages", href: `/app/messages/${caseId}`, icon: MessageSquare },
         { label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings },

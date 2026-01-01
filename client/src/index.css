@@ -16,6 +16,29 @@
   --app-surface-2: 204 18% 89%;       /* #DFE8EC - slightly deeper for borders/hover */
   --app-panel: 200 14% 97%;           /* #F4F7F8 - dropdown/panels */
   --app-panel-border: 200 18% 82%;    /* #C9D6DC - border */
+  
+  /* Input field light green background */
+  --input-bg: #EEF7F1;
+}
+
+/* Autofill background fix - prevent browser yellow on autofilled inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #EEF7F1 inset !important;
+  box-shadow: 0 0 0px 1000px #EEF7F1 inset !important;
+  -webkit-text-fill-color: inherit !important;
+  caret-color: inherit !important;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 /* Only add top padding when JS sets the attribute */

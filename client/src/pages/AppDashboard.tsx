@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Briefcase, FileText, Calendar, MessageSquare, Users, FolderOpen, FileStack, CheckSquare, Clock } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import type { Case } from "@shared/schema";
 
 const getModuleCards = (caseId: string) => [
@@ -31,7 +32,7 @@ const getModuleCards = (caseId: string) => [
     href: `/app/exhibits/${caseId}`,
   },
   {
-    title: "Tasks",
+    title: "Case To-Do",
     description: "Track your to-do items",
     icon: CheckSquare,
     href: `/app/tasks/${caseId}`,
@@ -115,45 +116,53 @@ export default function AppDashboard() {
             </Link>
           </div>
 
-          <div className="w-full bg-[#e7ebea] rounded-lg p-6 md:p-8 mb-8">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-bush flex items-center justify-center flex-shrink-0">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="font-heading font-bold text-lg text-neutral-darkest">
-                  Case Workspace
-                </p>
-                <p className="font-sans text-sm text-neutral-darkest/70 mt-1">
-                  This is your central hub for managing your case. Access documents, track deadlines, and stay organized.
-                </p>
-              </div>
+          <div className="w-full flex flex-col lg:flex-row gap-8">
+            <div className="lg:w-[380px] flex-shrink-0">
+              <CaseMonthCalendar caseId={primaryCase.id} />
             </div>
-          </div>
 
-          <div className="w-full">
-            <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-4">
-              Modules
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {getModuleCards(primaryCase.id).map((module) => (
-                <Link
-                  key={module.title}
-                  href={module.href}
-                  className="relative bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
-                  data-testid={`module-card-${module.title.toLowerCase()}`}
-                >
-                  <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center mb-3">
-                    <module.icon className="w-5 h-5 text-bush" />
+            <div className="flex-1">
+              <div className="w-full bg-[#e7ebea] rounded-lg p-6 md:p-8 mb-8">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-bush flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="font-heading font-bold text-base text-neutral-darkest mb-1">
-                    {module.title}
-                  </h3>
-                  <p className="font-sans text-sm text-neutral-darkest/60">
-                    {module.description}
-                  </p>
-                </Link>
-              ))}
+                  <div className="flex-1">
+                    <p className="font-heading font-bold text-lg text-neutral-darkest">
+                      Case Workspace
+                    </p>
+                    <p className="font-sans text-sm text-neutral-darkest/70 mt-1">
+                      This is your central hub for managing your case. Access documents, track deadlines, and stay organized.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full">
+                <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-4">
+                  Modules
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {getModuleCards(primaryCase.id).map((module) => (
+                    <Link
+                      key={module.title}
+                      href={module.href}
+                      className="relative bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-lg p-5 hover:bg-[hsl(var(--app-surface-2))] cursor-pointer block transition-colors"
+                      data-testid={`module-card-${module.title.toLowerCase()}`}
+                    >
+                      <div className="w-10 h-10 rounded-md bg-muted-green/30 flex items-center justify-center mb-3">
+                        <module.icon className="w-5 h-5 text-bush" />
+                      </div>
+                      <h3 className="font-heading font-bold text-base text-neutral-darkest mb-1">
+                        {module.title}
+                      </h3>
+                      <p className="font-sans text-sm text-neutral-darkest/60">
+                        {module.description}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

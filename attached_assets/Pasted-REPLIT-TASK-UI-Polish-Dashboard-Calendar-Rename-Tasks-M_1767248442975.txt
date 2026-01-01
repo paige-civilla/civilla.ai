@@ -1,0 +1,141 @@
+REPLIT TASK: UI Polish + Dashboard Calendar + Rename Tasks Module
+
+AUTONOMY: LOW
+SCOPE: UI + LABELS + CALENDAR VIEW ONLY (no backend changes unless absolutely required to fetch existing tasks/deadlines)
+
+GOALS
+1) Remove the weird yellow-ish interior on onboarding input boxes (and any typed-input boxes in the app).
+   Replace with a very light green that matches our existing dark green brand.
+2) Dashboard: show the calendar (month view) on the dashboard page (left side).
+3) Rename the Tasks module to: “Case To-Do” (everywhere user-facing).
+
+--------------------------------------------------------------------
+1) INPUT FIELD BACKGROUND COLOR (FIX YELLOW + AUTOFILL)
+--------------------------------------------------------------------
+
+A) Identify where input styling is defined.
+Likely files:
+- client/src/index.css OR client/src/globals.css OR client/src/App.css
+- client/src/components/ui/input.tsx (shadcn Input)
+- client/src/components/ui/textarea.tsx
+- client/src/components/ui/select.tsx (if custom)
+- onboarding page file (if it uses custom classes)
+
+B) Set a global input background for all text-entry controls:
+- input
+- textarea
+- select
+- any “Input” component wrapper class
+
+Use a VERY LIGHT green (example): #EEF7F1
+And keep borders consistent with our app theme.
+
+Implementation options (choose the one matching codebase):
+
+Option 1 (preferred): Update shadcn Input/Textarea components
+- In client/src/components/ui/input.tsx:
+  add/ensure class includes: `bg-[#EEF7F1]`
+- In client/src/components/ui/textarea.tsx:
+  add/ensure class includes: `bg-[#EEF7F1]`
+- If you have a select trigger input-like element (SelectTrigger), add same bg.
+
+Option 2: Global CSS (works everywhere even if some inputs aren’t shadcn)
+Add to the main CSS file:
+- input, textarea, select { background-color: #EEF7F1; }
+- Also add focus styles to match brand (border/ring using our dark green).
+
+C) MOST IMPORTANT: Fix browser autofill yellow
+Add this CSS (in the global CSS file):
+- input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px #EEF7F1 inset !important;
+    box-shadow: 0 0 0px 1000px #EEF7F1 inset !important;
+    -webkit-text-fill-color: inherit !important;
+    caret-color: inherit !important;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+Acceptance:
+- Onboarding inputs are light green inside.
+- Autofilled inputs do NOT turn yellow.
+- This applies anywhere the user types.
+
+--------------------------------------------------------------------
+2) DASHBOARD CALENDAR (MONTH VIEW) ON DASHBOARD PAGE
+--------------------------------------------------------------------
+
+A) Locate the dashboard page after login (examples):
+- client/src/pages/AppDashboard.tsx
+- client/src/pages/Dashboard.tsx
+- client/src/pages/AppHome.tsx
+- or whatever route renders when going to /app
+
+B) Add a left-side panel showing a MONTH calendar.
+Layout requirement:
+- Left column: Calendar (month view) + legend
+- Right column: Existing module tiles / content
+
+C) Data source:
+Use EXISTING endpoints that already exist:
+- Deadlines: GET /api/cases/:caseId/deadlines
+- Tasks: GET /api/cases/:caseId/tasks
+
+Calendar display rules:
+- Show deadlines as events on their due dates.
+- (Optional but recommended) show task due dates if tasks have dueDate.
+- Color-coding:
+  - Deadlines: one default color (user-custom colors can be phase 2)
+  - To-dos: another default color
+  - If user color preference is not implemented yet, do NOT add a complex preference system now.
+  - Keep it simple and visible.
+
+Implementation detail (simple, fast approach):
+- Use a lightweight React month calendar component already in the project if present.
+- If none exists, use a minimal in-house month grid:
+  - Header: Month/Year + prev/next
+  - 7-column grid
+  - Each day cell lists up to 2 items, then “+N more”
+
+Acceptance:
+- On dashboard after selecting/opening a case, the calendar is visible.
+- It shows deadlines on the correct dates.
+- No console errors.
+
+--------------------------------------------------------------------
+3) RENAME “TASKS” MODULE TO “CASE TO-DO”
+--------------------------------------------------------------------
+
+Update ALL user-facing labels (do not rename database tables or API routes).
+
+A) In the Case Workspace tiles:
+- Change tile label from “Tasks” to “Case To-Do”
+- Ensure the tile still routes to /app/tasks/:caseId (route can stay)
+
+B) In the AppNavbar dropdown:
+- Change “Tasks” to “Case To-Do”
+- Keep route the same
+
+C) On the Tasks page header/title:
+- Change page title to “Case To-Do”
+- Update helper text accordingly (still the same feature)
+
+D) Anywhere else visible:
+- Buttons, empty state text, breadcrumbs, etc.
+
+Acceptance:
+- Users never see “Tasks” anymore; they see “Case To-Do”
+- Routes remain unchanged and working.
+
+--------------------------------------------------------------------
+DELIVERABLES (REPORT BACK)
+--------------------------------------------------------------------
+1) Files edited (list)
+2) Confirmations:
+- Inputs are light green and autofill yellow is gone
+- Dashboard month calendar is visible and showing deadlines
+- “Tasks” renamed to “Case To-Do” everywhere user-facing
+3) Screenshots:
+- Onboarding input
+- Dashboard calendar
+- Case Workspace tile + navbar label
