@@ -331,5 +331,55 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_calendar_items_user_case_date ON case_calendar_items(user_id, case_id, start_date)`
   ]);
 
+  await initTable("case_contacts", `
+    CREATE TABLE IF NOT EXISTS case_contacts (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'other',
+      organization_or_firm TEXT,
+      email TEXT,
+      phone TEXT,
+      address TEXT,
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_contacts_case_id ON case_contacts(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON case_contacts(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_contacts_case_role ON case_contacts(case_id, role)`
+  ]);
+
+  await initTable("case_communications", `
+    CREATE TABLE IF NOT EXISTS case_communications (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      contact_id VARCHAR(255),
+      direction TEXT NOT NULL DEFAULT 'outgoing',
+      channel TEXT NOT NULL DEFAULT 'email',
+      status TEXT NOT NULL DEFAULT 'draft',
+      occurred_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      subject TEXT,
+      summary TEXT NOT NULL,
+      follow_up_at TIMESTAMP,
+      needs_follow_up BOOLEAN NOT NULL DEFAULT false,
+      pinned BOOLEAN NOT NULL DEFAULT false,
+      evidence_ids TEXT,
+      timeline_event_id VARCHAR(255),
+      calendar_item_id VARCHAR(255),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_communications_case_id ON case_communications(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_communications_user_id ON case_communications(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_communications_case_occurred ON case_communications(case_id, occurred_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_communications_case_followup ON case_communications(case_id, follow_up_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_communications_status ON case_communications(status)`,
+    `CREATE INDEX IF NOT EXISTS idx_communications_needs_followup ON case_communications(needs_follow_up)`
+  ]);
+
   console.log("Database table initialization complete");
 }

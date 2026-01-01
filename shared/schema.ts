@@ -585,3 +585,127 @@ export const updateCaseCalendarItemSchema = z.object({
 export type InsertCaseCalendarItem = z.infer<typeof insertCaseCalendarItemSchema>;
 export type UpdateCaseCalendarItem = z.infer<typeof updateCaseCalendarItemSchema>;
 export type CaseCalendarItem = typeof caseCalendarItems.$inferSelect;
+
+export const contactRoles = [
+  "opposing_party",
+  "opposing_counsel",
+  "mediator",
+  "gal",
+  "school",
+  "therapist",
+  "other",
+] as const;
+export type ContactRole = typeof contactRoles[number];
+
+export const caseContacts = pgTable("case_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  name: text("name").notNull(),
+  role: text("role").notNull().default("other"),
+  organizationOrFirm: text("organization_or_firm"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("contacts_case_idx").on(table.caseId),
+  userIdx: index("contacts_user_idx").on(table.userId),
+  caseRoleIdx: index("contacts_case_role_idx").on(table.caseId, table.role),
+}));
+
+export const insertContactSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200, "Name must be 200 characters or less"),
+  role: z.string().max(50).optional().default("other"),
+  organizationOrFirm: z.string().max(200).optional().nullable(),
+  email: z.string().max(200).optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+});
+
+export const updateContactSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  role: z.string().max(50).optional(),
+  organizationOrFirm: z.string().max(200).optional().nullable(),
+  email: z.string().max(200).optional().nullable(),
+  phone: z.string().max(30).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+});
+
+export type InsertContact = z.infer<typeof insertContactSchema>;
+export type UpdateContact = z.infer<typeof updateContactSchema>;
+export type CaseContact = typeof caseContacts.$inferSelect;
+
+export const communicationDirections = ["outgoing", "incoming"] as const;
+export type CommunicationDirection = typeof communicationDirections[number];
+
+export const communicationChannels = ["email", "text", "call", "in_person", "portal", "other"] as const;
+export type CommunicationChannel = typeof communicationChannels[number];
+
+export const communicationStatuses = ["draft", "sent", "received", "no_response", "resolved"] as const;
+export type CommunicationStatus = typeof communicationStatuses[number];
+
+export const caseCommunications = pgTable("case_communications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  contactId: varchar("contact_id"),
+  direction: text("direction").notNull().default("outgoing"),
+  channel: text("channel").notNull().default("email"),
+  status: text("status").notNull().default("draft"),
+  occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  subject: text("subject"),
+  summary: text("summary").notNull(),
+  followUpAt: timestamp("follow_up_at"),
+  needsFollowUp: boolean("needs_follow_up").notNull().default(false),
+  pinned: boolean("pinned").notNull().default(false),
+  evidenceIds: text("evidence_ids"),
+  timelineEventId: varchar("timeline_event_id"),
+  calendarItemId: varchar("calendar_item_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("communications_case_idx").on(table.caseId),
+  userIdx: index("communications_user_idx").on(table.userId),
+  caseOccurredIdx: index("communications_case_occurred_idx").on(table.caseId, table.occurredAt),
+  caseFollowUpIdx: index("communications_case_followup_idx").on(table.caseId, table.followUpAt),
+  statusIdx: index("communications_status_idx").on(table.status),
+  needsFollowUpIdx: index("communications_needs_followup_idx").on(table.needsFollowUp),
+}));
+
+export const insertCommunicationSchema = z.object({
+  contactId: z.string().optional().nullable(),
+  direction: z.enum(communicationDirections).optional().default("outgoing"),
+  channel: z.enum(communicationChannels).optional().default("email"),
+  status: z.enum(communicationStatuses).optional().default("draft"),
+  occurredAt: z.coerce.date().optional(),
+  subject: z.string().max(200).optional().nullable(),
+  summary: z.string().min(1, "Summary is required").max(10000, "Summary must be 10,000 characters or less"),
+  followUpAt: z.coerce.date().optional().nullable(),
+  needsFollowUp: z.boolean().optional().default(false),
+  pinned: z.boolean().optional().default(false),
+  evidenceIds: z.string().optional().nullable(),
+});
+
+export const updateCommunicationSchema = z.object({
+  contactId: z.string().optional().nullable(),
+  direction: z.enum(communicationDirections).optional(),
+  channel: z.enum(communicationChannels).optional(),
+  status: z.enum(communicationStatuses).optional(),
+  occurredAt: z.coerce.date().optional(),
+  subject: z.string().max(200).optional().nullable(),
+  summary: z.string().min(1).max(10000).optional(),
+  followUpAt: z.coerce.date().optional().nullable(),
+  needsFollowUp: z.boolean().optional(),
+  pinned: z.boolean().optional(),
+  evidenceIds: z.string().optional().nullable(),
+  timelineEventId: z.string().optional().nullable(),
+  calendarItemId: z.string().optional().nullable(),
+});
+
+export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
+export type UpdateCommunication = z.infer<typeof updateCommunicationSchema>;
+export type CaseCommunication = typeof caseCommunications.$inferSelect;

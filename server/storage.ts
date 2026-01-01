@@ -14,6 +14,8 @@ import {
   deadlines,
   calendarCategories,
   caseCalendarItems,
+  caseContacts,
+  caseCommunications,
   type User,
   type InsertUser,
   type Case,
@@ -45,6 +47,12 @@ import {
   type CaseCalendarItem,
   type InsertCaseCalendarItem,
   type UpdateCaseCalendarItem,
+  type CaseContact,
+  type InsertContact,
+  type UpdateContact,
+  type CaseCommunication,
+  type InsertCommunication,
+  type UpdateCommunication,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -111,6 +119,18 @@ export interface IStorage {
   createCaseCalendarItem(userId: string, caseId: string, data: InsertCaseCalendarItem): Promise<CaseCalendarItem>;
   updateCaseCalendarItem(userId: string, itemId: string, data: UpdateCaseCalendarItem): Promise<CaseCalendarItem | undefined>;
   deleteCaseCalendarItem(userId: string, itemId: string): Promise<boolean>;
+
+  listContacts(userId: string, caseId: string): Promise<CaseContact[]>;
+  createContact(userId: string, caseId: string, data: InsertContact): Promise<CaseContact>;
+  updateContact(userId: string, contactId: string, data: UpdateContact): Promise<CaseContact | undefined>;
+  deleteContact(userId: string, contactId: string): Promise<boolean>;
+  getContact(userId: string, contactId: string): Promise<CaseContact | undefined>;
+
+  listCommunications(userId: string, caseId: string): Promise<CaseCommunication[]>;
+  createCommunication(userId: string, caseId: string, data: InsertCommunication): Promise<CaseCommunication>;
+  updateCommunication(userId: string, commId: string, data: UpdateCommunication): Promise<CaseCommunication | undefined>;
+  deleteCommunication(userId: string, commId: string): Promise<boolean>;
+  getCommunication(userId: string, commId: string): Promise<CaseCommunication | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -764,6 +784,120 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCaseCalendarItem(userId: string, itemId: string): Promise<boolean> {
     const res = await db.delete(caseCalendarItems).where(and(eq(caseCalendarItems.id, itemId), eq(caseCalendarItems.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  async listContacts(userId: string, caseId: string): Promise<CaseContact[]> {
+    const rows = await db.select().from(caseContacts)
+      .where(and(eq(caseContacts.userId, userId), eq(caseContacts.caseId, caseId)))
+      .orderBy(asc(caseContacts.name));
+    return rows;
+  }
+
+  async getContact(userId: string, contactId: string): Promise<CaseContact | undefined> {
+    const [row] = await db.select().from(caseContacts)
+      .where(and(eq(caseContacts.id, contactId), eq(caseContacts.userId, userId)));
+    return row;
+  }
+
+  async createContact(userId: string, caseId: string, data: InsertContact): Promise<CaseContact> {
+    const [row] = await db.insert(caseContacts)
+      .values({
+        userId,
+        caseId,
+        name: data.name,
+        role: data.role ?? "other",
+        organizationOrFirm: data.organizationOrFirm ?? null,
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        address: data.address ?? null,
+        notes: data.notes ?? null,
+      })
+      .returning();
+    return row;
+  }
+
+  async updateContact(userId: string, contactId: string, data: UpdateContact): Promise<CaseContact | undefined> {
+    const [row] = await db.update(caseContacts)
+      .set({
+        ...("name" in data ? { name: data.name } : {}),
+        ...("role" in data ? { role: data.role } : {}),
+        ...("organizationOrFirm" in data ? { organizationOrFirm: data.organizationOrFirm ?? null } : {}),
+        ...("email" in data ? { email: data.email ?? null } : {}),
+        ...("phone" in data ? { phone: data.phone ?? null } : {}),
+        ...("address" in data ? { address: data.address ?? null } : {}),
+        ...("notes" in data ? { notes: data.notes ?? null } : {}),
+      })
+      .where(and(eq(caseContacts.id, contactId), eq(caseContacts.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteContact(userId: string, contactId: string): Promise<boolean> {
+    const res = await db.delete(caseContacts).where(and(eq(caseContacts.id, contactId), eq(caseContacts.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  async listCommunications(userId: string, caseId: string): Promise<CaseCommunication[]> {
+    const rows = await db.select().from(caseCommunications)
+      .where(and(eq(caseCommunications.userId, userId), eq(caseCommunications.caseId, caseId)))
+      .orderBy(desc(caseCommunications.occurredAt));
+    return rows;
+  }
+
+  async getCommunication(userId: string, commId: string): Promise<CaseCommunication | undefined> {
+    const [row] = await db.select().from(caseCommunications)
+      .where(and(eq(caseCommunications.id, commId), eq(caseCommunications.userId, userId)));
+    return row;
+  }
+
+  async createCommunication(userId: string, caseId: string, data: InsertCommunication): Promise<CaseCommunication> {
+    const [row] = await db.insert(caseCommunications)
+      .values({
+        userId,
+        caseId,
+        contactId: data.contactId ?? null,
+        direction: data.direction ?? "outgoing",
+        channel: data.channel ?? "email",
+        status: data.status ?? "draft",
+        occurredAt: data.occurredAt ?? new Date(),
+        subject: data.subject ?? null,
+        summary: data.summary,
+        followUpAt: data.followUpAt ?? null,
+        needsFollowUp: data.needsFollowUp ?? false,
+        pinned: data.pinned ?? false,
+        evidenceIds: data.evidenceIds ?? null,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return row;
+  }
+
+  async updateCommunication(userId: string, commId: string, data: UpdateCommunication): Promise<CaseCommunication | undefined> {
+    const [row] = await db.update(caseCommunications)
+      .set({
+        ...("contactId" in data ? { contactId: data.contactId ?? null } : {}),
+        ...("direction" in data ? { direction: data.direction } : {}),
+        ...("channel" in data ? { channel: data.channel } : {}),
+        ...("status" in data ? { status: data.status } : {}),
+        ...("occurredAt" in data ? { occurredAt: data.occurredAt } : {}),
+        ...("subject" in data ? { subject: data.subject ?? null } : {}),
+        ...("summary" in data ? { summary: data.summary } : {}),
+        ...("followUpAt" in data ? { followUpAt: data.followUpAt ?? null } : {}),
+        ...("needsFollowUp" in data ? { needsFollowUp: data.needsFollowUp } : {}),
+        ...("pinned" in data ? { pinned: data.pinned } : {}),
+        ...("evidenceIds" in data ? { evidenceIds: data.evidenceIds ?? null } : {}),
+        ...("timelineEventId" in data ? { timelineEventId: data.timelineEventId ?? null } : {}),
+        ...("calendarItemId" in data ? { calendarItemId: data.calendarItemId ?? null } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(caseCommunications.id, commId), eq(caseCommunications.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteCommunication(userId: string, commId: string): Promise<boolean> {
+    const res = await db.delete(caseCommunications).where(and(eq(caseCommunications.id, commId), eq(caseCommunications.userId, userId))).returning();
     return res.length > 0;
   }
 }
