@@ -1,0 +1,97 @@
+REPLIT — FIX HOVER MENU “TOO TESTY” (HOVER INTENT + GRACE AREA + CLOSE DELAY)
+
+AUTONOMY: HIGH
+FILE: client/src/components/layout/AppNavbar.tsx (or wherever the app dropdown hover logic lives)
+
+GOAL
+Make the hover dropdown forgiving:
+- Opens quickly, but not accidentally (small open delay)
+- Does NOT close immediately when cursor leaves the button by a pixel
+- Closes only after ~300–500ms of being outside BOTH the trigger and the menu
+- Optional: add an invisible “grace buffer” area (8–12px) between trigger and menu so users can move into the menu without it collapsing
+- Also allow click to toggle open/closed (keep current click behavior if already implemented)
+
+IMPLEMENTATION (DO THIS EXACTLY)
+1) Add state + refs near the top of the component:
+- const [menuOpen, setMenuOpen] = useState(false);
+- const openTimerRef = useRef<number | null>(null);
+- const closeTimerRef = useRef<number | null>(null);
+
+2) Wrap BOTH the trigger button AND dropdown panel in ONE parent container div with:
+- className="relative inline-block"
+- onMouseEnter={() => scheduleOpen()}
+- onMouseLeave={() => scheduleClose()}
+
+3) Implement these helper functions inside the component:
+
+const OPEN_DELAY = 80;       // small “hover intent” delay
+const CLOSE_DELAY = 350;     // grace period before closing
+
+function clearTimers() {
+  if (openTimerRef.current) window.clearTimeout(openTimerRef.current);
+  if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+  openTimerRef.current = null;
+  closeTimerRef.current = null;
+}
+
+function scheduleOpen() {
+  if (closeTimerRef.current) {
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }
+  if (menuOpen) return;
+  if (openTimerRef.current) return;
+  openTimerRef.current = window.setTimeout(() => {
+    setMenuOpen(true);
+    openTimerRef.current = null;
+  }, OPEN_DELAY);
+}
+
+function scheduleClose() {
+  if (openTimerRef.current) {
+    window.clearTimeout(openTimerRef.current);
+    openTimerRef.current = null;
+  }
+  if (!menuOpen) return;
+  if (closeTimerRef.current) return;
+  closeTimerRef.current = window.setTimeout(() => {
+    setMenuOpen(false);
+    closeTimerRef.current = null;
+  }, CLOSE_DELAY);
+}
+
+4) Ensure the dropdown panel itself has:
+- onMouseEnter={() => scheduleOpen()}   // keeps it open while hovering inside
+- onMouseLeave={() => scheduleClose()}
+
+5) Add the invisible grace buffer (THIS IS IMPORTANT):
+Insert a small div between the trigger and the panel when menuOpen is true:
+
+{menuOpen && (
+  <div className="absolute left-0 right-0 top-full h-3" />
+)}
+
+This creates a 12px “bridge” so the mouse can travel from trigger into menu without leaving the hover region.
+
+6) Optional “click to pin open” (recommended):
+- Keep your existing click toggle, but make sure it doesn’t fight hover.
+- Easiest: clicking sets menuOpen = !menuOpen, and also clears timers.
+
+On trigger click:
+onClick={() => { clearTimers(); setMenuOpen(v => !v); }}
+
+7) Cleanup on unmount:
+Add:
+useEffect(() => () => clearTimers(), []);
+
+ACCEPTANCE TEST
+- Hover over trigger => opens reliably
+- Move mouse from trigger down into menu => stays open
+- Move mouse away from both trigger and menu for ~0.35s => closes
+- Tiny slips don’t cause flicker
+- Click toggles menu open/closed without jitter
+
+DELIVERABLE
+After changes, paste:
+- the snippet of the wrapper div containing trigger + menu
+- confirmation of OPEN_DELAY and CLOSE_DELAY values you used

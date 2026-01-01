@@ -72,10 +72,17 @@ export default function AppNavbar() {
     queryKey: ["/api/auth/me"],
   });
 
+  const { data: profileData } = useQuery<{ profile: { fullName: string | null; email: string | null } }>({
+    queryKey: ["/api/profile"],
+    enabled: !!authData?.user,
+  });
+
   const { data: casesData } = useQuery<{ cases: { id: string; title: string }[] }>({
     queryKey: ["/api/cases"],
     enabled: !!authData?.user,
   });
+
+  const displayName = profileData?.profile?.fullName?.trim() || authData?.user?.email || "Account";
 
   const getSelectedCaseId = () => {
     const selectedCaseId = localStorage.getItem("selectedCaseId");
