@@ -87,6 +87,7 @@ export const cases = pgTable("cases", {
   state: text("state"),
   county: text("county"),
   caseType: text("case_type"),
+  hasChildren: boolean("has_children").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -96,6 +97,7 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   state: true,
   county: true,
   caseType: true,
+  hasChildren: true,
 });
 
 export type InsertCase = z.infer<typeof insertCaseSchema>;

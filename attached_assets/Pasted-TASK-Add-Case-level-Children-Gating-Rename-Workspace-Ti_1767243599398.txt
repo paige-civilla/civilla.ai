@@ -1,0 +1,61 @@
+TASK: Add Case-level Children Gating + Rename Workspace Title
+
+CONSTRAINTS:
+- Paige is not a developer. Make changes fully and ensure build passes.
+- Do NOT remove the existing Children CRUD; only gate its visibility per-case.
+- Children should NOT be in “onboarding” globally yet; instead we gate it in Case Profile (Case Settings page) and in the Case Workspace tiles.
+
+GOALS:
+A) Rename workspace header text:
+- In the Case Workspace page (AppCase.tsx or whichever file renders the “Your Case Workspace” title), change it to exactly: "Case Workspace"
+
+B) Add a case-level boolean flag: hasChildren
+1) shared/schema.ts
+- Add a new column to cases table:
+  hasChildren: boolean("has_children").notNull().default(false)
+- Update insertCaseSchema to accept hasChildren (optional), with default false.
+- Export type updates accordingly.
+
+2) server/db.ts
+- Ensure initDbTables() handles existing databases:
+  addColumnIfNotExists("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false")
+
+3) server/routes.ts
+- Ensure POST /api/cases accepts hasChildren and saves it.
+- Ensure PATCH /api/cases/:caseId (or whichever update-case endpoint exists) allows updating hasChildren.
+  - Validate hasChildren as boolean.
+  - Ownership enforced.
+
+4) client: Case Create flow
+- Wherever a case is created (AppCases.tsx create modal or similar), add a simple Yes/No control:
+  Label: "Does this case involve children?"
+  Default: No
+  Save to hasChildren.
+
+5) client: Case Profile (Case Settings page)
+- On the Case Profile/Case Settings page (AppCase.tsx if that’s the profile page), show a toggle/selector:
+  Label: "This case involves children"
+  Bound to hasChildren
+  When user changes it, persist via PATCH /api/cases/:caseId
+
+C) Gate the Children UI and Children module tile
+1) Case Profile page:
+- Only render the entire Children section (list/add/edit/delete UI) when hasChildren === true.
+- If hasChildren === false, show a small neutral helper line instead:
+  "Turn on 'This case involves children' to add child information."
+
+2) Case Workspace tiles:
+- Add a Children tile ONLY if hasChildren === true.
+- Route: /app/case-settings/:caseId (or the correct case profile route you are using) and scroll to Children section if possible.
+  If scroll-to is too much, just route to Case Profile page.
+
+3) AppNavbar dropdown:
+- If there is a Children item in the dropdown, also gate it based on currentCase.hasChildren.
+- If not present, do nothing.
+
+FINAL ACCEPTANCE TESTS:
+- Create a new case → asked “Does this case involve children?” → if No: no Children tile, no Children section.
+- Toggle “This case involves children” ON in Case Profile → Children tile appears and Children section appears with CRUD.
+- Toggle OFF → Children tile disappears, Children section hides (does not delete data).
+- Workspace header reads exactly “Case Workspace”.
+- No TS errors, no console errors, build passes.

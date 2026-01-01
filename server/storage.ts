@@ -145,6 +145,7 @@ export class DatabaseStorage implements IStorage {
         state: caseData.state,
         county: caseData.county,
         caseType: caseData.caseType,
+        hasChildren: caseData.hasChildren ?? false,
       })
       .returning();
     return newCase;
@@ -162,6 +163,7 @@ export class DatabaseStorage implements IStorage {
         state: caseData.state ?? existingCase.state,
         county: caseData.county ?? existingCase.county,
         caseType: caseData.caseType ?? existingCase.caseType,
+        hasChildren: caseData.hasChildren ?? existingCase.hasChildren,
         updatedAt: new Date(),
       })
       .where(and(eq(cases.id, caseId), eq(cases.userId, userId)))

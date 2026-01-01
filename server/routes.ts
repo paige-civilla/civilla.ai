@@ -461,10 +461,14 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Case not found" });
       }
 
-      const { title, state, county, caseType } = req.body;
+      const { title, state, county, caseType, hasChildren } = req.body;
       
       if (title !== undefined && typeof title !== "string") {
         return res.status(400).json({ error: "Invalid title" });
+      }
+
+      if (hasChildren !== undefined && typeof hasChildren !== "boolean") {
+        return res.status(400).json({ error: "Invalid hasChildren value" });
       }
 
       const updatedCase = await storage.updateCase(caseId, userId, {
@@ -472,6 +476,7 @@ export async function registerRoutes(
         state,
         county,
         caseType,
+        hasChildren: hasChildren !== undefined ? hasChildren : existingCase.hasChildren,
       });
 
       res.json({ case: updatedCase });

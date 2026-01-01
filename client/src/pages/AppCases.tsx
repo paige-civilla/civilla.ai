@@ -12,6 +12,7 @@ export default function AppCases() {
   const [state, setState] = useState("");
   const [county, setCounty] = useState("");
   const [caseType, setCaseType] = useState("");
+  const [hasChildren, setHasChildren] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [autoOpenChecked, setAutoOpenChecked] = useState(false);
@@ -31,7 +32,7 @@ export default function AppCases() {
   });
 
   const createCaseMutation = useMutation({
-    mutationFn: async (data: { title: string; state?: string; county?: string; caseType?: string }) => {
+    mutationFn: async (data: { title: string; state?: string; county?: string; caseType?: string; hasChildren?: boolean }) => {
       const res = await apiRequest("POST", "/api/cases", data);
       return res.json();
     },
@@ -41,6 +42,7 @@ export default function AppCases() {
       setState("");
       setCounty("");
       setCaseType("");
+      setHasChildren(false);
       setShowForm(false);
       setError("");
     },
@@ -57,6 +59,7 @@ export default function AppCases() {
       state: state || undefined,
       county: county || undefined,
       caseType: caseType || undefined,
+      hasChildren,
     });
   };
 
@@ -172,7 +175,21 @@ export default function AppCases() {
                     />
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3 mt-2">
+                <div className="flex items-center gap-3 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasChildren}
+                      onChange={(e) => setHasChildren(e.target.checked)}
+                      className="w-4 h-4 rounded border-neutral-darkest/30 text-bush focus:ring-bush"
+                      data-testid="checkbox-has-children"
+                    />
+                    <span className="font-sans text-sm text-neutral-darkest">
+                      Does this case involve children?
+                    </span>
+                  </label>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-4">
                   <button
                     type="submit"
                     disabled={createCaseMutation.isPending}

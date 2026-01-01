@@ -112,6 +112,7 @@ export async function initDbTables(): Promise<void> {
       state TEXT,
       county TEXT,
       case_type TEXT,
+      has_children BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
@@ -198,6 +199,7 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("user_profiles", "default_role", "TEXT NOT NULL DEFAULT 'self_represented'");
   await addColumnIfNotExists("user_profiles", "bar_number", "TEXT");
   await addColumnIfNotExists("user_profiles", "firm_name", "TEXT");
+  await addColumnIfNotExists("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
 
   await initTable("documents", `
     CREATE TABLE IF NOT EXISTS documents (
