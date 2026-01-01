@@ -29,6 +29,7 @@ export function ScrollablePolicyModal({
   hasScrolled,
 }: ScrollablePolicyModalProps) {
   const [reachedBottom, setReachedBottom] = useState(false);
+  const [savedScrollY, setSavedScrollY] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -45,13 +46,27 @@ export function ScrollablePolicyModal({
     }
   }, [reachedBottom, onScrolledToBottom]);
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      setSavedScrollY(window.scrollY);
+    } else {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: savedScrollY, left: 0, behavior: "instant" as ScrollBehavior });
+      });
+    }
+    onOpenChange(newOpen);
+  };
+
   const handleClose = () => {
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent 
+        className="sm:max-w-2xl max-h-[85vh] flex flex-col"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="font-heading text-xl text-neutral-darkest">{title}</DialogTitle>
           <DialogDescription className="font-sans text-sm text-neutral-darkest/60">

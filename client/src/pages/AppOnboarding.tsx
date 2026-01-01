@@ -345,6 +345,10 @@ export default function AppOnboarding() {
     return true;
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  };
+
   const handleNext = () => {
     if (!validateStep(step)) return;
     
@@ -353,6 +357,7 @@ export default function AppOnboarding() {
     } else if (step < 5) {
       setStep(step + 1);
     }
+    scrollToTop();
   };
 
   const handleBack = () => {
@@ -361,6 +366,7 @@ export default function AppOnboarding() {
     } else if (step > 1) {
       setStep(step - 1);
     }
+    scrollToTop();
   };
 
   const handleSubmit = () => {

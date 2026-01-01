@@ -1,0 +1,151 @@
+REPLIT TASK: Onboarding Stabilization Pass (Fix scroll + agreement modal + “sent back to start”)
++ Auth UI Color Alignment (Login + Create Account cards match app blue/gray)
+
+AUTONOMY: LOW
+SCOPE: BUGFIX + THEME/COLOR ONLY (no redesign, no layout changes)
+
+GOAL
+Fix 3 onboarding issues:
+1) Each Next/Back step loads at the TOP (not bottom).
+2) Opening/closing Terms/Privacy modal does NOT jump user to bottom.
+3) Completing onboarding persists correctly and NEVER restarts onboarding on refresh.
+
+PLUS:
+4) Login + Create Account frontend boxes/cards should use the same light blue/gray palette as the authenticated app.
+
+--------------------------------------------------------------------
+A) PERSIST “ONBOARDING COMPLETE” IN DB + RESPECT IT IN GUARDS
+--------------------------------------------------------------------
+
+1) shared/schema.ts
+- In userProfiles table, add a new column:
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+
+- In upsertUserProfileSchema, add:
+  onboardingCompleted: z.boolean().optional(),
+
+2) server/db.ts
+- In the CREATE TABLE for user_profiles, include:
+  onboarding_completed BOOLEAN NOT NULL DEFAULT false,
+
+- Also add for existing DBs:
+  await addColumnIfNotExists("user_profiles", "onboarding_completed", "BOOLEAN NOT NULL DEFAULT false");
+
+3) server/routes.ts
+- Ensure profile upsert route accepts onboardingCompleted when provided.
+- Add endpoint:
+  POST /api/profile/complete-onboarding
+  - requireAuth
+  - storage.upsertUserProfile(userId, { onboardingCompleted: true })
+  - return { ok: true }
+
+4) server/storage.ts
+- Ensure upsertUserProfile writes onboardingCompleted if provided.
+
+5) Frontend route guard
+Find onboarding enforcement (likely):
+- client/src/App.tsx
+- client/src/pages/CaseRedirect.tsx
+- client/src/components/layout/AppLayout.tsx
+- any OnboardingGate component
+
+Rule must be:
+- ONLY redirect to onboarding if profile.onboardingCompleted !== true
+- DO NOT redirect because of “Missing” fields. Missing stays editable later.
+
+Acceptance for A:
+- Finish onboarding -> refresh -> DOES NOT restart onboarding.
+- User can enter app even with optional fields skipped.
+
+--------------------------------------------------------------------
+B) SCROLL TO TOP ON STEP CHANGES (NEXT/BACK)
+--------------------------------------------------------------------
+
+In onboarding page component:
+- After any “Next” or “Back” that changes step state, call:
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+
+If there is an inner scroll container, also set scrollTop = 0.
+Add data-testid="onboarding-scroll" to the main scroll container if needed.
+
+Acceptance for B:
+- Next/Back always lands at top.
+
+--------------------------------------------------------------------
+C) AGREEMENTS MODAL SHOULD NOT JUMP SCROLL
+--------------------------------------------------------------------
+
+For Terms/Privacy/Disclaimers modal:
+- Capture scroll Y before open:
+  setSavedScrollY(window.scrollY)
+
+- Prevent autofocus scroll jump:
+  <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} ... />
+
+- Restore scroll on close:
+  requestAnimationFrame(() =>
+    window.scrollTo({ top: savedScrollY, left: 0, behavior: "instant" as ScrollBehavior })
+  );
+
+Acceptance for C:
+- Open/close modal returns to same scroll position (no jump to bottom).
+
+--------------------------------------------------------------------
+D) FINISH BUTTON MUST COMPLETE + NAVIGATE OUT
+--------------------------------------------------------------------
+
+On last onboarding step:
+1) POST /api/profile/complete-onboarding
+2) Navigate to canonical app route (ex: /app or /app/cases)
+3) Disable Finish while saving
+
+Acceptance for D:
+- Finish -> app
+- Refresh -> stays in app
+
+--------------------------------------------------------------------
+E) AUTH PAGES COLOR: LOGIN + CREATE ACCOUNT BOXES MATCH BLUE/GRAY
+--------------------------------------------------------------------
+
+DO NOT restructure the auth pages. Color changes only.
+
+1) Identify auth pages/components (common locations):
+- client/src/pages/Login.tsx
+- client/src/pages/Register.tsx
+- client/src/pages/Auth.tsx
+- client/src/components/AuthForm.tsx
+- client/src/pages/CreateAccount.tsx
+
+2) Update ONLY the container/card styling for the form “boxes”:
+- Background should match the app’s light blue/gray surface used in AppNavbar/App panels.
+- Border should match app subtle border color.
+- Inputs/buttons can remain as-is unless they clash (minor color tweaks allowed, no layout changes).
+
+Implementation approach (pick the one that matches your codebase):
+Option 1 (preferred): Use existing CSS variables used for app surfaces:
+- Replace hardcoded whites/grays with:
+  bg-[var(--app-surface)] / bg-[var(--panel)] (whatever exists)
+  border-[var(--app-border)]
+Option 2: If using Tailwind classes directly:
+- Match your app palette classes (example pattern):
+  bg-[#EEF3F4] (or whatever your authenticated surfaces use)
+  border border-neutral-light/?? (same as app)
+  rounded-xl shadow-sm (keep shape/shadow same as before unless already different)
+
+3) Ensure BOTH login and create account pages are updated, including any shared auth card component.
+
+Acceptance for E:
+- Login form box is blue/gray like the in-app UI.
+- Create account form box is blue/gray like the in-app UI.
+- No layout shifts, just color/theme consistency.
+
+--------------------------------------------------------------------
+DELIVERABLES (report back after changes)
+--------------------------------------------------------------------
+1) Files edited (list)
+2) Confirmations:
+- Next/Back always starts at top
+- Modal close does not jump to bottom
+- Onboarding completion persists (refresh does not restart)
+- Login + Create Account boxes match the app blue/gray palette
+3) Confirm no redesign/layout changes were made (bugfix + colors only)

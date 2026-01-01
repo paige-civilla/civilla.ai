@@ -102,7 +102,7 @@ export default function Register() {
       
       <section className="flex-1 w-full flex flex-col items-center justify-center px-5 py-10 md:py-16">
         <div className="max-w-[420px] w-full">
-          <div className="rounded-2xl border border-border bg-card backdrop-blur-sm shadow-sm p-6 md:p-8 space-y-6">
+          <div className="rounded-2xl border border-[hsl(var(--app-panel-border))] bg-[hsl(var(--app-panel))] backdrop-blur-sm shadow-sm p-6 md:p-8 space-y-6">
             <div className="text-center">
               <h1 className="text-[28px] md:text-[32px] font-figtree font-semibold tracking-tight text-foreground">
                 Create Account
