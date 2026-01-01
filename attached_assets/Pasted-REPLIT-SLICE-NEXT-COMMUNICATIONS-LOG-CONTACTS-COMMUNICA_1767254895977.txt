@@ -1,0 +1,209 @@
+REPLIT — SLICE NEXT: “COMMUNICATIONS LOG” (CONTACTS + COMMUNICATIONS) + CALENDAR/TIMELINE INTEGRATION
+
+AUTONOMY: MEDIUM
+SCOPE: ADD NEW MODULE + FULL CRUD + INTEGRATIONS
+DO NOT: change marketing pages, locked navbars, or existing module layouts beyond adding the new module tile/route + menu entry where needed.
+
+GOAL
+Build a real “Communications Log” module inside the app (post-login) that lets a user:
+1) Create/manage Contacts (opposing party, opposing counsel, mediator, school, therapist, etc.)
+2) Log communications (incoming/outgoing, channel, status, follow-up date)
+3) Attach evidence files to a communication
+4) Optionally push a communication to Timeline and/or Calendar
+5) Mark communications “resolved/done” and reflect it consistently in dashboard “Upcoming” lists
+
+IMPORTANT CONTEXT
+- “Pattern Analysis” already replaced “Messages” and is reading from tasks/deadlines/calendar. Leave it as-is.
+- We are now adding a separate module for communication tracking. Do NOT reintroduce “Messages.”
+
+ROUTES (NEW)
+- /app/communications/:caseId  (main page)
+API routes:
+- GET    /api/cases/:caseId/contacts
+- POST   /api/cases/:caseId/contacts
+- PATCH  /api/contacts/:contactId
+- DELETE /api/contacts/:contactId
+- GET    /api/cases/:caseId/communications
+- POST   /api/cases/:caseId/communications
+- PATCH  /api/communications/:commId
+- DELETE /api/communications/:commId
+Optional helper:
+- POST /api/communications/:commId/push-to-timeline
+- POST /api/communications/:commId/push-to-calendar
+
+DATABASE (ADD TABLES)
+In shared/schema.ts add:
+1) case_contacts table
+Fields:
+- id (uuid text)
+- userId
+- caseId
+- name (required)
+- role (enum-ish string: opposing_party, opposing_counsel, mediator, gal, school, therapist, other)
+- organizationOrFirm (optional)
+- email (optional)
+- phone (optional)
+- address (optional)
+- notes (optional)
+- createdAt
+Indexes: (caseId), (userId), (caseId, role)
+
+Zod:
+- insertContactSchema (validate name max 200, role max 50, email max 200, phone max 30, etc.)
+- updateContactSchema
+
+2) case_communications table
+Fields:
+- id (uuid text)
+- userId
+- caseId
+- contactId (nullable, FK-ish by id; don’t enforce hard FK if existing pattern avoids it)
+- direction: "outgoing" | "incoming"
+- channel: "email" | "text" | "call" | "in_person" | "portal" | "other"
+- status: "draft" | "sent" | "received" | "no_response" | "resolved"
+- occurredAt (timestamp, required; default now on create if omitted)
+- subject (optional, max 200)
+- summary (required text, max 10000)
+- followUpAt (timestamp nullable)
+- needsFollowUp boolean default false
+- pinned boolean default false
+- evidenceIds (text nullable) store as comma-separated ids OR jsonb array if you prefer; keep it simple
+- createdAt
+- updatedAt
+
+Indexes: (caseId), (userId), (caseId, occurredAt desc), (caseId, followUpAt), (status), (needsFollowUp)
+
+Zod:
+- insertCommunicationSchema
+- updateCommunicationSchema
+Include field-by-field structured validation errors { error, fields } like the other endpoints.
+
+DB INIT / MIGRATIONS
+In server/db.ts:
+- Add CREATE TABLE IF NOT EXISTS for both tables inside initDbTables()
+- Add addColumnIfNotExists helpers if needed
+- Keep logging consistent (no secrets)
+
+STORAGE LAYER
+In server/storage.ts:
+Add methods with strict ownership enforcement:
+Contacts:
+- listContacts(userId, caseId)
+- createContact(userId, caseId, data)
+- updateContact(userId, contactId, data)
+- deleteContact(userId, contactId)
+Communications:
+- listCommunications(userId, caseId)
+- createCommunication(userId, caseId, data)
+- updateCommunication(userId, commId, data)
+- deleteCommunication(userId, commId)
+
+Also add helper to verify the case belongs to user before allowing list/create.
+
+ROUTES
+In server/routes.ts:
+- Add all endpoints under requireAuth
+- Verify case ownership via existing storage.getCase(caseId, userId)
+- For contact updates/deletes: enforce userId on the record
+- For communications: enforce userId on the record
+
+INTEGRATIONS (REQUIRED)
+A) Attach Evidence to Communication
+- In the communications create/edit UI allow selecting multiple evidence files from that case.
+- Store evidenceIds on the communication.
+- In list view, show attached evidence count and allow quick open/download by calling existing evidence download endpoint.
+
+B) Push to Timeline
+- Add a button “Add to Timeline” on a communication item.
+- Create a timeline event using existing timeline endpoint/storage:
+  - eventDate = occurredAt
+  - title = “Communication: {contactName or role}”
+  - category = communication
+  - notes = subject + summary + (channel/status)
+  - source = user_manual
+- Prevent duplicates by adding a simple flag on the communication: timelineEventId (optional) OR check by same occurredAt+subject hash. If you want simplest: add timelineEventId column (text) and set it when created.
+
+C) Push to Calendar / Follow-up reminders
+- If followUpAt is set (or needsFollowUp true), show “Add Follow-up to Calendar”.
+- Use your unified calendar items table/system (already implemented per latest summary). Create a calendar item:
+  - title = “Follow up: {contactName}”
+  - date = followUpAt
+  - category = “Follow-up” (default) and color default teal; user can change later.
+- Add “Mark Resolved” which:
+  - sets status=resolved
+  - sets needsFollowUp=false
+  - if a linked calendar item exists, mark it done too (or remove from upcoming list)
+(If your calendar item system has a “done/completed” boolean, update it; otherwise add it now.)
+
+FRONTEND UI
+Create page: client/src/pages/AppCommunications.tsx
+Layout:
+- Top header: “Communications Log”
+- Two tabs:
+  1) Communications
+  2) Contacts
+(Keep it simple and consistent with other app pages; use app theme tokens.)
+
+Contacts tab:
+- List contacts with role badges
+- Add/Edit modal
+- Delete confirm
+- Search box (name/role)
+
+Communications tab:
+- “Log Communication” button opens modal
+Fields in modal:
+- Contact (dropdown; optional)
+- Direction, Channel, Status
+- Occurred date/time (default now)
+- Subject (optional)
+- Summary (required)
+- Follow-up toggle: “Needs follow-up?”
+  - Follow-up date/time if enabled
+- Attach evidence multi-select (show file names)
+Save creates record.
+
+Communication list items show:
+- Date/time, contact, direction/channel, status badge
+- subject (if any), summary preview with expand
+Actions per item:
+- Edit
+- Delete
+- Mark resolved
+- Add to Timeline
+- Add Follow-up to Calendar (if followUpAt set and not already linked)
+- Pin toggle (optional, but easy)
+
+NAV / ROUTING
+- Add module tile “Communications” on case workspace/dashboard where modules are listed, routed to /app/communications/:caseId
+- Add dropdown menu entry in AppNavbar to “Communications”
+- Ensure routes exist in App.tsx Switch.
+
+DASHBOARD “UPCOMING” PANEL SYNC (REQUIRED)
+You already added calendar + upcoming list area. Update aggregation logic so “upcoming” includes:
+- Deadlines (not done)
+- Case To-Do (due soon / not done)
+- Calendar items (not done)
+- Communications follow-ups (needsFollowUp true + followUpAt in future) OR if you store them as calendar items, just rely on calendar items.
+Show max 7 items, sorted soonest.
+Allow checking off from the list:
+- If it’s a deadline: mark done
+- If it’s a to-do: mark completed
+- If it’s a calendar item: mark done
+- If it’s a comm follow-up: mark resolved (and update linked calendar item if present)
+
+ACCEPTANCE TESTS
+1) Create a contact → appears, edit works, delete works
+2) Log a communication with contact + summary + follow-up date + evidence attached
+3) Communications list shows it; evidence count is correct; can open attached evidence
+4) Click “Add to Timeline” → timeline entry appears in Timeline module
+5) Click “Add Follow-up to Calendar” → item appears on dashboard calendar + upcoming list
+6) Mark resolved → removed from upcoming + calendar done (if linked)
+7) All endpoints enforce auth + ownership (cannot access another user’s case)
+
+REPORT BACK
+After implementation, give me:
+- Files changed list
+- API endpoints confirmed with example responses
+- Any schema/table names used for calendar items and how “done” is represented
+- Screenshot of Communications page showing both tabs
