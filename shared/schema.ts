@@ -365,3 +365,41 @@ export const insertGeneratedDocumentSchema = z.object({
 export type GenerateDocumentPayload = z.infer<typeof generateDocumentPayloadSchema>;
 export type InsertGeneratedDocument = z.infer<typeof insertGeneratedDocumentSchema>;
 export type GeneratedDocument = typeof generatedDocuments.$inferSelect;
+
+export const caseChildren = pgTable("case_children", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name"),
+  dateOfBirth: text("date_of_birth").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("case_children_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertCaseChildSchema = createInsertSchema(caseChildren)
+  .pick({
+    firstName: true,
+    lastName: true,
+    dateOfBirth: true,
+    notes: true,
+  })
+  .extend({
+    firstName: z.string().min(1, "First name is required").max(100),
+    lastName: z.string().max(100).optional().nullable(),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    notes: z.string().max(2000).optional().nullable(),
+  });
+
+export const updateCaseChildSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(100).optional(),
+  lastName: z.string().max(100).optional().nullable(),
+  dateOfBirth: z.string().min(1).optional(),
+  notes: z.string().max(2000).optional().nullable(),
+});
+
+export type InsertCaseChild = z.infer<typeof insertCaseChildSchema>;
+export type UpdateCaseChild = z.infer<typeof updateCaseChildSchema>;
+export type CaseChild = typeof caseChildren.$inferSelect;

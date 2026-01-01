@@ -84,7 +84,7 @@ export default function AppCase() {
             </div>
             <div>
               <h1 className="font-heading font-bold text-2xl md:text-3xl text-neutral-darkest">
-                You&apos;re in your Case Workspace
+                Case Workspace
               </h1>
               <p className="font-sans text-neutral-darkest/70 mt-1">
                 This is your central hub for managing your case. Access documents, track deadlines, and stay organized.

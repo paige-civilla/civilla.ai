@@ -1,0 +1,115 @@
+REPLIT AGENT TASK: Extend prior UX fixes with Case Workspace title, Children info, Onboarding/Profile collection for DOCX autofill, and an Account area.
+
+CONSTRAINTS:
+- DO NOT copy text/content from any user-uploaded legal docs. Only implement UI + data fields + routing.
+- Keep changes minimal and shippable: create pages + DB fields + APIs only as needed for onboarding + autofill.
+
+A) DASHBOARD TITLE COPY
+1) In the case workspace page (likely client/src/pages/AppCase.tsx), change the main heading to exactly:
+   "Case Workspace"
+   (not “Your Case Workspace”)
+
+B) CHILDREN ("KIDS") DATA MODEL + UI LOCATION
+Goal: Each case can store children info so document tools can reference it later.
+
+1) Add a new table in shared/schema.ts:
+   table name: case_children
+   fields:
+     id (uuid text)
+     user_id (fk users.id)
+     case_id (fk cases.id)
+     first_name (text, required)
+     last_name (text, optional)
+     date_of_birth (date or text, required)
+     notes (text, optional)
+     created_at default now
+   Add Zod schemas:
+     insertCaseChildSchema
+     updateCaseChildSchema
+   Export types: CaseChild, InsertCaseChild, UpdateCaseChild
+
+2) Add initDbTables support in server/db.ts:
+   - create table if not exists case_children
+   - indexes: (user_id, case_id)
+
+3) Add storage methods in server/storage.ts:
+   - listCaseChildren(userId, caseId)
+   - createCaseChild(userId, caseId, payload)
+   - updateCaseChild(userId, childId, payload)
+   - deleteCaseChild(userId, childId)
+
+4) Add routes in server/routes.ts (requireAuth):
+   GET  /api/cases/:caseId/children
+   POST /api/cases/:caseId/children
+   PATCH /api/children/:childId
+   DELETE /api/children/:childId
+
+5) Add a UI entry point for Children:
+   - Add a new module tile OR add it inside Case Settings:
+     Option preferred for now: Put “Children” section inside Case Settings page so it’s not a whole new module.
+   - In AppCaseSettings.tsx add a “Children” card:
+     - list children
+     - Add Child button opens modal with fields:
+       First name, Last name (optional), Date of birth, Notes (optional)
+     - edit and delete actions.
+
+C) ONBOARDING: PROFILE INFO FOR AUTOFILL (ACCOUNT-LEVEL)
+Goal: After login, we collect the user’s profile once so docs can autofill.
+
+1) Confirm user_profiles already has:
+   full_name, email, address fields, phone, party_role, is_self_represented,
+   auto_fill_enabled, auto_fill_choice_made, default_role, bar_number, firm_name
+   If missing any columns in server/db.ts CREATE TABLE user_profiles, add them to the create statement OR add with ALTER TABLE addColumnIfNotExists.
+
+2) Add/verify API endpoints exist:
+   GET /api/profile
+   POST or PUT /api/profile (upsert)
+   If they don’t exist, implement them now using upsertUserProfileSchema.
+
+3) Create an Onboarding page:
+   File: client/src/pages/AppOnboarding.tsx
+   - Stepper UI (simple):
+     Step 1: About you (Full name, Email, Phone)
+     Step 2: Address (Address 1, Address 2, City, State, Zip)
+     Step 3: Autofill choice (toggle + explanation) and Role default (self-represented vs attorney)
+       If attorney: firm name + bar number fields appear
+   - Final button saves via /api/profile then routes to /app/cases (or dashboard).
+
+4) Add a simple onboarding guard:
+   - On first authenticated entry (dashboard or cases list), if profile.autoFillChoiceMade === false OR fullName is empty:
+     redirect to /app/onboarding
+   - Also, if user has zero cases, after onboarding route them to create case.
+
+D) USER ACCOUNT AREA (APP-LEVEL SETTINGS)
+Goal: A place the user can manage their profile, preferences, and later subscription.
+
+1) Create Account page route:
+   path="/app/account"
+   File: client/src/pages/AppAccount.tsx
+   - Sections:
+     - Profile (same fields as onboarding, editable)
+     - Autofill Preferences (autoFillEnabled, defaultRole)
+     - (Placeholder) Subscription:
+       Show: “Subscription management is coming soon.”
+       Do NOT implement billing portal unless already in scope.
+
+2) Add Account link to AppNavbar dropdown:
+   “Account” -> /app/account
+   Keep “Log out” as-is.
+
+E) KEEP PRIOR TASKS FROM PREVIOUS BLOCK
+- Fix Case Settings route (ensure it goes to actual Case Settings page)
+- Lexi closes when clicking outside (overlay)
+- Hover menu on desktop + click on mobile
+- Ensure all routes exist and don’t 404
+
+DELIVERABLES
+- List files changed
+- Confirm onboarding triggers for new users / incomplete profiles
+- Confirm children can be added/edited inside Case Settings
+- Confirm Account page exists and edits profile fields
+- Confirm Case Workspace title is “Case Workspace”
+- Provide screenshots:
+  1) onboarding step 1
+  2) case settings children section
+  3) account page
