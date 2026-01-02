@@ -1,0 +1,142 @@
+REPLIT — IMPLEMENT + VERIFY THESE CHANGES (BE VERY DETAILED IN YOUR SUMMARY)
+
+CONTEXT
+- App has authenticated “Dashboard” and “Onboarding” flows.
+- We need to fix dashboard layout + calendar UX + module ordering, and confirm onboarding has the full in-depth flow + a warning up front that it is lengthy.
+- After changes, you MUST test and list exact files/lines changed and what each change does. Include before/after behaviors.
+
+PART 1 — DASHBOARD LAYOUT + CALENDAR UX FIXES (REQUIRED)
+
+A) Calendar sizing + balance
+1) On Dashboard, make layout balanced:
+   - Left column: Month calendar + “Upcoming” list beneath it
+   - Right column: Module tiles grid
+2) Ensure the calendar is not too tall or stretched:
+   - Calendar container should look like about half the screen width on desktop (balanced with modules)
+   - Avoid big empty dead space beneath the calendar
+
+B) Add “Upcoming” list under calendar (limit 7)
+1) Under the month calendar, add a section title: “Upcoming”
+2) Show the next 7 soonest upcoming items across:
+   - Deadlines
+   - Case To-Do items (tasks)
+   - Calendar items (custom events)
+3) Each row should show:
+   - Title
+   - Date
+   - Category/type indicator (deadline / to-do / calendar)
+   - Optional colored dot matching the category color rules already used on the calendar
+4) Allow user “dopamine rush” check-off:
+   - If it’s a Case To-Do item: clicking checkbox marks the task completed (and it disappears or moves to done)
+   - If it’s a Deadline: allow marking “Done” (set deadline done/completed)
+   - If it’s a Calendar item: allow marking “Done” if model supports it, otherwise leave non-checkable
+5) Completion must reflect across modules:
+   - If completed in Upcoming list, it must show completed in the Tasks module and/or Deadlines module accordingly.
+
+C) Remove unwanted headings
+1) Remove the word “Modules” above the module tiles on the dashboard.
+2) Remove the small “Case Workspace” title above the case section (user requested it be removed).
+
+D) View All Cases button styling
+1) “View All Cases” must be a smaller button (not huge)
+2) Give it a strong/dark outline (border color #1E2020) OR make it the same style as Lexi’s dark button (primary), whichever looks best with the palette.
+3) It should be visually clear and not dominate the header.
+
+E) Module tile order + visuals
+1) Re-order module tiles so it matches typical workflow priority:
+   Suggested order (edit if you think better, but explain why):
+   - Evidence
+   - Timeline
+   - Exhibits
+   - Documents
+   - Case To-Do
+   - Deadlines
+   - Pattern Analysis
+   - Case Settings / Children / Account (if shown as tiles)
+2) Module tiles should NOT be overly long/tall; tighten spacing.
+3) Ensure module tile background/border colors match the internal app palette:
+   - Background should be #FAF8F4 (page) not overly blue
+   - Tile interior can be #A2BEC2 or other approved app-surface
+   - Borders use #1E2020 or #A2BEC2 per our latest direction
+
+F) Navbar icon responsiveness when zooming out
+1) Fix AppNavbar icons so they don’t overflow or misalign when user zooms out.
+2) Add sensible responsive rules:
+   - icons shrink or wrap
+   - spacing reduces
+   - label text truncates
+3) Must look correct at 80%, 90%, 100%, 110% zoom.
+
+G) Calendar corner “gap” fix
+1) User reported top corners/headers of calendar have a visible gap between rounded corners.
+2) Identify the specific CSS causing this and fix so the header area looks seamless (no corner spacing glitch).
+
+PART 2 — ONBOARDING: FULL FLOW + WARNING + REVIEW STEP + PERSISTENCE (REQUIRED)
+
+A) Pre-onboarding warning screen / intro step
+1) After account creation (first login), before step 1, show an onboarding intro panel:
+   - Message like: “This will take a bit of time, but it will save you time later by auto-filling your documents and organizing your case.”
+   - A “Start Onboarding” button
+   - A “Do this later” option ONLY if allowed by product decision; if not allowed, explain why.
+2) Make sure it always scrolls to TOP when entering a new step (fix issue where next step starts at bottom).
+3) Also ensure when closing agreement modals, the page does NOT jump to bottom.
+
+B) Confirm onboarding includes “Review & confirm” step
+1) Add a “Review & confirm” step before Agreements:
+   - Show summary of entered info (profile, address, case details, children)
+   - Highlight missing items with “Missing” badges
+   - Provide “Edit” links that jump back to the relevant step
+2) Then proceed to Agreements.
+
+C) Agreements step (must be enforced)
+1) Ensure checkboxes cannot be checked until the user scrolls to the bottom of each agreement modal:
+   - Terms of Service
+   - Privacy Policy
+   - Not legal advice / no representation acknowledgement
+   - Release/limitation acknowledgement (whatever wording currently exists)
+2) User must complete all required agreements to finish onboarding.
+
+D) Onboarding completion persistence
+1) Confirm: once onboarding is completed, user is routed to Dashboard on future logins (never forced back into onboarding).
+2) Confirm: if onboarding incomplete, user is routed to onboarding before accessing app modules (unless you have a specific allowed bypass).
+
+E) “I don’t know yet” buttons
+1) For fields that are realistically unknown (case number, opposing counsel info, etc.), provide “I don’t know yet” / “Don’t have yet” option.
+2) These should record as deferred fields and show “Missing” badges later in Account Settings or Case Settings.
+
+PART 3 — TESTS + VERIFICATION (REQUIRED)
+
+A) Manual test checklist — you MUST run these and report results
+1) Dashboard:
+   - Calendar balanced with modules
+   - Upcoming list shows next 7 items
+   - Completing from Upcoming updates Tasks/Deadlines
+   - “Modules” heading removed
+   - “Case Workspace” small title removed
+   - View All Cases button is small + outlined or primary style
+   - Navbar icons responsive at 80% and 110% zoom
+   - Calendar header corners show no gap
+2) Onboarding:
+   - Intro warning appears before onboarding
+   - Each step starts at top (no jump to bottom)
+   - Agreement modals do not jump to bottom after closing
+   - Review & confirm step exists before Agreements
+   - Agreements require scroll-to-bottom before checkbox enabled
+   - Completing onboarding routes to dashboard and stays that way on refresh + re-login
+
+B) Replit summary must be extremely detailed
+In your final summary, include:
+- Exact files edited
+- What changed in each file
+- Any new components created
+- Any new API endpoints added (if any)
+- Any database changes (if any)
+- Before/after behavior notes
+- Proof of tests (what you clicked, what you saw, responses)
+
+DO NOT:
+- Change marketing (pre-login) styling except onboarding intro screen itself
+- Rename routes unless necessary
+- Remove existing functionality
+
+START NOW.

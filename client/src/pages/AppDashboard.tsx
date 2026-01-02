@@ -23,28 +23,28 @@ import type { Case, CalendarCategory } from "@shared/schema";
 
 const getModuleCards = (caseId: string) => [
   {
-    title: "Documents",
-    description: "Upload and organize your case documents",
-    icon: FileText,
-    href: `/app/documents/${caseId}`,
-  },
-  {
-    title: "Timeline",
-    description: "Track key dates and deadlines",
-    icon: Calendar,
-    href: `/app/timeline/${caseId}`,
-  },
-  {
     title: "Evidence",
     description: "Manage and organize case evidence",
     icon: FolderOpen,
     href: `/app/evidence/${caseId}`,
   },
   {
+    title: "Timeline",
+    description: "Track key dates and events",
+    icon: Calendar,
+    href: `/app/timeline/${caseId}`,
+  },
+  {
     title: "Exhibits",
     description: "Prepare exhibits for court filings",
     icon: FileStack,
     href: `/app/exhibits/${caseId}`,
+  },
+  {
+    title: "Documents",
+    description: "Upload and organize your case documents",
+    icon: FileText,
+    href: `/app/documents/${caseId}`,
   },
   {
     title: "Case To-Do",
