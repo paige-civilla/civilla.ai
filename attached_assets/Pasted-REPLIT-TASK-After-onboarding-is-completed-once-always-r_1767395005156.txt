@@ -1,0 +1,69 @@
+REPLIT TASK: After onboarding is completed once, always route the user to the Case Dashboard (not back into onboarding). This must persist across refresh/login.
+
+GOAL BEHAVIOR
+- If user has NOT completed onboarding → they must be sent to /app/onboarding
+- If user HAS completed onboarding → never send them to onboarding again; send them to their dashboard/case view instead.
+
+IMPLEMENTATION (do both backend + frontend so it is reliable)
+
+1) Add a persistent “onboarding completed” flag
+A) shared/schema.ts
+- In user_profiles table add:
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false)
+  onboardingCompletedAt: timestamp("onboarding_completed_at")
+
+- In upsertUserProfileSchema add optional:
+  onboardingCompleted: z.boolean().optional()
+
+B) server/db.ts
+- Ensure user_profiles table gets the columns (for existing DBs):
+  await addColumnIfNotExists("user_profiles", "onboarding_completed", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfNotExists("user_profiles", "onboarding_completed_at", "TIMESTAMP");
+
+2) Ensure the onboarding “finish” action sets the flag
+Find the onboarding submit/finalize handler (likely in:
+- client/src/pages/AppOnboarding.tsx
+and the API it calls (likely /api/profile or /api/onboarding))
+
+On the FINAL step submit:
+- Call the existing profile upsert endpoint with:
+  { onboardingCompleted: true, onboardingCompletedAt: new Date().toISOString() }
+OR if the backend prefers server timestamps, send only onboardingCompleted: true and set onboardingCompletedAt server-side.
+
+3) Redirect to dashboard when onboarding completes
+In client/src/pages/AppOnboarding.tsx:
+- After the final submit succeeds, do:
+  navigate(`/app/case/${caseId}`) if you have a currentCaseId
+  otherwise navigate(`/app`) (your CaseRedirect should pick a case)
+
+4) Update route guards so onboarding is skipped once completed
+Find the auth/app guard component (commonly:
+- client/src/components/CaseRedirect.tsx
+- client/src/App.tsx routes
+- client/src/components/layout/AppLayout.tsx)
+
+Wherever it currently does:
+  if (!profileComplete) navigate("/app/onboarding")
+
+Change the logic to:
+- fetch /api/profile (already exists)
+- if profile.onboardingCompleted is true:
+    NEVER redirect to onboarding
+- if false:
+    redirect to onboarding (unless already on onboarding route)
+
+Pseudo-logic:
+if (isAuthed) {
+  if (profile && profile.onboardingCompleted) {
+    allow app routes
+  } else {
+    if (location.pathname !== "/app/onboarding") navigate("/app/onboarding");
+  }
+}
+
+5) Verify in app
+- New user: create account → onboarding → finish → goes to dashboard
+- Refresh after finishing: stays in dashboard, never loops back
+- Log out/in again: stays in dashboard, never loops back
+
+Make sure this is app-only and does not affect marketing pages.

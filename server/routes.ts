@@ -1795,7 +1795,7 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const profile = await storage.getUserProfile(userId);
       
-      const onboardingComplete = !!profile?.onboardingCompletedAt;
+      const onboardingComplete = profile?.onboardingCompleted === true;
       const versionsMatch = 
         profile?.tosVersion === POLICY_VERSIONS.tos &&
         profile?.privacyVersion === POLICY_VERSIONS.privacy &&
@@ -1918,6 +1918,7 @@ export async function registerRoutes(
         firmName: deferredFields?.firmName ? null : (profile.firmName || null),
         petitionerName: profile.petitionerName,
         respondentName: profile.respondentName,
+        onboardingCompleted: true,
         onboardingCompletedAt: now,
         tosAcceptedAt: now,
         privacyAcceptedAt: now,

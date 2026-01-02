@@ -201,6 +201,7 @@ export async function initDbTables(): Promise<void> {
   await addColumnIfNotExists("user_profiles", "firm_name", "TEXT");
   await addColumnIfNotExists("user_profiles", "petitioner_name", "TEXT");
   await addColumnIfNotExists("user_profiles", "respondent_name", "TEXT");
+  await addColumnIfNotExists("user_profiles", "onboarding_completed", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfNotExists("user_profiles", "onboarding_completed_at", "TIMESTAMP");
   await addColumnIfNotExists("user_profiles", "tos_accepted_at", "TIMESTAMP");
   await addColumnIfNotExists("user_profiles", "privacy_accepted_at", "TIMESTAMP");
