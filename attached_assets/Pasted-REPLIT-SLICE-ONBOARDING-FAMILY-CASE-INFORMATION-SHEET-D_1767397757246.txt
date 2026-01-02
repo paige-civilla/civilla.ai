@@ -1,0 +1,127 @@
+REPLIT — SLICE: ONBOARDING → “FAMILY CASE INFORMATION SHEET” (DO THIS NEXT)
+
+AUTONOMY: MEDIUM
+SCOPE: APP (POST-LOGIN) ONLY
+GOAL: Users complete onboarding ONCE after account creation, it saves to DB, then always routes them to the dashboard. No looping, no starting at bottom, no weird scroll behavior.
+
+NON-NEGOTIABLE REQUIREMENTS
+1) Onboarding runs only if onboardingComplete=false for the logged-in user.
+2) After successful completion, set onboardingComplete=true and redirect to /app/dashboard (or equivalent).
+3) Do NOT allow access to app modules unless onboardingComplete=true (except Account/Logout).
+4) Every step must reset scroll to TOP when step changes.
+5) Every policy modal (Terms, Privacy, Disclosures) must open at TOP and close returning focus to TOP (no jumping to bottom).
+6) Provide “I don’t know yet / Don’t have yet” buttons on applicable fields and store deferred fields cleanly.
+7) Children module is gated: only appears if user answered “I have children” during onboarding.
+8) The final “agreements” step requires: scroll-to-end within each policy modal before enabling its checkbox. All checkboxes required before Finish.
+
+IMPLEMENTATION PLAN
+
+A) DATA MODEL / SCHEMA
+1) Update shared/schema.ts and server/db.ts to ensure these exist (add if missing):
+   - user_profiles.onboarding_complete BOOLEAN NOT NULL DEFAULT false
+   - user_profiles.has_children BOOLEAN NOT NULL DEFAULT false
+   - user_profiles.deferred_fields JSONB NOT NULL DEFAULT '{}'   (or TEXT storing JSON if JSONB is difficult)
+   - user_profiles.first_name, last_name (optional but recommended so navbar shows name)
+   - cases.case_number TEXT (for court caption data; optional in onboarding but should exist)
+2) Ensure db init includes these columns via addColumnIfNotExists migrations (so production upgrades safely).
+
+B) ROUTING GUARD (NO LOOPING)
+1) Add a single guard component used by ALL /app/* routes:
+   - If not authenticated → go to /login
+   - If authenticated and onboarding_complete=false:
+       - If current route is not /app/onboarding → redirect to /app/onboarding
+   - If authenticated and onboarding_complete=true:
+       - If route is /app/onboarding → redirect to /app/dashboard
+2) Fix the “it sends me back to the beginning” bug:
+   - Ensure the onboarding submit handler awaits the save mutation, then sets onboardingComplete and routes to dashboard.
+   - Make sure query cache invalidation/refetch occurs after save so the guard sees true.
+
+C) ONBOARDING UI = FAMILY CASE INFORMATION SHEET (WIZARD)
+1) Create/Update client page: client/src/pages/AppOnboarding.tsx (or equivalent)
+2) Top of page must include a clear heads-up banner:
+   - “This will take a bit of time, but it saves you hours later by auto-filling your court-ready documents.”
+3) Steps (keep simple, user-friendly titles; include progress indicator Step X of Y):
+   STEP 1: Your basics
+     - First name, last name
+     - Email (prefill from account, editable)
+     - Phone (optional)
+     - Address (line1 required, line2 optional, city/state/zip required)
+     - “I don’t know yet” available for phone and line2 only (not for required fields)
+   STEP 2: Case basics
+     - State, County (required)
+     - Case type (required dropdown)
+     - Case number (optional with “I don’t know yet”)
+     - Party role: Petitioner / Respondent / Other (required)
+     - Other party name(s) (optional; allow “I don’t know yet”)
+   STEP 3: Children
+     - Question: “Do you have children involved in this case?” Yes/No (required)
+     - If Yes:
+        - Minimal required: child first name, last name, DOB (allow “unknown DOB” toggle), notes optional
+        - Support adding multiple children here OR allow “skip for now” with deferred_fields tracking
+     - If No: set has_children=false and do not show Children module in dashboard/nav.
+   STEP 4: Review & confirm (summary)
+     - Show a clean summary of what will be used to auto-fill documents.
+     - Allow edits by going back.
+   STEP 5: Agreements (required)
+     - Checkboxes required:
+       (1) I agree to Terms of Service
+       (2) I agree to Privacy Policy
+       (3) I understand Civilla is not a court/government agency and does not file for me
+       (4) I understand Civilla does not provide legal advice or represent me
+     - Each checkbox is DISABLED until user opens its modal and scrolls to the bottom.
+     - Each modal must have:
+       - Scroll container with fixed height
+       - “You must scroll to the end to enable” state
+       - On open: scrollTop=0
+       - On close: restore scrollTop=0 on the page and keep the user at the same step
+4) Buttons:
+   - Back / Next
+   - Save & Finish on last step (disabled until all required agreements checked)
+   - For optional fields: “I don’t know yet” (sets value null AND marks deferred_fields[key]=true)
+
+D) API / STORAGE
+1) Ensure endpoints exist:
+   - GET /api/profile → returns user_profiles data including onboarding_complete, has_children, deferred_fields
+   - PATCH/POST /api/profile → upsert profile fields including onboarding_complete + has_children + deferred_fields
+2) On Finish:
+   - Persist all onboarding fields to user_profiles (and children to case_children if you’re collecting them here)
+   - Set onboarding_complete=true
+   - Redirect to /app/dashboard
+
+E) CHILDREN MODULE GATING
+1) In AppNavbar + Dashboard + Case Workspace tiles:
+   - Only show “Children” module if userProfile.has_children=true
+2) If user toggles has_children later in Account Settings, modules should update accordingly.
+
+F) SCROLL FIXES (THE BUGS PAIGE REPORTED)
+1) On step change: window.scrollTo({ top: 0, behavior: "instant" }) (or "auto")
+2) On modal open: modalScrollRef.current.scrollTop = 0
+3) On modal close: window.scrollTo({ top: 0, behavior: "instant" })
+4) Ensure no autofocus is jumping the page to the bottom. If needed, disable autofocus on modal close.
+
+G) ACCEPTANCE TESTS (MUST PASS)
+1) Create account → forced into onboarding
+2) Complete onboarding → routes to dashboard and NEVER returns to onboarding on refresh
+3) Open/close each policy modal → page does not jump to bottom
+4) Next step → always starts at top
+5) Children toggle OFF → Children module does not appear anywhere
+6) Children toggle ON → Children module appears and is accessible
+7) If user quits onboarding mid-way → logging back in returns them to the same step OR step 1, but never loops after completion
+8) No console errors
+
+IMPORTANT: DO NOT ADD LEGAL STRATEGY COPY
+Keep onboarding copy strictly factual: “courts commonly ask for this information” and “this auto-fills your documents.”
+
+AFTER THIS SLICE
+When done, report:
+- Files edited
+- Schema fields added
+- Routes/guard logic location
+- Confirmation that onboardingComplete prevents re-entry
+- Confirmation of scroll fixes
+
+REMINDER (DO NOT IMPLEMENT YET, JUST CONFIRM QUEUED NEXT)
+After onboarding is stable, the next three items Paige requested (queue):
+2) Document template universe + ordering/naming cleanup
+3) Communication Log module (non-messaging) CRUD + module explanation text
+4) Pattern Analysis polish + 1–3 paragraph explanation per module (UPL-safe)
