@@ -140,6 +140,11 @@ export default function AppOnboarding() {
     queryKey: ["/api/auth/me"],
   });
 
+  const { data: onboardingStatus, isLoading: statusLoading } = useQuery<{ onboardingComplete: boolean }>({
+    queryKey: ["/api/onboarding/status"],
+    enabled: !!authData?.user,
+  });
+
   const { data: policiesData } = useQuery<{
     tosText: string;
     privacyText: string;
@@ -173,6 +178,12 @@ export default function AppOnboarding() {
   }, [authLoading, authError, authData, setLocation]);
 
   useEffect(() => {
+    if (!statusLoading && onboardingStatus?.onboardingComplete) {
+      setLocation("/app/dashboard");
+    }
+  }, [statusLoading, onboardingStatus, setLocation]);
+
+  useEffect(() => {
     if (authData?.user?.email) {
       setData(prev => ({
         ...prev,
@@ -181,7 +192,7 @@ export default function AppOnboarding() {
     }
   }, [authData?.user?.email]);
 
-  if (authLoading) {
+  if (authLoading || statusLoading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -190,6 +201,7 @@ export default function AppOnboarding() {
   }
 
   if (!authData?.user) return null;
+  if (onboardingStatus?.onboardingComplete) return null;
 
   const updateProfile = (field: keyof OnboardingData["profile"], value: string | boolean) => {
     setData(prev => ({

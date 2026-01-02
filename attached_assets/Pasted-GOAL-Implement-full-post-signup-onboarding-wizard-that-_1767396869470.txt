@@ -1,0 +1,122 @@
+GOAL
+Implement full post-signup onboarding wizard that runs once, requires scroll-to-bottom policy acknowledgments, supports “I don’t know yet” deferred fields, gates Children module visibility, and redirects to dashboard after completion. Fix scroll position bugs (step navigation + closing policy modals). Ensure completed onboarding never re-runs.
+
+BACKEND CHANGES
+
+1) shared/schema.ts
+A) Add to cases table:
+- caseNumber: text("case_number")
+
+B) Add to user_profiles table (if not already):
+- onboardingComplete: boolean("onboarding_complete").notNull().default(false)
+- onboardingCompletedAt: timestamp("onboarding_completed_at")
+- acceptedTosAt: timestamp("accepted_tos_at")
+- acceptedPrivacyAt: timestamp("accepted_privacy_at")
+- acceptedNoLegalAdviceAt: timestamp("accepted_no_legal_advice_at")
+- acceptedResponsibilityAt: timestamp("accepted_responsibility_at")
+- deferredFields: jsonb("deferred_fields").notNull().default([])
+
+C) Add new table case_parties:
+- id (uuid text)
+- user_id
+- case_id
+- party_type text (petitioner/respondent/other)
+- full_name text
+- has_attorney boolean
+- attorney_name text
+- attorney_firm text
+- attorney_phone text
+- attorney_email text
+- created_at default now
+Indexes: (case_id), (user_id)
+
+Add Zod schemas:
+- upsertOnboardingSchema containing:
+  profile fields (firstName/lastName/etc)
+  case fields (state/county/caseType/caseNumber/caseNickname)
+  childrenInvolved enum yes/no/unknown
+  children array (optional)
+  otherParty (optional)
+  acknowledgments booleans (tos/privacy/noLegalAdvice/responsibility) required at final step
+  deferredFields string[] (optional)
+
+2) server/db.ts
+- Add ALTER TABLE addColumnIfNotExists for new user_profiles columns (onboarding_complete, onboarding_completed_at, accepted_* timestamps, deferred_fields jsonb default '[]')
+- Add ALTER TABLE addColumnIfNotExists for cases.case_number
+- initTable for case_parties with indexes
+
+3) server/storage.ts
+Add methods:
+- getOnboardingStatus(userId) -> { onboardingComplete, deferredFields, profile }
+- saveOnboarding(userId, payload) does:
+  a) upsert user_profile (name/address/role/attorney fields)
+  b) upsert/update the current case fields (state/county/caseType/caseNumber/title=caseNickname)
+  c) upsert case_parties for other party (respondent) and optional counsel
+  d) if childrenInvolved === yes: replace children list for the case (delete existing then insert)
+  e) save deferredFields array
+- completeOnboarding(userId, ackTimestamps) sets onboarding_complete=true, onboarding_completed_at=now, accepted_*_at=now
+
+4) server/routes.ts
+Add routes (requireAuth):
+- GET /api/onboarding/status -> returns onboardingComplete, deferredFields, profile, maybe currentCase summary
+- POST /api/onboarding/save -> validates payload via zod and calls saveOnboarding
+- POST /api/onboarding/complete -> validates final ack + required minimum fields and calls completeOnboarding
+Also ensure existing /api/profile and /api/cases endpoints remain unchanged.
+
+FRONTEND CHANGES
+
+5) Create client/src/pages/AppOnboarding.tsx
+Wizard steps:
+Step 0 Welcome
+Step 1 Your Information (role toggle, attorney fields conditional, “I don’t know yet” buttons on optional fields)
+Step 2 Case Basics (state/county/case type/case number optional/case nickname)
+Step 3 Children (ask yes/no/unknown; if yes show child CRUD inline)
+Step 4 Other Party (name + has attorney + counsel fields)
+Step 5 Required acknowledgments (four items, each opens ScrollablePolicyModal)
+Step 6 Confirmation
+
+Required UX:
+- On Next/Back step change: window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+- When closing any policy modal: restore focus to the checkbox row and window.scrollTo top of the wizard container (no jumping to bottom)
+- Each policy checkbox is disabled until its modal reports “scrolledToBottom = true”
+- Final “Complete onboarding” button disabled until all 4 boxes checked
+
+Saving behavior:
+- After each step Next: POST /api/onboarding/save with partial payload
+- On final complete: POST /api/onboarding/complete then navigate to /app/dashboard (or to the current case workspace page)
+
+6) Add route in router (client/src/App.tsx or wherever routes live):
+- /app/onboarding -> AppOnboarding (protected)
+Guard:
+- In Protected layout or route wrapper: if logged in AND onboardingComplete === false AND not already on /app/onboarding, redirect to /app/onboarding
+- If onboardingComplete === true and user visits /app/onboarding, redirect to /app/dashboard
+
+7) Update auth flow after signup/login:
+- After successful create account, navigate to /app/onboarding (not dashboard)
+- After login, fetch /api/onboarding/status and route to onboarding if incomplete else dashboard
+
+8) Children module gating:
+- If onboarding childrenInvolved !== yes, hide Children tile on dashboard and case workspace
+- Keep Children section accessible in Case Settings (so user can add later)
+Implementation approach:
+- Store a boolean on case: children_involved (or infer from having children rows). If you already store this in onboarding payload, persist to case metadata JSONB or add cases.has_children boolean.
+- Dashboard tile rendering checks hasChildren flag.
+
+9) Fix “goes back to beginning” bug:
+- Ensure onboardingComplete state is persisted server-side and checked on mount
+- Ensure wizard step state initializes from server status (do not reset to step 0 after complete)
+- If /api/onboarding/status says complete, immediately redirect to dashboard
+
+TESTING CHECKLIST
+- Create account -> goes to onboarding
+- Step navigation never starts at bottom
+- Opening/closing policy modals does not jump to bottom
+- Completion sets onboarding_complete=true and next login skips onboarding
+- Children module hides/shows based on onboarding children answer
+- Court doc generation uses profile + case fields with Missing badges if deferred
+
+DELIVERABLE
+Commit all changes, then provide:
+- list of files changed
+- confirmation of routes created
+- screenshot of onboarding welcome + acknowledgments step
