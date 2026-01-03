@@ -87,7 +87,7 @@
 
   /* Borders: #1E2020 dark */
   --border: 180 3% 12%;                   /* #1E2020 */
-  --input: 165 9.1% 82.7%;                /* #CFD7D5 */
+  --input: 189 23% 87%;                   /* #D6E4E6 slightly bluer */
   --ring: 186.7 15.5% 22.7%;              /* near primary */
 
   /* Primary = Dark Blue #314143 */
@@ -111,6 +111,7 @@
   /* App-specific aliases */
   --app-surface: 186.7 15.5% 22.7%;       /* #314143 navbar/footer */
   --app-surface-2: 187.1 16.2% 18%;       /* #27363A hover */
+  --app-panel: 40 37.5% 96.9%;            /* #FAF8F4 solid cream dropdown bg */
   --app-panel-border: 180 3% 12%;         /* #1E2020 */
   --app-tile-bg: 187.5 20.8% 69.8%;       /* #A2BEC2 for module tiles */
 
@@ -167,6 +168,7 @@
 
   --app-surface: 200 10% 14%;
   --app-surface-2: 200 10% 18%;
+  --app-panel: 200 10% 14%;               /* dark mode solid dropdown bg */
   --app-panel-border: 200 10% 28%;
 
   /* Dark mode interaction tokens */
@@ -199,8 +201,8 @@ select:-webkit-autofill,
 select:-webkit-autofill:hover,
 select:-webkit-autofill:focus,
 select:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0px 1000px #EEF7F1 inset !important;
-  box-shadow: 0 0 0px 1000px #EEF7F1 inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px #D6E4E6 inset !important;
+  box-shadow: 0 0 0px 1000px #D6E4E6 inset !important;
   -webkit-text-fill-color: inherit !important;
   caret-color: inherit !important;
   transition: background-color 9999s ease-in-out 0s;

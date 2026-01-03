@@ -239,11 +239,11 @@ export default function AppNavbar() {
               </button>
               <button 
                 onClick={handleQuickExit}
-                className="ml-1 sm:ml-2 p-1 sm:p-1.5 rounded-md bg-[#F2F2F2]/20 hover:bg-[#F2F2F2]/30 transition-colors"
+                className="ml-1 sm:ml-2 p-1 sm:p-1.5 rounded-md bg-gradient-to-b from-bush to-bush-dark hover:from-bush-dark hover:to-bush text-cream transition-colors"
                 aria-label="Quick exit"
                 data-testid="button-quick-exit-app"
               >
-                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F2F2F2]" />
+                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               
               {/* Grace area bridge between trigger and menu */}

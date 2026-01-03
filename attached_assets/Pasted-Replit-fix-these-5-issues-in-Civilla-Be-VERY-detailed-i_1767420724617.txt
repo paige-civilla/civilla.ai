@@ -1,0 +1,135 @@
+Replit — fix these 5 issues in Civilla. Be VERY detailed in your final summary: list every file changed, what lines/sections, and what behavior changed.
+
+========================================================
+1) APP NAV DROPDOWN IS TRANSPARENT (shows page underneath)
+========================================================
+Problem: The AppNavbar dropdown panel is not solid, it’s visually picking up the page behind it.
+
+Fix:
+- In client/src/components/layout/AppNavbar.tsx (or wherever the dropdown panel is rendered)
+  - Ensure the dropdown container has:
+    - a solid background color (NO transparency)
+    - no backdrop blur that makes it see-through
+    - a high z-index above all content
+  - Example class changes (use our app tokens):
+    - add: "bg-background" (which should be #FAF8F4 in app theme)
+    - add: "border border-[var(--border)]"
+    - add: "shadow-lg"
+    - add: "z-[9999]"
+    - remove any "bg-*/xx" opacity classes like bg-white/70, bg-background/70, etc.
+    - remove backdrop-blur if present (or keep blur but still solid: bg-background + no opacity)
+
+Also confirm the dropdown wrapper is positioned correctly and not inheriting opacity.
+
+========================================================
+2) ONBOARDING LOOPS BACK TO STEP 0 EVERY TIME
+========================================================
+Problem: user cannot complete onboarding; after finishing, they get sent back to beginning.
+
+Fix approach:
+A) Verify onboarding completion field exists and is persisted
+- In shared/schema.ts user_profiles table MUST include:
+  - onboardingCompleted boolean NOT NULL DEFAULT false
+  (If it exists already, confirm naming matches exactly what frontend checks.)
+
+B) Ensure DB table creation and runtime init includes it
+- In server/db.ts initTable("user_profiles", CREATE TABLE ...) ensure onboarding_completed column exists in the base CREATE TABLE statement.
+- Also add a safety ALTER in initDbTables():
+  ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT false;
+
+C) Ensure the endpoint that saves onboarding sets onboardingCompleted true
+- Find the onboarding “Finish” handler on the client (client/src/pages/AppOnboarding.tsx)
+- Confirm it calls a backend route that updates user_profiles (or case + profile) AND sets onboarding_completed=true.
+- If you already have PATCH /api/user/profile or /api/profile/upsert, extend it so “finish onboarding” sets onboardingCompleted.
+
+D) Ensure routing logic doesn’t mis-detect completion
+- In AppLayout (or the onboarding guard), ensure it checks:
+  profile.onboardingCompleted === true
+  not just “profile exists” or “has required fields”.
+- After successful completion, redirect user to the dashboard route (whatever current is, likely /app/dashboard or /app).
+
+E) Add a small debug-friendly safeguard (no console spam):
+- If onboarding redirect triggers even when onboardingCompleted=true, fix the condition and add one warning log server-side only in dev.
+
+========================================================
+3) CLEAR ALL USERS + FAKE DATA FROM DATABASE (RESET DEV DB)
+========================================================
+Goal: wipe ALL users and related data so DB is empty.
+
+Implement a dev-only reset script (safer than random manual deletes):
+- Create server/scripts/resetDevDb.ts
+  - Connect using DATABASE_URL
+  - Run TRUNCATE with CASCADE on all tables that store user/case data:
+    users,
+    user_profiles,
+    auth_magic_links,
+    auth_identities,
+    cases,
+    timeline_events,
+    evidence_files,
+    documents,
+    generated_documents,
+    case_children,
+    tasks,
+    deadlines,
+    case_contacts,
+    case_communications,
+    exhibit_lists,
+    exhibits,
+    exhibit_evidence,
+    calendar_categories,
+    case_calendar_items,
+    lexi_threads,
+    lexi_messages
+  - Use:
+    TRUNCATE TABLE <tables...> RESTART IDENTITY CASCADE;
+
+- Add npm script in package.json:
+  "reset:devdb": "tsx server/scripts/resetDevDb.ts"
+
+Important:
+- Make script refuse to run if NODE_ENV === "production" (hard stop).
+- Print a clear success message.
+
+========================================================
+4) TEXTBOX INTERIOR COLOR SHOULD BE A LITTLE BLUER
+========================================================
+Right now textboxes are green-ish (#CFD7D5). Make it slightly bluer while staying soft.
+
+Update ONLY authenticated app textbox interior:
+- In client/src/index.css inside .theme-app (or .app-shell), set:
+  --input: <new bluish value>
+Use:
+  #D6E4E6   (slightly bluer than #CFD7D5, still soft)
+- Ensure Input + Textarea use bg-input (not hardcoded hex).
+- Keep webkit autofill override aligned to new input color:
+  -webkit-box-shadow inset should use the same new --input color.
+
+Do NOT change marketing theme inputs unless they share the same component and we explicitly scope it by theme class.
+
+========================================================
+5) QUICK EXIT BUTTON SHOULD MATCH MARKETING CREAM NAVBAR GREEN GRADIENT
+========================================================
+Goal: the quick exit icon/button in the app should use the same green gradient styling as the cream navbar (marketing).
+
+- Locate the quick exit button component (likely in AppNavbar / QuickExitButton).
+- Apply a gradient background equivalent to marketing navbar styling, e.g.:
+  bg-gradient-to-b (or to-r)
+  from-bush to-bush-dark
+  text-cream
+  hover: slightly darker or increase contrast (e.g. from-bush-dark to-bush)
+- Ensure it keeps accessibility:
+  - minimum 44px tap target on mobile
+  - clear focus ring using border/ring token
+
+========================================================
+DELIVERABLE
+========================================================
+After implementing:
+- Confirm dropdown is solid (no bleed-through).
+- Confirm onboarding completes ONCE and always redirects to dashboard.
+- Confirm reset:devdb wipes all users and data in dev without affecting production.
+- Confirm textbox interior is slightly bluer only in app theme.
+- Confirm quick exit matches the green gradient.
+
+Return a detailed summary of files changed + what each change did.
