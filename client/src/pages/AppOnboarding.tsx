@@ -21,7 +21,9 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
-  Info
+  Info,
+  ClipboardCheck,
+  Edit2
 } from "lucide-react";
 import AppNavbar from "@/components/layout/AppNavbar";
 import Footer from "@/components/Footer";
@@ -31,7 +33,8 @@ const STEPS = [
   { id: 2, title: "Your Address", icon: MapPin },
   { id: 3, title: "Case Details", icon: Briefcase },
   { id: 4, title: "Children", icon: Users },
-  { id: 5, title: "Agreements", icon: FileText },
+  { id: 5, title: "Review", icon: ClipboardCheck },
+  { id: 6, title: "Agreements", icon: FileText },
 ];
 
 interface Child {
@@ -130,7 +133,7 @@ const DEFERRABLE_FIELDS = [
 
 export default function AppOnboarding() {
   const [, setLocation] = useLocation();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [policyModal, setPolicyModal] = useState<string | null>(null);
@@ -315,7 +318,7 @@ export default function AppOnboarding() {
       });
     }
 
-    if (currentStep === 5) {
+    if (currentStep === 6) {
       if (!data.agreements.scrolledTos) newErrors.scrolledTos = "Please read Terms of Service";
       if (!data.agreements.scrolledPrivacy) newErrors.scrolledPrivacy = "Please read Privacy Policy";
       if (!data.agreements.scrolledNotLawFirm) newErrors.scrolledNotLawFirm = "Please read Not a Law Firm disclosure";
@@ -349,6 +352,9 @@ export default function AppOnboarding() {
       return data.children.every(c => c.firstName.trim() && c.dateOfBirth);
     }
     if (step === 5) {
+      return true;
+    }
+    if (step === 6) {
       return data.agreements.tosAccepted && data.agreements.privacyAccepted &&
              data.agreements.notLawFirmAccepted && data.agreements.responsibilityAccepted &&
              data.agreements.scrolledTos && data.agreements.scrolledPrivacy &&
@@ -362,11 +368,16 @@ export default function AppOnboarding() {
   };
 
   const handleNext = () => {
+    if (step === 0) {
+      setStep(1);
+      scrollToTop();
+      return;
+    }
     if (!validateStep(step)) return;
     
     if (step === 3 && !data.case.hasChildren) {
       setStep(5);
-    } else if (step < 5) {
+    } else if (step < 6) {
       setStep(step + 1);
     }
     scrollToTop();
@@ -382,7 +393,7 @@ export default function AppOnboarding() {
   };
 
   const handleSubmit = () => {
-    if (!validateStep(5)) return;
+    if (!validateStep(6)) return;
     if (!policiesData?.versions) return;
 
     completeMutation.mutate({
@@ -417,33 +428,73 @@ export default function AppOnboarding() {
               Let's get your account set up. This will only take a few minutes.
             </p>
 
-            <div className="w-full mb-8">
-              <div className="flex items-center justify-between gap-2">
-                {displaySteps.map((s, idx) => {
-                  const isActive = s.id === step;
-                  const isComplete = s.id < step || (s.id === 4 && step === 5 && !data.case.hasChildren);
-                  const Icon = s.icon;
-                  
-                  return (
-                    <div key={s.id} className="flex-1 flex flex-col items-center">
-                      <div className={`
-                        w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors
-                        ${isComplete ? 'bg-primary text-primary-foreground' : isActive ? 'bg-primary/20 text-primary border-2 border-primary' : 'bg-neutral-darkest/10 text-neutral-darkest/40'}
-                      `}>
-                        {isComplete ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+            {step === 0 && (
+              <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-6 md:p-8">
+                <div className="space-y-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <FileText className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">
+                    Before we begin
+                  </h2>
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-neutral-darkest mb-2">
+                          This will take a bit of time
+                        </p>
+                        <p className="text-sm text-neutral-darkest/70">
+                          Courts commonly ask for this information, and completing it now will save you time later by auto-filling your documents and organizing your case materials.
+                        </p>
                       </div>
-                      <span className={`text-xs font-medium text-center ${isActive ? 'text-primary' : 'text-neutral-darkest/60'}`}>
-                        {s.title}
-                      </span>
-                      {idx < displaySteps.length - 1 && (
-                        <div className="hidden" />
-                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                  <p className="text-sm text-neutral-darkest/60">
+                    You can always update this information later in your account settings.
+                  </p>
+                  <Button
+                    onClick={handleNext}
+                    className="w-full bg-primary text-white hover:bg-primary/90"
+                    data-testid="button-start-onboarding"
+                  >
+                    Start Setup
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
+            {step > 0 && (
+              <div className="w-full mb-8">
+                <div className="flex items-center justify-between gap-2">
+                  {displaySteps.map((s, idx) => {
+                    const isActive = s.id === step;
+                    const isComplete = s.id < step || (s.id === 4 && step >= 5 && !data.case.hasChildren);
+                    const Icon = s.icon;
+                    
+                    return (
+                      <div key={s.id} className="flex-1 flex flex-col items-center">
+                        <div className={`
+                          w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors
+                          ${isComplete ? 'bg-primary text-primary-foreground' : isActive ? 'bg-primary/20 text-primary border-2 border-primary' : 'bg-neutral-darkest/10 text-neutral-darkest/40'}
+                        `}>
+                          {isComplete ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                        </div>
+                        <span className={`text-xs font-medium text-center ${isActive ? 'text-primary' : 'text-neutral-darkest/60'}`}>
+                          {s.title}
+                        </span>
+                        {idx < displaySteps.length - 1 && (
+                          <div className="hidden" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {step > 0 && (
             <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-6 md:p-8">
               {step === 1 && (
                 <div className="space-y-6">
@@ -885,6 +936,145 @@ export default function AppOnboarding() {
 
               {step === 5 && (
                 <div className="space-y-6">
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Review Your Information</h2>
+                  <p className="text-sm text-neutral-darkest/70">
+                    Please review the information below before proceeding to agreements.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-neutral-darkest">Your Information</h3>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setStep(1)}
+                          data-testid="button-edit-profile"
+                        >
+                          <Edit2 className="w-3 h-3 mr-1" /> Edit
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-neutral-darkest/60">Name:</span>{" "}
+                          {data.profile.fullName || <span className="text-destructive">Missing</span>}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">Email:</span>{" "}
+                          {data.profile.email || <span className="text-neutral-darkest/40">Not provided</span>}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">Phone:</span>{" "}
+                          {data.profile.phone || (deferredFields.phone ? <span className="text-neutral-darkest/40">Deferred</span> : <span className="text-neutral-darkest/40">Not provided</span>)}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">Role:</span>{" "}
+                          {data.profile.partyRole === "petitioner" ? "Petitioner" : "Respondent"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-neutral-darkest">Address</h3>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setStep(2)}
+                          data-testid="button-edit-address"
+                        >
+                          <Edit2 className="w-3 h-3 mr-1" /> Edit
+                        </Button>
+                      </div>
+                      <div className="text-sm">
+                        <p>{data.profile.addressLine1 || <span className="text-destructive">Missing</span>}</p>
+                        {data.profile.addressLine2 && <p>{data.profile.addressLine2}</p>}
+                        <p>
+                          {data.profile.city || (deferredFields.city ? "Deferred" : "")}
+                          {data.profile.city && data.profile.state ? ", " : ""}
+                          {data.profile.state || (deferredFields.state ? "Deferred" : "")}
+                          {(data.profile.city || data.profile.state) && data.profile.zip ? " " : ""}
+                          {data.profile.zip || (deferredFields.zip ? "Deferred" : "")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-neutral-darkest">Case Details</h3>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setStep(3)}
+                          data-testid="button-edit-case"
+                        >
+                          <Edit2 className="w-3 h-3 mr-1" /> Edit
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-neutral-darkest/60">Case Title:</span>{" "}
+                          {data.case.title || <span className="text-destructive">Missing</span>}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">Case Number:</span>{" "}
+                          {data.case.caseNumber || (deferredFields.caseNumber ? <span className="text-neutral-darkest/40">Deferred</span> : <span className="text-neutral-darkest/40">Not provided</span>)}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">State:</span>{" "}
+                          {data.case.state || <span className="text-destructive">Missing</span>}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">County:</span>{" "}
+                          {data.case.county || <span className="text-destructive">Missing</span>}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">Petitioner:</span>{" "}
+                          {data.profile.petitionerName || <span className="text-destructive">Missing</span>}
+                        </div>
+                        <div>
+                          <span className="text-neutral-darkest/60">Respondent:</span>{" "}
+                          {data.profile.respondentName || <span className="text-destructive">Missing</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {data.case.hasChildren && (
+                      <div className="border border-neutral-darkest/10 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-medium text-neutral-darkest">Children ({data.children.length})</h3>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setStep(4)}
+                            data-testid="button-edit-children"
+                          >
+                            <Edit2 className="w-3 h-3 mr-1" /> Edit
+                          </Button>
+                        </div>
+                        {data.children.length === 0 ? (
+                          <p className="text-sm text-destructive">No children added</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {data.children.map((child, idx) => (
+                              <div key={idx} className="text-sm">
+                                {child.firstName} {child.lastName} - {child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString() : "No DOB"}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {step === 6 && (
+                <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Legal Agreements</h2>
                   <p className="text-sm text-neutral-darkest/70">
                     Please read and agree to the following documents to continue.
@@ -1084,7 +1274,7 @@ export default function AppOnboarding() {
                   Back
                 </Button>
 
-                {step < 5 ? (
+                {step < 6 ? (
                   <Button
                     type="button"
                     onClick={handleNext}
@@ -1118,6 +1308,7 @@ export default function AppOnboarding() {
                 )}
               </div>
             </div>
+            )}
           </div>
         </section>
       </main>

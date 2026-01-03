@@ -203,7 +203,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
   };
 
   return (
-    <Card className="bg-white rounded-2xl border border-[#1E2020] h-full" data-testid="calendar-month">
+    <Card className="bg-white border-0 shadow-none h-full" data-testid="calendar-month">
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 pt-4 px-4">
         <div className="flex items-center gap-2">
           <Button

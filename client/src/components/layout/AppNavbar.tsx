@@ -184,10 +184,10 @@ export default function AppNavbar() {
   return (
     <div ref={shellRef} className="civilla-nav-shell">
       <nav className="bg-[#314143] border-b border-[#1E2020] w-full relative" data-testid="navbar-app">
-        <div className="h-9 flex items-center justify-center px-5 md:px-16 py-0">
-          <div className="flex items-center justify-between gap-4 w-full max-w-container">
-            <div className="flex items-center">
-              <Link href="/app" className="relative h-7 w-7" aria-label="Civilla" data-testid="link-logo-app">
+        <div className="h-9 flex items-center justify-center px-3 sm:px-5 md:px-16 py-0">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 w-full max-w-container">
+            <div className="flex items-center flex-shrink-0">
+              <Link href="/app" className="relative h-6 w-6 sm:h-7 sm:w-7" aria-label="Civilla" data-testid="link-logo-app">
                 <img 
                   src={logoSymbol} 
                   alt="Civilla" 
@@ -196,34 +196,34 @@ export default function AppNavbar() {
               </Link>
             </div>
             <div 
-              className="flex items-center justify-center gap-2 relative"
+              className="flex items-center justify-center gap-1 sm:gap-2 relative flex-shrink-0"
               onMouseEnter={scheduleOpen}
               onMouseLeave={scheduleClose}
             >
               <button 
                 ref={menuButtonRef}
-                className="inline-flex items-center justify-center rounded-md p-1.5 border border-[#F2F2F2]/30 hover:border-[#F2F2F2]/50 hover:bg-[#F2F2F2]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2F2F2]/40"
+                className="inline-flex items-center justify-center rounded-md p-1 sm:p-1.5 border border-[#F2F2F2]/30 hover:border-[#F2F2F2]/50 hover:bg-[#F2F2F2]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2F2F2]/40"
                 onClick={() => { clearTimers(); setIsMenuOpen((v) => !v); }}
                 aria-label="Open menu"
                 aria-expanded={isMenuOpen}
                 data-testid="button-menu-app"
               >
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1 sm:gap-1.5">
                   {isMenuOpen ? (
-                    <X className="h-4 w-4 text-[#F2F2F2]" aria-hidden="true" />
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#F2F2F2]" aria-hidden="true" />
                   ) : (
-                    <Menu className="h-4 w-4 text-[#F2F2F2]" aria-hidden="true" />
+                    <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#F2F2F2]" aria-hidden="true" />
                   )}
-                  <span className="text-xs font-medium text-[#F2F2F2]">Menu</span>
+                  <span className="text-xs font-medium text-[#F2F2F2] hidden sm:inline">Menu</span>
                 </span>
               </button>
               <button 
                 onClick={handleQuickExit}
-                className="ml-2 p-1.5 rounded-md bg-[#F2F2F2]/20 hover:bg-[#F2F2F2]/30 transition-colors"
+                className="ml-1 sm:ml-2 p-1 sm:p-1.5 rounded-md bg-[#F2F2F2]/20 hover:bg-[#F2F2F2]/30 transition-colors"
                 aria-label="Quick exit"
                 data-testid="button-quick-exit-app"
               >
-                <LogOut className="w-4 h-4 text-[#F2F2F2]" />
+                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F2F2F2]" />
               </button>
               
               {/* Grace area bridge between trigger and menu */}
