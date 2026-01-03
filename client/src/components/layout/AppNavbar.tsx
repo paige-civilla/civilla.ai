@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, TrendingUp, MessageSquare, Users } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, TrendingUp, MessageSquare, Users, Calculator } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
@@ -139,6 +139,7 @@ export default function AppNavbar() {
         { label: "Pattern Analysis", href: `/app/patterns/${caseId}`, icon: TrendingUp },
         { label: "Contacts", href: `/app/contacts/${caseId}`, icon: Users },
         { label: "Communications", href: `/app/communications/${caseId}`, icon: MessageSquare },
+        { label: "Child Support Estimator", href: `/app/child-support/${caseId}`, icon: Calculator },
         { label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings },
       );
     }

@@ -34,6 +34,7 @@ import AppDeadlines from "@/pages/AppDeadlines";
 import AppPatterns from "@/pages/AppPatterns";
 import AppContacts from "@/pages/AppContacts";
 import AppCommunications from "@/pages/AppCommunications";
+import AppChildSupport from "@/pages/AppChildSupport";
 import AppCaseSettings from "@/pages/AppCaseSettings";
 import AppAccountSettings from "@/pages/AppAccountSettings";
 import AppOnboarding from "@/pages/AppOnboarding";
@@ -78,6 +79,7 @@ function Router() {
       <Route path="/app/messages/:caseId">{({ caseId }) => <Redirect to={`/app/patterns/${caseId}`} />}</Route>
       <Route path="/app/contacts/:caseId" component={AppContacts} />
       <Route path="/app/communications/:caseId" component={AppCommunications} />
+      <Route path="/app/child-support/:caseId" component={AppChildSupport} />
       <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
       <Route path="/app/documents">{() => <CaseRedirect targetPath="documents" />}</Route>
@@ -90,6 +92,7 @@ function Router() {
       <Route path="/app/messages">{() => <CaseRedirect targetPath="patterns" />}</Route>
       <Route path="/app/contacts">{() => <CaseRedirect targetPath="contacts" />}</Route>
       <Route path="/app/communications">{() => <CaseRedirect targetPath="communications" />}</Route>
+      <Route path="/app/child-support">{() => <CaseRedirect targetPath="child-support" />}</Route>
       <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />
     </Switch>

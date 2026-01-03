@@ -1,0 +1,89 @@
+REPLIT TASK: Slice — Savings Widget + Child Support Estimator Module (Foundation)
+
+GOALS
+A) Dashboard: Add a TurboTax-style “Estimated Savings” widget ABOVE the “View All Cases” button.
+B) Modules: Add a “Child Support Estimator” module tile and route/page inside the app.
+C) Keep it EDUCATIONAL only (no court-accurate claim), clear disclaimer text, consistent app theme tokens.
+D) Mobile-ready.
+
+REQUIREMENTS / UX
+1) Savings Widget (Dashboard)
+- Location: AppDashboard.tsx, above the “View All Cases” button.
+- Title: “Estimated Savings”
+- Subtitle: “A quick estimate of time saved when you stay organized.”
+- Inputs (simple, friendly):
+  - “Hours you expect to spend organizing your case” (number input, default 10)
+  - “Hourly value (editable)” (number input, default 300)
+  - “Include document prep time” checkbox (default on, adds +25% to hours)
+- Output:
+  - Show a large computed number: hours * hourlyValue (and if checkbox on, hours*1.25)
+  - Show helper text: “This is an educational estimate. Actual costs vary.”
+- Button: “Update estimate” (optional; can auto-update on change if you prefer)
+- Styling:
+  - Use app theme: background = app background (#FAF8F4), card surface = white, border = #A2BEC2.
+  - Primary button uses bg-primary/text-primary-foreground (dark blue).
+  - Inputs use bg-input (#CFD7D5).
+  - Ensure spacing looks good and does not create dead space.
+
+2) Add “Upcoming” list (if not already in place)
+- Under the month calendar, show a header “Upcoming” and list next 7 items.
+- Each item has a checkbox and toggling it marks the item done everywhere it applies:
+  - deadlines -> done
+  - case to-do -> completed
+  - calendar items -> completed
+- If that cross-module toggle wiring already exists, keep it; if not, implement it now via one unified endpoint (see below).
+
+3) Child Support Estimator Module
+- Add a new module tile on dashboard + case workspace (where tiles are shown).
+- Label: “Child Support Estimator”
+- Route should be inside the app and case-scoped:
+  - /app/child-support/:caseId
+- Add to AppNavbar dropdown as well.
+- Page: client/src/pages/AppChildSupport.tsx
+  - Layout matches other app pages (AppLayout).
+  - Simple estimator foundation:
+    - Inputs (all optional, can use “I don’t know yet” buttons):
+      - State (prefill from case if exists)
+      - Number of children (prefill from case children count if available)
+      - Overnights per year (or percentage parenting time)
+      - Parent A monthly gross income
+      - Parent B monthly gross income
+      - Childcare/month, Health insurance/month (optional)
+    - Output: show “Estimated range” placeholder and “Next steps” guidance.
+    - VERY CLEAR disclaimer text:
+      - “Not court-accurate. Courts and formulas vary by state and case. For a court-accurate amount, consult an attorney or use your state’s official calculator.”
+  - Do NOT implement state-by-state legal formulas yet. This is foundation + UI only.
+
+4) Unified “Mark complete” wiring (only if missing)
+- Add a single backend endpoint to mark an upcoming item complete:
+  POST /api/cases/:caseId/upcoming/:itemType/:itemId/complete
+  where itemType in: "deadline" | "task" | "calendar"
+- Update the correct table field:
+  - deadlines: set status done/true (whatever field exists)
+  - tasks: set completed true
+  - calendar items: set completed true
+- Return { ok: true } and updated record.
+
+5) Files to update / create
+- client/src/pages/AppDashboard.tsx (Savings widget placement + upcoming list consistency)
+- client/src/pages/AppCase.tsx (add module tile if case workspace shows tiles)
+- client/src/components/layout/AppNavbar.tsx (add menu link)
+- client/src/App.tsx (add route)
+- Create: client/src/pages/AppChildSupport.tsx
+- server/routes.ts (only if unified complete endpoint is needed)
+- shared/schema.ts + server/db.ts (only if calendar items lack “completed” field; otherwise do NOT alter schema)
+
+6) Acceptance tests
+- Dashboard shows Estimated Savings widget above View All Cases
+- Widget computes correctly and looks clean on mobile
+- Child Support Estimator tile navigates correctly
+- Child Support page loads and is mobile-safe
+- Upcoming list shows and checkbox completion updates the source module record (task/deadline/calendar)
+- No console errors
+- Publish ready
+
+REPORT BACK (in your Replit summary)
+- Files changed
+- Routes added
+- Whether the unified “mark complete” endpoint was necessary
+- Screenshot of Dashboard (top area) + Child Support page

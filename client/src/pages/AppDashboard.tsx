@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, MessageSquare } from "lucide-react";
+import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, MessageSquare, Calculator, DollarSign } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -76,6 +76,12 @@ const getModuleCards = (caseId: string) => [
     icon: MessageSquare,
     href: `/app/communications/${caseId}`,
   },
+  {
+    title: "Child Support Estimator",
+    description: "Educational support estimates",
+    icon: Calculator,
+    href: `/app/child-support/${caseId}`,
+  },
 ];
 
 type UpcomingEvent = {
@@ -123,6 +129,10 @@ export default function AppDashboard() {
   const [createCategoryMode, setCreateCategoryMode] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("#7BA3A8");
+
+  const [savingsHours, setSavingsHours] = useState(10);
+  const [savingsHourlyRate, setSavingsHourlyRate] = useState(300);
+  const [savingsIncludeDocPrep, setSavingsIncludeDocPrep] = useState(true);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -442,7 +452,70 @@ export default function AppDashboard() {
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="w-full">
+              <div className="w-full space-y-6">
+                <div className="bg-white rounded-lg border border-[#1E2020] p-4 sm:p-5">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-md bg-[#A2BEC2] flex items-center justify-center flex-shrink-0">
+                      <DollarSign className="w-5 h-5 text-[#314143]" />
+                    </div>
+                    <div>
+                      <h3 className="font-heading font-bold text-base text-[#1E2020]">Estimated Savings</h3>
+                      <p className="font-sans text-sm text-[#1E2020]/60">A quick estimate of time saved when you stay organized.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label htmlFor="savings-hours" className="text-xs text-[#1E2020]/70">Hours organizing your case</Label>
+                      <Input
+                        id="savings-hours"
+                        type="number"
+                        min="1"
+                        max="500"
+                        value={savingsHours}
+                        onChange={(e) => setSavingsHours(parseInt(e.target.value) || 0)}
+                        className="mt-1"
+                        data-testid="input-savings-hours"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="savings-rate" className="text-xs text-[#1E2020]/70">Hourly value ($)</Label>
+                      <Input
+                        id="savings-rate"
+                        type="number"
+                        min="1"
+                        max="1000"
+                        value={savingsHourlyRate}
+                        onChange={(e) => setSavingsHourlyRate(parseInt(e.target.value) || 0)}
+                        className="mt-1"
+                        data-testid="input-savings-rate"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center gap-2 cursor-pointer min-h-[36px]">
+                        <Checkbox
+                          checked={savingsIncludeDocPrep}
+                          onCheckedChange={(val) => setSavingsIncludeDocPrep(val === true)}
+                          data-testid="checkbox-include-doc-prep"
+                        />
+                        <span className="text-xs text-[#1E2020]/70">Include doc prep (+25%)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#F2F2F2] rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-[#1E2020]/60 mb-1">Estimated value of time saved</p>
+                      <p className="font-heading font-bold text-2xl sm:text-3xl text-[#314143]" data-testid="text-savings-estimate">
+                        ${((savingsIncludeDocPrep ? savingsHours * 1.25 : savingsHours) * savingsHourlyRate).toLocaleString()}
+                      </p>
+                    </div>
+                    <p className="text-xs text-[#1E2020]/50 max-w-xs">
+                      This is an educational estimate. Actual costs vary.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {getModuleCards(primaryCase.id).map((module) => (
                     <Link
