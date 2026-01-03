@@ -183,6 +183,29 @@ export default function LexiPanel() {
   }, []);
 
   useEffect(() => {
+    const handleLexiAsk = (e: CustomEvent<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string; caseId?: string }>) => {
+      const { text, mode: requestedMode } = e.detail || {};
+      if (!text) return;
+      
+      setOpen(true);
+      setMode("chat");
+      setInput(text);
+      
+      setTimeout(() => {
+        if (activeThreadId) {
+          sendMessageMutation.mutate(text);
+          setInput("");
+        }
+      }, 100);
+    };
+
+    window.addEventListener("lexi:ask" as any, handleLexiAsk);
+    return () => {
+      window.removeEventListener("lexi:ask" as any, handleLexiAsk);
+    };
+  }, [activeThreadId, sendMessageMutation]);
+
+  useEffect(() => {
     setSelectedDocKey(undefined);
   }, [location]);
 
