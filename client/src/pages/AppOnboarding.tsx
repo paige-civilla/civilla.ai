@@ -936,27 +936,28 @@ export default function AppOnboarding() {
               )}
 
               {step === 5 && (
-                <div className="space-y-6">
-                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Review Your Information</h2>
-                  <p className="text-sm text-neutral-darkest/70">
+                <div className="space-y-4 sm:space-y-6">
+                  <h2 className="font-heading font-bold text-lg sm:text-xl text-neutral-darkest">Review Your Information</h2>
+                  <p className="text-xs sm:text-sm text-neutral-darkest/70">
                     Please review the information below before proceeding to agreements.
                   </p>
 
-                  <div className="space-y-4">
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-medium text-neutral-darkest">Your Information</h3>
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                        <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Your Information</h3>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => setStep(1)}
+                          className="min-h-[44px] text-xs sm:text-sm"
                           data-testid="button-edit-profile"
                         >
                           <Edit2 className="w-3 h-3 mr-1" /> Edit
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
                         <div>
                           <span className="text-neutral-darkest/60">Name:</span>{" "}
                           {data.profile.fullName || <span className="text-destructive">Missing</span>}
@@ -976,20 +977,21 @@ export default function AppOnboarding() {
                       </div>
                     </div>
 
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-medium text-neutral-darkest">Address</h3>
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                        <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Address</h3>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => setStep(2)}
+                          className="min-h-[44px] text-xs sm:text-sm"
                           data-testid="button-edit-address"
                         >
                           <Edit2 className="w-3 h-3 mr-1" /> Edit
                         </Button>
                       </div>
-                      <div className="text-sm">
+                      <div className="text-xs sm:text-sm">
                         <p>{data.profile.addressLine1 || <span className="text-destructive">Missing</span>}</p>
                         {data.profile.addressLine2 && <p>{data.profile.addressLine2}</p>}
                         <p>
@@ -1002,20 +1004,21 @@ export default function AppOnboarding() {
                       </div>
                     </div>
 
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-medium text-neutral-darkest">Case Details</h3>
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                        <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Case Details</h3>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => setStep(3)}
+                          className="min-h-[44px] text-xs sm:text-sm"
                           data-testid="button-edit-case"
                         >
                           <Edit2 className="w-3 h-3 mr-1" /> Edit
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
                         <div>
                           <span className="text-neutral-darkest/60">Case Title:</span>{" "}
                           {data.case.title || <span className="text-destructive">Missing</span>}
@@ -1044,25 +1047,26 @@ export default function AppOnboarding() {
                     </div>
 
                     {data.case.hasChildren && (
-                      <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="font-medium text-neutral-darkest">Children ({data.children.length})</h3>
+                      <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                        <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                          <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Children ({data.children.length})</h3>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => setStep(4)}
+                            className="min-h-[44px] text-xs sm:text-sm"
                             data-testid="button-edit-children"
                           >
                             <Edit2 className="w-3 h-3 mr-1" /> Edit
                           </Button>
                         </div>
                         {data.children.length === 0 ? (
-                          <p className="text-sm text-destructive">No children added</p>
+                          <p className="text-xs sm:text-sm text-destructive">No children added</p>
                         ) : (
-                          <div className="space-y-2">
+                          <div className="space-y-1.5 sm:space-y-2">
                             {data.children.map((child, idx) => (
-                              <div key={idx} className="text-sm">
+                              <div key={idx} className="text-xs sm:text-sm">
                                 {child.firstName} {child.lastName} - {child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString() : "No DOB"}
                               </div>
                             ))}
@@ -1075,18 +1079,18 @@ export default function AppOnboarding() {
               )}
 
               {step === 6 && (
-                <div className="space-y-6">
-                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">Legal Agreements</h2>
-                  <p className="text-sm text-neutral-darkest/70">
+                <div className="space-y-4 sm:space-y-6">
+                  <h2 className="font-heading font-bold text-lg sm:text-xl text-neutral-darkest">Legal Agreements</h2>
+                  <p className="text-xs sm:text-sm text-neutral-darkest/70">
                     Please read and agree to the following documents to continue.
                   </p>
 
-                  <div className="space-y-4">
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-neutral-darkest">Terms of Service</h3>
-                          <p className="text-sm text-neutral-darkest/60 mt-1">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Terms of Service</h3>
+                          <p className="text-xs sm:text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledTos ? (
                               <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
@@ -1101,35 +1105,37 @@ export default function AppOnboarding() {
                           variant="outline"
                           size="sm"
                           onClick={() => setPolicyModal("tos")}
+                          className="min-h-[44px] flex-shrink-0"
                           data-testid="button-read-tos"
                         >
                           Read
                         </Button>
                       </div>
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <div className="flex items-start gap-2 mt-3 pt-3 border-t">
                         <Checkbox
                           id="tosAccepted"
                           checked={data.agreements.tosAccepted}
                           onCheckedChange={(checked) => updateAgreement("tosAccepted", !!checked)}
                           disabled={!data.agreements.scrolledTos}
+                          className="mt-0.5"
                           data-testid="checkbox-tos"
                         />
                         <Label 
                           htmlFor="tosAccepted" 
-                          className={`cursor-pointer ${!data.agreements.scrolledTos ? "text-neutral-darkest/40" : ""}`}
+                          className={`cursor-pointer text-xs sm:text-sm leading-tight ${!data.agreements.scrolledTos ? "text-neutral-darkest/40" : ""}`}
                         >
                           I agree to the Terms of Service
                         </Label>
                       </div>
-                      {errors.tosAccepted && <p className="text-sm text-destructive mt-1">{errors.tosAccepted}</p>}
-                      {errors.scrolledTos && <p className="text-sm text-destructive mt-1">{errors.scrolledTos}</p>}
+                      {errors.tosAccepted && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.tosAccepted}</p>}
+                      {errors.scrolledTos && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.scrolledTos}</p>}
                     </div>
 
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-neutral-darkest">Privacy Policy</h3>
-                          <p className="text-sm text-neutral-darkest/60 mt-1">
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Privacy Policy</h3>
+                          <p className="text-xs sm:text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledPrivacy ? (
                               <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
@@ -1144,35 +1150,37 @@ export default function AppOnboarding() {
                           variant="outline"
                           size="sm"
                           onClick={() => setPolicyModal("privacy")}
+                          className="min-h-[44px] flex-shrink-0"
                           data-testid="button-read-privacy"
                         >
                           Read
                         </Button>
                       </div>
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <div className="flex items-start gap-2 mt-3 pt-3 border-t">
                         <Checkbox
                           id="privacyAccepted"
                           checked={data.agreements.privacyAccepted}
                           onCheckedChange={(checked) => updateAgreement("privacyAccepted", !!checked)}
                           disabled={!data.agreements.scrolledPrivacy}
+                          className="mt-0.5"
                           data-testid="checkbox-privacy"
                         />
                         <Label 
                           htmlFor="privacyAccepted"
-                          className={`cursor-pointer ${!data.agreements.scrolledPrivacy ? "text-neutral-darkest/40" : ""}`}
+                          className={`cursor-pointer text-xs sm:text-sm leading-tight ${!data.agreements.scrolledPrivacy ? "text-neutral-darkest/40" : ""}`}
                         >
                           I agree to the Privacy Policy
                         </Label>
                       </div>
-                      {errors.privacyAccepted && <p className="text-sm text-destructive mt-1">{errors.privacyAccepted}</p>}
-                      {errors.scrolledPrivacy && <p className="text-sm text-destructive mt-1">{errors.scrolledPrivacy}</p>}
+                      {errors.privacyAccepted && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.privacyAccepted}</p>}
+                      {errors.scrolledPrivacy && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.scrolledPrivacy}</p>}
                     </div>
 
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-neutral-darkest">Not a Law Firm Disclosure</h3>
-                          <p className="text-sm text-neutral-darkest/60 mt-1">
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">Not a Law Firm Disclosure</h3>
+                          <p className="text-xs sm:text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledNotLawFirm ? (
                               <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
@@ -1187,35 +1195,37 @@ export default function AppOnboarding() {
                           variant="outline"
                           size="sm"
                           onClick={() => setPolicyModal("notLawFirm")}
+                          className="min-h-[44px] flex-shrink-0"
                           data-testid="button-read-not-law-firm"
                         >
                           Read
                         </Button>
                       </div>
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <div className="flex items-start gap-2 mt-3 pt-3 border-t">
                         <Checkbox
                           id="notLawFirmAccepted"
                           checked={data.agreements.notLawFirmAccepted}
                           onCheckedChange={(checked) => updateAgreement("notLawFirmAccepted", !!checked)}
                           disabled={!data.agreements.scrolledNotLawFirm}
+                          className="mt-0.5"
                           data-testid="checkbox-not-law-firm"
                         />
                         <Label 
                           htmlFor="notLawFirmAccepted"
-                          className={`cursor-pointer ${!data.agreements.scrolledNotLawFirm ? "text-neutral-darkest/40" : ""}`}
+                          className={`cursor-pointer text-xs sm:text-sm leading-tight ${!data.agreements.scrolledNotLawFirm ? "text-neutral-darkest/40" : ""}`}
                         >
-                          I acknowledge that Civilla is not a law firm
+                          I acknowledge that <span className="italic">civilla</span> is not a law firm
                         </Label>
                       </div>
-                      {errors.notLawFirmAccepted && <p className="text-sm text-destructive mt-1">{errors.notLawFirmAccepted}</p>}
-                      {errors.scrolledNotLawFirm && <p className="text-sm text-destructive mt-1">{errors.scrolledNotLawFirm}</p>}
+                      {errors.notLawFirmAccepted && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.notLawFirmAccepted}</p>}
+                      {errors.scrolledNotLawFirm && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.scrolledNotLawFirm}</p>}
                     </div>
 
-                    <div className="border border-neutral-darkest/10 rounded-lg p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-neutral-darkest">User Responsibility</h3>
-                          <p className="text-sm text-neutral-darkest/60 mt-1">
+                    <div className="border border-neutral-darkest/10 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm sm:text-base text-neutral-darkest">User Responsibility</h3>
+                          <p className="text-xs sm:text-sm text-neutral-darkest/60 mt-1">
                             {data.agreements.scrolledResponsibility ? (
                               <span className="text-primary flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Read
@@ -1230,28 +1240,30 @@ export default function AppOnboarding() {
                           variant="outline"
                           size="sm"
                           onClick={() => setPolicyModal("responsibility")}
+                          className="min-h-[44px] flex-shrink-0"
                           data-testid="button-read-responsibility"
                         >
                           Read
                         </Button>
                       </div>
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <div className="flex items-start gap-2 mt-3 pt-3 border-t">
                         <Checkbox
                           id="responsibilityAccepted"
                           checked={data.agreements.responsibilityAccepted}
                           onCheckedChange={(checked) => updateAgreement("responsibilityAccepted", !!checked)}
                           disabled={!data.agreements.scrolledResponsibility}
+                          className="mt-0.5"
                           data-testid="checkbox-responsibility"
                         />
                         <Label 
                           htmlFor="responsibilityAccepted"
-                          className={`cursor-pointer ${!data.agreements.scrolledResponsibility ? "text-neutral-darkest/40" : ""}`}
+                          className={`cursor-pointer text-xs sm:text-sm leading-tight ${!data.agreements.scrolledResponsibility ? "text-neutral-darkest/40" : ""}`}
                         >
                           I acknowledge my responsibilities as a user
                         </Label>
                       </div>
-                      {errors.responsibilityAccepted && <p className="text-sm text-destructive mt-1">{errors.responsibilityAccepted}</p>}
-                      {errors.scrolledResponsibility && <p className="text-sm text-destructive mt-1">{errors.scrolledResponsibility}</p>}
+                      {errors.responsibilityAccepted && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.responsibilityAccepted}</p>}
+                      {errors.scrolledResponsibility && <p className="text-xs sm:text-sm text-destructive mt-1">{errors.scrolledResponsibility}</p>}
                     </div>
                   </div>
                 </div>
@@ -1263,12 +1275,13 @@ export default function AppOnboarding() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleBack}
                   disabled={step === 1}
+                  className="min-h-[44px] order-2 sm:order-1"
                   data-testid="button-back"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
@@ -1280,7 +1293,7 @@ export default function AppOnboarding() {
                     type="button"
                     onClick={handleNext}
                     disabled={!canProceed()}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 min-h-[44px] order-1 sm:order-2"
                     data-testid="button-next"
                   >
                     Next
@@ -1291,7 +1304,7 @@ export default function AppOnboarding() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={!canProceed() || completeMutation.isPending}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 min-h-[44px] order-1 sm:order-2"
                     data-testid="button-complete-onboarding"
                   >
                     {completeMutation.isPending ? (
