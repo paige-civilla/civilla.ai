@@ -178,6 +178,199 @@ _______________________________
 [YOUR FULL NAME]
 Petitioner, Pro Se`,
   },
+  affidavit: {
+    title: "Affidavit",
+    content: `STATE OF [STATE]
+COUNTY OF [COUNTY]
+
+AFFIDAVIT OF [YOUR FULL NAME]
+
+I, [YOUR FULL NAME], being duly sworn, depose and state as follows:
+
+1. I am over the age of 18 years and am competent to make this affidavit.
+
+2. [State your first fact]
+
+3. [State your second fact]
+
+4. [Continue with additional facts as needed]
+
+FURTHER AFFIANT SAYETH NOT.
+
+
+_______________________________
+[YOUR FULL NAME]
+Affiant
+
+Subscribed and sworn to before me this ____ day of __________, 20____.
+
+
+_______________________________
+Notary Public
+My Commission Expires: __________`,
+  },
+  notice_of_appearance: {
+    title: "Notice of Appearance",
+    content: `[YOUR NAME]
+[YOUR ADDRESS]
+[CITY, STATE ZIP]
+[PHONE NUMBER]
+[EMAIL ADDRESS]
+Appearing Pro Se
+
+SUPERIOR COURT OF THE STATE OF [STATE]
+COUNTY OF [COUNTY]
+
+In re the Matter of:
+
+[PETITIONER NAME],
+        Petitioner,
+vs.
+[RESPONDENT NAME],
+        Respondent.
+
+Case No.: [CASE NUMBER]
+
+NOTICE OF APPEARANCE
+
+TO THE CLERK OF THE COURT AND ALL PARTIES:
+
+PLEASE TAKE NOTICE that [YOUR FULL NAME] hereby appears in the above-entitled action as [Petitioner/Respondent], appearing pro se (self-represented).
+
+All future pleadings, notices, and correspondence should be served upon me at the following address:
+
+[YOUR FULL NAME]
+[YOUR ADDRESS]
+[CITY, STATE ZIP]
+[PHONE NUMBER]
+[EMAIL ADDRESS]
+
+I request that I be notified of all proceedings in this matter.
+
+DATED this ____ day of __________, 20____.
+
+
+_______________________________
+[YOUR FULL NAME]
+[Petitioner/Respondent], Pro Se`,
+  },
+  case_information_sheet: {
+    title: "Case Information Sheet",
+    content: `CASE INFORMATION SHEET
+
+COURT: Superior Court of [STATE], County of [COUNTY]
+CASE NUMBER: [CASE NUMBER]
+CASE TYPE: [Family Law / Dissolution / Custody / etc.]
+
+PETITIONER INFORMATION:
+Name: [PETITIONER FULL NAME]
+Address: [ADDRESS]
+City, State, ZIP: [CITY, STATE ZIP]
+Phone: [PHONE]
+Email: [EMAIL]
+Self-Represented: [ ] Yes  [ ] No
+Attorney (if applicable): [ATTORNEY NAME]
+
+RESPONDENT INFORMATION:
+Name: [RESPONDENT FULL NAME]
+Address: [ADDRESS]
+City, State, ZIP: [CITY, STATE ZIP]
+Phone: [PHONE]
+Email: [EMAIL]
+Self-Represented: [ ] Yes  [ ] No
+Attorney (if applicable): [ATTORNEY NAME]
+
+CASE DETAILS:
+Date of Marriage/Partnership: [DATE]
+Date of Separation: [DATE]
+Date Petition Filed: [DATE]
+
+CHILDREN (if applicable):
+[ ] No minor children
+[ ] Minor children:
+  Child 1: [NAME], DOB: [DATE]
+  Child 2: [NAME], DOB: [DATE]
+  [Add additional children as needed]
+
+PROPERTY:
+[ ] Community/Marital property to be divided
+[ ] Separate property claims
+[ ] No property issues
+
+SUPPORT ISSUES:
+[ ] Child support
+[ ] Spousal support/alimony
+[ ] No support issues
+
+ORDERS REQUESTED:
+[ ] Dissolution/Divorce
+[ ] Legal separation
+[ ] Custody/Parenting plan
+[ ] Child support
+[ ] Spousal support
+[ ] Property division
+[ ] Other: [DESCRIBE]
+
+Date: _______________
+
+Signature: _______________________________
+Printed Name: [YOUR FULL NAME]`,
+  },
+  response: {
+    title: "Response",
+    content: `[YOUR NAME]
+[YOUR ADDRESS]
+[CITY, STATE ZIP]
+[PHONE NUMBER]
+[EMAIL ADDRESS]
+Respondent, In Pro Per
+
+SUPERIOR COURT OF THE STATE OF [STATE]
+COUNTY OF [COUNTY]
+
+In re the Matter of:
+
+[PETITIONER NAME],
+        Petitioner,
+vs.
+[RESPONDENT NAME],
+        Respondent.
+
+Case No.: [CASE NUMBER]
+
+RESPONSE TO [DOCUMENT BEING RESPONDED TO]
+
+COMES NOW the Respondent, [YOUR FULL NAME], appearing pro se, and in response to [Petitioner's Motion/Petition/etc.] filed on [DATE], states as follows:
+
+GENERAL RESPONSE:
+
+1. [Admit/Deny/Lack sufficient information to admit or deny] the allegations in paragraph 1 of the [Petition/Motion].
+
+2. [Continue responding to each paragraph]
+
+3. [State any additional facts relevant to your response]
+
+AFFIRMATIVE DEFENSES (if applicable):
+
+1. [State any affirmative defenses]
+
+RELIEF REQUESTED:
+
+WHEREFORE, Respondent respectfully requests that this Court:
+
+1. [Deny the relief requested in the motion/petition];
+
+2. [State any counter-relief you are requesting];
+
+3. Award such other and further relief as the Court deems just and proper.
+
+DATED this ____ day of __________, 20____.
+
+
+_______________________________
+[YOUR FULL NAME]
+Respondent, Pro Se`,
+  },
 };
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;

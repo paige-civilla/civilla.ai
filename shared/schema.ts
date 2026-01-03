@@ -294,9 +294,13 @@ export type EvidenceFile = typeof evidenceFiles.$inferSelect;
 
 export const documentTemplateKeys = [
   "declaration",
+  "affidavit",
   "motion",
   "proposed_order",
   "certificate_of_service",
+  "notice_of_appearance",
+  "case_information_sheet",
+  "response",
 ] as const;
 
 export type DocumentTemplateKey = typeof documentTemplateKeys[number];
@@ -342,6 +346,10 @@ export const generatedDocumentTemplateTypes = [
   "motion",
   "memorandum",
   "certificate_of_service",
+  "proposed_order",
+  "notice_of_appearance",
+  "case_information_sheet",
+  "response",
 ] as const;
 
 export type GeneratedDocumentTemplateType = typeof generatedDocumentTemplateTypes[number];
