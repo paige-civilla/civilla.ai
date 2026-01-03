@@ -382,5 +382,58 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_communications_needs_followup ON case_communications(needs_follow_up)`
   ]);
 
+  await initTable("exhibit_lists", `
+    CREATE TABLE IF NOT EXISTS exhibit_lists (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      notes TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_case_id ON exhibit_lists(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_user_id ON exhibit_lists(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_case_created ON exhibit_lists(case_id, created_at)`
+  ]);
+
+  await initTable("exhibits", `
+    CREATE TABLE IF NOT EXISTS exhibits (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      exhibit_list_id VARCHAR(255) NOT NULL,
+      label TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      included BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibits_list_id ON exhibits(exhibit_list_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibits_case_id ON exhibits(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibits_user_id ON exhibits(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibits_list_sort ON exhibits(exhibit_list_id, sort_order)`
+  ]);
+
+  await initTable("exhibit_evidence", `
+    CREATE TABLE IF NOT EXISTS exhibit_evidence (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      exhibit_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE(exhibit_id, evidence_id)
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_exhibit_id ON exhibit_evidence(exhibit_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_evidence_id ON exhibit_evidence(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_case_id ON exhibit_evidence(case_id)`
+  ]);
+
   console.log("Database table initialization complete");
 }

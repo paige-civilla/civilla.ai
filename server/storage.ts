@@ -1,4 +1,4 @@
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -16,6 +16,9 @@ import {
   caseCalendarItems,
   caseContacts,
   caseCommunications,
+  exhibitLists,
+  exhibits,
+  exhibitEvidence,
   type User,
   type InsertUser,
   type Case,
@@ -53,6 +56,13 @@ import {
   type CaseCommunication,
   type InsertCommunication,
   type UpdateCommunication,
+  type ExhibitList,
+  type InsertExhibitList,
+  type UpdateExhibitList,
+  type Exhibit,
+  type InsertExhibit,
+  type UpdateExhibit,
+  type ExhibitEvidence,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -131,6 +141,24 @@ export interface IStorage {
   updateCommunication(userId: string, commId: string, data: UpdateCommunication): Promise<CaseCommunication | undefined>;
   deleteCommunication(userId: string, commId: string): Promise<boolean>;
   getCommunication(userId: string, commId: string): Promise<CaseCommunication | undefined>;
+
+  listExhibitLists(userId: string, caseId: string): Promise<ExhibitList[]>;
+  getExhibitList(userId: string, listId: string): Promise<ExhibitList | undefined>;
+  createExhibitList(userId: string, caseId: string, data: InsertExhibitList): Promise<ExhibitList>;
+  updateExhibitList(userId: string, listId: string, data: UpdateExhibitList): Promise<ExhibitList | undefined>;
+  deleteExhibitList(userId: string, listId: string): Promise<boolean>;
+
+  listExhibits(userId: string, exhibitListId: string): Promise<Exhibit[]>;
+  getExhibit(userId: string, exhibitId: string): Promise<Exhibit | undefined>;
+  createExhibit(userId: string, caseId: string, exhibitListId: string, data: InsertExhibit): Promise<Exhibit>;
+  updateExhibit(userId: string, exhibitId: string, data: UpdateExhibit): Promise<Exhibit | undefined>;
+  deleteExhibit(userId: string, exhibitId: string): Promise<boolean>;
+  reorderExhibits(userId: string, exhibitListId: string, orderedIds: string[]): Promise<boolean>;
+
+  listExhibitEvidence(userId: string, exhibitId: string): Promise<EvidenceFile[]>;
+  attachEvidence(userId: string, caseId: string, exhibitId: string, evidenceId: string): Promise<ExhibitEvidence | null>;
+  detachEvidence(userId: string, exhibitId: string, evidenceId: string): Promise<boolean>;
+  getExhibitsForEvidence(userId: string, evidenceId: string): Promise<Exhibit[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -899,6 +927,172 @@ export class DatabaseStorage implements IStorage {
   async deleteCommunication(userId: string, commId: string): Promise<boolean> {
     const res = await db.delete(caseCommunications).where(and(eq(caseCommunications.id, commId), eq(caseCommunications.userId, userId))).returning();
     return res.length > 0;
+  }
+
+  async listExhibitLists(userId: string, caseId: string): Promise<ExhibitList[]> {
+    const rows = await db.select().from(exhibitLists)
+      .where(and(eq(exhibitLists.userId, userId), eq(exhibitLists.caseId, caseId)))
+      .orderBy(desc(exhibitLists.createdAt));
+    return rows;
+  }
+
+  async getExhibitList(userId: string, listId: string): Promise<ExhibitList | undefined> {
+    const [row] = await db.select().from(exhibitLists)
+      .where(and(eq(exhibitLists.id, listId), eq(exhibitLists.userId, userId)));
+    return row;
+  }
+
+  async createExhibitList(userId: string, caseId: string, data: InsertExhibitList): Promise<ExhibitList> {
+    const [row] = await db.insert(exhibitLists)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        notes: data.notes ?? null,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return row;
+  }
+
+  async updateExhibitList(userId: string, listId: string, data: UpdateExhibitList): Promise<ExhibitList | undefined> {
+    const [row] = await db.update(exhibitLists)
+      .set({
+        ...("title" in data ? { title: data.title } : {}),
+        ...("notes" in data ? { notes: data.notes ?? null } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(exhibitLists.id, listId), eq(exhibitLists.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteExhibitList(userId: string, listId: string): Promise<boolean> {
+    const list = await this.getExhibitList(userId, listId);
+    if (!list) return false;
+    const exhibitRows = await db.select().from(exhibits)
+      .where(and(eq(exhibits.exhibitListId, listId), eq(exhibits.userId, userId)));
+    const exhibitIds = exhibitRows.map(e => e.id);
+    if (exhibitIds.length > 0) {
+      await db.delete(exhibitEvidence).where(and(eq(exhibitEvidence.userId, userId), inArray(exhibitEvidence.exhibitId, exhibitIds)));
+    }
+    await db.delete(exhibits).where(and(eq(exhibits.exhibitListId, listId), eq(exhibits.userId, userId)));
+    const res = await db.delete(exhibitLists).where(and(eq(exhibitLists.id, listId), eq(exhibitLists.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  private generateNextLabel(existingLabels: string[]): string {
+    const usedLabels = new Set(existingLabels.map(l => l.toUpperCase()));
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (const letter of alphabet) {
+      if (!usedLabels.has(letter)) return letter;
+    }
+    for (const first of alphabet) {
+      for (const second of alphabet) {
+        const combo = first + second;
+        if (!usedLabels.has(combo)) return combo;
+      }
+    }
+    return `EX${existingLabels.length + 1}`;
+  }
+
+  async listExhibits(userId: string, exhibitListId: string): Promise<Exhibit[]> {
+    const rows = await db.select().from(exhibits)
+      .where(and(eq(exhibits.userId, userId), eq(exhibits.exhibitListId, exhibitListId)))
+      .orderBy(asc(exhibits.sortOrder));
+    return rows;
+  }
+
+  async getExhibit(userId: string, exhibitId: string): Promise<Exhibit | undefined> {
+    const [row] = await db.select().from(exhibits)
+      .where(and(eq(exhibits.id, exhibitId), eq(exhibits.userId, userId)));
+    return row;
+  }
+
+  async createExhibit(userId: string, caseId: string, exhibitListId: string, data: InsertExhibit): Promise<Exhibit> {
+    const existing = await this.listExhibits(userId, exhibitListId);
+    const existingLabels = existing.map(e => e.label);
+    const label = this.generateNextLabel(existingLabels);
+    const maxSort = existing.length > 0 ? Math.max(...existing.map(e => e.sortOrder)) : -1;
+    const [row] = await db.insert(exhibits)
+      .values({
+        userId,
+        caseId,
+        exhibitListId,
+        label,
+        title: data.title,
+        description: data.description ?? null,
+        sortOrder: maxSort + 1,
+        included: data.included ?? true,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return row;
+  }
+
+  async updateExhibit(userId: string, exhibitId: string, data: UpdateExhibit): Promise<Exhibit | undefined> {
+    const [row] = await db.update(exhibits)
+      .set({
+        ...("title" in data ? { title: data.title } : {}),
+        ...("description" in data ? { description: data.description ?? null } : {}),
+        ...("included" in data ? { included: data.included } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(exhibits.id, exhibitId), eq(exhibits.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteExhibit(userId: string, exhibitId: string): Promise<boolean> {
+    await db.delete(exhibitEvidence).where(and(eq(exhibitEvidence.exhibitId, exhibitId), eq(exhibitEvidence.userId, userId)));
+    const res = await db.delete(exhibits).where(and(eq(exhibits.id, exhibitId), eq(exhibits.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  async reorderExhibits(userId: string, exhibitListId: string, orderedIds: string[]): Promise<boolean> {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.update(exhibits)
+        .set({ sortOrder: i, updatedAt: new Date() })
+        .where(and(eq(exhibits.id, orderedIds[i]), eq(exhibits.userId, userId), eq(exhibits.exhibitListId, exhibitListId)));
+    }
+    return true;
+  }
+
+  async listExhibitEvidence(userId: string, exhibitId: string): Promise<EvidenceFile[]> {
+    const links = await db.select().from(exhibitEvidence)
+      .where(and(eq(exhibitEvidence.exhibitId, exhibitId), eq(exhibitEvidence.userId, userId)));
+    if (links.length === 0) return [];
+    const evidenceIds = links.map(l => l.evidenceId);
+    const files = await db.select().from(evidenceFiles)
+      .where(and(eq(evidenceFiles.userId, userId), inArray(evidenceFiles.id, evidenceIds)));
+    return files;
+  }
+
+  async attachEvidence(userId: string, caseId: string, exhibitId: string, evidenceId: string): Promise<ExhibitEvidence | null> {
+    const existing = await db.select().from(exhibitEvidence)
+      .where(and(eq(exhibitEvidence.exhibitId, exhibitId), eq(exhibitEvidence.evidenceId, evidenceId)));
+    if (existing.length > 0) return null;
+    const [row] = await db.insert(exhibitEvidence)
+      .values({ userId, caseId, exhibitId, evidenceId })
+      .returning();
+    return row;
+  }
+
+  async detachEvidence(userId: string, exhibitId: string, evidenceId: string): Promise<boolean> {
+    const res = await db.delete(exhibitEvidence)
+      .where(and(eq(exhibitEvidence.exhibitId, exhibitId), eq(exhibitEvidence.evidenceId, evidenceId), eq(exhibitEvidence.userId, userId)))
+      .returning();
+    return res.length > 0;
+  }
+
+  async getExhibitsForEvidence(userId: string, evidenceId: string): Promise<Exhibit[]> {
+    const links = await db.select().from(exhibitEvidence)
+      .where(and(eq(exhibitEvidence.evidenceId, evidenceId), eq(exhibitEvidence.userId, userId)));
+    if (links.length === 0) return [];
+    const exhibitIds = links.map(l => l.exhibitId);
+    const rows = await db.select().from(exhibits)
+      .where(and(eq(exhibits.userId, userId), inArray(exhibits.id, exhibitIds)));
+    return rows;
   }
 }
 

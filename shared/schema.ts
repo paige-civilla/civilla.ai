@@ -711,3 +711,87 @@ export const updateCommunicationSchema = z.object({
 export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
 export type UpdateCommunication = z.infer<typeof updateCommunicationSchema>;
 export type CaseCommunication = typeof caseCommunications.$inferSelect;
+
+export const exhibitLists = pgTable("exhibit_lists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("exhibit_lists_case_idx").on(table.caseId),
+  userIdx: index("exhibit_lists_user_idx").on(table.userId),
+  caseCreatedIdx: index("exhibit_lists_case_created_idx").on(table.caseId, table.createdAt),
+}));
+
+export const insertExhibitListSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+  notes: z.string().max(5000, "Notes must be 5,000 characters or less").optional().nullable(),
+});
+
+export const updateExhibitListSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export type InsertExhibitList = z.infer<typeof insertExhibitListSchema>;
+export type UpdateExhibitList = z.infer<typeof updateExhibitListSchema>;
+export type ExhibitList = typeof exhibitLists.$inferSelect;
+
+export const exhibits = pgTable("exhibits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  exhibitListId: varchar("exhibit_list_id").notNull(),
+  label: text("label").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  included: boolean("included").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  listIdx: index("exhibits_list_idx").on(table.exhibitListId),
+  caseIdx: index("exhibits_case_idx").on(table.caseId),
+  userIdx: index("exhibits_user_idx").on(table.userId),
+  listSortIdx: index("exhibits_list_sort_idx").on(table.exhibitListId, table.sortOrder),
+}));
+
+export const insertExhibitSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+  description: z.string().max(5000, "Description must be 5,000 characters or less").optional().nullable(),
+  included: z.boolean().optional().default(true),
+});
+
+export const updateExhibitSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  included: z.boolean().optional(),
+});
+
+export type InsertExhibit = z.infer<typeof insertExhibitSchema>;
+export type UpdateExhibit = z.infer<typeof updateExhibitSchema>;
+export type Exhibit = typeof exhibits.$inferSelect;
+
+export const exhibitEvidence = pgTable("exhibit_evidence", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  exhibitId: varchar("exhibit_id").notNull(),
+  evidenceId: varchar("evidence_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  exhibitIdx: index("exhibit_evidence_exhibit_idx").on(table.exhibitId),
+  evidenceIdx: index("exhibit_evidence_evidence_idx").on(table.evidenceId),
+  caseIdx: index("exhibit_evidence_case_idx").on(table.caseId),
+  uniqueExhibitEvidence: uniqueIndex("exhibit_evidence_unique_idx").on(table.exhibitId, table.evidenceId),
+}));
+
+export const attachEvidenceToExhibitSchema = z.object({
+  evidenceId: z.string().min(1, "Evidence ID is required"),
+});
+
+export type AttachEvidenceToExhibit = z.infer<typeof attachEvidenceToExhibitSchema>;
+export type ExhibitEvidence = typeof exhibitEvidence.$inferSelect;

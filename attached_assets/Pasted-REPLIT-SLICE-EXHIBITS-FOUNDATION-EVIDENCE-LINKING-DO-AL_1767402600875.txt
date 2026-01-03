@@ -1,0 +1,178 @@
+REPLIT — SLICE: EXHIBITS (FOUNDATION + EVIDENCE LINKING) — DO ALL WORK, THEN GIVE ME A DETAILED SUMMARY
+
+CONTEXT
+This is Civilla. User is not a developer. You will implement the Exhibits module foundation (CRUD) plus wiring between Evidence ↔ Exhibits.
+Do NOT redesign the whole app. Keep styling consistent with authenticated app theme.
+Routes should live under /app/exhibits/:caseId and use existing AppLayout.
+
+GOALS (WHAT MUST WORK)
+1) User can create Exhibit Lists per case (e.g., “Trial Exhibits”, “Hearing 5/6/25”)
+2) Inside an Exhibit List, user can add Exhibits (A, B, C… auto), edit title/description, reorder, mark “Included/Not included”
+3) User can attach existing Evidence files to an Exhibit (many-to-many):
+   - From Exhibits page: “Attach Evidence” opens a picker of that case’s evidence
+   - From Evidence page: “Add to Exhibit List” lets user choose list + exhibit (or create new exhibit)
+4) All ownership enforcement: user can only see/edit their own case data (same pattern as other modules)
+5) Dashboard + Pattern Analysis can later read this data easily (so design schema cleanly)
+
+DATABASE + SCHEMA (Drizzle)
+Add to shared/schema.ts:
+A) exhibit_lists table:
+- id (uuid text)
+- userId
+- caseId
+- title (required, max 200)
+- notes (optional, max 5000)
+- createdAt
+- updatedAt
+Indexes: (caseId), (userId), (caseId, createdAt)
+
+B) exhibits table:
+- id
+- userId
+- caseId
+- exhibitListId (FK to exhibit_lists.id)
+- label (TEXT, required)  // like “A”, “B”, “C”, “1”, etc.
+- title (TEXT, required, max 200)
+- description (TEXT optional max 5000)
+- sortOrder (INT required default 0)
+- included (BOOLEAN default true)
+- createdAt
+- updatedAt
+Indexes: (exhibitListId), (caseId), (userId), (exhibitListId, sortOrder)
+
+C) exhibit_evidence join table (many-to-many):
+- id
+- userId
+- caseId
+- exhibitId (FK)
+- evidenceId (FK to evidence_files.id)
+- createdAt
+Unique constraint: (exhibitId, evidenceId)
+Indexes: (exhibitId), (evidenceId), (caseId)
+
+Zod schemas:
+- insertExhibitListSchema
+- updateExhibitListSchema
+- insertExhibitSchema
+- updateExhibitSchema
+- attachEvidenceToExhibitSchema (exhibitId, evidenceId)
+Types exported for all.
+
+DB INIT / MIGRATION
+Update server/db.ts initDbTables():
+- Create exhibit_lists, exhibits, exhibit_evidence if not exists
+- Add indexes + unique constraint
+- If you use addColumnIfNotExists patterns, keep consistent
+
+STORAGE LAYER
+Update server/storage.ts:
+Add CRUD methods:
+- listExhibitLists(userId, caseId)
+- createExhibitList(userId, caseId, data)
+- updateExhibitList(userId, exhibitListId, data)
+- deleteExhibitList(userId, exhibitListId)  // should cascade delete exhibits + join records OR manually delete in transaction
+
+- listExhibits(userId, exhibitListId)
+- createExhibit(userId, caseId, exhibitListId, data)
+  - Auto-labeling: When adding a new exhibit, choose next label based on existing count:
+    default sequence A-Z then AA, AB if >26 (safe), OR allow numeric if user chooses; but for now just do A-Z then AA... automatically.
+  - sortOrder should append to end.
+- updateExhibit(userId, exhibitId, data)
+- reorderExhibits(userId, exhibitListId, orderedIds[]) sets sortOrder accordingly
+- deleteExhibit(userId, exhibitId) deletes join rows too
+
+Join methods:
+- listExhibitEvidence(userId, exhibitId) -> returns evidenceFiles metadata
+- attachEvidence(userId, caseId, exhibitId, evidenceId) with unique handling
+- detachEvidence(userId, exhibitId, evidenceId)
+
+All must enforce ownership via userId and caseId checks (follow existing patterns in codebase).
+
+API ROUTES (server/routes.ts)
+Add requireAuth protected endpoints:
+
+Exhibit Lists:
+GET    /api/cases/:caseId/exhibit-lists
+POST   /api/cases/:caseId/exhibit-lists
+PATCH  /api/exhibit-lists/:listId
+DELETE /api/exhibit-lists/:listId
+
+Exhibits:
+GET    /api/exhibit-lists/:listId/exhibits
+POST   /api/exhibit-lists/:listId/exhibits
+PATCH  /api/exhibits/:exhibitId
+POST   /api/exhibit-lists/:listId/exhibits/reorder   body: { orderedIds: string[] }
+DELETE /api/exhibits/:exhibitId
+
+Exhibit ↔ Evidence links:
+GET    /api/exhibits/:exhibitId/evidence
+POST   /api/exhibits/:exhibitId/evidence/attach   body: { evidenceId: string }
+POST   /api/exhibits/:exhibitId/evidence/detach   body: { evidenceId: string }
+
+From Evidence side convenience:
+POST   /api/evidence/:evidenceId/add-to-exhibit   body: { exhibitListId: string, exhibitId?: string, createNewExhibitTitle?: string }
+
+Validation:
+- Use structured validation errors like other endpoints: { error: "Validation failed", fields: {...} }
+- Titles length, notes/description length enforced.
+
+FRONTEND UI (Authenticated App)
+Create/Update page: client/src/pages/AppExhibits.tsx
+Route: /app/exhibits/:caseId
+
+UI requirements (keep simple and consistent):
+A) Exhibit Lists panel (top):
+- List existing exhibit lists (cards)
+- Button “New Exhibit List”
+- Clicking a list opens its exhibits below (or navigates within same page state)
+- Edit list title/notes, Delete list (confirm modal)
+
+B) Exhibits panel (for selected list):
+- Shows exhibits in order with label badge (A, B…)
+- Actions per exhibit: Edit, Delete, Toggle Included
+- Button “Add Exhibit” (title + optional description)
+- Reorder: simplest acceptable is “Move Up/Move Down” buttons (no drag-drop required)
+
+C) Evidence attachments:
+- Each exhibit expands to show attached evidence:
+  - List evidence name + size + category + quick “Open/Download” link using existing evidence download behavior
+  - Remove (detach) button
+- “Attach Evidence” button opens a modal with searchable list of Evidence files from that case with checkboxes to attach.
+
+D) Evidence page wiring:
+Update client/src/pages/AppEvidence.tsx:
+- Add action in each evidence card row: “Add to Exhibit”
+- Modal: pick Exhibit List then pick Exhibit (or “Create new exhibit” with title field)
+- On success: toast + close + no full refresh; invalidate relevant queries.
+
+E) Navigation:
+- Ensure AppCase dashboard tile “Exhibits” already routes here and works.
+- Update AppNavbar dropdown label “Exhibits” routes to /app/exhibits/:caseId (like others).
+
+MOBILE
+Use the same mobile patterns already applied:
+- px-4 sm:px-5 md:px-16
+- full-width buttons on mobile
+- 44px touch targets
+- stack panels vertically on small screens
+
+ACCEPTANCE TESTS (YOU MUST RUN/VERIFY LOCALLY)
+1) Login -> open /app/exhibits/:caseId
+2) Create Exhibit List -> appears
+3) Add 3 exhibits -> labels A, B, C assigned automatically
+4) Attach an evidence file to Exhibit A -> appears under A
+5) From Evidence page -> Add same evidence to Exhibit B -> works, does NOT duplicate within same exhibit, but can attach to multiple exhibits
+6) Detach evidence -> removed
+7) Delete exhibit -> join rows removed
+8) Delete exhibit list -> deletes its exhibits + joins
+9) Ownership: try using another caseId (unowned) -> 404 or Unauthorized as appropriate
+
+IMPORTANT OUTPUT
+When done, provide:
+- Files changed (with brief purpose)
+- Endpoints added
+- Any UI notes
+- Confirmation that all acceptance tests passed
+- If something can’t be tested, say exactly what and why.
+
+START NOW.
