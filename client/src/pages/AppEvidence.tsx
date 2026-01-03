@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, EvidenceFile } from "@shared/schema";
+import type { Case, EvidenceFile, ExhibitList, Exhibit } from "@shared/schema";
 
 const CATEGORIES = [
   { value: "document", label: "Document" },
@@ -61,6 +63,10 @@ export default function AppEvidence() {
   const [editingMetadata, setEditingMetadata] = useState<Record<string, { category: string; description: string; tags: string }>>({});
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [addToExhibitEvidenceId, setAddToExhibitEvidenceId] = useState<string | null>(null);
+  const [selectedExhibitListId, setSelectedExhibitListId] = useState<string>("");
+  const [selectedExhibitId, setSelectedExhibitId] = useState<string>("");
+  const [newExhibitTitle, setNewExhibitTitle] = useState("");
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -71,6 +77,19 @@ export default function AppEvidence() {
     queryKey: ["/api/cases", caseId, "evidence"],
     enabled: !!caseId,
   });
+
+  const { data: exhibitListsData } = useQuery<{ exhibitLists: ExhibitList[] }>({
+    queryKey: ["/api/cases", caseId, "exhibit-lists"],
+    enabled: !!addToExhibitEvidenceId && !!caseId,
+  });
+
+  const { data: exhibitsData } = useQuery<{ exhibits: Exhibit[] }>({
+    queryKey: ["/api/exhibit-lists", selectedExhibitListId, "exhibits"],
+    enabled: !!selectedExhibitListId,
+  });
+
+  const exhibitLists = exhibitListsData?.exhibitLists || [];
+  const exhibits = exhibitsData?.exhibits || [];
 
   const currentCase = caseData?.case;
   const rawFiles = evidenceData?.files || [];
@@ -127,6 +146,37 @@ export default function AppEvidence() {
       toast({ title: "Error", description: error.message || "Failed to delete file", variant: "destructive" });
     },
   });
+
+  const addToExhibitMutation = useMutation({
+    mutationFn: async ({ evidenceId, exhibitListId, exhibitId, createNewExhibitTitle }: { evidenceId: string; exhibitListId: string; exhibitId?: string; createNewExhibitTitle?: string }) => {
+      return apiRequest("POST", `/api/evidence/${evidenceId}/add-to-exhibit`, { exhibitListId, exhibitId, createNewExhibitTitle });
+    },
+    onSuccess: () => {
+      toast({ title: "Added to exhibit", description: "Evidence file linked to exhibit successfully." });
+      closeAddToExhibitModal();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to add to exhibit", variant: "destructive" });
+    },
+  });
+
+  const closeAddToExhibitModal = () => {
+    setAddToExhibitEvidenceId(null);
+    setSelectedExhibitListId("");
+    setSelectedExhibitId("");
+    setNewExhibitTitle("");
+  };
+
+  const handleAddToExhibit = () => {
+    if (!addToExhibitEvidenceId || !selectedExhibitListId) return;
+    if (!selectedExhibitId && !newExhibitTitle.trim()) return;
+    addToExhibitMutation.mutate({
+      evidenceId: addToExhibitEvidenceId,
+      exhibitListId: selectedExhibitListId,
+      exhibitId: selectedExhibitId || undefined,
+      createNewExhibitTitle: !selectedExhibitId && newExhibitTitle.trim() ? newExhibitTitle.trim() : undefined,
+    });
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -441,6 +491,15 @@ export default function AppEvidence() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                onClick={() => setAddToExhibitEvidenceId(file.id)}
+                                data-testid={`button-add-to-exhibit-${file.id}`}
+                                title="Add to exhibit"
+                              >
+                                <Paperclip className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => setDeleteConfirmId(file.id)}
                                 data-testid={`button-delete-${file.id}`}
                               >
@@ -522,6 +581,78 @@ export default function AppEvidence() {
           )}
         </div>
       </section>
+
+      <Dialog open={!!addToExhibitEvidenceId} onOpenChange={(open) => !open && closeAddToExhibitModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add to Exhibit</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {exhibitLists.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No exhibit lists found. Create an exhibit list first in the Exhibits section.
+              </p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="exhibit-list-select">Exhibit List</Label>
+                  <Select value={selectedExhibitListId} onValueChange={(v) => { setSelectedExhibitListId(v); setSelectedExhibitId(""); setNewExhibitTitle(""); }}>
+                    <SelectTrigger id="exhibit-list-select" data-testid="select-exhibit-list">
+                      <SelectValue placeholder="Select an exhibit list" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {exhibitLists.map((list) => (
+                        <SelectItem key={list.id} value={list.id}>{list.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedExhibitListId && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="exhibit-select">Existing Exhibit (optional)</Label>
+                      <Select value={selectedExhibitId} onValueChange={(v) => { setSelectedExhibitId(v); if (v) setNewExhibitTitle(""); }}>
+                        <SelectTrigger id="exhibit-select" data-testid="select-exhibit">
+                          <SelectValue placeholder="Select an exhibit or create new" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Create new exhibit</SelectItem>
+                          {exhibits.map((exhibit) => (
+                            <SelectItem key={exhibit.id} value={exhibit.id}>{exhibit.label}: {exhibit.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {!selectedExhibitId && (
+                      <div className="space-y-2">
+                        <Label htmlFor="new-exhibit-title">New Exhibit Title</Label>
+                        <Input
+                          id="new-exhibit-title"
+                          placeholder="Enter title for new exhibit"
+                          value={newExhibitTitle}
+                          onChange={(e) => setNewExhibitTitle(e.target.value)}
+                          data-testid="input-new-exhibit-title"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeAddToExhibitModal}>Cancel</Button>
+            <Button
+              onClick={handleAddToExhibit}
+              disabled={!selectedExhibitListId || (!selectedExhibitId && !newExhibitTitle.trim()) || addToExhibitMutation.isPending}
+            >
+              {addToExhibitMutation.isPending ? "Adding..." : "Add to Exhibit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
