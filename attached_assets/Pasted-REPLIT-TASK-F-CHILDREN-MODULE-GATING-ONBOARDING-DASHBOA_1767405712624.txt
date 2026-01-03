@@ -1,0 +1,90 @@
+REPLIT TASK (F) — CHILDREN MODULE GATING (ONBOARDING + DASHBOARD + NAV)
+
+GOAL
+Only show the “Children” module if the user indicated they have children (during onboarding) OR if the case already has at least one child saved. If they indicated “No children,” do not show the Children module tile or nav link for that case.
+
+IMPORTANT RULES
+- Do not remove the existing Children CRUD functionality you already built.
+- Do not put Children management only inside Case Settings. Create a dedicated “Children” module page so it behaves like the other modules.
+- Gating must be per-case (different cases can have different children).
+
+BACKEND CHANGES
+1) shared/schema.ts
+- Add a boolean column on cases table:
+  hasChildren: boolean("has_children").notNull().default(false)
+- Update insertCaseSchema / update case schema if you have one to allow hasChildren optional.
+- Export it in Case type automatically (drizzle).
+
+2) server/db.ts
+- Add migration line to ensure the column exists in production:
+  await addColumnIfNotExists("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
+
+3) server/routes.ts
+- Add a route to update the case hasChildren flag:
+  PATCH /api/cases/:caseId
+  Body: { hasChildren?: boolean }
+  Validate user owns the case.
+  Update cases.hasChildren accordingly.
+- Ensure existing children CRUD endpoints remain unchanged.
+
+FRONTEND CHANGES
+4) Create a dedicated Children module page (new file):
+- client/src/pages/AppChildren.tsx
+Behavior:
+- Use the same layout/padding/mobile patterns as other modules.
+- Show the case children list + Add/Edit/Delete dialogs (reuse the UI you built in AppCase.tsx).
+- Use the existing endpoints (GET/POST/PATCH/DELETE children) you already created.
+- If the user hasChildren is false AND there are 0 children records, show a friendly empty state explaining:
+  “You marked this case as having no children. If that’s incorrect, enable Children for this case.”
+  Provide a button: “Enable Children for this Case” that PATCHes /api/cases/:caseId with { hasChildren: true }.
+
+5) Update routing so the Children module exists:
+- client/src/App.tsx (wouter)
+Add route:
+  /app/children/:caseId  -> <AppChildren />
+
+6) GATING LOGIC (Dashboard tiles, Case Workspace tiles, Navbar)
+Wherever you render module tiles/links for a specific case:
+- Determine “childrenEnabledForCase” as:
+  childrenEnabledForCase = currentCase.hasChildren === true OR childrenCount > 0
+
+Implementation approach:
+- On pages that already fetch children list (or can):
+  Use a query:
+    GET /api/cases/:caseId/children
+  Set childrenCount = response.children.length
+- Only show the Children tile / nav link when childrenEnabledForCase is true.
+
+Files to update:
+- client/src/pages/AppDashboard.tsx (module tiles)
+- client/src/pages/AppCase.tsx (case workspace tiles)
+- client/src/components/layout/AppNavbar.tsx (dropdown/menu links)
+Where “Children” should link:
+  /app/children/:caseId
+
+7) ONBOARDING INTEGRATION
+In the onboarding Children step:
+- When the user answers the “Do you have children in this case?” question:
+  If Yes -> PATCH /api/cases/:caseId with { hasChildren: true }
+  If No  -> PATCH /api/cases/:caseId with { hasChildren: false }
+- If they choose “I don’t know yet” -> do NOT change hasChildren (leave as-is) OR set null behavior; but since the DB is boolean, keep it false and allow them to enable later via the Children module empty state CTA.
+
+8) CASE SETTINGS INTEGRATION (optional but recommended)
+In Case Settings page, add a simple toggle:
+- “This case involves children” (switch)
+Toggling updates hasChildren via PATCH /api/cases/:caseId.
+If turned off, do NOT delete children records automatically. Just hide the module unless children exist; if children exist, show a warning:
+  “You already have children saved. Remove them first if this case does not involve children.”
+
+ACCEPTANCE TESTS (must pass)
+- Case A: hasChildren=false AND no children records -> Children tile/link is hidden everywhere.
+- Case B: hasChildren=true -> Children tile/link appears everywhere and opens /app/children/:caseId.
+- Case C: hasChildren=false BUT children records exist -> Children tile/link still appears (because childrenCount > 0).
+- Onboarding: choosing Yes/No immediately affects whether the Children module appears after onboarding completes.
+- Mobile: Children page matches the same responsive patterns (px-4, 44px touch targets, buttons full width on mobile).
+
+OUTPUT REQUIRED
+After implementing, report:
+- All files edited/created
+- Confirm the acceptance tests above were manually verified
+- Screenshot of Dashboard tiles for a case with children disabled and enabled
