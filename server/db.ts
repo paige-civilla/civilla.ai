@@ -436,5 +436,34 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_case_id ON exhibit_evidence(case_id)`
   ]);
 
+  await initTable("lexi_threads", `
+    CREATE TABLE IF NOT EXISTS lexi_threads (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      title TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_lexi_threads_user_case_updated ON lexi_threads(user_id, case_id, updated_at DESC)`
+  ]);
+
+  await initTable("lexi_messages", `
+    CREATE TABLE IF NOT EXISTS lexi_messages (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      thread_id VARCHAR(255) NOT NULL REFERENCES lexi_threads(id) ON DELETE CASCADE,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      safety_flags JSONB,
+      model TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)`
+  ]);
+
   console.log("Database table initialization complete");
 }

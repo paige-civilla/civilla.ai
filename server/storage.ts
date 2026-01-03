@@ -19,6 +19,8 @@ import {
   exhibitLists,
   exhibits,
   exhibitEvidence,
+  lexiThreads,
+  lexiMessages,
   type User,
   type InsertUser,
   type Case,
@@ -63,6 +65,9 @@ import {
   type InsertExhibit,
   type UpdateExhibit,
   type ExhibitEvidence,
+  type LexiThread,
+  type LexiMessage,
+  type LexiMessageRole,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -159,6 +164,14 @@ export interface IStorage {
   attachEvidence(userId: string, caseId: string, exhibitId: string, evidenceId: string): Promise<ExhibitEvidence | null>;
   detachEvidence(userId: string, exhibitId: string, evidenceId: string): Promise<boolean>;
   getExhibitsForEvidence(userId: string, evidenceId: string): Promise<Exhibit[]>;
+
+  listLexiThreads(userId: string, caseId: string): Promise<LexiThread[]>;
+  createLexiThread(userId: string, caseId: string, title: string): Promise<LexiThread>;
+  renameLexiThread(userId: string, threadId: string, title: string): Promise<LexiThread | undefined>;
+  deleteLexiThread(userId: string, threadId: string): Promise<boolean>;
+  getLexiThread(userId: string, threadId: string): Promise<LexiThread | undefined>;
+  listLexiMessages(userId: string, threadId: string): Promise<LexiMessage[]>;
+  createLexiMessage(userId: string, caseId: string, threadId: string, role: LexiMessageRole, content: string, safetyFlags?: Record<string, boolean> | null, model?: string | null): Promise<LexiMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1095,6 +1108,73 @@ export class DatabaseStorage implements IStorage {
     const rows = await db.select().from(exhibits)
       .where(and(eq(exhibits.userId, userId), inArray(exhibits.id, exhibitIds)));
     return rows;
+  }
+
+  async listLexiThreads(userId: string, caseId: string): Promise<LexiThread[]> {
+    return db.select().from(lexiThreads)
+      .where(and(eq(lexiThreads.userId, userId), eq(lexiThreads.caseId, caseId)))
+      .orderBy(desc(lexiThreads.updatedAt));
+  }
+
+  async createLexiThread(userId: string, caseId: string, title: string): Promise<LexiThread> {
+    const [row] = await db.insert(lexiThreads)
+      .values({ userId, caseId, title })
+      .returning();
+    return row;
+  }
+
+  async renameLexiThread(userId: string, threadId: string, title: string): Promise<LexiThread | undefined> {
+    const [row] = await db.update(lexiThreads)
+      .set({ title, updatedAt: new Date() })
+      .where(and(eq(lexiThreads.id, threadId), eq(lexiThreads.userId, userId)))
+      .returning();
+    return row;
+  }
+
+  async deleteLexiThread(userId: string, threadId: string): Promise<boolean> {
+    await db.delete(lexiMessages).where(and(eq(lexiMessages.threadId, threadId), eq(lexiMessages.userId, userId)));
+    const res = await db.delete(lexiThreads).where(and(eq(lexiThreads.id, threadId), eq(lexiThreads.userId, userId))).returning();
+    return res.length > 0;
+  }
+
+  async getLexiThread(userId: string, threadId: string): Promise<LexiThread | undefined> {
+    const [row] = await db.select().from(lexiThreads)
+      .where(and(eq(lexiThreads.id, threadId), eq(lexiThreads.userId, userId)));
+    return row;
+  }
+
+  async listLexiMessages(userId: string, threadId: string): Promise<LexiMessage[]> {
+    return db.select().from(lexiMessages)
+      .where(and(eq(lexiMessages.threadId, threadId), eq(lexiMessages.userId, userId)))
+      .orderBy(asc(lexiMessages.createdAt));
+  }
+
+  async createLexiMessage(
+    userId: string,
+    caseId: string,
+    threadId: string,
+    role: LexiMessageRole,
+    content: string,
+    safetyFlags?: Record<string, boolean> | null,
+    model?: string | null
+  ): Promise<LexiMessage> {
+    const [row] = await db.insert(lexiMessages)
+      .values({
+        userId,
+        caseId,
+        threadId,
+        role,
+        content,
+        safetyFlags: safetyFlags ?? null,
+        model: model ?? null,
+      })
+      .returning();
+    
+    await db.update(lexiThreads)
+      .set({ updatedAt: new Date() })
+      .where(eq(lexiThreads.id, threadId));
+    
+    return row;
   }
 }
 

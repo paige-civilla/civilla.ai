@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -20,6 +20,10 @@ import {
   HeadingLevel,
   AlignmentType,
 } from "docx";
+import OpenAI from "openai";
+import { buildLexiSystemPrompt } from "./lexi/systemPrompt";
+import { SAFETY_TEMPLATES, detectUPLRequest, shouldBlockMessage } from "./lexi/safetyTemplates";
+import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -2829,6 +2833,177 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get exhibits for evidence error:", error);
       res.status(500).json({ error: "Failed to get exhibits" });
+    }
+  });
+
+  const openai = new OpenAI({
+    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  });
+
+  app.get("/api/lexi/disclaimer", requireAuth, (_req, res) => {
+    res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
+  });
+
+  app.get("/api/cases/:caseId/lexi/threads", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const threads = await storage.listLexiThreads(userId, caseId);
+      res.json({ threads });
+    } catch (error) {
+      console.error("List lexi threads error:", error);
+      res.status(500).json({ error: "Failed to list threads" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/lexi/threads", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parsed = createLexiThreadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+      }
+
+      const thread = await storage.createLexiThread(userId, caseId, parsed.data.title);
+      res.status(201).json({ thread });
+    } catch (error) {
+      console.error("Create lexi thread error:", error);
+      res.status(500).json({ error: "Failed to create thread" });
+    }
+  });
+
+  app.patch("/api/lexi/threads/:threadId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { threadId } = req.params;
+
+      const parsed = renameLexiThreadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+      }
+
+      const thread = await storage.renameLexiThread(userId, threadId, parsed.data.title);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+      res.json({ thread });
+    } catch (error) {
+      console.error("Rename lexi thread error:", error);
+      res.status(500).json({ error: "Failed to rename thread" });
+    }
+  });
+
+  app.delete("/api/lexi/threads/:threadId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { threadId } = req.params;
+
+      const deleted = await storage.deleteLexiThread(userId, threadId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+      res.json({ deleted: true });
+    } catch (error) {
+      console.error("Delete lexi thread error:", error);
+      res.status(500).json({ error: "Failed to delete thread" });
+    }
+  });
+
+  app.get("/api/lexi/threads/:threadId/messages", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { threadId } = req.params;
+
+      const thread = await storage.getLexiThread(userId, threadId);
+      if (!thread) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      const messages = await storage.listLexiMessages(userId, threadId);
+      res.json({ messages });
+    } catch (error) {
+      console.error("List lexi messages error:", error);
+      res.status(500).json({ error: "Failed to list messages" });
+    }
+  });
+
+  app.post("/api/lexi/chat", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+
+      const parsed = lexiChatRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+      }
+
+      const { caseId, threadId, message, stateOverride } = parsed.data;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const thread = await storage.getLexiThread(userId, threadId);
+      if (!thread || thread.caseId !== caseId) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+
+      const uplTemplate = detectUPLRequest(message);
+      if (uplTemplate) {
+        const userMsg = await storage.createLexiMessage(userId, caseId, threadId, "user", message, { upl_detected: true });
+        const response = SAFETY_TEMPLATES[uplTemplate];
+        const assistantMsg = await storage.createLexiMessage(userId, caseId, threadId, "assistant", response, { safety_template: true }, null);
+        return res.json({ userMessage: userMsg, assistantMessage: assistantMsg });
+      }
+
+      await storage.createLexiMessage(userId, caseId, threadId, "user", message);
+
+      const existingMessages = await storage.listLexiMessages(userId, threadId);
+      const systemPrompt = buildLexiSystemPrompt({
+        state: stateOverride || caseRecord.state || undefined,
+        county: caseRecord.county || undefined,
+        caseType: caseRecord.caseType || undefined,
+      });
+
+      const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
+        { role: "system", content: systemPrompt },
+      ];
+
+      for (const msg of existingMessages.slice(-20)) {
+        if (msg.role === "user" || msg.role === "assistant") {
+          chatHistory.push({ role: msg.role, content: msg.content });
+        }
+      }
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        messages: chatHistory,
+        max_completion_tokens: 2048,
+      });
+
+      const assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+      const assistantMsg = await storage.createLexiMessage(
+        userId, caseId, threadId, "assistant", assistantContent, null, "gpt-4.1"
+      );
+
+      res.json({ assistantMessage: assistantMsg });
+    } catch (error) {
+      console.error("Lexi chat error:", error);
+      res.status(500).json({ error: "Failed to process message" });
     }
   });
 

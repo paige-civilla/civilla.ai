@@ -805,3 +805,58 @@ export const attachEvidenceToExhibitSchema = z.object({
 
 export type AttachEvidenceToExhibit = z.infer<typeof attachEvidenceToExhibitSchema>;
 export type ExhibitEvidence = typeof exhibitEvidence.$inferSelect;
+
+export const lexiMessageRoles = ["user", "assistant", "system"] as const;
+export type LexiMessageRole = typeof lexiMessageRoles[number];
+
+export const lexiThreads = pgTable("lexi_threads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseUpdatedIdx: index("lexi_threads_user_case_updated_idx").on(table.userId, table.caseId, table.updatedAt),
+}));
+
+export const createLexiThreadSchema = z.object({
+  title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
+});
+
+export const renameLexiThreadSchema = z.object({
+  title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
+});
+
+export type CreateLexiThread = z.infer<typeof createLexiThreadSchema>;
+export type RenameLexiThread = z.infer<typeof renameLexiThreadSchema>;
+export type LexiThread = typeof lexiThreads.$inferSelect;
+
+export const lexiMessages = pgTable("lexi_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  threadId: varchar("thread_id").notNull().references(() => lexiThreads.id),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  safetyFlags: jsonb("safety_flags"),
+  model: text("model"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  threadCreatedIdx: index("lexi_messages_thread_created_idx").on(table.threadId, table.createdAt),
+}));
+
+export const createLexiMessageSchema = z.object({
+  role: z.enum(lexiMessageRoles),
+  content: z.string().min(1, "Content is required"),
+});
+
+export type CreateLexiMessage = z.infer<typeof createLexiMessageSchema>;
+export type LexiMessage = typeof lexiMessages.$inferSelect;
+
+export const lexiChatRequestSchema = z.object({
+  caseId: z.string().min(1, "Case ID is required"),
+  threadId: z.string().min(1, "Thread ID is required"),
+  message: z.string().min(1, "Message is required").max(10000, "Message too long"),
+  stateOverride: z.string().optional(),
+});
