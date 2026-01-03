@@ -1,0 +1,215 @@
+COMPREHENSIVE PRE-AI AUDIT — CIVILLA APP
+GOAL: Verify foundation integrity before adding OpenAI / Lexi.
+
+You must perform a FULL AUDIT across backend, frontend, data integrity, routing, permissions, and UX flows.
+Do NOT add new features. Only audit, verify, and report.
+
+========================
+1. AUTH + SECURITY AUDIT
+========================
+Verify:
+- Authentication is required for all /app/* routes
+- No unauthenticated access to:
+  - cases
+  - documents
+  - evidence
+  - exhibits
+  - communications
+  - pattern analysis
+  - calendar
+- Logout works on:
+  - manual logout
+  - idle timeout
+  - tab close / navigation away
+- Sessions are destroyed properly
+- No tokens or secrets are exposed client-side
+
+Report:
+- Any route that lacks auth protection
+- Any session edge cases
+
+========================
+2. DATA OWNERSHIP & PERMISSIONS
+========================
+Verify for EVERY module:
+- User can ONLY access their own data
+- Case-based isolation is enforced
+- No cross-case data leakage
+
+Modules to check:
+- Cases
+- Children
+- Documents (drafts + court DOCX)
+- Evidence (R2 uploads)
+- Exhibits
+- Calendar + categories
+- Tasks / Case To-Do
+- Deadlines
+- Communications
+- Contacts
+- Pattern Analysis
+- Savings Widget calculations
+
+Report:
+- Any missing userId / caseId checks
+- Any query missing ownership enforcement
+
+========================
+3. CRUD COMPLETENESS CHECK
+========================
+For each module, confirm:
+- Create
+- Read
+- Update
+- Delete
+- Empty states
+- Error handling
+
+Modules:
+- Cases
+- Children
+- Documents
+- Evidence
+- Exhibits
+- Calendar Items
+- Calendar Categories
+- Case To-Do
+- Deadlines
+- Communications
+- Contacts
+
+Report:
+- Any missing CRUD operation
+- Any UI that exists without backend support
+- Any backend route not used by UI
+
+========================
+4. ONBOARDING FLOW AUDIT
+========================
+Verify:
+- Onboarding shows intro warning (length notice)
+- Users can skip fields via “I don’t know yet”
+- Scroll position resets correctly between steps
+- Agreements require full scroll before acceptance
+- Onboarding completion persists
+- Completed users NEVER see onboarding again
+- Redirect always goes to Dashboard after completion
+
+Verify stored fields:
+- Profile
+- Address
+- Case basics
+- Children
+- Deferred fields
+- Agreement acceptance timestamps
+
+Report:
+- Any loopbacks
+- Any missing persistence
+- Any broken redirects
+
+========================
+5. DOCUMENT SYSTEM AUDIT
+========================
+Verify:
+- All document templates exist
+- Document types are educationally explained (no UPL)
+- Draft → Review → Court-Ready flow is consistent
+- Court DOCX uses:
+  - official case number
+  - party names
+  - correct caption format
+- Nickname is NEVER used in court documents
+- Autofill consent logic works and persists
+
+Report:
+- Any mismatch between UI copy and behavior
+- Any place legal advice could be implied
+
+========================
+6. MODULE INTRO / EDUCATION AUDIT
+========================
+Verify:
+- Each module has:
+  - short educational explanation
+  - purpose explanation
+  - no legal advice
+- Language is neutral and informational
+- No “you should file” or “best strategy” wording
+
+Report:
+- Any copy that risks UPL
+- Any missing module intro
+
+========================
+7. CALENDAR & CROSS-MODULE SYNC
+========================
+Verify:
+- Calendar aggregates:
+  - deadlines
+  - case to-do
+  - calendar items
+- Marking “Done” syncs across modules
+- Upcoming list is capped and ordered correctly
+- Categories:
+  - create
+  - edit
+  - delete
+  - color selection persists
+
+Report:
+- Any desync
+- Any double source of truth
+
+========================
+8. UI / UX CONSISTENCY AUDIT
+========================
+Verify:
+- Color tokens are consistent (app vs marketing)
+- Module cards use correct colors
+- Hover, focus, active states are consistent
+- Buttons follow hierarchy (primary, secondary, destructive)
+- No leftover placeholder headings (e.g., “Modules”, “Case Workspace”)
+
+Report:
+- Any visual inconsistency
+- Any outdated styles or classes
+
+========================
+9. MOBILE READINESS AUDIT
+========================
+Test at:
+- 320px
+- 375px
+- 414px
+
+Verify:
+- No text cutoff
+- No horizontal scroll
+- Touch targets ≥ 44px
+- Modals scroll correctly
+- Lexi panel behaves correctly on mobile
+
+Report:
+- Any overflow
+- Any broken layout
+- Any interaction issues
+
+========================
+10. LOGGING & OBSERVABILITY
+========================
+Verify:
+- Errors are logged server-side
+- Failed API calls return meaningful messages
+- No silent failures
+
+========================
+FINAL OUTPUT REQUIRED
+========================
+Provide:
+1. A checklist showing PASS / FAIL for each section
+2. A list of CRITICAL issues (must fix before OpenAI)
+3. A list of NON-BLOCKING issues
+4. Confirmation whether system is READY FOR AI INTEGRATION
+
+Do NOT implement fixes unless explicitly asked.
