@@ -861,4 +861,43 @@ export const lexiChatRequestSchema = z.object({
   threadId: z.string().min(1, "Thread ID is required"),
   message: z.string().min(1, "Message is required").max(10000, "Message too long"),
   stateOverride: z.string().optional(),
+  mode: z.enum(["help", "chat", "research"]).optional(),
+  moduleKey: z.string().optional(),
 });
+
+export const caseRuleTerms = pgTable("case_rule_terms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  moduleKey: text("module_key").notNull(),
+  jurisdictionState: text("jurisdiction_state").notNull(),
+  jurisdictionCounty: text("jurisdiction_county"),
+  termKey: text("term_key").notNull(),
+  officialLabel: text("official_label").notNull(),
+  alsoKnownAs: text("also_known_as"),
+  summary: text("summary").notNull(),
+  sourcesJson: jsonb("sources_json").notNull().default(sql`'[]'::jsonb`),
+  lastCheckedAt: timestamp("last_checked_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("case_rule_terms_user_case_idx").on(table.userId, table.caseId),
+  termIdx: index("case_rule_terms_term_idx").on(table.caseId, table.moduleKey, table.termKey),
+}));
+
+export const upsertCaseRuleTermSchema = z.object({
+  moduleKey: z.string().min(1),
+  jurisdictionState: z.string().min(1),
+  jurisdictionCounty: z.string().optional().nullable(),
+  termKey: z.string().min(1),
+  officialLabel: z.string().min(1),
+  alsoKnownAs: z.string().optional().nullable(),
+  summary: z.string().min(1),
+  sourcesJson: z.array(z.object({
+    title: z.string().optional(),
+    url: z.string().url(),
+    retrievedAt: z.string().optional(),
+  })).default([]),
+});
+
+export type UpsertCaseRuleTerm = z.infer<typeof upsertCaseRuleTermSchema>;
+export type CaseRuleTerm = typeof caseRuleTerms.$inferSelect;

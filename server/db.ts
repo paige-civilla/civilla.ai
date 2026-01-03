@@ -469,5 +469,26 @@ export async function initDbTables(): Promise<void> {
     `ALTER TABLE lexi_messages ADD COLUMN IF NOT EXISTS metadata JSONB`
   ]);
 
+  await initTable("case_rule_terms", `
+    CREATE TABLE IF NOT EXISTS case_rule_terms (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      module_key TEXT NOT NULL,
+      jurisdiction_state TEXT NOT NULL,
+      jurisdiction_county TEXT,
+      term_key TEXT NOT NULL,
+      official_label TEXT NOT NULL,
+      also_known_as TEXT,
+      summary TEXT NOT NULL,
+      sources_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+      last_checked_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)`
+  ]);
+
   console.log("Database table initialization complete");
 }
