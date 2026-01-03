@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { getLexiHelp, type LexiHelpContent } from "@/lib/lexiHelpContent";
-import { HelpCircle, MessageSquare, Plus, Trash2, Loader2, Search, Lightbulb, FileText } from "lucide-react";
+import { HelpCircle, MessageSquare, Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { LexiThread, LexiMessage } from "@shared/schema";
@@ -68,8 +70,26 @@ function formatMessageContent(content: string) {
   return parts;
 }
 
+function containsDeadlineInfo(content: string): boolean {
+  const deadlinePatterns = [
+    /\b\d+\s*days?\b/i,
+    /\bwithin\s+\d+/i,
+    /\bdeadline/i,
+    /\bdue\s+date/i,
+    /\bfiling\s+deadline/i,
+    /\bresponse\s+deadline/i,
+    /\bmust\s+(be\s+)?file[d]?\s+(within|by)/i,
+    /\bserve[d]?\s+(within|by)/i,
+    /\bcalendar\s+days?\b/i,
+    /\bbusiness\s+days?\b/i,
+    /\bcourt\s+days?\b/i,
+  ];
+  
+  return deadlinePatterns.some(pattern => pattern.test(content));
+}
+
 export default function LexiPanel() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"help" | "chat">("help");
   const [input, setInput] = useState("");
@@ -83,6 +103,7 @@ export default function LexiPanel() {
   const title = useMemo(() => "Lexi", []);
   const routeKey = getRouteKey(location);
   const caseId = extractCaseId(location);
+  const { toast } = useToast();
 
   const helpContent: LexiHelpContent = useMemo(() => {
     return getLexiHelp({ routeKey, selectedDocKey });
@@ -241,6 +262,20 @@ export default function LexiPanel() {
   function startNewThread() {
     const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
     createThreadMutation.mutate(`New conversation - ${timestamp}`);
+  }
+
+  function handleAddToDeadlines(messageContent: string) {
+    if (!caseId) return;
+    
+    localStorage.setItem("lexi_deadline_context", messageContent.slice(0, 500));
+    
+    toast({
+      title: "Opening Deadlines",
+      description: "Create a deadline based on this information.",
+    });
+    
+    setOpen(false);
+    setLocation(`/app/deadlines/${caseId}`);
   }
 
   const noCaseSelected = !caseId;
@@ -570,6 +605,7 @@ export default function LexiPanel() {
                       const meta = m.metadata as { intent?: LexiIntent; refused?: boolean; hadSources?: boolean } | null;
                       const badge = m.role === "assistant" ? getIntentBadge(meta?.intent) : null;
                       const formattedContent = formatMessageContent(m.content);
+                      const showDeadlineButton = m.role === "assistant" && containsDeadlineInfo(m.content) && caseId;
                       
                       return (
                         <div key={m.id} className="space-y-1">
@@ -608,6 +644,20 @@ export default function LexiPanel() {
                               )
                             )}
                           </div>
+                          {showDeadlineButton && (
+                            <div className="mr-8 pt-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddToDeadlines(m.content)}
+                                className="text-xs"
+                                data-testid={`button-add-deadline-${m.id}`}
+                              >
+                                <Clock className="w-3 h-3 mr-1" />
+                                Add to Deadlines
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
