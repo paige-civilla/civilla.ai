@@ -1,0 +1,105 @@
+TASK: Build/Finish the Contacts module (Slice: Contacts CRUD + UI polish + integration-ready)
+
+CONSTRAINTS:
+- I am not a developer. Implement fully and report exactly what you changed.
+- Keep styling consistent with the authenticated app theme (app-shell): 
+  background #FAF8F4, surfaces #E4ECED, module tiles #A2BEC2, text/borders #1E2020, primary buttons #314143, destructive burgundy #7A1E2D.
+- Do not break existing routes or other modules.
+
+GOAL:
+Create a Contacts module that works per-case, supports full CRUD, and can be referenced later by Communications + Documents (autofill).
+
+REQUIREMENTS:
+
+A) DATABASE + SCHEMA
+1) Add a new table: case_contacts (if it does not already exist)
+   Columns:
+   - id (uuid/text)
+   - user_id (string, required)
+   - case_id (string, required)
+   - display_name (string, required)  // e.g., "Aaron Woolf"
+   - role (string, optional)          // e.g., "Opposing Counsel", "Respondent", "Teacher", "Therapist", "GAL"
+   - organization (string, optional)  // firm/school/clinic
+   - email (string, optional)
+   - phone (string, optional)
+   - address (string, optional)
+   - notes (text, optional, max 5000)
+   - is_primary (boolean default false) // user can mark a contact primary per role if desired
+   - created_at, updated_at
+2) Zod validation schemas:
+   - insertCaseContactSchema
+   - updateCaseContactSchema
+   Include max lengths and basic formatting (email optional but valid if provided).
+3) Ensure db.ts init creates the table and adds indexes:
+   - (user_id, case_id)
+   - (case_id, created_at desc)
+
+B) STORAGE METHODS
+Add storage methods:
+- listCaseContacts(userId, caseId)
+- createCaseContact(userId, caseId, data)
+- updateCaseContact(userId, contactId, data)  // verify ownership by user_id
+- deleteCaseContact(userId, contactId)        // verify ownership
+- getCaseContact(userId, contactId) optional
+
+C) API ROUTES
+Add these endpoints (requireAuth):
+- GET    /api/cases/:caseId/contacts
+- POST   /api/cases/:caseId/contacts
+- PATCH  /api/contacts/:contactId
+- DELETE /api/contacts/:contactId
+Return JSON with { contacts: [...] } for list.
+
+D) FRONTEND PAGE
+1) Implement/finish client/src/pages/AppContacts.tsx as a real page (not “Coming soon”):
+   - Header: "Contacts"
+   - Helper text: “Store people involved in your case so they’re easy to reuse in communications and documents.”
+   - List of contacts as cards (consistent styling)
+   - Search box (filters by name/role/org)
+   - Filter dropdown by role (All + existing roles)
+   - Sort (Newest / A–Z)
+2) Add “Add Contact” button:
+   - Opens modal with fields:
+     display_name (required)
+     role (dropdown + “Custom role” option)
+     organization
+     email
+     phone
+     address
+     notes
+   - Save validates + shows toast
+3) Each contact card:
+   - shows name, role, org
+   - shows email/phone if present
+   - Edit button (opens modal prefilled)
+   - Delete button (confirm modal, burgundy)
+4) Empty state:
+   - friendly explanation + button to add first contact
+
+E) NAVIGATION + ROUTING
+1) Ensure the “Contacts” tile on dashboard/case workspace routes correctly:
+   - /app/contacts/:caseId
+2) Ensure AppNavbar dropdown includes Contacts (if not already)
+3) If an old placeholder route exists, keep it but redirect to the real route.
+
+F) INTEGRATION-READY (NO AI YET)
+Add a small “Copy” action on each contact card:
+- Copy email
+- Copy phone
+- Copy full contact block (name + role + email + phone + org)
+This is purely UI convenience now, but helps workflow.
+
+G) ACCEPTANCE TESTS (YOU MUST RUN)
+1) Create a contact → appears in list
+2) Edit contact → persists after refresh
+3) Delete contact → removed after refresh
+4) Search/filter works
+5) Mobile: no cutoff at 320px width; buttons full-width on mobile; touch targets min 44px
+
+DELIVERABLE OUTPUT:
+After implementing, reply with:
+- Files edited (full paths)
+- New routes added
+- Schema/table details
+- Screenshots of Contacts page on desktop + mobile width
+- Confirmation that build passes and no console errors
