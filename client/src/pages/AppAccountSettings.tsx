@@ -10,6 +10,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 interface UserProfile {
   fullName: string | null;
@@ -106,6 +107,14 @@ export default function AppAccountSettings() {
             </div>
           </div>
         </div>
+
+        <ModuleIntro
+          title="About Account Settings"
+          paragraphs={[
+            "Manage your personal information and preferences. This information may be used to pre-fill documents and court forms.",
+            "Keep your contact information current for accurate document generation."
+          ]}
+        />
 
         <div className="space-y-8">
           <Card className="bg-white">

@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertTaskSchema, type Case, type Task, type InsertTask, taskStatuses } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 export default function AppTasks() {
   const [, setLocation] = useLocation();
@@ -189,6 +190,14 @@ export default function AppTasks() {
               Add To-Do
             </Button>
           </div>
+
+          <ModuleIntro
+            title="About Case To-Do"
+            paragraphs={[
+              "Keep track of tasks you need to complete for your case. Set due dates and mark tasks complete as you finish them.",
+              "Breaking larger tasks into smaller steps can help you stay organized and make progress."
+            ]}
+          />
 
           {tasksLoading ? (
             <div className="w-full flex items-center justify-center py-12">

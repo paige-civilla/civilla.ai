@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, ExhibitList, Exhibit, EvidenceFile } from "@shared/schema";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 function formatDate(date: string | Date): string {
   const d = new Date(date);
@@ -125,6 +126,15 @@ export default function AppExhibits() {
             New Exhibit List
           </Button>
         </div>
+
+        <ModuleIntro
+          title="About Exhibit Lists"
+          paragraphs={[
+            "Exhibits are pieces of evidence formally presented to the court. This tool helps you organize and number exhibits according to court requirements.",
+            "Many courts require exhibit lists to be submitted in advance of hearings or trials."
+          ]}
+          caution="Check your court's local rules for specific exhibit formatting requirements."
+        />
 
         {showCreateList && (
           <Card>

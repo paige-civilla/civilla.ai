@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, TimelineEvent } from "@shared/schema";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 const CATEGORIES = [
   { value: "court", label: "Court" },
@@ -262,6 +263,14 @@ export default function AppTimeline() {
               </Button>
             )}
           </div>
+
+          <ModuleIntro
+            title="About the Case Timeline"
+            paragraphs={[
+              "The timeline helps you organize important events chronologically. Recording events as they happen can help you maintain an accurate record of your case history.",
+              "Courts often find chronological organization helpful when reviewing case details."
+            ]}
+          />
 
           {(showAddForm || editingEventId) && (
             <Card className="w-full mb-6">

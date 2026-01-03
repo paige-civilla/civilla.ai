@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertDeadlineSchema, type Case, type Deadline, type InsertDeadline } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 export default function AppDeadlines() {
   const [, setLocation] = useLocation();
@@ -194,6 +195,15 @@ export default function AppDeadlines() {
               Add Deadline
             </Button>
           </div>
+
+          <ModuleIntro
+            title="About Deadlines"
+            paragraphs={[
+              "Court deadlines are often strict. This tool helps you track filing deadlines, hearing dates, and other important dates.",
+              "Missing a deadline can have serious consequences for your case."
+            ]}
+            caution="Always verify deadlines with official court documents or your court clerk."
+          />
 
           {deadlinesLoading ? (
             <div className="w-full flex items-center justify-center py-12">

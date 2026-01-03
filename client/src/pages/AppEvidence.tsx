@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, EvidenceFile, ExhibitList, Exhibit } from "@shared/schema";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 const CATEGORIES = [
   { value: "document", label: "Document" },
@@ -345,6 +346,15 @@ export default function AppEvidence() {
               </Button>
             </div>
           </div>
+
+          <ModuleIntro
+            title="About Evidence Management"
+            paragraphs={[
+              "This tool helps you organize and store evidence files for your case. Upload documents, photos, messages, and other files that may be relevant to your proceedings.",
+              "Keeping evidence organized can help when preparing exhibits or referring to specific documents later."
+            ]}
+            caution="Store copies of your evidence securely. This tool is for organization purposes."
+          />
 
           {!r2Configured && (
             <Card className="w-full mb-6 border-amber-300 bg-amber-50">

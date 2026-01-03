@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Case, CaseContact, contactRoles } from "@shared/schema";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 const ROLE_OPTIONS: { value: string; label: string }[] = [
   { value: "opposing_party", label: "Opposing Party" },
@@ -286,9 +287,13 @@ export default function AppContacts() {
             </Button>
           </div>
 
-          <p className="font-sans text-sm text-neutral-darkest/70 mb-6">
-            Store people involved in your case so they're easy to reuse in communications and documents.
-          </p>
+          <ModuleIntro
+            title="About Case Contacts"
+            paragraphs={[
+              "Keep track of people involved in your case, including the other party, attorneys, witnesses, and court personnel.",
+              "Having contact information organized saves time when you need to reach someone."
+            ]}
+          />
 
           <div className="flex flex-col sm:flex-row gap-3 w-full mb-6">
             <div className="relative flex-1">

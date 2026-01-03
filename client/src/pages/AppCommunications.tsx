@@ -23,6 +23,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertContactSchema, insertCommunicationSchema, type Case, type CaseContact, type CaseCommunication, type InsertContact, type InsertCommunication, contactRoles, communicationDirections, communicationChannels, communicationStatuses } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 const roleLabels: Record<string, string> = {
   opposing_party: "Opposing Party",
@@ -283,6 +284,14 @@ export default function AppCommunications() {
               </p>
             </div>
           </div>
+
+          <ModuleIntro
+            title="About Communications Log"
+            paragraphs={[
+              "Track important communications related to your case. Logging communications can help you remember details and provide context if needed later.",
+              "Include the date, participants, and a summary of what was discussed."
+            ]}
+          />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-6">

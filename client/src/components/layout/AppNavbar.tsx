@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, TrendingUp, MessageSquare, Users, Calculator, Baby } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, TrendingUp, MessageSquare, Users, Calculator, Baby, BookOpen } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
@@ -134,6 +134,7 @@ export default function AppNavbar() {
     if (caseId) {
       links.push(
         { label: "Documents", href: `/app/documents/${caseId}`, icon: FileText },
+        { label: "Document Library", href: `/app/library/${caseId}`, icon: BookOpen },
         { label: "Timeline", href: `/app/timeline/${caseId}`, icon: Calendar },
         { label: "Evidence", href: `/app/evidence/${caseId}`, icon: FolderOpen },
         { label: "Exhibits", href: `/app/exhibits/${caseId}`, icon: Image },

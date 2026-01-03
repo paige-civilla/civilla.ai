@@ -32,6 +32,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CaseChild } from "@shared/schema";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 interface UserProfile {
   fullName: string | null;
@@ -300,6 +301,14 @@ export default function AppCaseSettings() {
             </div>
           </div>
         </div>
+
+        <ModuleIntro
+          title="About Case Settings"
+          paragraphs={[
+            "Configure your case details including the official title, a nickname for easy reference, and the case number.",
+            "The official title is used in court documents, while the nickname is for your own reference."
+          ]}
+        />
 
         {profileData?.profile && (
           <div className="mb-10">

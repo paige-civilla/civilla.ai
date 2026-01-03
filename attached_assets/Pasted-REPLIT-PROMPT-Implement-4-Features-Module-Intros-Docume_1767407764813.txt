@@ -1,0 +1,238 @@
+REPLIT PROMPT — Implement 4 Features (Module Intros + Document Library + Lexi Help + Scalable Template Registry)
+
+Goal: Build these 4 things end-to-end, inside the authenticated app:
+
+1) A reusable “Module Intro” panel on every module page (safe, non-UPL educational copy).
+2) A “Document Type Library” screen that lists common family-court document types + motion subtypes (to compel, sanctions, continuance, etc.) with plain-language explanations and “Start Draft” actions.
+3) Lexi contextual help: a “What is this?” help experience tied to the current page + selected document type/subtype.
+4) A scalable template registry so adding new templates does NOT require hardcoding in multiple places; templates should be data-driven and consistently available in Draft + Court-Formatted generation.
+
+Constraints:
+- Avoid UPL. Use neutral language: “what this is”, “why it’s used”, “what information is commonly included”, “questions to consider”, NOT “you should file X”.
+- All changes apply to authenticated app (.app-shell) only unless explicitly stated.
+- Keep routes clean: rename “Messages” -> “Patterns” already done; keep consistent.
+
+Deliverables (must complete all):
+A) Module Intro component + used everywhere
+B) Document Library page + routing + nav link
+C) Lexi contextual help integration (side panel content changes based on route and selection)
+D) Template registry refactor + add missing common templates (at least: Notice of Appearance + Family Law Case Information Sheet as templates)
+
+------------------------------------------------------------
+A) MODULE INTRO PANEL (Reusable)
+
+1. Create a reusable component:
+- File: client/src/components/app/ModuleIntro.tsx
+- Props:
+  - title: string
+  - paragraphs: string[] (1–3 paragraphs)
+  - bullets?: string[] (optional)
+  - caution?: string (optional small disclaimer line)
+- UI:
+  - A soft bordered card, uses app tokens:
+    - bg: white (#FFFFFF) OR bg-background if that is #FAF8F4; border: #A2BEC2; text: #243032
+  - Title in heading style
+  - Paragraphs below
+  - Optional bullets
+  - Optional caution in smaller muted text
+- Must look good on mobile: px-4, responsive typography, spacing.
+
+2. Add ModuleIntro to the top of EVERY authenticated module page:
+- AppDashboard.tsx (short intro)
+- AppEvidence.tsx
+- AppTimeline.tsx
+- AppExhibits.tsx
+- AppDocuments.tsx
+- AppTasks.tsx (Case To-Do)
+- AppDeadlines.tsx
+- AppPatternAnalysis.tsx (or whatever file name is Patterns)
+- AppContacts.tsx
+- AppCommunications.tsx
+- AppChildSupport.tsx (if exists)
+- AppCaseSettings.tsx
+- AppAccountSettings.tsx
+Keep copy “educational / organizational” and non-UPL.
+
+Make sure any intro text does not say “file this” or “choose this motion”.
+Use phrasing like:
+- “This tool helps you organize…”
+- “Commonly used when…”
+- “Many courts require…”
+
+------------------------------------------------------------
+B) DOCUMENT TYPE LIBRARY (New Screen)
+
+1. Create a document library data file (single source of truth):
+- File: client/src/lib/documentLibrary.ts
+- Export:
+  - type DocCategory = "Starting a case" | "Motions" | "Responses" | "Orders" | "Service" | "Evidence/Exhibits" | "Other"
+  - interface DocumentType {
+      key: string;               // stable key, e.g. "notice_of_appearance"
+      title: string;             // user-facing name
+      category: DocCategory;
+      description: string;       // 1–2 sentences, non-UPL
+      commonWhenUsed: string[];  // bullets, non-UPL
+      requiredInfo: string[];    // bullets
+      subtypeOf?: string;        // if it’s a motion subtype, e.g. subtypeOf="motion"
+      subtypeLabel?: string;     // e.g. "Motion to Compel"
+    }
+  - export const DOCUMENT_TYPES: DocumentType[] = [...]
+Include at minimum:
+- Declaration / Affidavit
+- Motion (generic) + subtypes:
+  - Motion to Compel
+  - Motion for Sanctions
+  - Motion for Continuance
+  - Motion to Reconsider / Amend
+  - Motion for Temporary Orders
+  - Motion to Modify (generic)
+  - Motion to Enforce (generic)
+- Proposed Order
+- Certificate of Service
+- Notice of Appearance (self-represented / pro se friendly wording)
+- Family Law Case Information Sheet (or “Case Information Sheet”)
+- Proof of Service / Service forms (keep neutral)
+- Response / Objection (generic)
+(We can expand later; start with these.)
+
+2. Create a new page:
+- File: client/src/pages/AppDocumentLibrary.tsx
+- Route: /app/library/:caseId  (or /app/doc-library/:caseId)
+- UI:
+  - Search input
+  - Filter by category (tabs or dropdown)
+  - Cards listing doc types with: title, short description, bullets
+  - Each card has button: “Start Draft” (creates a draft document in Documents module)
+  - For motion subtypes: show them grouped under “Motions” with a “Subtype” pill.
+
+3. “Start Draft” behavior:
+- When clicked:
+  - POST to existing documents endpoint for drafts: /api/cases/:caseId/documents (or whatever exists)
+  - Creates a new draft document with:
+    - title = selected doc type title (or motion subtype label)
+    - templateKey = map to internal template key (see template registry in section D)
+    - content = starter placeholder text (non-UPL) e.g. headings + blanks
+  - On success: navigate to /app/documents/:caseId and highlight/open that document if your UI supports it; otherwise just route to Documents.
+
+4. Add to navigation:
+- Add “Document Library” link to AppNavbar dropdown (and optionally module tiles).
+- Use a BookOpen icon.
+
+------------------------------------------------------------
+C) LEXI CONTEXTUAL HELP (Route-aware + Document-aware)
+
+1. Create a Lexi help content source file:
+- File: client/src/lib/lexiHelpContent.ts
+- Export a function:
+  - getLexiHelp(context: {
+      routeKey: string;           // e.g. "documents", "evidence", "timeline"
+      selectedDocKey?: string;    // from review modal or document type selection
+      selectedSubtypeKey?: string;
+    }) => { title: string; paragraphs: string[]; bullets?: string[]; }
+- Populate with:
+  - Per-module help (Evidence, Timeline, Exhibits, Documents, etc.)
+  - Per-document help (Motion generic + each subtype)
+Keep it educational:
+  - “What it is”
+  - “Why people use it”
+  - “What info is commonly included”
+  - “Questions to consider”
+No recommendations like “You should file X”.
+
+2. Update Lexi panel behavior:
+- Wherever LexiPanel is implemented (client/src/components/LexiPanel.tsx or similar):
+  - Add a “Help mode” section at the top:
+    - When user is on a page: Lexi shows contextual help by default.
+    - Provide a toggle: “Help” vs “Chat” (so they can chat normally).
+  - On Documents page:
+    - If user is in the “Prepare Court-Formatted” step and has selected a doc type/subtype, Lexi Help should automatically show that doc explanation (not just the page explanation).
+  - Ensure click-outside still closes panel as requested earlier.
+
+3. Add “What is this?” link points:
+- On Documents > court formatted selection UI:
+  - Next to the doc type selector add a small text link “What is this?”
+  - Clicking it opens Lexi panel (if collapsed) and switches Lexi to Help mode for the selected doc type.
+- On Document Library cards:
+  - Add “Learn more” which opens Lexi help for that doc type.
+
+------------------------------------------------------------
+D) SCALABLE TEMPLATE REGISTRY (Single source of truth + add new templates)
+
+Problem to solve: templates are currently hardcoded across dropdowns, doc generation, etc.
+
+1. Create a shared registry in @shared so both server + client can reference:
+- File: shared/templates.ts  (NEW)
+- Export:
+  - export const TEMPLATE_REGISTRY = [
+      {
+        key: "declaration",
+        title: "Declaration",
+        docTypeKey: "declaration",
+        supportsCourtDocx: true,
+        supportsDraft: true
+      },
+      ...
+    ] as const
+  - include:
+    - motion (generic)
+    - proposed_order
+    - certificate_of_service
+    - notice_of_appearance
+    - case_information_sheet
+  - Also export helpful maps:
+    - templateKeys array
+    - getTemplateByKey()
+
+2. Update shared/schema.ts to use registry-derived keys:
+- Replace documentTemplateKeys hardcoded array with registry keys.
+- Ensure zod enums reference the new list.
+- Make sure existing keys remain valid (backwards compatible).
+
+3. Update server doc generation:
+- Wherever courtDocx generation chooses template text, change it to:
+  - look up TEMPLATE_REGISTRY by key
+  - support new templates:
+    - Notice of Appearance (court header + appearance language; user fills)
+    - Case Information Sheet (structured fields; can be partially blank; non-UPL)
+- Update payload schema if needed:
+  - Add optional document.subtypeKey and document.subtypeLabel (string)
+  - Store subtype in generated_documents.payload_json so history re-download preserves it.
+
+4. Update frontend dropdowns and UI:
+- AppDocuments “New Document” dropdown should be populated from TEMPLATE_REGISTRY (draft-capable).
+- Court-formatted selection should be populated from TEMPLATE_REGISTRY (court-docx-capable).
+- Document Library uses DOCUMENT_TYPES but maps to a templateKey from TEMPLATE_REGISTRY.
+
+5. Add motion subtypes without hardcoding new templates per subtype:
+- Motion subtypes should still use the same underlying "motion" templateKey, but:
+  - document.subtitle or document.title includes subtype label
+  - Lexi help content uses subtypeKey
+  - The draft starter content includes the subtype label in the header.
+
+6. Make sure history re-download includes subtype label/title:
+- The stored payload must include document.title/subtitle and subtype info so it reproduces the same download.
+
+------------------------------------------------------------
+Acceptance checklist (Replit must verify these):
+
+1) Every module page shows a ModuleIntro panel at the top, mobile-friendly.
+2) Document Library page exists, searchable, grouped, and “Start Draft” works.
+3) Lexi shows contextual Help on every page and “What is this?” opens the relevant help.
+4) Templates are registry-driven and appear consistently in:
+   - New Draft dropdown
+   - Court-Formatted generation selector
+   - Document Library “Start Draft”
+5) New templates:
+   - Notice of Appearance (draft + court-formatted)
+   - Case Information Sheet (draft + court-formatted)
+6) Motions:
+   - user can pick motion subtype in Document Library or in Documents flow
+   - subtype persists into download history
+7) No UPL language. Keep everything neutral and informational.
+
+Finally: After implementation, provide a detailed summary listing:
+- All files changed
+- All new routes added
+- How to test each feature manually in the UI
+
+Proceed to implement now.

@@ -6,6 +6,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication } from "@shared/schema";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 type PatternDataResponse = {
   deadlines: Deadline[];
@@ -223,6 +224,14 @@ export default function AppPatterns() {
               </p>
             </div>
           </div>
+
+          <ModuleIntro
+            title="About Pattern Analysis"
+            paragraphs={[
+              "This tool analyzes your logged communications to identify recurring themes and patterns. Recognizing patterns can help you understand the overall picture.",
+              "Pattern analysis is for your own organization and understanding."
+            ]}
+          />
 
           <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border border-[#A2BEC2]">

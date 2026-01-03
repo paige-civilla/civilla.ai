@@ -30,6 +30,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CaseChild } from "@shared/schema";
 import { Link } from "wouter";
+import ModuleIntro from "@/components/app/ModuleIntro";
 
 export default function AppChildren() {
   const params = useParams() as { caseId?: string };
@@ -227,6 +228,14 @@ export default function AppChildren() {
               </div>
             </div>
           </div>
+
+          <ModuleIntro
+            title="About Children Information"
+            paragraphs={[
+              "If your case involves children, this section helps you organize information about each child, including basic details and relevant notes.",
+              "This information may be needed for various court forms and filings."
+            ]}
+          />
 
           {!childrenEnabled ? (
             <Card className="w-full border-dashed">
