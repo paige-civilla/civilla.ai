@@ -91,6 +91,8 @@ export default function AppCaseSettings() {
   const [editCaseDialogOpen, setEditCaseDialogOpen] = useState(false);
   const [caseForm, setCaseForm] = useState({
     title: "",
+    nickname: "",
+    caseNumber: "",
     caseType: "",
     state: "",
     county: "",
@@ -189,6 +191,8 @@ export default function AppCaseSettings() {
     if (caseRecord) {
       setCaseForm({
         title: caseRecord.title || "",
+        nickname: caseRecord.nickname || "",
+        caseNumber: caseRecord.caseNumber || "",
         caseType: caseRecord.caseType || "",
         state: caseRecord.state || "",
         county: caseRecord.county || "",
@@ -543,13 +547,38 @@ export default function AppCaseSettings() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="case-title">Case Title *</Label>
+              <Label htmlFor="case-title">Case Title (Official) *</Label>
               <Input
                 id="case-title"
                 value={caseForm.title}
                 onChange={(e) => setCaseForm({ ...caseForm, title: e.target.value })}
                 placeholder="e.g., Smith v. Smith"
+                maxLength={80}
                 data-testid="input-case-title"
+              />
+              <p className="text-xs text-neutral-darkest/50">Used in formal documents and exports.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="case-nickname">Case Nickname</Label>
+              <Input
+                id="case-nickname"
+                value={caseForm.nickname}
+                onChange={(e) => setCaseForm({ ...caseForm, nickname: e.target.value })}
+                placeholder="e.g., My Custody Case"
+                maxLength={80}
+                data-testid="input-case-nickname"
+              />
+              <p className="text-xs text-neutral-darkest/50">A friendly name shown on your dashboard. Leave blank to use the official title.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="case-number">Case Number</Label>
+              <Input
+                id="case-number"
+                value={caseForm.caseNumber}
+                onChange={(e) => setCaseForm({ ...caseForm, caseNumber: e.target.value })}
+                placeholder="e.g., 2024-FL-12345"
+                maxLength={80}
+                data-testid="input-case-number"
               />
             </div>
             <div className="space-y-2">
