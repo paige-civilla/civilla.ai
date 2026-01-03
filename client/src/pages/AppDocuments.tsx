@@ -88,6 +88,8 @@ interface UserProfile {
   defaultRole: "self_represented" | "attorney";
   barNumber: string | null;
   firmName: string | null;
+  petitionerName: string | null;
+  respondentName: string | null;
 }
 
 interface ExtendedPayload extends GenerateDocumentPayload {
@@ -428,11 +430,11 @@ export default function AppDocuments() {
         state: currentCase.state || "Idaho",
       },
       case: {
-        caseNumber: currentCase.title || "CV10-XX-XXXX",
+        caseNumber: currentCase.caseNumber || "___________",
       },
       parties: {
-        petitioner: useAutofill && userProfile?.partyRole === "petitioner" ? (userProfile?.fullName || "[Petitioner Name]") : "[Petitioner Name]",
-        respondent: useAutofill && userProfile?.partyRole === "respondent" ? (userProfile?.fullName || "[Respondent Name]") : "[Respondent Name]",
+        petitioner: useAutofill ? (userProfile?.petitionerName || "[Petitioner Name]") : "[Petitioner Name]",
+        respondent: useAutofill ? (userProfile?.respondentName || "[Respondent Name]") : "[Respondent Name]",
       },
       filer: {
         fullName: useAutofill ? (userProfile?.fullName || "[Your Full Name]") : "[Your Full Name]",
@@ -506,8 +508,8 @@ export default function AppDocuments() {
           phone: userProfile.phone || reviewPayload.filer.phone,
         },
         parties: {
-          petitioner: userProfile.partyRole === "petitioner" ? (userProfile.fullName || "[Petitioner Name]") : reviewPayload.parties.petitioner,
-          respondent: userProfile.partyRole === "respondent" ? (userProfile.fullName || "[Respondent Name]") : reviewPayload.parties.respondent,
+          petitioner: userProfile.petitionerName || "[Petitioner Name]",
+          respondent: userProfile.respondentName || "[Respondent Name]",
         },
       });
     }

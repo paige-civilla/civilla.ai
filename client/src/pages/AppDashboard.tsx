@@ -389,11 +389,12 @@ export default function AppDashboard() {
             </div>
             <Button
               size="sm"
-              className="bg-[#314143] text-[#FAF8F4] border-2 border-[#1E2020] min-h-[44px] w-full sm:w-auto text-sm font-medium"
+              variant="outline"
+              className="border-[#1E2020] text-neutral-darkest w-full sm:w-auto text-xs"
               onClick={() => setLocation("/app/cases")}
               data-testid="button-view-all-cases"
             >
-              <Briefcase className="w-4 h-4 mr-2 flex-shrink-0" />
+              <Briefcase className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
               View all cases
             </Button>
           </div>

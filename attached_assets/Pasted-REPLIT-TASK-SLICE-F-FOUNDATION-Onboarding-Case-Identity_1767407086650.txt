@@ -1,0 +1,108 @@
+REPLIT TASK — SLICE F (FOUNDATION): Onboarding → Case Identity → Autofill → Court Docs Consistency
+
+AUTONOMY: MEDIUM
+SCOPE: APP SIDE ONLY (post-login). Do NOT change marketing pages.
+
+GOAL
+Make onboarding, case identity (title/nickname/case number), profile autofill, and court-document generation all pull from the same single source of truth, with correct redirects and zero “loop back to onboarding” bugs.
+
+ACCEPTANCE TESTS (MUST PASS)
+1) New user → Create account → Onboarding → finishes once → ALWAYS lands on /app/dashboard on future logins.
+2) Case Settings: editing Case Title, Case Nickname, Case Number persists after refresh.
+3) Dashboard + Case Workspace: uses Nickname (if set) as primary display; falls back to Case Title.
+4) Court DOCX generation: header uses Case Title (official) + Case Number; never uses Nickname in the pleading caption.
+5) Autofill: user profile fields (name/email/address/phone/role) prefill review modal only if user previously allowed it; user can deny; choice remembered.
+6) No scroll-position bugs: advancing onboarding steps always starts at top; closing policy modal returns you to the same scroll position (not bottom).
+
+PHASE 1 — DATA MODEL & API (Single Source of Truth)
+A) Confirm schema has these fields and they are actually in the DB tables (not just drizzle schema):
+- cases: title (official), nickname (nullable), caseNumber (nullable), state, county, caseType
+- user_profiles: fullName, email, phone, addressLine1, addressLine2, city, state, zip
+  plus: autoFillEnabled, autoFillChoiceMade, defaultRole, barNumber, firmName
+- users or user_profiles: onboardingCompleted (boolean) OR equivalent persistent flag
+
+B) If any columns are missing in DB init/migrations:
+- Update server/db.ts initTable("cases", ...) to include nickname and case_number (or caseNumber) column.
+- Update addColumnIfNotExists for existing deployments to add nickname + case_number columns safely.
+- Ensure naming is consistent everywhere (prefer snake_case in SQL: nickname, case_number).
+
+C) Ensure API returns these fields:
+- GET /api/cases and GET /api/cases/:caseId should return title, nickname, caseNumber.
+- PATCH /api/cases/:caseId (or whatever update route exists) must accept nickname + caseNumber and persist.
+- GET /api/profile returns all user_profiles autofill fields.
+- PATCH /api/profile (upsert) persists autoFillEnabled/autoFillChoiceMade/defaultRole + attorney fields.
+
+PHASE 2 — ONBOARDING FLOW (Fix loop + redirect)
+A) Fix the onboarding redirect logic:
+- After onboarding completion, set onboardingCompleted=true in persistent storage.
+- App guard: if onboardingCompleted=true, NEVER redirect user back into onboarding.
+- If onboardingCompleted=false, redirect to onboarding from any /app route except onboarding itself.
+
+B) Onboarding start + warning step:
+- Step 0 intro screen stays.
+- After final Agreements step, on success redirect to /app/dashboard AND mark onboarding complete.
+
+C) Fix “it took me back to the beginning” bug:
+- Confirm onboarding completion write is awaited and confirmed before navigate().
+- Do not reset onboarding local state after completion unless the redirect happens.
+
+D) Scroll-to-top fixes:
+- On every onboarding step change: window.scrollTo({ top: 0, behavior: "auto" })
+- When closing policy modal: restore the previous scroll position of the onboarding page instead of jumping to bottom.
+
+PHASE 3 — CASE IDENTITY RULES (Official vs Nickname)
+A) Display rules:
+- Dashboard: show nickname as primary title if present; show official title underneath smaller.
+- Case Workspace header: same rule.
+- Case picker/list: show nickname first, then official in small text.
+
+B) Court-document rules:
+- Pleading caption uses ONLY:
+  - Court: district/county/state
+  - Parties: petitioner/respondent
+  - Case Number
+  - Document Title
+  - Attorney/self-represented signature block
+- DO NOT use nickname in the DOCX caption/header.
+
+PHASE 4 — COURT DOCS: Review Modal uses Case + Profile (Autofill)
+A) Review modal payload defaults:
+- Case fields: county/state/caseNumber pulled from case record (not from user typing each time)
+- Party names pulled from case parties (if you have them) OR allow user to enter once and save to case.
+- Filer fields pulled from user profile IF autoFillEnabled is true.
+
+B) Autofill consent:
+- If autoFillChoiceMade=false: show consent modal FIRST, before review modal.
+- If user says “Yes”: set autoFillEnabled=true, autoFillChoiceMade=true; remember.
+- If user says “No”: set autoFillEnabled=false, autoFillChoiceMade=true; remember.
+- Always allow changing this later in Account Settings/Profile section.
+
+C) Date confirmation:
+- Keep auto date filled but require checkbox confirmation before enabling “Download Court-Formatted DOCX”.
+
+PHASE 5 — UX CONSISTENCY (quick wins)
+A) Case Workspace title:
+- Must be “Case Workspace” (no “Your”).
+B) “View All Cases”:
+- Make it smaller and styled like a secondary button (dark outline, matches Lexi/button tone).
+C) Remove stray headings:
+- Ensure “Modules” and any redundant “Case Workspace” subheading above tiles are removed.
+
+PHASE 6 — QA CHECKLIST (Run through these)
+1) Create new test account → onboarding → dashboard
+2) Set nickname/title/case number → refresh
+3) Generate DOCX → confirm caption uses official title + case number
+4) Deny autofill → review modal should NOT prefill
+5) Allow autofill → review modal DOES prefill
+6) Leave app idle 5 minutes → auto logout works (existing feature)
+7) Mobile 320px quick check for Dashboard + Onboarding + Documents
+
+DELIVERABLES (REQUIRED IN YOUR REPLY)
+After implementing, respond with:
+1) Files edited (full paths)
+2) Routes/endpoints touched
+3) DB columns added (if any)
+4) Confirmation of passing each Acceptance Test 1–6
+5) Any known limitations or TODOs you couldn’t finish
+
+START NOW.
