@@ -21,6 +21,7 @@ import {
   exhibitEvidence,
   lexiThreads,
   lexiMessages,
+  caseRuleTerms,
   type User,
   type InsertUser,
   type Case,
@@ -68,6 +69,8 @@ import {
   type LexiThread,
   type LexiMessage,
   type LexiMessageRole,
+  type CaseRuleTerm,
+  type UpsertCaseRuleTerm,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -173,6 +176,9 @@ export interface IStorage {
   markLexiThreadDisclaimerShown(userId: string, threadId: string): Promise<boolean>;
   listLexiMessages(userId: string, threadId: string): Promise<LexiMessage[]>;
   createLexiMessage(userId: string, caseId: string, threadId: string, role: LexiMessageRole, content: string, safetyFlags?: Record<string, boolean> | null, model?: string | null, metadata?: Record<string, unknown> | null): Promise<LexiMessage>;
+
+  getCaseRuleTerms(userId: string, caseId: string, moduleKey?: string): Promise<CaseRuleTerm[]>;
+  upsertCaseRuleTerm(userId: string, caseId: string, input: UpsertCaseRuleTerm): Promise<CaseRuleTerm>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1192,6 +1198,55 @@ export class DatabaseStorage implements IStorage {
       .where(eq(lexiThreads.id, threadId));
     
     return row;
+  }
+
+  async getCaseRuleTerms(userId: string, caseId: string, moduleKey?: string): Promise<CaseRuleTerm[]> {
+    const conditions = [eq(caseRuleTerms.userId, userId), eq(caseRuleTerms.caseId, caseId)];
+    if (moduleKey) {
+      conditions.push(eq(caseRuleTerms.moduleKey, moduleKey));
+    }
+    return db.select().from(caseRuleTerms)
+      .where(and(...conditions))
+      .orderBy(desc(caseRuleTerms.lastCheckedAt));
+  }
+
+  async upsertCaseRuleTerm(userId: string, caseId: string, input: UpsertCaseRuleTerm): Promise<CaseRuleTerm> {
+    const [existing] = await db.select().from(caseRuleTerms)
+      .where(and(
+        eq(caseRuleTerms.caseId, caseId),
+        eq(caseRuleTerms.moduleKey, input.moduleKey),
+        eq(caseRuleTerms.termKey, input.termKey)
+      ));
+
+    if (existing) {
+      const [updated] = await db.update(caseRuleTerms)
+        .set({
+          officialLabel: input.officialLabel,
+          alsoKnownAs: input.alsoKnownAs ?? null,
+          summary: input.summary,
+          sourcesJson: input.sourcesJson,
+          lastCheckedAt: new Date(),
+        })
+        .where(eq(caseRuleTerms.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db.insert(caseRuleTerms)
+      .values({
+        userId,
+        caseId,
+        moduleKey: input.moduleKey,
+        jurisdictionState: input.jurisdictionState,
+        jurisdictionCounty: input.jurisdictionCounty ?? null,
+        termKey: input.termKey,
+        officialLabel: input.officialLabel,
+        alsoKnownAs: input.alsoKnownAs ?? null,
+        summary: input.summary,
+        sourcesJson: input.sourcesJson,
+      })
+      .returning();
+    return created;
   }
 }
 
