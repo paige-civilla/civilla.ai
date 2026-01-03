@@ -176,24 +176,24 @@ export default function AppPatterns() {
 
   return (
     <AppLayout>
-      <section className="w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16">
+      <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
         <div className="flex flex-col items-start max-w-container w-full">
           <Link
             href={`/app/dashboard/${caseId}`}
-            className="inline-flex items-center gap-2 text-sm text-primary font-medium mb-6"
+            className="inline-flex items-center gap-2 text-sm text-primary font-medium mb-4 sm:mb-6 min-h-[44px]"
             data-testid="link-back-to-dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
             <div>
-              <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest flex items-center gap-3">
-                <TrendingUp className="w-8 h-8 text-primary" />
+              <h1 className="font-heading font-bold text-xl sm:text-heading-3-mobile md:text-heading-3 text-neutral-darkest flex items-center gap-2 sm:gap-3">
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
                 Pattern Analysis
               </h1>
-              <p className="font-sans text-neutral-darkest/60 mt-2">
+              <p className="font-sans text-sm sm:text-base text-neutral-darkest/60 mt-2">
                 Spot trends across tasks, deadlines, and calendar items over time.
               </p>
             </div>

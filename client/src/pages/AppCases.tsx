@@ -77,16 +77,16 @@ export default function AppCases() {
 
   return (
     <AppLayout>
-      <section className="w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16">
+      <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
         <div className="flex flex-col items-start max-w-container w-full">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full mb-8">
-            <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
+            <h1 className="font-heading font-bold text-xl sm:text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
               Your Cases
             </h1>
             {canCreateCase && !showForm && !noCases && (
               <button
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow min-h-[44px] w-full sm:w-auto justify-center"
                 data-testid="button-new-case"
               >
                 <Plus className="w-4 h-4" />
