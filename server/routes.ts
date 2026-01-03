@@ -2836,8 +2836,17 @@ export async function registerRoutes(
     }
   });
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+  const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+  const openai = lexiApiKeyConfigured 
+    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    : null;
+
+  app.get("/api/lexi/health", requireAuth, (_req, res) => {
+    if (lexiApiKeyConfigured) {
+      res.json({ ok: true, provider: "openai-direct" });
+    } else {
+      res.status(503).json({ ok: false, error: "missing OPENAI_API_KEY" });
+    }
   });
 
   app.get("/api/lexi/disclaimer", requireAuth, (_req, res) => {
@@ -2967,6 +2976,10 @@ export async function registerRoutes(
         const response = SAFETY_TEMPLATES[uplTemplate];
         const assistantMsg = await storage.createLexiMessage(userId, caseId, threadId, "assistant", response, { safety_template: true }, null);
         return res.json({ userMessage: userMsg, assistantMessage: assistantMsg });
+      }
+
+      if (!openai) {
+        return res.status(503).json({ error: "Lexi is unavailable - OPENAI_API_KEY not configured" });
       }
 
       await storage.createLexiMessage(userId, caseId, threadId, "user", message);

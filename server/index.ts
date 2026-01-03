@@ -113,6 +113,11 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      if (process.env.OPENAI_API_KEY) {
+        log("Lexi provider: openai-direct");
+      } else {
+        log("WARNING: OPENAI_API_KEY not set - Lexi will be unavailable");
+      }
     },
   );
 })();
