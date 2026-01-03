@@ -1,0 +1,135 @@
+Replit: implement Lexi “Balanced” guardrails + research citations + full logging + user-visible thread history. Be explicit about every file you change and paste the final diff summary.
+
+GOALS (Balanced mode)
+- Lexi is EDUCATIONAL + ORGANIZATIONAL + RESEARCH (always include “research”).
+- Avoid UPL risk without becoming a refusal bot.
+- No “likelihood of success”, no “you should file X”, no personalized legal strategy.
+- Allow: definitions, explanations, options, procedural info, how-to-use-the-app, checklists, drafting help that is clearly user-provided, and research summaries with citations.
+- When user asks about rules/forms/deadlines/state-specific requirements, Lexi should switch to “Research Mode” and include a Sources section.
+
+1) Server: centralize Lexi policy and response shaping
+Create: server/lexi/policy.ts
+- export const LEXI_SYSTEM_PROMPT_BALANCED = `...` (see below)
+- export function classifyIntent(userText: string): "research" | "organize" | "educate"
+  - research keywords: "what form", "required forms", "rule", "statute", "deadline", "service", "county", "state", "court rule", "how do I file", "notice of appearance", "case information sheet"
+- export function isDisallowed(userText: string): boolean
+  - disallowed patterns: "what are my chances", "likelihood", "will I win", "should I file", "best strategy", "what motion should I file", "tell me what to do", "recommend I", “guarantee”
+  - NOTE: do NOT block questions asking for “options”; only block direct personalized strategy/outcome prediction.
+
+Add: server/lexi/format.ts
+- export function addSoftDisclaimerOncePerThread(args)
+  - Store per-thread a boolean “disclaimerShown” (in DB or in-memory fallback).
+  - If not shown, prepend a 1-2 sentence header:
+    “Lexi provides education, organization, and research support. It does not provide legal advice or represent you.”
+  - After it has been shown once in a thread, do not repeat it.
+
+Add: server/lexi/sources.ts
+- Implement “Sources” formatting:
+  - Accept an array of { title, url, jurisdiction?, type? } objects and render:
+    Sources:
+    - Title (Jurisdiction) - URL
+- If no sources found, Lexi must say: “I did not find an official source for that yet” and suggest where to verify (state court website / legislature site).
+
+2) Server: add Lexi research capability safely (no internal content library)
+In server/routes.ts (or wherever Lexi chat route is):
+- Ensure all Lexi routes requireAuth (health can remain requireAuth).
+- In the Lexi chat handler:
+  a) Load thread + messages for the case/threadId (existing tables).
+  b) Run classifyIntent(userText).
+  c) If isDisallowed(userText) is true:
+     - Respond with a helpful alternative:
+       - Offer neutral options framework:
+         “I can explain what motions generally do, how to locate the correct forms/rules for your state, and help you organize facts and deadlines.”
+       - Ask 1 minimal clarifying question ONLY if needed.
+  d) If intent is "research":
+     - Use web.run equivalent is NOT available in runtime; instead implement a “Research Pack” approach:
+       - Add a server-side fetch that only allows a whitelist of domains:
+         - state legislature domains (*.gov) and judiciary/court domains (*.gov, *.us)
+         - If you already have a safe fetch utility, reuse it; otherwise implement server/lexi/fetch.ts with:
+           - domain allowlist
+           - timeout
+           - max bytes
+           - user-agent
+       - Query approach:
+         - Build search URLs using an official site query when possible (many .gov sites support internal search; if not, use a lightweight search provider is NOT allowed without keys; so instead:
+           - Start with known official sources patterns:
+             - state judiciary “forms” pages
+             - state court rules pages
+             - legislature statute search pages
+           - If you cannot fetch a reliable source, say so and provide “where to look” guidance.
+       - Summarize findings with citations in Sources section.
+     - IMPORTANT: If no reliable official sources are retrieved, do not invent. Provide “how to verify” steps.
+  e) If intent is "organize":
+     - Focus on checklists, templates, converting user info into structured lists (deadlines, exhibit list, communication log entries).
+  f) If intent is "educate":
+     - Provide plain-language explanations and differences (motion types, affidavit vs declaration, etc.) in general terms.
+- Always save:
+  - user message
+  - assistant message
+  - metadata: intent, hadSources boolean, refused boolean
+  - Store in lexi_messages table (existing) with JSON metadata column if available; if not, add column.
+
+3) DB: ensure Lexi logging and thread state
+- Confirm tables exist:
+  - lexi_threads: id, user_id, case_id, title, created_at, updated_at, disclaimer_shown boolean default false
+  - lexi_messages: id, thread_id, role, content, created_at, metadata jsonb
+If disclaimer_shown or metadata column does not exist, add them with ALTER TABLE ADD COLUMN IF NOT EXISTS.
+
+4) API endpoints (server/routes.ts)
+Add/confirm:
+- GET /api/cases/:caseId/lexi/threads
+- POST /api/cases/:caseId/lexi/threads  (create new thread, optional title)
+- GET /api/lexi/threads/:threadId/messages
+- POST /api/lexi/threads/:threadId/messages  (send message; returns assistant response)
+All must enforce:
+- user owns case
+- user owns thread
+- thread belongs to case
+
+5) Client: LexiPanel improvements (right side panel)
+In client/src/components/LexiPanel.tsx (or where Lexi lives):
+- Add a Thread selector UI:
+  - “New chat” button
+  - Thread list (most recent first)
+  - Clicking thread loads history
+- Add “Mode” indicator (not a user-controlled switch):
+  - Show a small label above response: “Research” when intent=research and sources exist.
+- Display citations:
+  - If assistant message includes “Sources:” render as a collapsible section.
+- Keep the toggle </> button behavior as-is.
+
+6) Client: do not make Lexi a refusal bot
+- Refusals should:
+  - be short
+  - offer allowed alternatives immediately
+  - continue with educational/general info when possible.
+
+7) Acceptance tests (manual)
+- Create thread, send message, refresh page: history persists.
+- First assistant message in a new thread includes the short disclaimer header, subsequent ones do not.
+- Ask: “What is the rule for service in Idaho custody modification?” triggers Research mode and shows Sources if available; if not available, explains where to verify.
+- Ask: “What motion should I file to win?” triggers disallowed flow with alternatives.
+- Ask: “Explain difference between motion to compel and motion for sanctions” allowed (general education).
+- Verify all Lexi endpoints require auth and case/thread ownership.
+
+LEXI_SYSTEM_PROMPT_BALANCED (paste into server/lexi/policy.ts)
+- You are Lexi for Civilla. You provide education, organization, and research support for legal processes.
+- You are not a lawyer, do not represent the user, do not provide legal advice.
+- Never predict outcomes, probabilities, or likelihood of success.
+- Never recommend a specific filing strategy (“you should file X”) or tell the user what to do in their case.
+- You may explain what common documents are, what they generally do, and how court processes typically work.
+- You may help the user organize facts, draft neutral summaries, prepare checklists, and track deadlines.
+- When the user asks for rules/forms/deadlines/state or county specifics: switch to Research Mode.
+  - Prefer primary sources: official judiciary sites, official legislature statutes, official court rules, official forms pages.
+  - Cite sources at the end under “Sources”.
+  - If uncertain or sources are unavailable, say so and provide steps to verify on official sites.
+- Keep tone calm, plain-language, and practical. Avoid repeating “get a lawyer” unless the user asks for strategy/outcomes or the request is high-risk.
+
+DELIVERABLE
+- Implement all above.
+- Return a detailed summary:
+  - Files changed
+  - Endpoints added/changed
+  - DB columns added
+  - Screenshots (if possible)
+  - How to test checklist
