@@ -1,0 +1,118 @@
+GOAL
+Add a new authenticated module: Disclosures & Discovery (and a dashboard tile).
+This module must:
+1) Explain “Disclosures vs Discovery” in UPL-safe, educational language.
+2) Show the state-specific naming label for the case state (Idaho/Florida/California/Arizona mapped; all others fallback).
+3) Provide full CRUD for:
+   A) Disclosure checklist items (what must be exchanged + status + due date)
+   B) Discovery log items (requests served/received + type + due date + status)
+4) Keep everything per-user and per-case (userId + caseId enforced like other modules).
+
+ROUTES / URLS
+- Canonical route: /app/disclosures/:caseId
+- Also accept /app/discovery/:caseId as an alias redirecting to /app/disclosures/:caseId (so URL matches user expectation).
+- Add navbar + dashboard tile entry named “Disclosures & Discovery”.
+
+DATABASE (shared/schema.ts)
+Create two tables:
+
+1) case_disclosure_items
+- id (serial pk)
+- userId (text, not null)
+- caseId (int, not null)
+- title (text, not null)
+- category (text, not null)  // e.g., "Financial", "Parenting", "Other"
+- status (text, not null default "pending") // pending | in_progress | complete
+- dueDate (date nullable)
+- notes (text nullable)
+- createdAt, updatedAt (timestamps)
+
+2) case_discovery_items
+- id (serial pk)
+- userId (text, not null)
+- caseId (int, not null)
+- direction (text not null default "sent") // sent | received
+- requestType (text not null) // interrogatories | rfp | rfa | subpoena | other
+- title (text not null)
+- servedDate (date nullable)
+- dueDate (date nullable)
+- status (text not null default "open") // open | responded | closed
+- relatedContactId (int nullable) // optional link to contacts
+- notes (text nullable)
+- createdAt, updatedAt (timestamps)
+
+Add zod insert/update schemas similar to tasks/deadlines patterns.
+
+DB INIT (server/db.ts)
+Add runtime table creation statements for both tables (same style as other modules).
+
+STORAGE (server/storage.ts)
+Add methods (all must enforce userId):
+Disclosure:
+- listDisclosureItems(userId, caseId)
+- createDisclosureItem(userId, payload)
+- updateDisclosureItem(userId, id, patch)
+- deleteDisclosureItem(userId, id)
+
+Discovery:
+- listDiscoveryItems(userId, caseId)
+- createDiscoveryItem(userId, payload)
+- updateDiscoveryItem(userId, id, patch)
+- deleteDiscoveryItem(userId, id)
+
+API ROUTES (server/routes.ts) requireAuth on all:
+Disclosure:
+- GET  /api/cases/:caseId/disclosures
+- POST /api/cases/:caseId/disclosures
+- PATCH /api/disclosures/:id
+- DELETE /api/disclosures/:id
+
+Discovery:
+- GET  /api/cases/:caseId/discovery
+- POST /api/cases/:caseId/discovery
+- PATCH /api/discovery/:id
+- DELETE /api/discovery/:id
+
+FRONTEND PAGE
+Create: client/src/pages/AppDisclosures.tsx (or AppDisclosuresDiscovery.tsx)
+- Use AppLayout.
+- At top show ModuleIntro block (educational copy below).
+- Show “In your state, this is commonly labeled: ____” based on currentCase.state.
+State label mapping in code:
+  if state === "ID" or "Idaho" => "Mandatory Disclosure (IRFLP 401)"
+  if state === "FL" or "Florida" => "Mandatory Disclosure (Rule 12.285)"
+  if state === "CA" or "California" => "Declarations of Disclosure (Preliminary/Final)"
+  if state === "AZ" or "Arizona" => "Disclosure (ARFLP Rule 49)"
+  else => "Initial Disclosures + Discovery"
+
+PAGE UI (two sections or tabs)
+A) Disclosures Checklist
+- List items with checkbox-like status toggle (Pending/In Progress/Complete)
+- Add/Edit/Delete dialogs
+- Filter by status + category
+- Sort by dueDate
+
+B) Discovery Log
+- List items with “Sent/Received” badge, request type badge, dueDate, status
+- Add/Edit/Delete dialogs
+- Filters: direction, requestType, status
+- Sorting: dueDate, servedDate, newest
+
+DASHBOARD TILE + NAV
+- Add tile “Disclosures & Discovery” in AppDashboard modules grid.
+- Add nav link in AppNavbar dropdown and left nav if present.
+- Add route in App.tsx for /app/disclosures/:caseId
+- Add redirect alias route: /app/discovery/:caseId -> navigate to /app/disclosures/:caseId
+
+MODULE INTRO COPY (paste verbatim)
+Title: Disclosures & Discovery
+Body:
+“Most family courts require some form of initial (sometimes ‘mandatory’) disclosures—basic documents and information exchanged early in the case. Discovery is different: it’s the process of requesting and responding to specific information (interrogatories, requests for production, subpoenas, and more). Use this module to track what’s required, what was sent or received, and what’s complete. Terminology and exact requirements vary by state; Civilla labels this section using your case’s state when possible.”
+
+DONE WHEN
+- CRUD works for both lists.
+- Everything is case-scoped and user-scoped.
+- Module appears on dashboard + nav.
+- /app/discovery/:caseId redirects to /app/disclosures/:caseId.
+- No unauthenticated API access.
+- Styling uses current authenticated theme tokens.
