@@ -113,6 +113,17 @@
   --app-surface-2: 187.1 16.2% 18%;       /* #27363A hover */
   --app-panel-border: 180 3% 12%;         /* #1E2020 */
   --app-tile-bg: 187.5 20.8% 69.8%;       /* #A2BEC2 for module tiles */
+
+  /* Module & interaction tokens */
+  --module: 189 18% 91%;                  /* #E4ECED lighter module bg */
+  --module-border: 189 20% 46%;           /* #628286 */
+  --ink: 180 3% 12%;                      /* #1E2020 */
+
+  /* Interaction tokens */
+  --highlight: 187.5 20.8% 69.8%;         /* #A2BEC2 selected/active bg */
+  --hover: 187.5 20.8% 69.8% / 0.22;      /* rgba(162,190,194,0.22) subtle hover */
+  --ring: 189 20% 46%;                    /* #628286 focus ring */
+  --active-border: 186.7 15.5% 22.7%;     /* #314143 active border/text */
 }
 
 /* APP DARK MODE */

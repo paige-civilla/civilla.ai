@@ -1,0 +1,121 @@
+Replit — implement calendar styling tokens + apply to CaseMonthCalendar
+
+Goal
+- Calendar outer border uses navbar dark: #314143
+- Calendar internal grid/dividers use: #628286
+- Calendar hover highlight uses: #A2BEC2 (as a light wash)
+- Selected day uses: #A2BEC2 (solid or stronger)
+- “Today” indicator uses: #314143 ring or dot
+- Keep overall app background as-is (no theme rewrite here)
+
+1) Add calendar-specific CSS tokens (scoped to the authenticated app shell)
+
+File: client/src/index.css
+
+Inside the existing ".app-shell { ... }" block, add these variables (or update if they already exist):
+
+  --calendar-frame: 187.5 20.8% 22.7%;         /* #314143 */
+  --calendar-grid: 190 14% 45%;                 /* #628286 approx */
+  --calendar-hover: 187.5 20.8% 69.8%;          /* #A2BEC2 */
+  --calendar-selected: 187.5 20.8% 69.8%;       /* #A2BEC2 */
+  --calendar-surface: 40 37.5% 96.9%;           /* #FAF8F4 (or your surface/white choice) */
+
+Also add optional convenience classes (in the same file):
+
+  .app-shell .calendar-frame {
+    border-color: hsl(var(--calendar-frame)) !important;
+  }
+  .app-shell .calendar-grid {
+    border-color: hsl(var(--calendar-grid)) !important;
+  }
+  .app-shell .calendar-surface {
+    background: hsl(var(--calendar-surface)) !important;
+  }
+
+2) Update CaseMonthCalendar component to use the new tokens
+
+File: client/src/components/CaseMonthCalendar.tsx
+(or if the calendar lives elsewhere, search for "CaseMonthCalendar" and open that file)
+
+Make these style changes:
+
+A) Outer calendar container
+- Ensure the outermost calendar wrapper has:
+  - background: surface (white/cream)
+  - border: 2px solid #314143 (token)
+  - rounded corners preserved
+
+Example tailwind update:
+- Replace any border classes like:
+  border border-neutral-light / border-[#A2BEC2] / etc
+- With:
+  border-2
+  and inline style or class using token:
+  style={{ borderColor: "hsl(var(--calendar-frame))" }}
+
+Also ensure the background is surface:
+  className includes "bg-background" or add:
+  style={{ backgroundColor: "hsl(var(--calendar-surface))" }}
+
+B) Calendar header (month + controls row)
+- If header currently has double borders or “corner gaps”, remove any nested border wrappers.
+- Keep header background same as surface (no tinted header), but:
+  - bottom divider line uses grid token (#628286)
+
+Add to header container:
+  style={{ borderBottomColor: "hsl(var(--calendar-grid))" }}
+  className includes "border-b"
+
+C) Day-of-week row + grid cells
+- All internal borders/dividers should use grid token (#628286), not the frame color.
+- Update any:
+  border-neutral-light, border-[#A2BEC2], etc
+  to:
+  style={{ borderColor: "hsl(var(--calendar-grid))" }}
+
+D) Hover state (day cell hover)
+- On hover, apply a light wash of highlight:
+  backgroundColor: "hsla(...)" OR use opacity utility.
+- Use #A2BEC2 but transparent so it feels soft.
+  Example:
+    background: rgba(162, 190, 194, 0.25)
+
+Implementation approach:
+- Where day cells render, add hover class:
+  hover:bg-[rgba(162,190,194,0.25)]
+  (or set via inline style if needed)
+
+E) Selected day
+- If you already have selected day logic, set its background to solid highlight:
+  bg-[#A2BEC2] (or hsl(var(--calendar-selected)))
+- Make text remain readable (likely text-[#243032]).
+
+F) Today indicator
+Pick one:
+Option 1 (ring): add a 2px ring around today date badge
+  ring-2 ring-[hsl(var(--calendar-frame))] ring-offset-2 ring-offset-[hsl(var(--calendar-surface))]
+Option 2 (dot): show a small dot under the date number
+  bg-[hsl(var(--calendar-frame))] w-1.5 h-1.5 rounded-full
+
+Do not use bright blue “today” styles—keep it in the navy family.
+
+3) Verify dark mode compatibility
+- If you already have dark mode tokens, keep these calendar tokens defined in both light and dark.
+- If dark mode exists, add matching variables inside the ".dark .app-shell { ... }" block:
+  --calendar-frame: (slightly lighter than #314143 or keep it)
+  --calendar-grid: (lighter line)
+  --calendar-hover / selected: (same concept but adjusted for contrast)
+If you don’t have that block yet, tell me and I’ll give you exact values.
+
+4) Confirm with screenshots
+After applying:
+- Calendar outer border should match navbar dark exactly
+- No corner gaps on header
+- Hover is a soft tint
+- Selected is clear but not harsh
+- Today is indicated subtly (ring or dot)
+
+When done, reply with:
+- The file(s) you changed
+- Before/after screenshots of the calendar (desktop + mobile)
+- Confirm whether you chose Today ring or Today dot
