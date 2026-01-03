@@ -1,0 +1,149 @@
+REPLIT TASK: Build “Communications Log” module (full CRUD + feeds Pattern Analysis)
+
+AUTONOMY: MEDIUM
+SCOPE: APP (post-login) only. Keep existing theme/app-shell. No marketing pages.
+
+GOAL
+Create a Communications Log module for each case:
+- Users can record communications with opposing party/counsel (not chat)
+- Full CRUD (create, view, edit, delete)
+- Status tracking (resolved/unresolved)
+- Optional follow-up due date
+- This data must feed the Pattern Analysis module (counts + overdue follow-ups)
+
+DO NOT
+- Do not implement real messaging, SMS, email sending, or integrations
+- Do not add AI
+- Do not change existing routes other than adding the new module routes + wiring nav tiles
+- Do not break existing Tasks/Deadlines/Calendar
+
+DATA MODEL
+1) Add a new DB table: case_communications
+
+Fields (required unless marked optional):
+- id (uuid/text primary key)
+- user_id (fk to users)
+- case_id (fk to cases)
+- occurred_at (timestamp, required)  // when the communication happened
+- method (text, required)           // phone, text, email, in-person, OFW, other
+- direction (text, required)        // outbound, inbound
+- with_person (text, required)      // e.g., “Zachary Di Bella”, “Aaron Woolf”
+- summary (text, required, max 2000)
+- notes (text, optional, max 10000)
+- tags (text, optional, max 500)    // comma-separated OK for v1
+- requires_follow_up (boolean, default false)
+- follow_up_due (timestamp, optional)
+- is_resolved (boolean, default false)
+- created_at (timestamp default now)
+- updated_at (timestamp default now)
+
+2) shared/schema.ts
+- Add pgTable definition for caseCommunications
+- Add Zod schemas:
+  - insertCaseCommunicationSchema (with validation and coercions)
+  - updateCaseCommunicationSchema
+- Export types:
+  - CaseCommunication, InsertCaseCommunication, UpdateCaseCommunication
+- Add enum lists for method/direction (as const arrays) used by the UI
+
+3) server/db.ts
+- Ensure table is created in initDbTables()
+- Add indexes:
+  - (case_id, occurred_at desc)
+  - (user_id, case_id)
+  - (case_id, is_resolved)
+  - (case_id, follow_up_due) optionally
+
+4) server/storage.ts
+Add storage methods:
+- listCaseCommunications(userId, caseId) -> newest first
+- createCaseCommunication(userId, caseId, data)
+- updateCaseCommunication(userId, commId, patch)
+- deleteCaseCommunication(userId, commId)
+- getCaseCommunication(userId, commId) (if needed for edit)
+
+5) server/routes.ts
+Add REST API endpoints (protected with requireAuth, must enforce ownership):
+- GET    /api/cases/:caseId/communications
+- POST   /api/cases/:caseId/communications
+- PATCH  /api/communications/:commId
+- DELETE /api/communications/:commId
+
+Return shapes:
+- GET -> { communications: CaseCommunication[] }
+- POST/PATCH -> { communication: CaseCommunication }
+- DELETE -> { ok: true }
+
+UI (client)
+6) Create page: client/src/pages/AppCommunications.tsx
+Use existing patterns from Tasks/Deadlines pages.
+
+Page requirements:
+- Header: “Communications Log”
+- Short helper text (UPL-safe):
+  “Track important co-parenting or counsel communications with dates and notes. Civilla does not send messages or contact anyone for you.”
+- List view with cards
+Card shows:
+- occurred_at (formatted)
+- method + direction
+- with_person
+- summary (truncated 2 lines)
+- badges: “Follow-up due” (if requires_follow_up), “Resolved” (if is_resolved)
+- Edit + Delete buttons
+- “Mark Resolved” quick toggle (PATCH is_resolved true/false)
+
+Create/Edit modal:
+- occurred_at (datetime input)
+- method (select)
+- direction (select)
+- with_person (text)
+- summary (textarea)
+- notes (textarea optional)
+- tags (text)
+- requires_follow_up (checkbox)
+- follow_up_due (datetime input shown only if requires_follow_up)
+- is_resolved (checkbox)
+Include “I don’t know yet” button for optional fields (notes/tags/follow_up_due) like onboarding style if available; otherwise simple “Skip”.
+
+Validation:
+- occurred_at required
+- with_person required
+- summary required max 2000
+- method/direction required
+
+Mobile:
+- Apply the same mobile patterns already used (px-4 sm:px-5 md:px-16, min-h-[44px], w-full on mobile)
+
+7) Routing + navigation wiring
+- Ensure route exists: /app/communications/:caseId
+- Update Dashboard module tiles + Case Workspace tiles:
+  - “Communications” tile should go to /app/communications/:caseId
+- Ensure AppNavbar dropdown includes “Communications” and routes properly
+- If “Messages” was previously replaced by “Pattern Analysis”, keep that. Communications is a separate module.
+
+PATTERN ANALYSIS INTEGRATION (Minimum viable)
+8) Update Pattern Analysis page to include communications stats:
+- Total communications logged (for case)
+- Unresolved communications count
+- Follow-ups due count
+- Overdue follow-ups count (follow_up_due < now and not resolved)
+This must be computed from DB (not mock data).
+If Pattern Analysis uses an aggregation endpoint, extend it to include these values.
+If it reads each module directly, add a query call for communications.
+
+ACCEPTANCE TESTS
+- Create communication -> appears immediately
+- Edit -> updates and persists after refresh
+- Delete -> removed
+- Toggle resolved -> badge changes
+- Follow-up due -> shows due badge, overdue logic works
+- Pattern Analysis reflects counts (total/unresolved/overdue)
+- No console errors
+- Works at 320px width
+
+DELIVERABLE
+After implementation, report:
+- Files changed (list)
+- New endpoints (list)
+- Any migrations/columns added
+- Quick manual test checklist completed (yes/no)

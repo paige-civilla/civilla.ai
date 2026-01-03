@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity } from "lucide-react";
+import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory } from "@shared/schema";
+import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication } from "@shared/schema";
 
 type PatternDataResponse = {
   deadlines: Deadline[];
@@ -54,11 +54,17 @@ export default function AppPatterns() {
     enabled: !!caseId,
   });
 
+  const { data: communicationsData } = useQuery<{ communications: CaseCommunication[] }>({
+    queryKey: ["/api/cases", caseId, "communications"],
+    enabled: !!caseId,
+  });
+
   const currentCase = caseData?.case;
   const deadlines = deadlinesData?.deadlines || [];
   const tasks = tasksData?.tasks || [];
   const calendarItems = calendarItemsData?.items || [];
   const categories = categoriesData?.categories || [];
+  const communications = communicationsData?.communications || [];
 
   useEffect(() => {
     if (currentCase) {
@@ -80,6 +86,15 @@ export default function AppPatterns() {
 
   const overdueTasks = tasks.filter(t => 
     t.status !== "completed" && t.dueDate && new Date(t.dueDate) < now
+  );
+
+  const unresolvedCommunications = communications.filter(c => c.status !== "resolved");
+  const followUpsDue = communications.filter(c => c.requiresFollowUp && !c.followUpCompleted);
+  const overdueFollowUps = communications.filter(c => 
+    c.requiresFollowUp && 
+    !c.followUpCompleted && 
+    c.followUpDueDate && 
+    new Date(c.followUpDueDate) < now
   );
 
   const upcomingDeadlines = deadlines.filter(d => 
@@ -104,7 +119,7 @@ export default function AppPatterns() {
   const uncategorizedCount = calendarItems.filter(item => !item.categoryId && !item.isDone).length;
 
   const recentActivity: Array<{ 
-    type: "deadline" | "task" | "calendar"; 
+    type: "deadline" | "task" | "calendar" | "communication"; 
     id: string; 
     title: string; 
     updatedAt: Date; 
@@ -138,6 +153,16 @@ export default function AppPatterns() {
       title: item.title,
       updatedAt: new Date(item.updatedAt || item.createdAt),
       status: item.isDone ? "Completed" : "Scheduled",
+    });
+  }
+
+  for (const c of communications.slice(0, 10)) {
+    recentActivity.push({
+      type: "communication",
+      id: c.id,
+      title: c.subject || `${c.channel} with ${c.contactName || "contact"}`,
+      updatedAt: new Date(c.updatedAt || c.createdAt),
+      status: c.status === "resolved" ? "Resolved" : "Pending",
     });
   }
 
@@ -208,7 +233,7 @@ export default function AppPatterns() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {overdueDeadlines.length === 0 && overdueTasks.length === 0 ? (
+                {overdueDeadlines.length === 0 && overdueTasks.length === 0 && overdueFollowUps.length === 0 ? (
                   <p className="text-sm text-neutral-darkest/60">No overdue items. Great job staying on track!</p>
                 ) : (
                   <div className="space-y-3">
@@ -239,6 +264,24 @@ export default function AppPatterns() {
                           <p className="text-sm font-medium text-neutral-darkest truncate">{t.title}</p>
                           <p className="text-xs text-neutral-darkest/60">
                             Case To-Do - Due {t.dueDate ? new Date(t.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
+                          </p>
+                        </div>
+                        <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                      </div>
+                    ))}
+                    {overdueFollowUps.map(c => (
+                      <div 
+                        key={`followup-${c.id}`}
+                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
+                        data-testid={`overdue-followup-${c.id}`}
+                      >
+                        <MessageSquare className="w-4 h-4 text-[#9575CD] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-neutral-darkest truncate">
+                            {c.subject || `Follow-up: ${c.contactName || "contact"}`}
+                          </p>
+                          <p className="text-xs text-neutral-darkest/60">
+                            Follow-up Due {c.followUpDueDate ? new Date(c.followUpDueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
                           </p>
                         </div>
                         <Badge variant="destructive" className="text-xs">Overdue</Badge>
@@ -321,10 +364,11 @@ export default function AppPatterns() {
                         {item.type === "deadline" && <Clock className="w-4 h-4 text-[#E57373] flex-shrink-0" />}
                         {item.type === "task" && <CheckSquare className="w-4 h-4 text-[#64B5F6] flex-shrink-0" />}
                         {item.type === "calendar" && <Calendar className="w-4 h-4 text-[#7BA3A8] flex-shrink-0" />}
+                        {item.type === "communication" && <MessageSquare className="w-4 h-4 text-[#9575CD] flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-neutral-darkest truncate">{item.title}</p>
                           <p className="text-xs text-neutral-darkest/60">
-                            {item.type === "deadline" ? "Deadline" : item.type === "task" ? "Case To-Do" : "Calendar"} - {item.status}
+                            {item.type === "deadline" ? "Deadline" : item.type === "task" ? "Case To-Do" : item.type === "communication" ? "Communication" : "Calendar"} - {item.status}
                           </p>
                         </div>
                         <span className="text-xs text-neutral-darkest/50 whitespace-nowrap">
@@ -359,10 +403,44 @@ export default function AppPatterns() {
                     <p className="text-sm text-neutral-darkest/60">Calendar Items</p>
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-[#E57373]">{overdueDeadlines.length + overdueTasks.length}</p>
+                    <p className="text-2xl font-bold text-[#E57373]">{overdueDeadlines.length + overdueTasks.length + overdueFollowUps.length}</p>
                     <p className="text-sm text-neutral-darkest/60">Overdue Items</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-[#A2BEC2]">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageSquare className="w-5 h-5 text-[#9575CD]" />
+                  Communications Log
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-muted/50 rounded-md">
+                    <p className="text-2xl font-bold text-neutral-darkest">{communications.length}</p>
+                    <p className="text-sm text-neutral-darkest/60">Total Logged</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-md">
+                    <p className="text-2xl font-bold text-neutral-darkest">{unresolvedCommunications.length}</p>
+                    <p className="text-sm text-neutral-darkest/60">Unresolved</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-md">
+                    <p className="text-2xl font-bold text-neutral-darkest">{followUpsDue.length}</p>
+                    <p className="text-sm text-neutral-darkest/60">Follow-ups Due</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-md">
+                    <p className="text-2xl font-bold text-[#E57373]">{overdueFollowUps.length}</p>
+                    <p className="text-sm text-neutral-darkest/60">Overdue Follow-ups</p>
+                  </div>
+                </div>
+                {communications.length === 0 && (
+                  <p className="text-sm text-neutral-darkest/60 mt-4 text-center">
+                    No communications logged yet. Track co-parenting or counsel communications in the Communications Log.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
