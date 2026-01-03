@@ -1,6 +1,7 @@
 import pg from "pg";
 
 const TABLES_TO_TRUNCATE = [
+  "case_rule_terms",
   "lexi_messages",
   "lexi_threads",
   "exhibit_evidence",
