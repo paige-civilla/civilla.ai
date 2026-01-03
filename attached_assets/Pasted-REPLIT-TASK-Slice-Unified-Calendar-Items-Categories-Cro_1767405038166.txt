@@ -1,0 +1,123 @@
+REPLIT TASK: Slice — Unified Calendar Items + Categories + Cross-Module “Done” Sync (Dashboard-first)
+
+GOAL
+From the Dashboard, users can add an item, classify it (To-Do / Deadline / Calendar Event), assign a category (with color), create custom categories, and when they mark an item “Done” it stays done everywhere (Dashboard Upcoming, Case To-Do page, Deadlines page, Calendar).
+
+NON-NEGOTIABLE UX
+- Dashboard has a “+ Add” button near the calendar.
+- Clicking “+ Add” opens a modal with:
+  1) Type selector: Case To-Do / Deadline / Calendar Event
+  2) Title (required)
+  3) Date:
+     - Deadline: due date (required)
+     - Calendar Event: start date (required) + optional end date/time later (not required for this slice)
+     - Case To-Do: optional due date
+  4) Category dropdown + “Create new category”
+  5) Color picker (use an easy palette grid of ~12–18 nice colors; NOT a wheel for v1)
+  6) Notes (optional)
+- Dashboard “Upcoming” list shows next 7 items across all three types, sorted soonest first.
+- Each Upcoming row has a checkbox that marks it Done and it disappears from Upcoming (or moves to bottom with “Completed” label).
+- Marking Done must update the source module:
+  - To-Do → updates tasks.completed
+  - Deadline → updates deadlines.completed (or status=done)
+  - Calendar item → updates calendar_items.completed
+- Users can create multiple categories and reuse them across items.
+- Categories are per-user (global) and can optionally be per-case too; pick whichever matches current architecture best, but keep it consistent.
+
+BACKEND REQUIREMENTS
+1) Add database tables (if not already present):
+   A) calendar_categories:
+      - id (uuid text)
+      - user_id (required)
+      - case_id (nullable if you choose global categories)
+      - name (required, max 50)
+      - color_hex (required, like #A2BEC2)
+      - created_at
+      - unique constraint: (user_id, case_id, name) OR (user_id, name) depending on scope
+   B) calendar_items:
+      - id (uuid text)
+      - user_id
+      - case_id
+      - title (required)
+      - item_type (enum: "todo" | "deadline" | "event")
+      - date_start (timestamp, required for deadline/event; optional for todo)
+      - date_end (timestamp nullable)
+      - category_id (nullable)
+      - notes (text nullable)
+      - completed (boolean default false)
+      - completed_at (timestamp nullable)
+      - created_at
+
+2) API endpoints (all require auth):
+   - GET  /api/cases/:caseId/calendar/categories
+   - POST /api/cases/:caseId/calendar/categories   (create category)
+   - GET  /api/cases/:caseId/calendar/items        (list)
+   - POST /api/cases/:caseId/calendar/items        (create item)
+   - PATCH /api/calendar/items/:itemId             (edit item, including completed toggle)
+   - DELETE /api/calendar/items/:itemId
+
+3) Dashboard aggregation endpoint (single call):
+   - GET /api/cases/:caseId/dashboard/upcoming
+   Returns normalized items array with fields:
+   {
+     id,
+     sourceType: "todo" | "deadline" | "event",
+     title,
+     date,             // due or start date
+     categoryName,
+     categoryColorHex,
+     completed
+   }
+   Include tasks + deadlines + calendar_items in one list.
+   Only return not-completed for Upcoming by default.
+
+4) “Mark Done” endpoint (single normalized endpoint):
+   - POST /api/cases/:caseId/dashboard/complete
+   Body: { sourceType: "todo"|"deadline"|"event", id: string, completed: boolean }
+   Behavior:
+   - If sourceType=todo → update tasks.completed and tasks.completed_at
+   - If sourceType=deadline → update deadlines.completed and deadlines.completed_at
+   - If sourceType=event → update calendar_items.completed and completed_at
+   Return { ok: true }
+
+FRONTEND REQUIREMENTS
+1) Dashboard:
+   - Add “+ Add” button for item creation
+   - Add modal described above
+   - Under calendar, “Upcoming” list:
+     - shows color dot (category color if set)
+     - shows type label (To-Do / Deadline / Event)
+     - checkbox to mark done (calls normalized complete endpoint)
+     - optimistic UI (immediate feedback) + toast on error
+
+2) Modules:
+   - Case To-Do page: when item completed via Dashboard, it reflects instantly (invalidate queries)
+   - Deadlines page: same
+   - Calendar: show dots for events and optionally tasks/deadlines (if already implemented, keep it)
+   - Add a “Categories” mini manager inside the modal only for this slice (full category management page can be later)
+
+STYLE REQUIREMENTS (match Paige’s tokens)
+- App background uses #FAF8F4
+- Navbar/footer/buttons use #314143 with text #F2F2F2
+- Module tiles interior can use #A2BEC2 with border/text #1E2020
+- Input background uses #CFD7D5
+- No tan/blue-heavy background blocks; keep surfaces clean and “comfy”
+- Destructive buttons use burgundy (#7A1E2D) + darker hover
+
+QUALITY / FIXES
+- Ensure modal opens at top and page scroll resets to top when moving between steps (no jumping to bottom).
+- Ensure mobile: 44px touch targets and modal fits 320px width.
+- Add clear empty state when no upcoming items.
+
+DELIVERABLE / REPORT BACK
+When done, output:
+- Files edited (list)
+- Endpoints added (list)
+- DB tables added/modified
+- Confirm: “Checking Done in Upcoming updates To-Do/Deadlines/Calendar everywhere”
+- Add screenshots of Dashboard modal + Upcoming list with at least 3 mixed item types.
+
+DO NOT
+- Change marketing (pre-login) theme
+- Introduce new legal language or policy changes
+- Remove existing routes
