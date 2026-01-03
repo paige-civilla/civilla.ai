@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { getLexiHelp, type LexiHelpContent } from "@/lib/lexiHelpContent";
-import { HelpCircle, MessageSquare, Plus, Trash2, Loader2 } from "lucide-react";
+import { HelpCircle, MessageSquare, Plus, Trash2, Loader2, Search, Lightbulb, FileText } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { LexiThread, LexiMessage } from "@shared/schema";
@@ -29,6 +29,43 @@ function getRouteKey(path: string): string {
 function extractCaseId(path: string): string | null {
   const match = path.match(/\/cases\/([^/]+)/);
   return match ? match[1] : null;
+}
+
+type LexiIntent = "research" | "organize" | "educate";
+
+function getIntentBadge(intent?: LexiIntent): { label: string; icon: typeof Search; color: string } | null {
+  if (!intent) return null;
+  switch (intent) {
+    case "research":
+      return { label: "Research", icon: Search, color: "bg-blue-100 text-blue-700 border-blue-200" };
+    case "organize":
+      return { label: "Organize", icon: FileText, color: "bg-green-100 text-green-700 border-green-200" };
+    case "educate":
+      return { label: "Learn", icon: Lightbulb, color: "bg-amber-100 text-amber-700 border-amber-200" };
+    default:
+      return null;
+  }
+}
+
+function formatMessageContent(content: string) {
+  const urlRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const parts: (string | { text: string; url: string })[] = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = urlRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index));
+    }
+    parts.push({ text: match[1], url: match[2] });
+    lastIndex = match.index + match[0].length;
+  }
+  
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex));
+  }
+  
+  return parts;
 }
 
 export default function LexiPanel() {
@@ -495,19 +532,51 @@ export default function LexiPanel() {
                         {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
                       </div>
                     )}
-                    {messages.map((m) => (
-                      <div
-                        key={m.id}
-                        className={[
-                          "rounded-lg px-3 py-2 whitespace-pre-wrap text-sm",
-                          m.role === "user"
-                            ? "ml-8 bg-primary text-primary-foreground"
-                            : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
-                        ].join(" ")}
-                      >
-                        {m.content}
-                      </div>
-                    ))}
+                    {messages.map((m) => {
+                      const meta = m.metadata as { intent?: LexiIntent; refused?: boolean; hadSources?: boolean } | null;
+                      const badge = m.role === "assistant" ? getIntentBadge(meta?.intent) : null;
+                      const formattedContent = formatMessageContent(m.content);
+                      
+                      return (
+                        <div key={m.id} className="space-y-1">
+                          {badge && (
+                            <div className="flex items-center gap-1 mr-8">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${badge.color}`}>
+                                <badge.icon className="w-3 h-3" />
+                                {badge.label}
+                              </span>
+                              {meta?.hadSources && (
+                                <span className="text-xs text-neutral-darkest/50">with sources</span>
+                              )}
+                            </div>
+                          )}
+                          <div
+                            className={[
+                              "rounded-lg px-3 py-2 whitespace-pre-wrap text-sm",
+                              m.role === "user"
+                                ? "ml-8 bg-primary text-primary-foreground"
+                                : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
+                            ].join(" ")}
+                          >
+                            {formattedContent.map((part, idx) => 
+                              typeof part === "string" ? (
+                                <span key={idx}>{part}</span>
+                              ) : (
+                                <a 
+                                  key={idx} 
+                                  href={part.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline hover:text-blue-800"
+                                >
+                                  {part.text}
+                                </a>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                     {sendMessageMutation.isPending && (
                       <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
