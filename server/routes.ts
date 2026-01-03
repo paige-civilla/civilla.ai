@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -2836,6 +2836,48 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get exhibits for evidence error:", error);
       res.status(500).json({ error: "Failed to get exhibits" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/rule-terms", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const moduleKey = req.query.moduleKey as string | undefined;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
+      res.json({ terms });
+    } catch (error) {
+      console.error("Get rule terms error:", error);
+      res.status(500).json({ error: "Failed to get rule terms" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/rule-terms", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parsed = upsertCaseRuleTermSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+      }
+
+      const term = await storage.upsertCaseRuleTerm(userId, caseId, parsed.data);
+      res.status(201).json({ term });
+    } catch (error) {
+      console.error("Upsert rule term error:", error);
+      res.status(500).json({ error: "Failed to save rule term" });
     }
   });
 
