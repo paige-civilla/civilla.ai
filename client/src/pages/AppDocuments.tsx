@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Case, Document, GeneratedDocument, GenerateDocumentPayload } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, Edit3, ChevronDown, ChevronUp } from "lucide-react";
@@ -761,6 +762,10 @@ export default function AppDocuments() {
             ]}
             caution="Review all documents carefully before filing with the court."
           />
+
+          {caseId && (
+            <LexiSuggestedQuestions moduleKey="documents" caseId={caseId} />
+          )}
 
           <Tabs value={docStep} onValueChange={(v) => setDocStep(v as DocStep)} className="w-full">
             <TabsList className="w-full grid grid-cols-1 md:grid-cols-3 gap-2 bg-transparent p-0 h-auto">

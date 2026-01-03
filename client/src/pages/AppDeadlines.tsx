@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertDeadlineSchema, type Case, type Deadline, type InsertDeadline } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
 export default function AppDeadlines() {
   const [, setLocation] = useLocation();
@@ -204,6 +205,10 @@ export default function AppDeadlines() {
             ]}
             caution="Always verify deadlines with official court documents or your court clerk."
           />
+
+          {caseId && (
+            <LexiSuggestedQuestions moduleKey="deadlines" caseId={caseId} />
+          )}
 
           {deadlinesLoading ? (
             <div className="w-full flex items-center justify-center py-12">

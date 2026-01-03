@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, EvidenceFile, ExhibitList, Exhibit } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
 const CATEGORIES = [
   { value: "document", label: "Document" },
@@ -355,6 +356,10 @@ export default function AppEvidence() {
             ]}
             caution="Store copies of your evidence securely. This tool is for organization purposes."
           />
+
+          {caseId && (
+            <LexiSuggestedQuestions moduleKey="evidence" caseId={caseId} />
+          )}
 
           {!r2Configured && (
             <Card className="w-full mb-6 border-amber-300 bg-amber-50">

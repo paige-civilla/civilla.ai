@@ -24,6 +24,7 @@ import { insertContactSchema, insertCommunicationSchema, type Case, type CaseCon
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
 const roleLabels: Record<string, string> = {
   opposing_party: "Opposing Party",
@@ -292,6 +293,10 @@ export default function AppCommunications() {
               "Include the date, participants, and a summary of what was discussed."
             ]}
           />
+
+          {caseId && (
+            <LexiSuggestedQuestions moduleKey="communications" caseId={caseId} />
+          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-6">

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, TimelineEvent } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
 const CATEGORIES = [
   { value: "court", label: "Court" },
@@ -271,6 +272,10 @@ export default function AppTimeline() {
               "Courts often find chronological organization helpful when reviewing case details."
             ]}
           />
+
+          {caseId && (
+            <LexiSuggestedQuestions moduleKey="timeline" caseId={caseId} />
+          )}
 
           {(showAddForm || editingEventId) && (
             <Card className="w-full mb-6">
