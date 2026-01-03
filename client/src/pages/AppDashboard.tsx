@@ -390,11 +390,11 @@ export default function AppDashboard() {
             <Button
               size="sm"
               variant="outline"
-              className="border-[#1E2020] text-neutral-darkest w-full sm:w-auto text-xs"
+              className="bg-[#E4ECED] border-[#628286] text-[#1E2020] hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] focus-visible:ring-[#628286] w-full sm:w-auto text-xs"
               onClick={() => setLocation("/app/cases")}
               data-testid="button-view-all-cases"
             >
-              <Briefcase className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+              <Briefcase className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 text-[#628286]" />
               View all cases
             </Button>
           </div>
@@ -475,8 +475,8 @@ export default function AppDashboard() {
               <div className="w-full space-y-6">
                 <div className="bg-white rounded-lg border border-[#1E2020] p-4 sm:p-5">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-md bg-[#A2BEC2] flex items-center justify-center flex-shrink-0">
-                      <DollarSign className="w-5 h-5 text-[#314143]" />
+                    <div className="w-10 h-10 rounded-md bg-[#E4ECED] border border-[#628286] flex items-center justify-center flex-shrink-0">
+                      <DollarSign className="w-5 h-5 text-[#628286]" />
                     </div>
                     <div>
                       <h3 className="font-heading font-bold text-base text-[#1E2020]">Estimated Savings</h3>
@@ -541,11 +541,11 @@ export default function AppDashboard() {
                     <Link
                       key={module.title}
                       href={module.href}
-                      className="relative bg-[#A2BEC2] border border-[#1E2020] rounded-lg p-4 sm:p-5 hover:bg-[#92AEB2] active:bg-[#92AEB2] cursor-pointer block transition-colors min-h-[44px]"
+                      className="relative bg-[#E4ECED] border border-[#628286] rounded-lg p-4 sm:p-5 hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] cursor-pointer block transition-colors min-h-[44px]"
                       data-testid={`module-card-${module.title.toLowerCase()}`}
                     >
                       <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-2 sm:mb-3">
-                        <module.icon className="w-5 h-5 text-[#314143]" />
+                        <module.icon className="w-5 h-5 text-[#628286]" />
                       </div>
                       <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1 break-words">
                         {module.title}

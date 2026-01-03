@@ -124,6 +124,13 @@
   --hover: 187.5 20.8% 69.8% / 0.22;      /* rgba(162,190,194,0.22) subtle hover */
   --ring: 189 20% 46%;                    /* #628286 focus ring */
   --active-border: 186.7 15.5% 22.7%;     /* #314143 active border/text */
+
+  /* Calendar tokens */
+  --calendar-frame: 186.7 15.5% 22.7%;    /* #314143 outer border */
+  --calendar-grid: 189 20% 46%;           /* #628286 internal dividers */
+  --calendar-hover: 187.5 20.8% 69.8%;    /* #A2BEC2 hover wash */
+  --calendar-selected: 187.5 20.8% 69.8%; /* #A2BEC2 selected */
+  --calendar-surface: 0 0% 100%;          /* white surface */
 }
 
 /* APP DARK MODE */
@@ -161,6 +168,22 @@
   --app-surface: 200 10% 14%;
   --app-surface-2: 200 10% 18%;
   --app-panel-border: 200 10% 28%;
+
+  /* Dark mode interaction tokens */
+  --module: 200 10% 16%;
+  --module-border: 186 22% 50%;
+  --ink: 40 25% 94%;
+  --highlight: 186 22% 45%;
+  --hover: 186 22% 45% / 0.22;
+  --ring: 186 22% 50%;
+  --active-border: 186 22% 60%;
+
+  /* Dark mode calendar tokens */
+  --calendar-frame: 186 22% 50%;
+  --calendar-grid: 186 22% 40%;
+  --calendar-hover: 186 22% 45%;
+  --calendar-selected: 186 22% 45%;
+  --calendar-surface: 200 10% 14%;
 }
 
 /* Autofill background fix - prevent browser yellow on autofilled inputs */
@@ -699,4 +722,15 @@ blockquote, dd, dt, figcaption {
 .safe-text-container {
   min-width: 0;
   overflow: hidden;
+}
+
+/* Calendar utility classes (app scope only) */
+.app-shell .calendar-frame {
+  border-color: hsl(var(--calendar-frame)) !important;
+}
+.app-shell .calendar-grid {
+  border-color: hsl(var(--calendar-grid)) !important;
+}
+.app-shell .calendar-surface {
+  background: hsl(var(--calendar-surface)) !important;
 }

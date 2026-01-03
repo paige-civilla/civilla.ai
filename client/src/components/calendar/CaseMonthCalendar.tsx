@@ -203,8 +203,18 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
   };
 
   return (
-    <Card className="bg-white border-0 shadow-none h-full" data-testid="calendar-month">
-      <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-2 pb-2 pt-4 px-3 sm:px-4">
+    <Card 
+      className="h-full border-2 rounded-lg shadow-none" 
+      style={{ 
+        backgroundColor: "hsl(var(--calendar-surface))",
+        borderColor: "hsl(var(--calendar-frame))"
+      }}
+      data-testid="calendar-month"
+    >
+      <CardHeader 
+        className="flex flex-col sm:flex-row items-center justify-between gap-2 pb-2 pt-4 px-3 sm:px-4 border-b"
+        style={{ borderColor: "hsl(var(--calendar-grid))" }}
+      >
         <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center sm:justify-start">
           <Button
             size="icon"
@@ -256,12 +266,18 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
             <p className="font-sans text-sm text-neutral-darkest/60">Loading calendar...</p>
           </div>
         ) : (
-          <div className="border rounded-lg overflow-hidden">
-            <div className="grid grid-cols-7 bg-[#f4f6f5]">
+          <div className="overflow-hidden">
+            <div 
+              className="grid grid-cols-7 border-b"
+              style={{ 
+                backgroundColor: "hsl(var(--calendar-surface))",
+                borderColor: "hsl(var(--calendar-grid))"
+              }}
+            >
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
-                  className="py-2 text-center font-sans text-[10px] sm:text-xs font-medium text-neutral-darkest/70 border-b"
+                  className="py-2 text-center font-sans text-[10px] sm:text-xs font-medium text-[#1E2020]/70"
                 >
                   <span className="hidden xs:inline">{day}</span>
                   <span className="xs:hidden">{day.charAt(0)}</span>
@@ -280,11 +296,15 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
                     <div
                       key={`${weekIdx}-${dayIdx}`}
                       className={[
-                        "min-h-[60px] sm:min-h-[80px] border-b border-r p-0.5 sm:p-1",
-                        day ? "bg-white" : "bg-neutral-50",
+                        "min-h-[60px] sm:min-h-[80px] border-b border-r p-0.5 sm:p-1 transition-colors",
+                        day ? "hover:bg-[rgba(162,190,194,0.25)] cursor-pointer" : "bg-neutral-50/50",
                         dayIdx === 6 ? "border-r-0" : "",
                         weekIdx === weeks.length - 1 ? "border-b-0" : "",
                       ].join(" ")}
+                      style={{ 
+                        backgroundColor: day ? "hsl(var(--calendar-surface))" : undefined,
+                        borderColor: "hsl(var(--calendar-grid))"
+                      }}
                     >
                       {day && (
                         <>
@@ -292,8 +312,8 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
                             className={[
                               "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1",
                               isToday(day)
-                                ? "bg-primary text-primary-foreground"
-                                : "text-neutral-darkest",
+                                ? "ring-2 ring-[#314143] ring-offset-1 ring-offset-white bg-white text-[#314143] font-bold"
+                                : "text-[#1E2020]",
                             ].join(" ")}
                           >
                             {day}
