@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -2272,6 +2272,364 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Mark resolved error:", error);
       res.status(500).json({ error: "Failed to mark resolved" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/exhibit-lists", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const lists = await storage.listExhibitLists(userId, caseId);
+      res.json({ exhibitLists: lists });
+    } catch (error) {
+      console.error("List exhibit lists error:", error);
+      res.status(500).json({ error: "Failed to list exhibit lists" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/exhibit-lists", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const parseResult = insertExhibitListSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const list = await storage.createExhibitList(userId, caseId, parseResult.data);
+      res.status(201).json({ exhibitList: list });
+    } catch (error) {
+      console.error("Create exhibit list error:", error);
+      res.status(500).json({ error: "Failed to create exhibit list" });
+    }
+  });
+
+  app.patch("/api/exhibit-lists/:listId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+
+      const existing = await storage.getExhibitList(userId, listId);
+      if (!existing) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const parseResult = updateExhibitListSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateExhibitList(userId, listId, parseResult.data);
+      res.json({ exhibitList: updated });
+    } catch (error) {
+      console.error("Update exhibit list error:", error);
+      res.status(500).json({ error: "Failed to update exhibit list" });
+    }
+  });
+
+  app.delete("/api/exhibit-lists/:listId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+
+      const deleted = await storage.deleteExhibitList(userId, listId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      res.json({ message: "Exhibit list deleted" });
+    } catch (error) {
+      console.error("Delete exhibit list error:", error);
+      res.status(500).json({ error: "Failed to delete exhibit list" });
+    }
+  });
+
+  app.get("/api/exhibit-lists/:listId/exhibits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+
+      const list = await storage.getExhibitList(userId, listId);
+      if (!list) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const exhibitItems = await storage.listExhibits(userId, listId);
+      res.json({ exhibits: exhibitItems });
+    } catch (error) {
+      console.error("List exhibits error:", error);
+      res.status(500).json({ error: "Failed to list exhibits" });
+    }
+  });
+
+  app.post("/api/exhibit-lists/:listId/exhibits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+
+      const list = await storage.getExhibitList(userId, listId);
+      if (!list) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const parseResult = insertExhibitSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const exhibit = await storage.createExhibit(userId, list.caseId, listId, parseResult.data);
+      res.status(201).json({ exhibit });
+    } catch (error) {
+      console.error("Create exhibit error:", error);
+      res.status(500).json({ error: "Failed to create exhibit" });
+    }
+  });
+
+  app.patch("/api/exhibits/:exhibitId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { exhibitId } = req.params;
+
+      const existing = await storage.getExhibit(userId, exhibitId);
+      if (!existing) {
+        return res.status(404).json({ error: "Exhibit not found" });
+      }
+
+      const parseResult = updateExhibitSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const updated = await storage.updateExhibit(userId, exhibitId, parseResult.data);
+      res.json({ exhibit: updated });
+    } catch (error) {
+      console.error("Update exhibit error:", error);
+      res.status(500).json({ error: "Failed to update exhibit" });
+    }
+  });
+
+  app.delete("/api/exhibits/:exhibitId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { exhibitId } = req.params;
+
+      const deleted = await storage.deleteExhibit(userId, exhibitId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Exhibit not found" });
+      }
+
+      res.json({ message: "Exhibit deleted" });
+    } catch (error) {
+      console.error("Delete exhibit error:", error);
+      res.status(500).json({ error: "Failed to delete exhibit" });
+    }
+  });
+
+  app.post("/api/exhibit-lists/:listId/exhibits/reorder", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+      const { orderedIds } = req.body;
+
+      const list = await storage.getExhibitList(userId, listId);
+      if (!list) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      if (!Array.isArray(orderedIds)) {
+        return res.status(400).json({ error: "orderedIds must be an array" });
+      }
+
+      await storage.reorderExhibits(userId, listId, orderedIds);
+      const exhibitItems = await storage.listExhibits(userId, listId);
+      res.json({ exhibits: exhibitItems });
+    } catch (error) {
+      console.error("Reorder exhibits error:", error);
+      res.status(500).json({ error: "Failed to reorder exhibits" });
+    }
+  });
+
+  app.get("/api/exhibits/:exhibitId/evidence", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { exhibitId } = req.params;
+
+      const exhibit = await storage.getExhibit(userId, exhibitId);
+      if (!exhibit) {
+        return res.status(404).json({ error: "Exhibit not found" });
+      }
+
+      const files = await storage.listExhibitEvidence(userId, exhibitId);
+      res.json({ evidence: files });
+    } catch (error) {
+      console.error("List exhibit evidence error:", error);
+      res.status(500).json({ error: "Failed to list exhibit evidence" });
+    }
+  });
+
+  app.post("/api/exhibits/:exhibitId/evidence/attach", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { exhibitId } = req.params;
+
+      const exhibit = await storage.getExhibit(userId, exhibitId);
+      if (!exhibit) {
+        return res.status(404).json({ error: "Exhibit not found" });
+      }
+
+      const parseResult = attachEvidenceToExhibitSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        return res.status(400).json({ error: "Validation failed", fields });
+      }
+
+      const { evidenceId } = parseResult.data;
+
+      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidenceFile) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const link = await storage.attachEvidence(userId, exhibit.caseId, exhibitId, evidenceId);
+      if (!link) {
+        return res.status(400).json({ error: "Evidence already attached to this exhibit" });
+      }
+
+      res.status(201).json({ attached: true });
+    } catch (error) {
+      console.error("Attach evidence error:", error);
+      res.status(500).json({ error: "Failed to attach evidence" });
+    }
+  });
+
+  app.post("/api/exhibits/:exhibitId/evidence/detach", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { exhibitId } = req.params;
+      const { evidenceId } = req.body;
+
+      const exhibit = await storage.getExhibit(userId, exhibitId);
+      if (!exhibit) {
+        return res.status(404).json({ error: "Exhibit not found" });
+      }
+
+      if (!evidenceId) {
+        return res.status(400).json({ error: "evidenceId is required" });
+      }
+
+      const detached = await storage.detachEvidence(userId, exhibitId, evidenceId);
+      if (!detached) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+
+      res.json({ detached: true });
+    } catch (error) {
+      console.error("Detach evidence error:", error);
+      res.status(500).json({ error: "Failed to detach evidence" });
+    }
+  });
+
+  app.post("/api/evidence/:evidenceId/add-to-exhibit", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { evidenceId } = req.params;
+      const { exhibitListId, exhibitId, createNewExhibitTitle } = req.body;
+
+      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidenceFile) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      if (!exhibitListId) {
+        return res.status(400).json({ error: "exhibitListId is required" });
+      }
+
+      const list = await storage.getExhibitList(userId, exhibitListId);
+      if (!list) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      let targetExhibitId = exhibitId;
+
+      if (createNewExhibitTitle) {
+        const newExhibit = await storage.createExhibit(userId, list.caseId, exhibitListId, {
+          title: createNewExhibitTitle,
+        });
+        targetExhibitId = newExhibit.id;
+      }
+
+      if (!targetExhibitId) {
+        return res.status(400).json({ error: "exhibitId or createNewExhibitTitle is required" });
+      }
+
+      const exhibit = await storage.getExhibit(userId, targetExhibitId);
+      if (!exhibit) {
+        return res.status(404).json({ error: "Exhibit not found" });
+      }
+
+      const link = await storage.attachEvidence(userId, list.caseId, targetExhibitId, evidenceId);
+      if (!link) {
+        return res.status(400).json({ error: "Evidence already attached to this exhibit" });
+      }
+
+      res.status(201).json({ attached: true, exhibitId: targetExhibitId });
+    } catch (error) {
+      console.error("Add to exhibit error:", error);
+      res.status(500).json({ error: "Failed to add to exhibit" });
+    }
+  });
+
+  app.get("/api/evidence/:evidenceId/exhibits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { evidenceId } = req.params;
+
+      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidenceFile) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const exhibitItems = await storage.getExhibitsForEvidence(userId, evidenceId);
+      res.json({ exhibits: exhibitItems });
+    } catch (error) {
+      console.error("Get exhibits for evidence error:", error);
+      res.status(500).json({ error: "Failed to get exhibits" });
     }
   });
 
