@@ -1,20 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { getLexiHelp, type LexiHelpContent } from "@/lib/lexiHelpContent";
-import { HelpCircle, MessageSquare } from "lucide-react";
+import { HelpCircle, MessageSquare, Plus, Trash2, Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { LexiThread, LexiMessage } from "@shared/schema";
 
-type ChatMsg = {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  createdAt: number;
-};
-
-function uid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
-const STORAGE_KEY = "civilla_lexi_chat_v1";
 const OPEN_KEY = "civilla_lexi_open_v1";
 
 function getRouteKey(path: string): string {
@@ -35,56 +26,9 @@ function getRouteKey(path: string): string {
   return "dashboard";
 }
 
-function localExplain(input: string) {
-  const q = input.toLowerCase();
-
-  if (q.includes("motion")) {
-    return [
-      "A Motion is a request you make to the court to do something (or to stop something).",
-      "Examples include a Motion to Compel, Motion for Sanctions, Motion to Continue, Motion to Modify, etc.",
-      "In Civilla, a Motion template is a general starting format — you'd fill in what you want the judge to order and why.",
-      "If you tell me what you're trying to accomplish, I can suggest which kind of motion it usually fits.",
-    ].join("\n\n");
-  }
-
-  if (q.includes("declaration") || q.includes("affidavit")) {
-    return [
-      "A Declaration/Affidavit is your written sworn statement of facts.",
-      "It's where you explain what happened, with dates and details, and you sign under penalty of perjury (or notarize, depending on requirements).",
-      "Declarations often support a Motion by providing the facts that justify what you're asking the court to do.",
-    ].join("\n\n");
-  }
-
-  if (q.includes("proposed order") || q.includes("order")) {
-    return [
-      "A Proposed Order is a draft order you want the judge to sign.",
-      "Courts often like these because it saves time — you're giving the judge a ready-to-sign version of what you requested.",
-      "If the judge agrees, they may sign it as-is or edit it.",
-    ].join("\n\n");
-  }
-
-  if (q.includes("certificate") || q.includes("service")) {
-    return [
-      "A Certificate of Service is proof you delivered (served) your document to the other party (or their attorney).",
-      "It usually lists what you served, how you served it (mail/hand delivery/e-service), and the date.",
-      "Courts often require it any time you file something that must be sent to the other side.",
-    ].join("\n\n");
-  }
-
-  if (q.includes("docx") || q.includes("court format") || q.includes("court-ready")) {
-    return [
-      "Court-formatted DOCX is the printable version in the right font/spacing and caption format.",
-      "In Civilla the general flow is:",
-      "1) Draft (your working text)",
-      "2) Review & Edit (confirm caption/signature/date/role)",
-      "3) Download Court-Formatted DOCX (court-ready file)",
-    ].join("\n");
-  }
-
-  return [
-    "Tell me what you're filing and why (example: 'I want the court to order him to provide school records').",
-    "Then I'll explain which document type fits (Motion vs Declaration vs Proposed Order) and how they usually work together.",
-  ].join("\n\n");
+function extractCaseId(path: string): string | null {
+  const match = path.match(/\/cases\/([^/]+)/);
+  return match ? match[1] : null;
 }
 
 export default function LexiPanel() {
@@ -92,34 +36,78 @@ export default function LexiPanel() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"help" | "chat">("help");
   const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
   const [selectedDocKey, setSelectedDocKey] = useState<string | undefined>();
-
-  const [messages, setMessages] = useState<ChatMsg[]>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw) as ChatMsg[];
-    } catch {
-      // ignore
-    }
-    return [
-      {
-        id: uid(),
-        role: "assistant",
-        text:
-          "Hi, I'm Lexi. I can explain the differences between Motions, Declarations, Proposed Orders, and Certificates of Service — and how they fit together. What are you trying to file?",
-        createdAt: Date.now(),
-      },
-    ];
-  });
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [showThreadList, setShowThreadList] = useState(false);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const title = useMemo(() => "Lexi", []);
   const routeKey = getRouteKey(location);
+  const caseId = extractCaseId(location);
 
   const helpContent: LexiHelpContent = useMemo(() => {
     return getLexiHelp({ routeKey, selectedDocKey });
   }, [routeKey, selectedDocKey]);
+
+  const { data: disclaimerData } = useQuery<{ disclaimer: string; welcome: string }>({
+    queryKey: ["/api/lexi/disclaimer"],
+    enabled: open,
+  });
+
+  const { data: threadsData, isLoading: threadsLoading } = useQuery<{ threads: LexiThread[] }>({
+    queryKey: ["/api/cases", caseId, "lexi", "threads"],
+    enabled: open && mode === "chat" && !!caseId,
+  });
+
+  const threads = threadsData?.threads ?? [];
+
+  const { data: messagesData, isLoading: messagesLoading } = useQuery<{ messages: LexiMessage[] }>({
+    queryKey: ["/api/lexi/threads", activeThreadId, "messages"],
+    enabled: open && mode === "chat" && !!activeThreadId,
+  });
+
+  const messages = messagesData?.messages ?? [];
+
+  const createThreadMutation = useMutation({
+    mutationFn: async (threadTitle: string) => {
+      const res = await apiRequest("POST", `/api/cases/${caseId}/lexi/threads`, { title: threadTitle });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "lexi", "threads"] });
+      setActiveThreadId(data.thread.id);
+      setShowThreadList(false);
+    },
+  });
+
+  const deleteThreadMutation = useMutation({
+    mutationFn: async (threadId: string) => {
+      await apiRequest("DELETE", `/api/lexi/threads/${threadId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "lexi", "threads"] });
+      if (activeThreadId && threads.length <= 1) {
+        setActiveThreadId(null);
+      } else if (threads.length > 1) {
+        const remaining = threads.filter(t => t.id !== activeThreadId);
+        setActiveThreadId(remaining[0]?.id || null);
+      }
+    },
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageText: string) => {
+      const res = await apiRequest("POST", "/api/lexi/chat", {
+        caseId,
+        threadId: activeThreadId,
+        message: messageText,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/lexi/threads", activeThreadId, "messages"] });
+    },
+  });
 
   useEffect(() => {
     try {
@@ -129,14 +117,6 @@ export default function LexiPanel() {
       // ignore
     }
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch {
-      // ignore
-    }
-  }, [messages]);
 
   useEffect(() => {
     try {
@@ -169,28 +149,30 @@ export default function LexiPanel() {
     setSelectedDocKey(undefined);
   }, [location]);
 
+  useEffect(() => {
+    if (threads.length > 0 && !activeThreadId) {
+      setActiveThreadId(threads[0].id);
+    }
+  }, [threads, activeThreadId]);
+
   async function send() {
     const text = input.trim();
-    if (!text || sending) return;
+    if (!text || sendMessageMutation.isPending || !activeThreadId) return;
 
-    const userMsg: ChatMsg = { id: uid(), role: "user", text, createdAt: Date.now() };
-    setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    setSending(true);
-
-    try {
-      const replyText = localExplain(text);
-
-      const botMsg: ChatMsg = { id: uid(), role: "assistant", text: replyText, createdAt: Date.now() };
-      setMessages((prev) => [...prev, botMsg]);
-    } finally {
-      setSending(false);
-    }
+    sendMessageMutation.mutate(text);
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") send();
   }
+
+  function startNewThread() {
+    const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    createThreadMutation.mutate(`New conversation - ${timestamp}`);
+  }
+
+  const noCaseSelected = !caseId;
 
   return (
     <>
@@ -316,6 +298,14 @@ export default function LexiPanel() {
             </button>
           </div>
 
+          {disclaimerData?.disclaimer && (
+            <div className="px-4 py-2 bg-amber-50 border-b border-amber-200">
+              <p className="font-sans text-xs text-amber-800">
+                {disclaimerData.disclaimer}
+              </p>
+            </div>
+          )}
+
           <div className="flex border-b border-neutral-light">
             <button
               type="button"
@@ -375,72 +365,192 @@ export default function LexiPanel() {
                 </div>
               </div>
             </div>
+          ) : noCaseSelected ? (
+            <div className="flex-1 flex items-center justify-center px-4">
+              <div className="text-center">
+                <MessageSquare className="w-12 h-12 mx-auto text-neutral-darkest/30 mb-3" />
+                <p className="font-sans text-sm text-neutral-darkest/60">
+                  Open a case to chat with Lexi about your questions.
+                </p>
+              </div>
+            </div>
+          ) : showThreadList ? (
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-4 py-3 border-b border-neutral-light flex items-center justify-between gap-2">
+                <p className="font-sans text-sm font-medium text-neutral-darkest">Conversations</p>
+                <button
+                  type="button"
+                  onClick={startNewThread}
+                  disabled={createThreadMutation.isPending}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
+                  data-testid="lexi-new-thread"
+                >
+                  <Plus className="w-4 h-4" />
+                  New
+                </button>
+              </div>
+              {threadsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-neutral-darkest/40" />
+                </div>
+              ) : threads.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="font-sans text-sm text-neutral-darkest/60 mb-3">No conversations yet</p>
+                  <button
+                    type="button"
+                    onClick={startNewThread}
+                    disabled={createThreadMutation.isPending}
+                    className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Start a conversation
+                  </button>
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-light">
+                  {threads.map((thread) => (
+                    <div
+                      key={thread.id}
+                      className={[
+                        "px-4 py-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-neutral-lightest",
+                        activeThreadId === thread.id ? "bg-primary/5" : "",
+                      ].join(" ")}
+                      onClick={() => {
+                        setActiveThreadId(thread.id);
+                        setShowThreadList(false);
+                      }}
+                      data-testid={`lexi-thread-${thread.id}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-sans text-sm text-neutral-darkest truncate">{thread.title}</p>
+                        <p className="font-sans text-xs text-neutral-darkest/50">
+                          {new Date(thread.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteThreadMutation.mutate(thread.id);
+                        }}
+                        className="p-1 text-neutral-darkest/40 hover:text-destructive"
+                        aria-label="Delete conversation"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={[
-                      "rounded-lg px-3 py-2 whitespace-pre-wrap text-sm",
-                      m.role === "user"
-                        ? "ml-8 bg-primary text-primary-foreground"
-                        : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
-                    ].join(" ")}
-                  >
-                    {m.text}
+              <div className="px-4 py-2 border-b border-neutral-light flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowThreadList(true)}
+                  className="text-xs text-primary hover:text-primary/80"
+                  data-testid="lexi-show-threads"
+                >
+                  All conversations ({threads.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={startNewThread}
+                  disabled={createThreadMutation.isPending}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
+                  data-testid="lexi-new-thread-inline"
+                >
+                  <Plus className="w-3 h-3" />
+                  New
+                </button>
+              </div>
+
+              {!activeThreadId ? (
+                <div className="flex-1 flex items-center justify-center px-4">
+                  <div className="text-center">
+                    <p className="font-sans text-sm text-neutral-darkest/60 mb-3">
+                      {disclaimerData?.welcome || "Start a conversation with Lexi"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={startNewThread}
+                      disabled={createThreadMutation.isPending}
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:opacity-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Start a conversation
+                    </button>
                   </div>
-                ))}
-                <div ref={endRef} />
-              </div>
-
-              <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)]">
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
-                    placeholder="Ask Lexi..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={onKeyDown}
-                    data-testid="lexi-input"
-                  />
-                  <button
-                    type="button"
-                    onClick={send}
-                    disabled={sending || !input.trim()}
-                    className="rounded-md bg-primary text-primary-foreground px-4 py-3 min-h-[44px] font-sans text-sm disabled:opacity-50 active:opacity-80"
-                    data-testid="lexi-send"
-                  >
-                    Send
-                  </button>
                 </div>
-
-                <div className="mt-2 flex items-center justify-between">
-                  <button
-                    type="button"
-                    className="text-xs font-sans text-neutral-darkest/60 hover:text-neutral-darkest"
-                    onClick={() => {
-                      localStorage.removeItem(STORAGE_KEY);
-                      setMessages([
-                        {
-                          id: uid(),
-                          role: "assistant",
-                          text:
-                            "Cleared. What do you want to understand about Motions, Declarations, Proposed Orders, or Certificates of Service?",
-                          createdAt: Date.now(),
-                        },
-                      ]);
-                    }}
-                    data-testid="lexi-clear"
-                  >
-                    Clear chat
-                  </button>
-
-                  <span className="text-xs font-sans text-neutral-darkest/50">
-                    Education only • Not legal advice
-                  </span>
+              ) : messagesLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-neutral-darkest/40" />
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                    {messages.length === 0 && (
+                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
+                        {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
+                      </div>
+                    )}
+                    {messages.map((m) => (
+                      <div
+                        key={m.id}
+                        className={[
+                          "rounded-lg px-3 py-2 whitespace-pre-wrap text-sm",
+                          m.role === "user"
+                            ? "ml-8 bg-primary text-primary-foreground"
+                            : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
+                        ].join(" ")}
+                      >
+                        {m.content}
+                      </div>
+                    ))}
+                    {sendMessageMutation.isPending && (
+                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Thinking...
+                      </div>
+                    )}
+                    <div ref={endRef} />
+                  </div>
+
+                  <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+                    <div className="flex gap-2">
+                      <input
+                        className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
+                        placeholder="Ask Lexi..."
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={onKeyDown}
+                        disabled={sendMessageMutation.isPending}
+                        data-testid="lexi-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={send}
+                        disabled={sendMessageMutation.isPending || !input.trim()}
+                        className="rounded-md bg-primary text-primary-foreground px-4 py-3 min-h-[44px] font-sans text-sm disabled:opacity-50 active:opacity-80"
+                        data-testid="lexi-send"
+                      >
+                        {sendMessageMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Send"
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-end">
+                      <span className="text-xs font-sans text-neutral-darkest/50">
+                        Education only
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
