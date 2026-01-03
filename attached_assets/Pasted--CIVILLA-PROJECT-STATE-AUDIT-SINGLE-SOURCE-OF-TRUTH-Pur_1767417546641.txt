@@ -1,0 +1,153 @@
+# CIVILLA PROJECT STATE AUDIT — SINGLE SOURCE OF TRUTH
+# Purpose: Produce a complete, factual inventory of what exists in the Civilla codebase today.
+# Rule: Do NOT describe intent or plans. Report ONLY what is present, wired, and verifiable.
+
+======================================================================
+A) ENVIRONMENT & BOOT CONFIGURATION
+======================================================================
+
+1. List all environment variables referenced anywhere in the backend code.
+   - File path
+   - Variable name
+   - Purpose (DB, auth, AI, storage, etc.)
+   - Whether it is REQUIRED or OPTIONAL
+
+2. Identify the database initialization file(s).
+   - File path(s)
+   - Which env var is used to connect (must name it)
+   - Whether any fallback or alternate DB logic exists
+
+3. On server boot, report:
+   - What DB host is logged (host only, no secrets)
+   - Whether the server logs confirm successful DB connection
+
+======================================================================
+B) DATABASE & SCHEMA INVENTORY
+======================================================================
+
+4. List ALL database tables that currently exist.
+   For each table:
+   - Table name
+   - Columns
+   - Indexes
+   - Foreign keys (if any)
+
+5. Identify where each table is accessed in code.
+   - Storage layer file(s)
+   - API route file(s)
+
+======================================================================
+C) STORAGE LAYER INVENTORY
+======================================================================
+
+6. List all storage-layer functions (e.g., in server/storage.ts or equivalent).
+   For each function:
+   - Function name
+   - What table(s) it touches
+   - Whether it enforces user_id + case_id ownership
+
+======================================================================
+D) API ROUTE INVENTORY
+======================================================================
+
+7. List ALL API routes.
+   For each route:
+   - HTTP method
+   - Path
+   - Auth required? (yes/no)
+   - Case-scoped? (yes/no)
+   - Ownership enforced server-side? (yes/no)
+   - Storage function used (if any)
+
+8. List all health / diagnostic endpoints.
+   - Path
+   - What they verify (DB, auth, tables, Lexi, etc.)
+
+======================================================================
+E) FRONTEND ROUTE INVENTORY
+======================================================================
+
+9. List ALL frontend routes.
+   For each route:
+   - Path
+   - Whether it is public or authenticated
+   - Whether it includes :caseId in the URL
+   - Which API routes it depends on
+
+10. Identify any routes that:
+   - Do not include caseId but should
+   - Use localStorage instead of URL as source of truth
+
+======================================================================
+F) MODULE-BY-MODULE STATUS REPORT
+======================================================================
+
+11. For each module below, report whether each layer exists:
+   (DB / Storage / API / UI)
+
+Modules:
+- Auth
+- Cases
+- Timeline
+- Evidence
+- Exhibits
+- Documents
+- Tasks
+- Deadlines
+- Calendar aggregation
+- Contacts
+- Communications log
+- Children
+- Pattern analysis
+- Billing / entitlements
+- Lexi (AI)
+
+Use this exact format per module:
+Module: <name>
+- DB schema exists: yes/no
+- Storage functions exist: yes/no
+- API routes exist: yes/no
+- UI route exists: yes/no
+- Ownership enforced: yes/no
+
+======================================================================
+G) LEXI (AI) SPECIFIC AUDIT
+======================================================================
+
+12. Identify Lexi backend components:
+   - Files handling Lexi requests
+   - OpenAI client initialization
+   - Threads/messages persistence tables
+   - Health endpoint(s)
+
+13. Identify Lexi frontend components:
+   - Panel location
+   - Thread UI existence
+   - Case-scoping behavior
+
+14. List any guardrails currently enforced in code:
+   - Refusal logic
+   - Citation requirements
+   - Read-only enforcement
+   - Rate limiting
+
+======================================================================
+H) PRODUCTION VERIFICATION STATUS
+======================================================================
+
+15. Report which features have been VERIFIED on civilla.ai.
+   - Explicitly tested in production (yes/no)
+   - Persist after refresh (yes/no)
+
+16. List any known production-only failures or inconsistencies.
+
+======================================================================
+I) SUMMARY
+======================================================================
+
+17. List:
+   - Top 5 areas that are fully built and production-verified
+   - Top 5 areas that exist but are not production-verified
+   - Top 5 missing or partially wired components
+
+END OF AUDIT
