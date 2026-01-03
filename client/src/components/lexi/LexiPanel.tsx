@@ -76,6 +76,8 @@ export default function LexiPanel() {
   const [selectedDocKey, setSelectedDocKey] = useState<string | undefined>();
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [showThreadList, setShowThreadList] = useState(false);
+  const [currentModuleKey, setCurrentModuleKey] = useState<string | undefined>();
+  const [pendingAsk, setPendingAsk] = useState<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string } | null>(null);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const title = useMemo(() => "Lexi", []);
@@ -133,16 +135,19 @@ export default function LexiPanel() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageText: string) => {
+    mutationFn: async (payload: { text: string; mode?: "help" | "chat" | "research"; moduleKey?: string }) => {
       const res = await apiRequest("POST", "/api/lexi/chat", {
         caseId,
         threadId: activeThreadId,
-        message: messageText,
+        message: payload.text,
+        mode: payload.mode,
+        moduleKey: payload.moduleKey,
       });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lexi/threads", activeThreadId, "messages"] });
+      setCurrentModuleKey(undefined);
     },
   });
 
@@ -184,26 +189,32 @@ export default function LexiPanel() {
 
   useEffect(() => {
     const handleLexiAsk = (e: CustomEvent<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string; caseId?: string }>) => {
-      const { text, mode: requestedMode } = e.detail || {};
+      const { text, mode: requestedMode, moduleKey } = e.detail || {};
       if (!text) return;
       
       setOpen(true);
       setMode("chat");
       setInput(text);
+      setCurrentModuleKey(moduleKey);
       
-      setTimeout(() => {
-        if (activeThreadId) {
-          sendMessageMutation.mutate(text);
-          setInput("");
-        }
-      }, 100);
+      if (activeThreadId) {
+        setPendingAsk({ text, mode: requestedMode, moduleKey });
+      }
     };
 
     window.addEventListener("lexi:ask" as any, handleLexiAsk);
     return () => {
       window.removeEventListener("lexi:ask" as any, handleLexiAsk);
     };
-  }, [activeThreadId, sendMessageMutation]);
+  }, [activeThreadId]);
+
+  useEffect(() => {
+    if (pendingAsk && activeThreadId && !sendMessageMutation.isPending) {
+      sendMessageMutation.mutate(pendingAsk);
+      setInput("");
+      setPendingAsk(null);
+    }
+  }, [pendingAsk, activeThreadId, sendMessageMutation]);
 
   useEffect(() => {
     setSelectedDocKey(undefined);
@@ -220,7 +231,7 @@ export default function LexiPanel() {
     if (!text || sendMessageMutation.isPending || !activeThreadId) return;
 
     setInput("");
-    sendMessageMutation.mutate(text);
+    sendMessageMutation.mutate({ text, moduleKey: currentModuleKey });
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
