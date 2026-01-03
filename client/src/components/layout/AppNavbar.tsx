@@ -144,8 +144,15 @@ export default function AppNavbar() {
     return links;
   })();
 
+  const [location] = useLocation();
+  
+  // Close menu on route change
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    setIsMenuOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (
         isMenuOpen &&
         menuRef.current &&
@@ -164,9 +171,11 @@ export default function AppNavbar() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
@@ -235,19 +244,26 @@ export default function AppNavbar() {
         </div>
 
         {isMenuOpen && (
-          <div 
-            ref={menuRef}
-            className="absolute left-0 right-0 top-full mt-2 z-[9999]"
-            data-testid="dropdown-menu-app"
-            onMouseEnter={scheduleOpen}
-            onMouseLeave={scheduleClose}
-          >
-            <div className="mx-auto max-w-6xl px-3">
-              <div
-                className="bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-xl shadow-xl p-4"
-                role="menu"
-                aria-label="App menu"
-              >
+          <>
+            {/* Mobile overlay backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 z-[9998] md:hidden"
+              onClick={() => setIsMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <div 
+              ref={menuRef}
+              className="fixed md:absolute left-0 right-0 top-[var(--civilla-nav-h,36px)] md:top-full md:mt-2 z-[9999] max-h-[calc(100vh-var(--civilla-nav-h,36px))] overflow-y-auto"
+              data-testid="dropdown-menu-app"
+              onMouseEnter={scheduleOpen}
+              onMouseLeave={scheduleClose}
+            >
+              <div className="mx-auto max-w-6xl px-3 py-2 md:py-0">
+                <div
+                  className="bg-[hsl(var(--app-panel))] border border-[hsl(var(--app-panel-border))] rounded-xl shadow-xl p-4"
+                  role="menu"
+                  aria-label="App menu"
+                >
                 {authData?.user && (
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
@@ -259,7 +275,7 @@ export default function AppNavbar() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                   {menuLinks.map((item) => (
                     <button
                       key={item.href}
@@ -268,28 +284,28 @@ export default function AppNavbar() {
                         setIsMenuOpen(false);
                         setLocation(item.href);
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
+                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] text-left font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] active:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
                       role="menuitem"
                       data-testid={`menu-link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
                       <span className="truncate">{item.label}</span>
                     </button>
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[hsl(var(--app-panel-border))] flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="mt-4 pt-3 border-t border-[hsl(var(--app-panel-border))] flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <button
                       type="button"
                       onClick={() => {
                         setIsMenuOpen(false);
                         setLocation("/app/account");
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
+                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] active:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
                       data-testid="menu-link-account-settings"
                     >
-                      <Settings className="h-5 w-5" />
+                      <Settings className="h-5 w-5 flex-shrink-0" />
                       <span>Account Settings</span>
                     </button>
                     <button
@@ -300,10 +316,10 @@ export default function AppNavbar() {
                         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
                         setLocation("/");
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
+                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-neutral-darkest hover:bg-[hsl(var(--app-surface-2))] active:bg-[hsl(var(--app-surface-2))] border border-transparent hover:border-[hsl(var(--app-panel-border))]"
                       data-testid="button-logout-menu"
                     >
-                      <LogOut className="h-5 w-5" />
+                      <LogOut className="h-5 w-5 flex-shrink-0" />
                       <span>Log out</span>
                     </button>
                   </div>
@@ -311,7 +327,7 @@ export default function AppNavbar() {
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen(false)}
-                    className="rounded-lg px-3 py-2 font-sans text-sm text-neutral-darkest/70 hover:bg-[hsl(var(--app-surface-2))]"
+                    className="rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-neutral-darkest/70 hover:bg-[hsl(var(--app-surface-2))] active:bg-[hsl(var(--app-surface-2))]"
                     data-testid="button-close-menu"
                   >
                     Close
@@ -320,6 +336,7 @@ export default function AppNavbar() {
               </div>
             </div>
           </div>
+          </>
         )}
       </nav>
     </div>

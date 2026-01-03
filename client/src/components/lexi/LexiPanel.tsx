@@ -191,7 +191,7 @@ export default function LexiPanel() {
       <div
         className={[
           "fixed top-0 right-0 h-screen z-50 bg-white border-l border-neutral-light shadow-xl",
-          "w-[380px] max-w-[92vw]",
+          "w-full sm:w-[380px] sm:max-w-[92vw]",
           "transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "translate-x-full",
         ].join(" ")}
@@ -215,7 +215,7 @@ export default function LexiPanel() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="px-2 py-1 rounded-md border border-neutral-light text-neutral-darkest/70 hover:text-neutral-darkest"
+              className="px-3 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-neutral-light text-neutral-darkest/70 hover:text-neutral-darkest active:bg-neutral-light/20"
               data-testid="lexi-close"
               aria-label="Close Lexi"
             >
@@ -240,11 +240,11 @@ export default function LexiPanel() {
             <div ref={endRef} />
           </div>
 
-          <div className="border-t border-neutral-light p-3">
+          <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)]">
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-md border border-neutral-light px-3 py-2 font-sans text-sm outline-none focus:ring-2 focus:ring-bush/30"
-                placeholder="Ask Lexi: 'What's a Motion to Compel?'"
+                className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
+                placeholder="Ask Lexi..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
@@ -254,7 +254,7 @@ export default function LexiPanel() {
                 type="button"
                 onClick={send}
                 disabled={sending || !input.trim()}
-                className="rounded-md bg-primary text-primary-foreground px-4 py-2 font-sans text-sm disabled:opacity-50"
+                className="rounded-md bg-primary text-primary-foreground px-4 py-3 min-h-[44px] font-sans text-sm disabled:opacity-50 active:opacity-80"
                 data-testid="lexi-send"
               >
                 Send

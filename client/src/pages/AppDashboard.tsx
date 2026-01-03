@@ -350,27 +350,27 @@ export default function AppDashboard() {
 
   return (
     <AppLayout>
-      <section className="w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16">
+      <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
         <div className="flex flex-col items-start max-w-container w-full">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 w-full mb-8">
-            <div>
-              <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-heading font-bold text-xl sm:text-heading-3-mobile md:text-heading-3 text-neutral-darkest break-words">
                 {primaryCase.title}
               </h1>
             </div>
             <Button
               size="sm"
-              className="bg-[#314143] text-[#F2F2F2] hover:bg-[#27363A] border border-[#1E2020]"
+              className="bg-[#314143] text-[#F2F2F2] hover:bg-[#27363A] border border-[#1E2020] min-h-[44px] w-full sm:w-auto"
               onClick={() => setLocation("/app/cases")}
               data-testid="button-view-all-cases"
             >
-              <Briefcase className="w-4 h-4 mr-2" />
+              <Briefcase className="w-4 h-4 mr-2 flex-shrink-0" />
               View all cases
             </Button>
           </div>
 
-          <div className="w-full flex flex-col lg:flex-row gap-8">
-            <div className="lg:w-[380px] flex-shrink-0">
+          <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-8">
+            <div className="w-full lg:w-[380px] lg:flex-shrink-0">
               <div className="bg-white rounded-lg border border-[#1E2020] overflow-hidden">
                 <CaseMonthCalendar caseId={primaryCase.id} />
                 
@@ -441,23 +441,23 @@ export default function AppDashboard() {
               </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="w-full">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {getModuleCards(primaryCase.id).map((module) => (
                     <Link
                       key={module.title}
                       href={module.href}
-                      className="relative bg-[#A2BEC2] border border-[#1E2020] rounded-lg p-5 hover:bg-[#92AEB2] cursor-pointer block transition-colors"
+                      className="relative bg-[#A2BEC2] border border-[#1E2020] rounded-lg p-4 sm:p-5 hover:bg-[#92AEB2] active:bg-[#92AEB2] cursor-pointer block transition-colors min-h-[44px]"
                       data-testid={`module-card-${module.title.toLowerCase()}`}
                     >
-                      <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-3">
+                      <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-2 sm:mb-3">
                         <module.icon className="w-5 h-5 text-[#314143]" />
                       </div>
-                      <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1">
+                      <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1 break-words">
                         {module.title}
                       </h3>
-                      <p className="font-sans text-sm text-[#1E2020]/70">
+                      <p className="font-sans text-sm text-[#1E2020]/70 break-words">
                         {module.description}
                       </p>
                     </Link>

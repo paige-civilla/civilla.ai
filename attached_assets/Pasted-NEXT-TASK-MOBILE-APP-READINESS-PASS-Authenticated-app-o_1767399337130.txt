@@ -1,0 +1,102 @@
+NEXT TASK — MOBILE APP READINESS PASS (Authenticated app + onboarding + dashboard)
+
+Goal:
+Make the entire app usable on iPhone/Android screen sizes with no cut off text, no horizontal scroll, correct spacing, and touch-friendly navigation.
+
+Scope:
+- This is a UI/UX + responsive pass only. Do not change backend logic.
+- Focus primarily on post-login app pages (.app-shell), but also fix login/register/onboarding if needed.
+- Must work for widths: 320px, 375px, 390px, 414px, 768px, and desktop.
+
+Non-negotiable requirements:
+1) No text truncation/cutoff on any page at 320px width.
+2) No horizontal scrolling anywhere (unless inside a deliberate horizontal scroller).
+3) Tap targets: minimum 44px height for buttons/interactive items.
+4) Sticky/scroll behavior: Onboarding steps always start at top when switching steps. Closing policy modals returns user to the SAME scroll position of the onboarding step (not bottom of page).
+5) Navbar/dropdown: usable on touch (tap to open/close), not hover-only on mobile. Must not disappear “testy.” Must close on outside tap.
+6) Lexi panel: must not cover primary actions on mobile. If open, the app content behind should not be tappable; closing via outside tap works.
+7) Calendar + Upcoming list: must stack cleanly on mobile. Calendar should be full width. “Upcoming” list below it.
+8) Module tiles: must become 1 column on mobile, 2 on small tablets, 3+ on desktop. Tile text must wrap cleanly.
+9) Forms: inputs/textareas must be full width on mobile, labels readable, error text not overflowing. Use proper spacing between fields.
+10) Tables/lists (Evidence, Deadlines, Case To-Do, Documents, Exhibits, Pattern Analysis): cards must wrap, metadata lines must wrap, buttons must not overflow.
+
+Implementation directions (do all of these):
+A) Create a responsive layout system for app pages
+- Add a shared container utility (or update AppLayout) so pages consistently use:
+  - max width constraints on desktop
+  - padding that adapts (px-4 mobile, px-6 tablet, px-8 desktop)
+  - vertical spacing that adapts (gap-3/4 mobile, gap-6 desktop)
+- Ensure all app pages inherit the same layout behavior.
+
+B) Fix AppNavbar for mobile
+- If viewport is < md:
+  - Replace hover behavior with click/tap toggle
+  - Add a hamburger menu OR a clearly tappable menu trigger
+  - Ensure dropdown uses position: fixed with inset and scroll, so it never renders off-screen
+  - Ensure logout is always visible/reachable
+- Add “safe close” behavior:
+  - close on outside tap
+  - close on route change
+  - close on ESC (desktop)
+- Make icons/text responsive (no overlap when zoomed)
+
+C) Dashboard mobile layout
+- At < lg:
+  - Calendar and Upcoming should stack
+  - Modules grid becomes 1 column
+  - View All Cases becomes a compact button that doesn’t stretch full width unless needed
+- Remove any remaining headings we previously flagged (Modules / Case Workspace) if still present
+
+D) Calendar component mobile polish
+- Fix any header spacing/gaps at small sizes
+- Month view should be full width with readable day cells
+- Ensure dots/badges do not overflow cells
+- “Add item” flow must be mobile friendly (modal fits screen, scroll inside modal if needed)
+
+E) Onboarding mobile polish
+- Each step must start at top. Force scrollTo(0) on step change and modal close.
+- Ensure policy modal opens at top and is scrollable within the modal on mobile.
+- The intro warning screen (Step 0) must be readable and not cramped.
+- Review & Confirm step must display as stacked cards with “Edit” buttons full width on mobile.
+
+F) Lexi panel mobile behavior
+- On mobile:
+  - open as a full-screen or near-full-screen sheet from the right or bottom
+  - must have a clear close button
+  - must not block nav or primary actions unexpectedly
+  - outside tap closes (and returns to exactly where user was)
+
+G) Mobile QA pass
+Create a checklist and test these routes at 320px width:
+- /login
+- /register
+- /app/onboarding
+- /app (dashboard)
+- /app/cases
+- /app/case/:caseId (workspace)
+- /app/case-settings/:caseId
+- /app/documents/:caseId
+- /app/timeline/:caseId
+- /app/evidence/:caseId
+- /app/exhibits/:caseId
+- /app/tasks/:caseId (Case To-Do)
+- /app/deadlines/:caseId
+- /app/patterns/:caseId (Pattern Analysis)
+- /app/account
+
+For each page, confirm:
+- no horizontal scroll
+- no clipped text
+- buttons are tappable
+- modals fit screen and scroll correctly
+- dropdown and Lexi behave correctly
+
+Output requirements (very important):
+1) Provide a detailed final summary:
+   - Files edited (full paths)
+   - What changed per file
+   - Before/after behavior
+2) Provide the QA checklist with PASS/FAIL for every route above.
+3) If any item cannot be fixed quickly, implement a temporary safe fallback and document it.
+
+Proceed now and complete the full mobile readiness pass.
