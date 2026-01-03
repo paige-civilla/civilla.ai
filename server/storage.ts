@@ -206,6 +206,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         userId,
         title: caseData.title,
+        nickname: caseData.nickname,
         state: caseData.state,
         county: caseData.county,
         caseNumber: caseData.caseNumber,
@@ -225,6 +226,7 @@ export class DatabaseStorage implements IStorage {
       .update(cases)
       .set({
         title: caseData.title ?? existingCase.title,
+        nickname: caseData.nickname !== undefined ? caseData.nickname : existingCase.nickname,
         state: caseData.state ?? existingCase.state,
         county: caseData.county ?? existingCase.county,
         caseNumber: caseData.caseNumber !== undefined ? caseData.caseNumber : existingCase.caseNumber,

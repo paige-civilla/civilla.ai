@@ -1,0 +1,69 @@
+REPLIT TASK: Implement “E” = Case Title vs Case Nickname + Dashboard/Header UX polish
+
+GOAL
+Give each case:
+1) A formal “Case Title” (used in Case Settings + exports where needed)
+2) A “Case Nickname” (used on the Case Dashboard / Case Workspace header)
+Also clean up the Dashboard/Case header UI per Paige’s notes.
+
+REQUIREMENTS
+- No breaking changes to existing routes.
+- Keep all existing case IDs and relationships.
+- If a nickname is empty, fall back to Case Title everywhere.
+
+BACKEND / DB
+1) Update schema
+- In shared/schema.ts, add these columns to the cases table:
+  - nickname (TEXT, nullable)
+  - caseNumber (TEXT, nullable)   // only if not already present in cases; do NOT duplicate if stored elsewhere
+- Update insertCaseSchema / updateCaseSchema to accept nickname and caseNumber (optional/nullable).
+- Add appropriate max length validations (e.g. nickname 80, caseNumber 80).
+
+2) Migrations / init
+- In server/db.ts:
+  - If using CREATE TABLE for cases, include nickname + case_number columns.
+  - Also add addColumnIfNotExists for cases.nickname and cases.case_number so existing DBs update cleanly.
+
+3) API
+- Ensure existing case update endpoint accepts nickname and caseNumber and persists them.
+- Ensure GET case endpoints return nickname and caseNumber.
+
+FRONTEND
+4) Case Settings page
+- In AppCaseSettings.tsx (or wherever case settings edits happen):
+  - Add two editable fields:
+    - “Case Title (official)” -> maps to cases.title
+    - “Case Nickname (what you’ll see in your dashboard)” -> maps to cases.nickname
+  - Add helper text explaining the difference in plain language.
+  - Add “Case Number” field if it belongs here (or show it read-only with edit, depending on current structure).
+  - Save should update the case immediately (use existing mutation).
+
+5) Case Dashboard / Case Workspace header
+- In AppDashboard.tsx and AppCase.tsx:
+  - Replace the large header case name with:
+    - Primary header: nickname if present else title
+    - Secondary small text: title if nickname is present (so users still see the official name)
+  - Reduce the size so it doesn’t dominate the page.
+  - Centering:
+    - Keep left-aligned on desktop for readability, but allow centered on mobile if the layout looks better.
+    - Use responsive classes so it never overflows or wraps awkwardly.
+
+6) “View All Cases” button polish
+- Convert “View All Cases” into a smaller button:
+  - Use app primary color (#314143) with text #FAF8F4
+  - Add a strong border (use #1E2020 or border token) and consistent hover.
+  - Ensure it doesn’t visually compete with the main CTA.
+  - Keep min-h 44px for mobile accessibility.
+
+QUALITY / ACCEPTANCE TESTS
+- Create/edit case nickname -> immediately reflected on dashboard/workspace header.
+- Nickname empty -> dashboard shows title, no weird blank.
+- Existing cases load without errors (migration safe).
+- No layout overflow at 320px width.
+- No console errors.
+
+DELIVERABLE
+After implementing, reply with:
+- Files edited
+- What columns were added
+- Screenshots of Case Settings + Dashboard header showing nickname in use

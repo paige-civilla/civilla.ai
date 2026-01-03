@@ -470,10 +470,14 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Case not found" });
       }
 
-      const { title, state, county, caseType, hasChildren } = req.body;
+      const { title, nickname, state, county, caseType, caseNumber, hasChildren } = req.body;
       
       if (title !== undefined && typeof title !== "string") {
         return res.status(400).json({ error: "Invalid title" });
+      }
+
+      if (nickname !== undefined && nickname !== null && typeof nickname !== "string") {
+        return res.status(400).json({ error: "Invalid nickname" });
       }
 
       if (hasChildren !== undefined && typeof hasChildren !== "boolean") {
@@ -482,9 +486,11 @@ export async function registerRoutes(
 
       const updatedCase = await storage.updateCase(caseId, userId, {
         title: title || existingCase.title,
+        nickname: nickname !== undefined ? nickname : existingCase.nickname,
         state,
         county,
         caseType,
+        caseNumber: caseNumber !== undefined ? caseNumber : existingCase.caseNumber,
         hasChildren: hasChildren !== undefined ? hasChildren : existingCase.hasChildren,
       });
 

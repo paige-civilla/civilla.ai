@@ -114,6 +114,7 @@ export const cases = pgTable("cases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
+  nickname: text("nickname"),
   state: text("state"),
   county: text("county"),
   caseNumber: text("case_number"),
@@ -125,6 +126,7 @@ export const cases = pgTable("cases", {
 
 export const insertCaseSchema = createInsertSchema(cases).pick({
   title: true,
+  nickname: true,
   state: true,
   county: true,
   caseNumber: true,
