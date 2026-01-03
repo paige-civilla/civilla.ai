@@ -90,17 +90,17 @@ export default function AppAccountSettings() {
 
   return (
     <AppLayout>
-      <div className="px-4 md:px-8 py-8">
-        <div className="rounded-2xl bg-[#e7ebea] p-6 md:p-8 mb-10">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-              <Settings className="w-6 h-6" />
+      <div className="px-4 sm:px-5 md:px-8 py-6 sm:py-8">
+        <div className="rounded-2xl bg-[#e7ebea] p-4 sm:p-6 md:p-8 mb-6 sm:mb-10">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
+              <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <h1 className="font-heading font-bold text-2xl md:text-3xl text-neutral-darkest">
+            <div className="min-w-0">
+              <h1 className="font-heading font-bold text-xl sm:text-2xl md:text-3xl text-neutral-darkest">
                 Account Settings
               </h1>
-              <p className="font-sans text-neutral-darkest/70 mt-1">
+              <p className="font-sans text-sm sm:text-base text-neutral-darkest/70 mt-1">
                 Manage your profile and subscription.
               </p>
             </div>
