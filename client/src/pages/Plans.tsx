@@ -245,7 +245,7 @@ function PricingCardsSection() {
     },
     {
       id: "core",
-      name: "Core",
+      name: "civilla core",
       monthlyPrice: "$19.99",
       yearlyPrice: "$199",
       tagline: "Built for one active case — full tools, downloads, and tracking.",
@@ -261,7 +261,7 @@ function PricingCardsSection() {
     },
     {
       id: "pro",
-      name: "Pro",
+      name: "civilla pro",
       monthlyPrice: "$29.99",
       yearlyPrice: "$299",
       tagline: "For higher-volume cases — deeper evidence workflows and court prep exports.",
@@ -278,7 +278,7 @@ function PricingCardsSection() {
     },
     {
       id: "premium",
-      name: "Premium",
+      name: "civilla premium",
       monthlyPrice: "$49.99",
       yearlyPrice: "$499",
       tagline: "For complex cases — maximum storage, tracking, and organization tools.",

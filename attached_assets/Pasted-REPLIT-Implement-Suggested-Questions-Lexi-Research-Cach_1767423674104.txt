@@ -1,0 +1,297 @@
+REPLIT — Implement “Suggested Questions” + Lexi Research Caching + Deadline Research (Option A) + “Add to Deadlines” CTA
+Goal:
+1) Each module page shows Suggested Questions (chips) that send a message to Lexi in the correct mode (Research for rules/deadlines).
+2) Lexi Research Mode can (a) explain state-specific naming for “Disclosures/Discovery” and (b) research deadlines by rule text, then ask for the trigger date (Option A).
+3) Lexi stores (“caches”) only what the user asked for (not a giant library) with Sources.
+4) If Lexi returns a computed deadline, user can click “Add to Deadlines” and it creates a deadline + notes w/ Sources.
+
+--------------------------------------------
+A) ADD DATA MODEL: case_rule_terms (research caching, not a giant library)
+--------------------------------------------
+
+1) shared/schema.ts
+Add after other case-scoped tables:
+
+export const caseRuleTerms = pgTable("case_rule_terms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+
+  moduleKey: text("module_key").notNull(), // e.g., "disclosures_discovery"
+  jurisdictionState: text("jurisdiction_state").notNull(),
+  jurisdictionCounty: text("jurisdiction_county"),
+  termKey: text("term_key").notNull(), // e.g., "mandatory_disclosure", "initial_disclosure", "discovery"
+  officialLabel: text("official_label").notNull(),
+  alsoKnownAs: text("also_known_as"),
+  summary: text("summary").notNull(),
+
+  sourcesJson: jsonb("sources_json").notNull().default(sql`'[]'::jsonb`),
+  lastCheckedAt: timestamp("last_checked_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("case_rule_terms_user_case_idx").on(table.userId, table.caseId),
+  termIdx: index("case_rule_terms_term_idx").on(table.caseId, table.moduleKey, table.termKey),
+}));
+
+Add zod schemas:
+
+export const upsertCaseRuleTermSchema = z.object({
+  moduleKey: z.string().min(1),
+  jurisdictionState: z.string().min(1),
+  jurisdictionCounty: z.string().optional().nullable(),
+  termKey: z.string().min(1),
+  officialLabel: z.string().min(1),
+  alsoKnownAs: z.string().optional().nullable(),
+  summary: z.string().min(1),
+  sourcesJson: z.array(z.object({
+    title: z.string().optional(),
+    url: z.string().url(),
+    retrievedAt: z.string().optional(),
+  })).default([]),
+});
+
+export type UpsertCaseRuleTerm = z.infer<typeof upsertCaseRuleTermSchema>;
+export type CaseRuleTerm = typeof caseRuleTerms.$inferSelect;
+
+2) server/db.ts
+Inside initDbTables(), add:
+
+await initTable("case_rule_terms", `
+  CREATE TABLE IF NOT EXISTS case_rule_terms (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    user_id VARCHAR(255) NOT NULL,
+    case_id VARCHAR(255) NOT NULL,
+    module_key TEXT NOT NULL,
+    jurisdiction_state TEXT NOT NULL,
+    jurisdiction_county TEXT,
+    term_key TEXT NOT NULL,
+    official_label TEXT NOT NULL,
+    also_known_as TEXT,
+    summary TEXT NOT NULL,
+    sources_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    last_checked_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )
+`, [
+  `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)`
+]);
+
+3) server/storage.ts
+Add interface + impl methods (pattern like other tables):
+
+Interface additions:
+- getCaseRuleTerms(userId: string, caseId: string, moduleKey?: string): Promise<CaseRuleTerm[]>
+- upsertCaseRuleTerm(userId: string, caseId: string, input: UpsertCaseRuleTerm): Promise<CaseRuleTerm>
+
+Implementation (DatabaseStorage):
+- getCaseRuleTerms: select from caseRuleTerms where userId+caseId (+moduleKey if provided), order by lastCheckedAt desc
+- upsertCaseRuleTerm: upsert by (caseId, moduleKey, termKey) — since we don’t have a DB unique constraint, implement as:
+  a) find existing by those fields
+  b) if exists → update row
+  c) else → insert new row
+
+--------------------------------------------
+B) ADD API ENDPOINTS: store / fetch cached research terms
+--------------------------------------------
+
+server/routes.ts (under requireAuth protected routes)
+
+Add:
+GET /api/cases/:caseId/rule-terms?moduleKey=...
+- validate case ownership already as elsewhere
+- return storage.getCaseRuleTerms(req.user.id, caseId, moduleKey)
+
+POST /api/cases/:caseId/rule-terms
+- validate body with upsertCaseRuleTermSchema
+- storage.upsertCaseRuleTerm(req.user.id, caseId, body)
+- return saved row
+
+--------------------------------------------
+C) “SUGGESTED QUESTIONS” CHIPS PER MODULE
+--------------------------------------------
+
+1) client/src/lib/lexiSuggestedPrompts.ts (new)
+export const lexiSuggestedPrompts: Record<string, string[]> = {
+  timeline: [
+    "What belongs on a court timeline?",
+    "How should I phrase events so they stay factual?",
+    "What timeline categories are common in family cases?",
+    "What should I add first if I’m starting late?"
+  ],
+  disclosures_discovery: [
+    "What is the difference between disclosures and discovery?",
+    "What does my state call mandatory disclosures?",
+    "When are disclosures due in my state?",
+    "What discovery tools exist (interrogatories, requests for production, subpoenas)?"
+  ],
+  deadlines: [
+    "What deadlines usually matter early in a family case?",
+    "How do I calculate deadlines from a service date?",
+    "What is the difference between 'filed by' and 'served by'?"
+  ],
+  evidence: [
+    "What makes evidence useful in court (without over-sharing)?",
+    "How should I name and tag files so they’re easy to find later?"
+  ],
+  documents: [
+    "What is the difference between a motion, declaration, affidavit, and proposed order?",
+    "What details usually go in a certificate of service?"
+  ],
+  communications: [
+    "What should I log after a call or email?",
+    "How do I track follow-ups so nothing gets missed?"
+  ],
+};
+
+2) client/src/components/lexi/LexiSuggestedQuestions.tsx (new)
+- Renders a small header + chip buttons.
+- On click: dispatch an event LexiPanel listens to:
+  window.dispatchEvent(new CustomEvent("lexi:ask", { detail: { text, mode, moduleKey } }));
+
+Example component:
+- props: { moduleKey: string; caseId: string; prompts: string[]; defaultMode?: "help" | "chat" | "research" }
+- Use defaultMode="research" for disclosures_discovery + deadlines; otherwise "help"
+
+3) client/src/components/lexi/LexiPanel.tsx
+Add an effect to listen for the event and populate input + send:
+useEffect(() => {
+  const handler = (e: any) => {
+    const { text, mode, moduleKey } = e.detail || {};
+    if (!text) return;
+    setOpen(true);
+    if (mode) setMode(mode); // ensure LexiPanel already has mode state; if not, add it with existing Help/Chat toggle
+    setInput(text);
+    // small delay so UI updates, then send:
+    setTimeout(() => sendMessage(text, { mode, moduleKey }), 50);
+  };
+  window.addEventListener("lexi:ask", handler as any);
+  return () => window.removeEventListener("lexi:ask", handler as any);
+}, []);
+
+Also ensure sendMessage() includes caseId + moduleKey + mode in the POST to backend.
+
+4) Add the LexiSuggestedQuestions component to the TOP of each module page:
+- AppTimeline.tsx moduleKey="timeline"
+- AppDisclosuresDiscovery.tsx (or whatever file name you used) moduleKey="disclosures_discovery"
+- AppDeadlines.tsx moduleKey="deadlines"
+- AppEvidence.tsx moduleKey="evidence"
+- AppDocuments.tsx moduleKey="documents"
+- AppCommunications.tsx moduleKey="communications"
+Render it right below ModuleIntro.
+
+--------------------------------------------
+D) LEXI BACKEND: Option A deadline research + structured “Add to Deadlines”
+--------------------------------------------
+
+1) server/routes.ts (Lexi chat endpoint)
+Update the Lexi chat route so it returns a STRUCTURED JSON response.
+Do not rely on free-form text.
+
+Required response shape from OpenAI (enforced by prompting):
+{
+  "mode": "help"|"chat"|"research",
+  "messageMarkdown": "string",
+  "suggestedDeadline": null | {
+    "title": "string",
+    "dueDate": "YYYY-MM-DD",
+    "basis": "short explanation of how calculated + what rule says",
+    "sources": [{ "title": "...", "url": "...", "retrievedAt": "..." }]
+  },
+  "suggestedRuleTerm": null | {
+    "moduleKey": "disclosures_discovery",
+    "termKey": "mandatory_disclosure"|"initial_disclosure"|"discovery"|string,
+    "officialLabel": "string",
+    "alsoKnownAs": "string",
+    "summary": "string",
+    "sources": [{ "title": "...", "url": "...", "retrievedAt": "..." }]
+  },
+  "needsTriggerDate": false | {
+    "question": "What was the date of ____?",
+    "triggerTypeHint": "service_date|filing_date|hearing_date|other"
+  }
+}
+
+2) server/routes.ts
+Add a zod schema in server file for the response and validate.
+If validation fails: fallback to plain assistant text in messageMarkdown and null for others.
+
+3) Prompting rules (system/developer prompt)
+Add to Lexi system prompt (server-side):
+- Lexi is EDUCATIONAL + ORGANIZATIONAL + RESEARCH.
+- In research mode: prefer primary sources; include Sources.
+- No “likelihood of success,” no “you should file X,” no legal strategy recommendations.
+- Deadline Option A:
+  - If user asks “when is X due” and user has NOT provided trigger date, set needsTriggerDate with a single clarifying question and DO NOT compute a dueDate.
+  - If trigger date IS provided, compute due date and include suggestedDeadline.
+
+4) Trigger-date detection
+In your server Lexi handler, pass the case state/county and any known relevant dates you have (if any).
+If user message contains a recognizable date string, pass it in context as “possible trigger date.”
+But keep it simple: let the model decide if it has enough.
+
+5) Research caching write-through
+If response contains suggestedRuleTerm:
+- POST it internally to storage.upsertCaseRuleTerm (or directly call storage) using:
+  moduleKey, jurisdictionState from case.state, jurisdictionCounty from case.county, termKey, officialLabel, alsoKnownAs, summary, sources
+This is the “cache only what was asked.”
+
+--------------------------------------------
+E) FRONTEND: “Add to Deadlines” button from Lexi response
+--------------------------------------------
+
+1) client/src/components/lexi/LexiMessage.tsx (or wherever messages render)
+If a Lexi assistant message has suggestedDeadline:
+- show a CTA button under the message:
+  Button label: “Add to Deadlines”
+- on click:
+  POST /api/cases/:caseId/deadlines with:
+    title: suggestedDeadline.title
+    dueDate: suggestedDeadline.dueDate (as your API expects)
+    notes: include:
+      - “Basis: …”
+      - “Sources: … (URLs)”
+      - “Generated by Lexi Research Mode. Please verify local holiday/weekend rules.”
+- then invalidate dashboard/calendar/deadlines queries so it appears everywhere.
+
+2) If needsTriggerDate is present:
+- show a small inline callout:
+  “To calculate the deadline, Lexi needs: {question}”
+This keeps Option A clear.
+
+--------------------------------------------
+F) “DISCLOSURES vs DISCOVERY” module copy (safe + state naming)
+--------------------------------------------
+
+In your Disclosures & Discovery module intro copy (ModuleIntro), add:
+- 1–3 paragraphs:
+  - what disclosures are (basic, generally required exchanges)
+  - what discovery is (tools to request/obtain info)
+  - note naming varies by state; Lexi can research the exact rule name in your state
+- Add a final single-line disclaimer:
+  “Educational information only. Civilla does not provide legal advice or file documents.”
+
+Also add Suggested Questions chips (from C) and make defaultMode="research" for this module.
+
+--------------------------------------------
+G) Acceptance checks Replit should run and report back in detail
+--------------------------------------------
+
+Ask Replit to:
+1) Create/verify DB table case_rule_terms and indexes (logs show created/exists).
+2) Confirm new endpoints return expected data.
+3) Confirm LexiPanel receives “lexi:ask” events from chips and sends with moduleKey + mode.
+4) Confirm Lexi research response is valid JSON (zod validates) and:
+   - if trigger date missing → needsTriggerDate populated, suggestedDeadline null
+   - if trigger date provided → suggestedDeadline populated
+5) Confirm “Add to Deadlines” creates a deadline and it appears:
+   - Deadlines module
+   - Dashboard “Upcoming”
+   - Calendar dots
+6) Confirm suggestedRuleTerm is cached and can be fetched via GET /rule-terms.
+
+Deliverables:
+- All code compiled without LSP errors.
+- Replit summary must list each file changed and each endpoint added.
+
+END
