@@ -442,11 +442,13 @@ export async function initDbTables(): Promise<void> {
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
       case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
       title TEXT NOT NULL,
+      disclaimer_shown BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS idx_lexi_threads_user_case_updated ON lexi_threads(user_id, case_id, updated_at DESC)`
+    `CREATE INDEX IF NOT EXISTS idx_lexi_threads_user_case_updated ON lexi_threads(user_id, case_id, updated_at DESC)`,
+    `ALTER TABLE lexi_threads ADD COLUMN IF NOT EXISTS disclaimer_shown BOOLEAN NOT NULL DEFAULT false`
   ]);
 
   await initTable("lexi_messages", `
@@ -458,11 +460,13 @@ export async function initDbTables(): Promise<void> {
       role TEXT NOT NULL,
       content TEXT NOT NULL,
       safety_flags JSONB,
+      metadata JSONB,
       model TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)`
+    `CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)`,
+    `ALTER TABLE lexi_messages ADD COLUMN IF NOT EXISTS metadata JSONB`
   ]);
 
   console.log("Database table initialization complete");

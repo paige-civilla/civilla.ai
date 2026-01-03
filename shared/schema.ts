@@ -814,6 +814,7 @@ export const lexiThreads = pgTable("lexi_threads", {
   userId: varchar("user_id").notNull().references(() => users.id),
   caseId: varchar("case_id").notNull().references(() => cases.id),
   title: text("title").notNull(),
+  disclaimerShown: boolean("disclaimer_shown").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -840,6 +841,7 @@ export const lexiMessages = pgTable("lexi_messages", {
   role: text("role").notNull(),
   content: text("content").notNull(),
   safetyFlags: jsonb("safety_flags"),
+  metadata: jsonb("metadata"),
   model: text("model"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({

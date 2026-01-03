@@ -170,8 +170,9 @@ export interface IStorage {
   renameLexiThread(userId: string, threadId: string, title: string): Promise<LexiThread | undefined>;
   deleteLexiThread(userId: string, threadId: string): Promise<boolean>;
   getLexiThread(userId: string, threadId: string): Promise<LexiThread | undefined>;
+  markLexiThreadDisclaimerShown(userId: string, threadId: string): Promise<boolean>;
   listLexiMessages(userId: string, threadId: string): Promise<LexiMessage[]>;
-  createLexiMessage(userId: string, caseId: string, threadId: string, role: LexiMessageRole, content: string, safetyFlags?: Record<string, boolean> | null, model?: string | null): Promise<LexiMessage>;
+  createLexiMessage(userId: string, caseId: string, threadId: string, role: LexiMessageRole, content: string, safetyFlags?: Record<string, boolean> | null, model?: string | null, metadata?: Record<string, unknown> | null): Promise<LexiMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1143,6 +1144,14 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
+  async markLexiThreadDisclaimerShown(userId: string, threadId: string): Promise<boolean> {
+    const res = await db.update(lexiThreads)
+      .set({ disclaimerShown: true })
+      .where(and(eq(lexiThreads.id, threadId), eq(lexiThreads.userId, userId)))
+      .returning();
+    return res.length > 0;
+  }
+
   async listLexiMessages(userId: string, threadId: string): Promise<LexiMessage[]> {
     return db.select().from(lexiMessages)
       .where(and(eq(lexiMessages.threadId, threadId), eq(lexiMessages.userId, userId)))
@@ -1156,7 +1165,8 @@ export class DatabaseStorage implements IStorage {
     role: LexiMessageRole,
     content: string,
     safetyFlags?: Record<string, boolean> | null,
-    model?: string | null
+    model?: string | null,
+    metadata?: Record<string, unknown> | null
   ): Promise<LexiMessage> {
     const [row] = await db.insert(lexiMessages)
       .values({
@@ -1166,6 +1176,7 @@ export class DatabaseStorage implements IStorage {
         role,
         content,
         safetyFlags: safetyFlags ?? null,
+        metadata: metadata ?? null,
         model: model ?? null,
       })
       .returning();
