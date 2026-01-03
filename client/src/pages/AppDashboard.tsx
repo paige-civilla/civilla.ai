@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, MessageSquare, Calculator, DollarSign } from "lucide-react";
+import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, MessageSquare, Calculator, DollarSign, Baby } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,68 +21,82 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CalendarCategory } from "@shared/schema";
 
-const getModuleCards = (caseId: string) => [
-  {
-    title: "Evidence",
-    description: "Manage and organize case evidence",
-    icon: FolderOpen,
-    href: `/app/evidence/${caseId}`,
-  },
-  {
-    title: "Timeline",
-    description: "Track key dates and events",
-    icon: Calendar,
-    href: `/app/timeline/${caseId}`,
-  },
-  {
-    title: "Exhibits",
-    description: "Prepare exhibits for court filings",
-    icon: FileStack,
-    href: `/app/exhibits/${caseId}`,
-  },
-  {
-    title: "Documents",
-    description: "Upload and organize your case documents",
-    icon: FileText,
-    href: `/app/documents/${caseId}`,
-  },
-  {
-    title: "Case To-Do",
-    description: "Track your to-do items",
-    icon: CheckSquare,
-    href: `/app/tasks/${caseId}`,
-  },
-  {
-    title: "Deadlines",
-    description: "Never miss an important date",
-    icon: Clock,
-    href: `/app/deadlines/${caseId}`,
-  },
-  {
-    title: "Pattern Analysis",
-    description: "Spot trends across your case",
-    icon: TrendingUp,
-    href: `/app/patterns/${caseId}`,
-  },
-  {
-    title: "Contacts",
-    description: "Manage case-related contacts",
-    icon: Users,
-    href: `/app/contacts/${caseId}`,
-  },
-  {
-    title: "Communications",
-    description: "Log calls, emails, and meetings",
-    icon: MessageSquare,
-    href: `/app/communications/${caseId}`,
-  },
-  {
+const getModuleCards = (caseId: string, showChildren: boolean) => {
+  const modules = [
+    {
+      title: "Evidence",
+      description: "Manage and organize case evidence",
+      icon: FolderOpen,
+      href: `/app/evidence/${caseId}`,
+    },
+    {
+      title: "Timeline",
+      description: "Track key dates and events",
+      icon: Calendar,
+      href: `/app/timeline/${caseId}`,
+    },
+    {
+      title: "Exhibits",
+      description: "Prepare exhibits for court filings",
+      icon: FileStack,
+      href: `/app/exhibits/${caseId}`,
+    },
+    {
+      title: "Documents",
+      description: "Upload and organize your case documents",
+      icon: FileText,
+      href: `/app/documents/${caseId}`,
+    },
+    {
+      title: "Case To-Do",
+      description: "Track your to-do items",
+      icon: CheckSquare,
+      href: `/app/tasks/${caseId}`,
+    },
+    {
+      title: "Deadlines",
+      description: "Never miss an important date",
+      icon: Clock,
+      href: `/app/deadlines/${caseId}`,
+    },
+    {
+      title: "Pattern Analysis",
+      description: "Spot trends across your case",
+      icon: TrendingUp,
+      href: `/app/patterns/${caseId}`,
+    },
+    {
+      title: "Contacts",
+      description: "Manage case-related contacts",
+      icon: Users,
+      href: `/app/contacts/${caseId}`,
+    },
+    {
+      title: "Communications",
+      description: "Log calls, emails, and meetings",
+      icon: MessageSquare,
+      href: `/app/communications/${caseId}`,
+    },
+  ];
+
+  if (showChildren) {
+    modules.push({
+      title: "Children",
+      description: "Manage children in this case",
+      icon: Baby,
+      href: `/app/children/${caseId}`,
+    });
+  }
+
+  modules.push({
     title: "Child Support Estimator",
     description: "Educational support estimates",
     icon: Calculator,
     href: `/app/child-support/${caseId}`,
-  },
-];
+  });
+
+  return modules;
+};
 
 type UpcomingEvent = {
   kind: "deadline" | "todo" | "calendar" | "communication";
@@ -517,7 +531,7 @@ export default function AppDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                  {getModuleCards(primaryCase.id).map((module) => (
+                  {getModuleCards(primaryCase.id, primaryCase.hasChildren || false).map((module) => (
                     <Link
                       key={module.title}
                       href={module.href}
