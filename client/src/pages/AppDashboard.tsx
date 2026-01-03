@@ -378,13 +378,18 @@ export default function AppDashboard() {
         <div className="flex flex-col items-start max-w-container w-full">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
             <div className="min-w-0 flex-1">
-              <h1 className="font-heading font-bold text-xl sm:text-heading-3-mobile md:text-heading-3 text-neutral-darkest break-words">
-                {primaryCase.title}
+              <h1 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-neutral-darkest break-words leading-tight" data-testid="text-case-header">
+                {primaryCase.nickname || primaryCase.title}
               </h1>
+              {primaryCase.nickname && (
+                <p className="font-sans text-sm text-neutral-darkest/60 mt-1 truncate" data-testid="text-case-title-secondary">
+                  {primaryCase.title}
+                </p>
+              )}
             </div>
             <Button
               size="sm"
-              className="bg-[#314143] text-[#F2F2F2] hover:bg-[#27363A] border border-[#1E2020] min-h-[44px] w-full sm:w-auto"
+              className="bg-[#314143] text-[#FAF8F4] border-2 border-[#1E2020] min-h-[44px] w-full sm:w-auto text-sm font-medium"
               onClick={() => setLocation("/app/cases")}
               data-testid="button-view-all-cases"
             >
