@@ -24,6 +24,9 @@ import OpenAI from "openai";
 import { buildLexiSystemPrompt } from "./lexi/systemPrompt";
 import { SAFETY_TEMPLATES, detectUPLRequest, shouldBlockMessage } from "./lexi/safetyTemplates";
 import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer";
+import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
+import { prependDisclaimerIfNeeded } from "./lexi/format";
+import { extractSourcesFromContent } from "./lexi/sources";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -2970,19 +2973,54 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Thread not found" });
       }
 
+      const intent: LexiIntent = classifyIntent(message);
+      const disclaimerShown = thread.disclaimerShown;
+
+      if (isDisallowed(message)) {
+        const userMsg = await storage.createLexiMessage(
+          userId, caseId, threadId, "user", message, 
+          { disallowed: true }, null, { intent, refused: true }
+        );
+        
+        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, DISALLOWED_RESPONSE);
+        if (wasAdded) {
+          await storage.markLexiThreadDisclaimerShown(userId, threadId);
+        }
+        
+        const assistantMsg = await storage.createLexiMessage(
+          userId, caseId, threadId, "assistant", responseContent, 
+          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+        );
+        return res.json({ userMessage: userMsg, assistantMessage: assistantMsg, intent, refused: true });
+      }
+
       const uplTemplate = detectUPLRequest(message);
       if (uplTemplate) {
-        const userMsg = await storage.createLexiMessage(userId, caseId, threadId, "user", message, { upl_detected: true });
-        const response = SAFETY_TEMPLATES[uplTemplate];
-        const assistantMsg = await storage.createLexiMessage(userId, caseId, threadId, "assistant", response, { safety_template: true }, null);
-        return res.json({ userMessage: userMsg, assistantMessage: assistantMsg });
+        const userMsg = await storage.createLexiMessage(
+          userId, caseId, threadId, "user", message, 
+          { upl_detected: true }, null, { intent, refused: true }
+        );
+        
+        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, SAFETY_TEMPLATES[uplTemplate]);
+        if (wasAdded) {
+          await storage.markLexiThreadDisclaimerShown(userId, threadId);
+        }
+        
+        const assistantMsg = await storage.createLexiMessage(
+          userId, caseId, threadId, "assistant", responseContent, 
+          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+        );
+        return res.json({ userMessage: userMsg, assistantMessage: assistantMsg, intent, refused: true });
       }
 
       if (!openai) {
         return res.status(503).json({ error: "Lexi is unavailable - OPENAI_API_KEY not configured" });
       }
 
-      await storage.createLexiMessage(userId, caseId, threadId, "user", message);
+      await storage.createLexiMessage(
+        userId, caseId, threadId, "user", message, 
+        null, null, { intent }
+      );
 
       const existingMessages = await storage.listLexiMessages(userId, threadId);
       const systemPrompt = buildLexiSystemPrompt({
@@ -3007,12 +3045,21 @@ export async function registerRoutes(
         max_completion_tokens: 2048,
       });
 
-      const assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+      let assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+      
+      const { hasSources } = extractSourcesFromContent(assistantContent);
+      
+      const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
+      if (wasAdded) {
+        await storage.markLexiThreadDisclaimerShown(userId, threadId);
+      }
+      
       const assistantMsg = await storage.createLexiMessage(
-        userId, caseId, threadId, "assistant", assistantContent, null, "gpt-4.1"
+        userId, caseId, threadId, "assistant", finalContent, 
+        null, "gpt-4.1", { intent, refused: false, hadSources: hasSources }
       );
 
-      res.json({ assistantMessage: assistantMsg });
+      res.json({ assistantMessage: assistantMsg, intent, refused: false, hadSources: hasSources });
     } catch (error) {
       console.error("Lexi chat error:", error);
       res.status(500).json({ error: "Failed to process message" });
