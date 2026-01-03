@@ -1,0 +1,178 @@
+GOAL
+Implement Lexi end-to-end (backend + DB + UI) with:
+1) UPL-safe guardrails (educational assistance, no strategy/probability)
+2) Moderation gate before model call
+3) Persistent threads + full chat history per case
+4) Lexi available on every authenticated page
+5) Lexi panel opens/closes via a “</>” handle (not a button shape)
+6) Disclaimers shown once at top (not repeated in every message)
+7) Minimal “get a lawyer” spam: only escalate when deadlines/emergency/high-stakes
+
+IMPORTANT CONSTRAINTS
+- Lexi must NOT provide: likelihood of success, specific legal strategy, “you should file X”, or advice framed as directives.
+- Lexi CAN provide: definitions, procedural explanations, neutral options, checklists, questions to ask, what documents typically contain, how to organize evidence, how courts generally process filings.
+- Lexi must be state-aware ONLY when user provides state OR case has state saved.
+- Keep logs of all messages. Users can view history and separate threads by issue.
+
+TECH STACK ASSUMPTIONS
+- Existing app uses React + Tailwind + shadcn/ui + Express backend + drizzle/postgres.
+- There is already LexiPanel UI shell but no real backend (or partial). If LexiPanel exists, update it; if not, create it.
+- Use OpenAI API via env var OPENAI_API_KEY.
+
+PART A — DATABASE (shared/schema.ts + server/db.ts + server/storage.ts)
+1) Add tables:
+
+A) lexi_threads
+- id (uuid text)
+- user_id
+- case_id
+- title (text)  // user-editable thread title
+- created_at (timestamp default now)
+- updated_at (timestamp default now)
+
+B) lexi_messages
+- id (uuid text)
+- user_id
+- case_id
+- thread_id
+- role (text: "user" | "assistant" | "system")
+- content (text)
+- safety_flags (jsonb nullable)  // moderation categories triggered, if any
+- model (text nullable)
+- created_at (timestamp default now)
+
+C) Optional: lexi_user_prefs
+- user_id primary key
+- default_disclaimer_dismissed boolean default false
+
+2) Add Drizzle schemas + zod insert/update schemas:
+- createThreadSchema: title required (max 120)
+- createMessageSchema: role/content required
+- renameThreadSchema: title required
+
+3) server/db.ts initDbTables:
+- Create tables if not exist + indexes:
+  - idx_lexi_threads_user_case_updated
+  - idx_lexi_messages_thread_created
+
+4) server/storage.ts:
+Add CRUD methods:
+- listLexiThreads(userId, caseId)
+- createLexiThread(userId, caseId, title)
+- renameLexiThread(userId, threadId, title)
+- deleteLexiThread(userId, threadId) // also deletes messages in that thread
+- listLexiMessages(userId, threadId)
+- createLexiMessage(userId, caseId, threadId, role, content, safetyFlags?, model?)
+
+PART B — BACKEND ROUTES (server/routes.ts)
+Add routes under requireAuth:
+
+Threads
+- GET  /api/cases/:caseId/lexi/threads
+- POST /api/cases/:caseId/lexi/threads   { title }
+- PATCH /api/lexi/threads/:threadId      { title }
+- DELETE /api/lexi/threads/:threadId
+
+Messages
+- GET  /api/lexi/threads/:threadId/messages
+
+Chat (the model call)
+- POST /api/lexi/chat
+  body: { caseId, threadId, message, stateOverride? }
+  behavior:
+  1) Validate: user owns case and thread belongs to that case.
+  2) Moderation step (OpenAI moderation endpoint). Save flags into safety_flags for the user message.
+     - If disallowed, return safe refusal template and do NOT call model.
+  3) Load last N messages in thread (e.g., 20) for context.
+  4) Build SYSTEM prompt that enforces:
+     - educational info only
+     - neutral options, no directives
+     - no success likelihood
+     - no pretending to be lawyer
+     - concise, user-friendly
+     - ask clarifying questions if missing state/county
+  5) Provide CASE CONTEXT to system:
+     - case state/county/caseType if available
+     - warn: do not cite fake laws; if unsure, say “I’m not sure” and suggest how user can verify.
+  6) Call OpenAI Responses API (or chat completions if already in project) with the system + conversation.
+  7) Store assistant reply in lexi_messages with model name.
+  8) Return { reply }.
+
+Refusal templates:
+- UPL-like: “I can’t tell you what you should do, but I can explain options and typical requirements…”
+- Illegal wrongdoing: refuse.
+- Self-harm: standard safety response.
+Keep these templates in server/lexi/safetyTemplates.ts.
+
+System prompt should be stored in server/lexi/systemPrompt.ts.
+Also add a short “banner disclaimer” string in server/lexi/disclaimer.ts.
+
+PART C — FRONTEND UI (Lexi everywhere + “</>” handle + threads + history)
+1) Add Lexi panel globally inside authenticated app layout:
+- client/src/components/layout/AppLayout.tsx (or wherever the authenticated shell lives)
+- Render <LexiDock /> once so it appears on every /app/* page after login.
+
+2) Build LexiDock component:
+File: client/src/components/lexi/LexiDock.tsx
+- Right-side panel that can be collapsed/expanded.
+- Collapsed state: a vertical side handle hugging right edge:
+  - width ~ 36px, height ~ 140px
+  - background: app primary dark (#314143)
+  - text: “LEXI” vertical writing-mode OR rotated 90deg
+  - also show “</>” at top of handle to indicate “open/close”
+  - not button-shaped; it is a bar.
+- Expanded state: a right-side drawer/panel (full height) ~ 380px wide on desktop, full-width overlay on mobile.
+- Clicking outside the expanded panel collapses it.
+- Escape key collapses it.
+- Do NOT let it overlap content on mobile; use overlay with close “X”.
+
+3) LexiPanel contents in expanded state:
+Top area:
+- Title “Lexi”
+- Small banner disclaimer (dismissible, once per user):
+  “Civilla is not a law firm. Lexi provides educational information and organization help, not legal advice.”
+  Store dismissal in lexi_user_prefs or localStorage if prefs table not implemented yet.
+
+Main area:
+- Thread selector dropdown + “New chat”
+- Thread list (last updated order)
+- Chat messages list (user/assistant bubbles)
+- Input box + Send
+- A small toggle: “Help mode” vs “Chat mode”
+  - Help mode: encourages module explanations, definitions, checklists
+  - Chat mode: normal Q&A with the same guardrails
+
+4) API wiring:
+- useQuery for threads: /api/cases/:caseId/lexi/threads
+- useQuery for messages: /api/lexi/threads/:threadId/messages
+- useMutation send: POST /api/lexi/chat
+- After send, optimistically append user message, then append assistant reply.
+- Persist last selected thread per case in localStorage.
+
+5) Add the “</>” handle:
+- Visible in both collapsed and expanded states.
+- In expanded header also show a small “</>” icon button that collapses.
+
+PART D — UX (avoid “get a lawyer” spam)
+In system prompt:
+- Do not repeat “consult a lawyer” every message.
+- Only suggest legal counsel when:
+  - emergency relief / protective order / imminent hearing within days
+  - complex filing deadlines
+  - user asks for strategy or outcome prediction
+When suggesting counsel, do it once and then continue helping with education.
+
+PART E — TESTING CHECKLIST (print this in your final response)
+- Create thread, rename, delete
+- Messages persist after refresh
+- Case-specific threads separate correctly
+- Clicking outside collapses Lexi
+- Mobile: opens as overlay, text not cut off
+- Moderation: disallowed content blocked without model call
+- UPL requests: responds with educational alternative (not refusal-only)
+
+DELIVERABLE
+- Implement all code changes.
+- Restart workflow.
+- Provide a short summary of files changed and confirm endpoints.
+- Provide screenshots or brief confirmation of UI behavior if possible.
