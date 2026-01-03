@@ -197,7 +197,7 @@ export default function LexiPanel() {
       <div
         role="button"
         tabIndex={0}
-        aria-label={open ? "Hide Lexi" : "Show Lexi"}
+        aria-label={open ? "Close Lexi" : "Open Lexi"}
         data-testid="lexi-toggle"
         onClick={() => setOpen((v) => !v)}
         onKeyDown={(e) => {
@@ -205,25 +205,30 @@ export default function LexiPanel() {
         }}
         className={[
           "fixed right-0 top-1/2 -translate-y-1/2 z-50",
-          "h-36 w-10 bg-primary text-primary-foreground shadow-lg",
-          "rounded-l-xl",
+          "h-[140px] w-[38px] shadow-lg",
+          "rounded-l-md",
           "flex items-center justify-center",
           "cursor-pointer select-none",
-          "hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-bush/40",
+          "transition-colors duration-150",
+          "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
           open ? "hidden" : "",
         ].join(" ")}
+        style={{
+          backgroundColor: "#314143",
+        }}
       >
         <span
           className={[
-            "font-heading font-semibold tracking-wide",
-            "text-sm",
+            "font-mono font-bold tracking-wider",
+            "text-base",
             "[writing-mode:vertical-rl]",
             "[text-orientation:mixed]",
             "rotate-180",
             "leading-none",
           ].join(" ")}
+          style={{ color: "#FAF8F4" }}
         >
-          Lexi
+          &lt;/&gt;
         </span>
       </div>
 
@@ -234,6 +239,46 @@ export default function LexiPanel() {
           data-testid="lexi-overlay"
           aria-hidden="true"
         />
+      )}
+
+      {open && (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close Lexi"
+          data-testid="lexi-toggle-close"
+          onClick={() => setOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") setOpen(false);
+          }}
+          className={[
+            "fixed top-1/2 -translate-y-1/2 z-[51]",
+            "h-[140px] w-[38px] shadow-lg",
+            "rounded-l-md",
+            "flex items-center justify-center",
+            "cursor-pointer select-none",
+            "transition-colors duration-150",
+            "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
+          ].join(" ")}
+          style={{
+            backgroundColor: "#314143",
+            right: "min(380px, 92vw)",
+          }}
+        >
+          <span
+            className={[
+              "font-mono font-bold tracking-wider",
+              "text-base",
+              "[writing-mode:vertical-rl]",
+              "[text-orientation:mixed]",
+              "rotate-180",
+              "leading-none",
+            ].join(" ")}
+            style={{ color: "#FAF8F4" }}
+          >
+            &lt;/&gt;
+          </span>
+        </div>
       )}
 
       <div

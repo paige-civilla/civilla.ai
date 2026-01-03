@@ -1,0 +1,56 @@
+TASK: Add a clear </> toggle button for Lexi so users know how to open/close her panel.
+
+GOAL:
+- Show a slim vertical edge control on the RIGHT side of the app when Lexi is closed.
+- When clicked, it opens the Lexi right-side panel.
+- When Lexi is open, show the same control at the panel edge to collapse it.
+- The control should display the text "</>" (not a rounded “button” shape), styled like a small vertical tab hugging the right edge.
+- It must be visible on every authenticated page (inside the app after login).
+
+IMPLEMENTATION DETAILS:
+1) Find where Lexi is mounted globally (likely in AppLayout.tsx or wherever the LexiPanel is rendered so it appears on every page after login).
+   - If LexiPanel is not global yet, make it global by placing it inside AppLayout (or the main authenticated layout component) so it renders on all /app/* routes.
+
+2) Add state to control Lexi open/closed:
+   - const [isLexiOpen, setIsLexiOpen] = useState(false);
+
+3) Render a RIGHT-EDGE TOGGLE TAB that always exists:
+   - When isLexiOpen === false:
+     - Show only the edge tab at the far-right center of the viewport.
+   - When isLexiOpen === true:
+     - Show the LexiPanel plus the same edge tab attached to the panel edge for closing.
+
+4) Visual specs for the edge tab:
+   - Not “button shaped” (no pill button). It should look like a vertical bar/tab.
+   - Background: use the app primary dark color (#314143) or the Lexi border color already used.
+   - Text: "</>" in the app background white (#FAF8F4 or #F2F2F2).
+   - Text orientation: vertical (rotate -90 so user turns head to read).
+   - Size: ~34-40px wide, ~120-160px tall.
+   - Position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+   - Add hover: slightly darker background (use the existing primary-hover token if present).
+   - Cursor pointer; focus-visible ring using the app focus color (#628286).
+
+5) Interaction:
+   - Clicking the tab toggles open/close:
+     - onClick={() => setIsLexiOpen((v) => !v)}
+   - When Lexi is open, clicking outside already collapses (keep that behavior), but ALSO keep this explicit tab so the user always understands how to open/close.
+
+6) Ensure LexiPanel respects isLexiOpen:
+   - LexiPanel should receive props:
+     - open={isLexiOpen}
+     - onClose={() => setIsLexiOpen(false)}
+   - If LexiPanel currently manages its own open state, refactor to be controlled by these props.
+
+7) Styling should use existing Tailwind tokens if possible:
+   - Prefer bg-primary text-primary-foreground border-border / ring / hover states.
+   - If tokens don’t exist, add minimal inline classes using the exact hex colors.
+
+8) Confirm:
+   - The </> tab is visible on ALL app pages after login.
+   - When closed: user sees the </> tab and can open Lexi.
+   - When open: user can close Lexi with the </> tab, or click outside.
+   - On mobile: tab remains usable (44px min touch target height if needed).
+
+DELIVERABLE:
+- Tell me exactly which file(s) you edited (e.g., client/src/components/layout/AppLayout.tsx and client/src/components/LexiPanel.tsx).
+- Confirm the toggle appears on every /app route and opens/closes Lexi reliably.
