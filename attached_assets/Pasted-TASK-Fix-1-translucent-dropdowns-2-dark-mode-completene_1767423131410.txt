@@ -1,0 +1,114 @@
+TASK: Fix (1) translucent dropdowns, (2) dark mode completeness + toggle location + system-follow, (3) onboarding redirect loop, (4) textbox interior tint slightly bluer, (5) quick-exit styling.
+
+A) FIX DROPDOWN / POPOVER TRANSPARENCY (menus must be SOLID, not see-through)
+1) Find the menu dropdown in:
+- client/src/components/layout/AppNavbar.tsx (and any dropdown component it uses)
+2) Ensure the dropdown panel uses an opaque background token and no opacity classes:
+- Remove any "bg-*/80", "opacity-*", "backdrop-blur", or transparent overlays on the panel itself.
+- The dropdown container should use: bg-popover (or explicit hex), not bg-background with opacity.
+- Make sure it has a high z-index: z-50 or z-[100].
+3) If you are using shadcn Popover/DropdownMenu:
+- Update the content component className to include: "bg-popover text-popover-foreground border border-border shadow-lg"
+- Confirm bg-popover resolves to a fully opaque color in BOTH light and dark themes.
+
+B) DARK MODE MUST CHANGE BOXES/CARDS TOO (not only page background)
+1) Update theme tokens in:
+- client/src/index.css
+2) Ensure these tokens have correct values in BOTH light and dark:
+- --background
+- --foreground
+- --muted (used by cards/module tiles)
+- --card and --card-foreground (if present)
+- --popover and --popover-foreground (menus)
+- --border
+- --input
+3) Dark theme requirements:
+- App page background becomes dark
+- Module tiles/cards become a darker surface (NOT staying light)
+- Borders remain visible (slightly lighter than surface)
+- Text becomes near-white
+Example target (adjust as needed but keep it “comfy”):
+:root.theme-app { ...light tokens already exist... }
+:root.theme-app.dark {
+  --background: 200 12% 10%;        /* deep blue-gray */
+  --foreground: 40 20% 96%;         /* near-white */
+  --card: 200 12% 14%;              /* tile surface */
+  --card-foreground: 40 20% 96%;
+  --popover: 200 12% 14%;
+  --popover-foreground: 40 20% 96%;
+  --muted: 200 10% 16%;
+  --muted-foreground: 40 10% 80%;
+  --border: 200 10% 28%;
+  --input: 200 10% 18%;
+}
+Then confirm module tiles use bg-card (or bg-muted) so they change in dark mode.
+
+C) MOVE DARK MODE TOGGLE TO NAVBAR + FOLLOW SYSTEM SETTING
+1) Add a theme toggle button in AppNavbar next to Menu (sun/moon icon).
+2) Implement theme selection logic:
+- modes: "system" | "light" | "dark"
+- default: "system"
+- store in localStorage: "civilla-theme"
+- if "system": follow window.matchMedia('(prefers-color-scheme: dark)')
+- listen for changes to matchMedia and update immediately
+3) Keep Account Settings theme selector if you want, but navbar toggle must exist and be quick.
+4) Make the toggle accessible: aria-label, 44px touch target on mobile.
+
+D) FIX ONBOARDING LOOP (completing onboarding must never restart)
+1) Find the redirect guard:
+- likely in client/src/components/layout/AppLayout.tsx (or route guards)
+2) Confirm the exact field name used:
+- user_profiles.onboardingCompleted (or onboarding_complete) MUST match front-end check.
+3) In onboarding completion handler (client/src/pages/AppOnboarding.tsx):
+- after final step submit, PATCH user profile to set onboardingCompleted=true
+- only redirect AFTER server confirms save
+4) In AppLayout guard:
+- if onboardingCompleted is true => NEVER redirect to onboarding
+- if false => redirect to onboarding
+5) Add a small console-safe debug log (dev only) to verify the value once:
+- Only in development mode.
+
+E) CLEAR ALL USERS IN DATABASE (DEV-ONLY SAFE RESET)
+1) Add a server-side DEV-ONLY reset endpoint:
+- server/routes.ts
+- route: POST /api/dev/reset-db
+- guard: if process.env.NODE_ENV !== 'development' => return 404
+- and requireAuth + additionally require a hardcoded check like (req.user.email endsWith your domain OR a server secret)
+2) The reset should TRUNCATE in correct order (CASCADE):
+- lexi_messages, lexi_threads
+- exhibit_evidence, exhibits, exhibit_lists
+- evidence_files, documents, generated_documents
+- timeline_events, deadlines, tasks
+- case_calendar_items, calendar_categories
+- case_communications, case_contacts, contacts
+- case_children
+- cases
+- user_profiles
+- auth tables (auth_identities, magic links)
+- users
+3) Return { ok:true }.
+
+F) TEXTBOX FILL COLOR: slightly BLUER than current green tint
+1) Update the input + textarea components:
+- client/src/components/ui/input.tsx
+- client/src/components/ui/textarea.tsx
+2) Change background from the greenish tint to a subtle blue-gray tint that still reads “soft”:
+- Use a token (preferred): bg-input
+- Then set --input in theme-app light mode to a slightly bluer value than #CFD7D5 (ex: around #D6E3E6-ish)
+3) Ensure placeholder text remains readable.
+
+G) QUICK EXIT BUTTON: match the front-end cream navbar green gradient
+1) Locate QuickExit button component (AppNavbar likely).
+2) Apply same gradient classes used by the marketing NavbarCream quick exit:
+- Use bg-gradient-to-r from bush to bush-dark (or the exact tokens you use on the marketing navbar)
+- Ensure text is cream/white and passes contrast
+- Keep hover state slightly darker.
+
+DELIVERABLES:
+- Provide a bullet list of files changed and exactly what changed in each.
+- Provide screenshots of:
+  1) Menu open (light mode) showing fully opaque panel
+  2) Menu open (dark mode) showing fully opaque panel + white text
+  3) Dashboard in dark mode showing dark tiles/cards
+  4) Onboarding completion redirecting to dashboard and NOT looping
+- Confirm dev reset endpoint is disabled outside development.
