@@ -46,4 +46,4 @@ PSQL = "psql 'postgresql://neondb_owner:npg_9C5ObexrwojV@ep-muddy-rain-afb6ypj2-
 PSQLPASSAUTH = "psql -h pg.neon.tech"
 
 [agent]
-integrations = ["javascript_openai_ai_integrations:2.0.0"]
+integrations = ["javascript_openai_ai_integrations:2.0.0", "stripe:2.0.0"]
