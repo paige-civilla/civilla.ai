@@ -419,43 +419,43 @@ export default function AppOnboarding() {
     <div className="flex flex-col min-h-screen bg-cream text-neutral-darkest">
       <AppNavbar />
       <main className="flex-1 w-full">
-        <section className="w-full flex flex-col items-center px-5 md:px-16 py-10 md:py-16">
+        <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
           <div className="flex flex-col items-start max-w-2xl w-full">
-            <h1 className="font-heading font-bold text-heading-3-mobile md:text-heading-3 text-neutral-darkest mb-2">
+            <h1 className="font-heading font-bold text-xl sm:text-heading-3-mobile md:text-heading-3 text-neutral-darkest mb-2">
               Welcome to <span className="italic">civilla</span>
             </h1>
-            <p className="font-sans text-base text-neutral-darkest/70 mb-8">
+            <p className="font-sans text-sm sm:text-base text-neutral-darkest/70 mb-6 sm:mb-8">
               Let's get your account set up. This will only take a few minutes.
             </p>
 
             {step === 0 && (
-              <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-6 md:p-8">
-                <div className="space-y-6 text-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <FileText className="w-8 h-8 text-primary" />
+              <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-4 sm:p-6 md:p-8">
+                <div className="space-y-4 sm:space-y-6 text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
-                  <h2 className="font-heading font-bold text-xl text-neutral-darkest">
+                  <h2 className="font-heading font-bold text-lg sm:text-xl text-neutral-darkest">
                     Before we begin
                   </h2>
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left">
-                    <div className="flex items-start gap-3">
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 sm:p-4 text-left">
+                    <div className="flex items-start gap-2 sm:gap-3">
                       <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-medium text-neutral-darkest mb-2">
+                        <p className="font-medium text-sm sm:text-base text-neutral-darkest mb-1 sm:mb-2">
                           This will take a bit of time
                         </p>
-                        <p className="text-sm text-neutral-darkest/70">
+                        <p className="text-xs sm:text-sm text-neutral-darkest/70">
                           Courts commonly ask for this information, and completing it now will save you time later by auto-filling your documents and organizing your case materials.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-neutral-darkest/60">
+                  <p className="text-xs sm:text-sm text-neutral-darkest/60">
                     You can always update this information later in your account settings.
                   </p>
                   <Button
                     onClick={handleNext}
-                    className="w-full bg-primary text-white hover:bg-primary/90"
+                    className="w-full bg-primary text-white hover:bg-primary/90 min-h-[44px]"
                     data-testid="button-start-onboarding"
                   >
                     Start Setup
@@ -466,23 +466,24 @@ export default function AppOnboarding() {
             )}
 
             {step > 0 && (
-              <div className="w-full mb-8">
-                <div className="flex items-center justify-between gap-2">
+              <div className="w-full mb-6 sm:mb-8">
+                <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-2">
                   {displaySteps.map((s, idx) => {
                     const isActive = s.id === step;
                     const isComplete = s.id < step || (s.id === 4 && step >= 5 && !data.case.hasChildren);
                     const Icon = s.icon;
                     
                     return (
-                      <div key={s.id} className="flex-1 flex flex-col items-center">
+                      <div key={s.id} className="flex-1 min-w-0 flex flex-col items-center">
                         <div className={`
-                          w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors
+                          w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-1 sm:mb-2 transition-colors flex-shrink-0
                           ${isComplete ? 'bg-primary text-primary-foreground' : isActive ? 'bg-primary/20 text-primary border-2 border-primary' : 'bg-neutral-darkest/10 text-neutral-darkest/40'}
                         `}>
-                          {isComplete ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                          {isComplete ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : <Icon className="w-4 h-4 sm:w-5 sm:h-5" />}
                         </div>
-                        <span className={`text-xs font-medium text-center ${isActive ? 'text-primary' : 'text-neutral-darkest/60'}`}>
-                          {s.title}
+                        <span className={`text-[10px] sm:text-xs font-medium text-center leading-tight ${isActive ? 'text-primary' : 'text-neutral-darkest/60'}`}>
+                          <span className="hidden sm:inline">{s.title}</span>
+                          <span className="sm:hidden">{s.id}</span>
                         </span>
                         {idx < displaySteps.length - 1 && (
                           <div className="hidden" />
@@ -495,7 +496,7 @@ export default function AppOnboarding() {
             )}
 
             {step > 0 && (
-            <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-6 md:p-8">
+            <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-4 sm:p-6 md:p-8">
               {step === 1 && (
                 <div className="space-y-6">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest">Your Information</h2>

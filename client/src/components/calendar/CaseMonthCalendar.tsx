@@ -204,23 +204,25 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
 
   return (
     <Card className="bg-white border-0 shadow-none h-full" data-testid="calendar-month">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 pt-4 px-4">
-        <div className="flex items-center gap-2">
+      <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-2 pb-2 pt-4 px-3 sm:px-4">
+        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center sm:justify-start">
           <Button
             size="icon"
             variant="ghost"
             onClick={goToPrevMonth}
+            className="min-h-[44px] min-w-[44px]"
             data-testid="button-prev-month"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="font-heading font-bold text-lg text-neutral-darkest min-w-[160px] text-center">
+          <h2 className="font-heading font-bold text-base sm:text-lg text-neutral-darkest min-w-[140px] sm:min-w-[160px] text-center">
             {formatMonthYear()}
           </h2>
           <Button
             size="icon"
             variant="ghost"
             onClick={goToNextMonth}
+            className="min-h-[44px] min-w-[44px]"
             data-testid="button-next-month"
           >
             <ChevronRight className="w-4 h-4" />
@@ -231,6 +233,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
             variant="outline"
             size="sm"
             onClick={goToToday}
+            className="min-h-[44px]"
             data-testid="button-today"
           >
             Today
@@ -239,6 +242,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
             size="icon"
             variant="ghost"
             onClick={openColorDialog}
+            className="min-h-[44px] min-w-[44px]"
             data-testid="button-calendar-colors"
           >
             <Palette className="w-4 h-4" />
@@ -257,9 +261,10 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
-                  className="py-2 text-center font-sans text-xs font-medium text-neutral-darkest/70 border-b"
+                  className="py-2 text-center font-sans text-[10px] sm:text-xs font-medium text-neutral-darkest/70 border-b"
                 >
-                  {day}
+                  <span className="hidden xs:inline">{day}</span>
+                  <span className="xs:hidden">{day.charAt(0)}</span>
                 </div>
               ))}
             </div>
@@ -268,14 +273,14 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
               {weeks.map((week, weekIdx) =>
                 week.map((day, dayIdx) => {
                   const items = day ? getItemsForDay(day) : [];
-                  const displayItems = items.slice(0, 3);
-                  const moreCount = items.length - 3;
+                  const displayItems = items.slice(0, 2);
+                  const moreCount = items.length - 2;
 
                   return (
                     <div
                       key={`${weekIdx}-${dayIdx}`}
                       className={[
-                        "min-h-[80px] border-b border-r p-1",
+                        "min-h-[60px] sm:min-h-[80px] border-b border-r p-0.5 sm:p-1",
                         day ? "bg-white" : "bg-neutral-50",
                         dayIdx === 6 ? "border-r-0" : "",
                         weekIdx === weeks.length - 1 ? "border-b-0" : "",
@@ -285,7 +290,7 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
                         <>
                           <div
                             className={[
-                              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mb-1",
+                              "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1",
                               isToday(day)
                                 ? "bg-primary text-primary-foreground"
                                 : "text-neutral-darkest",
@@ -293,12 +298,12 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
                           >
                             {day}
                           </div>
-                          <div className="space-y-0.5">
+                          <div className="space-y-0.5 hidden sm:block">
                             {displayItems.map((item) => (
                               <button
                                 key={item.id}
                                 onClick={() => setSelectedItem(item)}
-                                className="w-full text-left px-1.5 py-0.5 rounded text-xs font-sans text-white truncate"
+                                className="w-full text-left px-1 sm:px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-sans text-white truncate min-h-[20px]"
                                 style={{ backgroundColor: getItemColor(item.type) }}
                                 data-testid={`calendar-item-${item.id}`}
                               >
@@ -306,9 +311,22 @@ export default function CaseMonthCalendar({ caseId }: CaseMonthCalendarProps) {
                               </button>
                             ))}
                             {moreCount > 0 && (
-                              <p className="text-xs text-neutral-darkest/60 px-1">
+                              <p className="text-[10px] sm:text-xs text-neutral-darkest/60 px-1">
                                 +{moreCount} more
                               </p>
+                            )}
+                          </div>
+                          {/* Mobile: show dots instead of text */}
+                          <div className="flex flex-wrap gap-0.5 sm:hidden">
+                            {items.slice(0, 3).map((item) => (
+                              <div
+                                key={item.id}
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: getItemColor(item.type) }}
+                              />
+                            ))}
+                            {items.length > 3 && (
+                              <span className="text-[8px] text-neutral-darkest/60">+{items.length - 3}</span>
                             )}
                           </div>
                         </>
