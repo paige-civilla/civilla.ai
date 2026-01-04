@@ -67,8 +67,8 @@ export default function ToolsSection() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 items-stretch w-full">
-          <div className="rounded-2xl border border-white/30 bg-white/5 p-4 text-center min-w-0">
+        <div className="flex justify-center w-full">
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-4 text-center max-w-2xl w-full">
             <div className="flex flex-col">
               {FEATURES.map((item, idx) => {
                 const isOpen = openIndex === idx;
@@ -103,21 +103,6 @@ export default function ToolsSection() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/30 bg-white/5 p-6 text-center h-full self-stretch min-w-0">
-            <div className="h-full flex flex-col justify-center min-w-0">
-              <h3 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
-                Track What Matters In Your Case
-              </h3>
-              <p className="mt-4 text-white/85 leading-relaxed text-sm md:text-base">
-                <BrandText>Family court can feel chaotic. civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized without promising outcomes.</BrandText>
-              </p>
-
-              <p className="mt-6 text-[10px] text-white/70 font-bold italic">
-                *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
-              </p>
             </div>
           </div>
         </div>
