@@ -47,11 +47,24 @@ export default function ToolsSection() {
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-5 md:gap-6 items-center text-white text-center max-w-content-large w-full">
           <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] w-full">
-            <BrandText>What You Can Do With civilla</BrandText>
+            What You Can Do With <em className="italic">civilla</em>
           </h2>
-          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full">
-            <BrandText>civilla is an educational, research, and organizational platform. We help you understand court processes, research questions with Lexi (our AI), and organize your case materials — but we don't provide legal advice, represent you in court, or guarantee outcomes.</BrandText>
-          </p>
+          <div className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] w-full space-y-4">
+            <p>
+              <em className="italic">civilla</em> is a platform designed to help you learn, research, and stay organized while navigating your court case.
+            </p>
+            <p>
+              With <em className="italic">civilla</em>, you can:
+            </p>
+            <ul className="list-disc text-left max-w-md mx-auto space-y-1 pl-5">
+              <li>Learn how court processes work and what steps are commonly involved</li>
+              <li>Research questions using Lexi, our AI assistant, including state-specific rules, terminology, and publicly available court information</li>
+              <li>Organize your case materials such as documents, evidence, timelines, deadlines, disclosures, and communications</li>
+            </ul>
+            <p>
+              <em className="italic">civilla</em> does not act as a lawyer. We don't represent you in court, make decisions for you, or predict outcomes. Instead, we give you tools and information so you can better understand your situation and manage your case with confidence.
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 items-stretch w-full">
@@ -93,26 +106,17 @@ export default function ToolsSection() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/30 bg-white/5 p-6 text-left h-full self-stretch min-w-0">
-            <div className="h-full flex flex-col justify-center min-w-0 space-y-4">
-              <h3 className="text-2xl md:text-3xl font-semibold leading-tight text-white">
-                What You Can Do With <em className="not-italic font-semibold">civilla</em>
+          <div className="rounded-2xl border border-white/30 bg-white/5 p-6 text-center h-full self-stretch min-w-0">
+            <div className="h-full flex flex-col justify-center min-w-0">
+              <h3 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
+                Track What Matters In Your Case
               </h3>
-              <p className="text-white/85 leading-relaxed text-sm md:text-base">
-                <em className="not-italic">civilla</em> is a platform designed to help you learn, research, and stay organized while navigating your court case.
+              <p className="mt-4 text-white/85 leading-relaxed text-sm md:text-base">
+                <BrandText>Family court can feel chaotic. civilla helps you research, understand typical court steps, and keep your timeline, notes, and documents organized without promising outcomes.</BrandText>
               </p>
-              <div className="space-y-2">
-                <p className="text-white/85 leading-relaxed text-sm md:text-base">
-                  With <em className="not-italic">civilla</em>, you can:
-                </p>
-                <ul className="list-disc list-inside text-white/85 leading-relaxed text-sm md:text-base space-y-1 pl-1">
-                  <li>Learn how court processes work and what steps are commonly involved</li>
-                  <li>Research questions using Lexi, our AI assistant, including state-specific rules, terminology, and publicly available court information</li>
-                  <li>Organize your case materials such as documents, evidence, timelines, deadlines, disclosures, and communications</li>
-                </ul>
-              </div>
-              <p className="text-white/85 leading-relaxed text-sm md:text-base">
-                <em className="not-italic">civilla</em> does not act as a lawyer. We don't represent you in court, make decisions for you, or predict outcomes. Instead, we give you tools and information so you can better understand your situation and manage your case with confidence.
+
+              <p className="mt-6 text-[10px] text-white/70 font-bold italic">
+                *Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*
               </p>
             </div>
           </div>
