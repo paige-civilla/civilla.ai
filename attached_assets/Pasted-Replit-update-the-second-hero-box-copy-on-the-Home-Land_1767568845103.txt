@@ -1,0 +1,37 @@
+Replit — update the second hero box copy on the Home/Landing page.
+
+Goal:
+Replace the existing text in the SECOND hero box on the home page with the exact copy below (keep the same styling/layout as-is; only change the text content). Make sure the heading and bullets render cleanly on mobile (no awkward line breaks).
+
+Where:
+Find the Home/Landing page component (likely one of: client/src/pages/Landing.tsx, client/src/pages/Home.tsx, or a component used by it like client/src/components/Hero*.tsx). Locate the “second hero box” (the second card/box in the hero area).
+
+Replace the box content with:
+
+TITLE (exact):
+What You Can Do With civilla
+
+BODY (exact; include bullets):
+civilla is a platform designed to help you learn, research, and stay organized while navigating your court case.
+
+With civilla, you can:
+- Learn how court processes work and what steps are commonly involved
+- Research questions using Lexi, our AI assistant, including state-specific rules, terminology, and publicly available court information
+- Organize your case materials such as documents, evidence, timelines, deadlines, disclosures, and communications
+
+civilla does not act as a lawyer. We don’t represent you in court, make decisions for you, or predict outcomes. Instead, we give you tools and information so you can better understand your situation and manage your case with confidence.
+
+Implementation details:
+- Keep existing container/card styling (background, padding, border, fonts, spacing).
+- Keep civilla lowercase everywhere (“civilla”, “Lexi” capitalized).
+- If the box currently uses <p> tags, convert the “With civilla, you can:” section into a semantic <ul><li> list (preferred) OR preserve the existing bullet formatting style if already present.
+- Ensure line-height and spacing looks good: add a small gap between paragraphs and the list (e.g., className="space-y-2" or equivalent).
+- After updating, run the app and confirm:
+  1) The second hero box shows the new title + bullets
+  2) Mobile view doesn’t cut off text or squeeze bullets
+  3) No other hero box text was changed
+
+When done:
+Reply with:
+- The file path(s) you edited
+- A short before/after snippet showing the updated second hero box JSX
