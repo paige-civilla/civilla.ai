@@ -24,6 +24,9 @@ export default function StepsSection() {
   return (
     <section className="w-full">
       <div className="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+        <h2 className="font-heading font-bold text-heading-1-mobile md:text-heading-1 leading-[1.1] tracking-[0.5px] md:tracking-[0.84px] text-neutral-darkest dark:text-cream text-center mb-12 md:mb-16">
+          Clarity Starts Here
+        </h2>
         <div className="space-y-10 md:space-y-12">
           {steps.map((s) => (
             <div
