@@ -1,3 +1,7 @@
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { BrandText } from "./Brand";
+
 export default function StepsSection() {
   const steps = [
     {
@@ -49,7 +53,26 @@ export default function StepsSection() {
               </div>
             </div>
           ))}
+        </div>
 
+        <div className="flex flex-wrap gap-4 items-center justify-center mt-12 md:mt-16">
+          <Link href="/plans">
+            <Button
+              className="bg-bush text-white rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular button-inset-shadow"
+              data-testid="button-cta-start"
+            >
+              Plans & Pricing
+            </Button>
+          </Link>
+          <Link href="/how-civilla-works">
+            <Button
+              variant="outline"
+              className="border-2 border-neutral-darkest dark:border-cream text-neutral-darkest dark:text-cream rounded-xl px-6 py-2.5 font-sans font-bold text-sm md:text-body-regular bg-transparent"
+              data-testid="button-cta-learn"
+            >
+              <BrandText>How civilla Works</BrandText>
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

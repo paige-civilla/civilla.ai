@@ -1,7 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ToolsSection from "@/components/ToolsSection";
-import CTASection from "@/components/CTASection";
 import SafetySection from "@/components/SafetySection";
 import StepsSection from "@/components/StepsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
@@ -21,7 +20,6 @@ export default function Home() {
       <Hero />
       <ToolsSection />
       <StepsSection />
-      <CTASection />
       <SafetySection />
       <TestimonialsSection />
       <FAQSection />
