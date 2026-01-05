@@ -1213,3 +1213,56 @@ export const generatedExhibitPackets = pgTable("generated_exhibit_packets", {
 }));
 
 export type GeneratedExhibitPacket = typeof generatedExhibitPackets.$inferSelect;
+
+export const parentingPlanStatusEnum = z.enum(["draft", "reviewed"]);
+export type ParentingPlanStatus = z.infer<typeof parentingPlanStatusEnum>;
+
+export const parentingPlans = pgTable("parenting_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  status: text("status").notNull().default("draft"),
+  lastUpdatedAt: timestamp("last_updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("parenting_plans_user_case_idx").on(table.userId, table.caseId),
+  caseIdUnique: index("parenting_plans_case_unique_idx").on(table.caseId),
+}));
+
+export const insertParentingPlanSchema = z.object({
+  status: parentingPlanStatusEnum.optional().default("draft"),
+});
+
+export const updateParentingPlanSchema = z.object({
+  status: parentingPlanStatusEnum.optional(),
+});
+
+export type InsertParentingPlan = z.infer<typeof insertParentingPlanSchema>;
+export type UpdateParentingPlan = z.infer<typeof updateParentingPlanSchema>;
+export type ParentingPlan = typeof parentingPlans.$inferSelect;
+
+export const parentingPlanSections = pgTable("parenting_plan_sections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  parentingPlanId: varchar("parenting_plan_id").notNull().references(() => parentingPlans.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  sectionKey: text("section_key").notNull(),
+  data: jsonb("data").notNull().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  planIdx: index("parenting_plan_sections_plan_idx").on(table.parentingPlanId),
+  sectionKeyIdx: index("parenting_plan_sections_key_idx").on(table.parentingPlanId, table.sectionKey),
+}));
+
+export const insertParentingPlanSectionSchema = z.object({
+  sectionKey: z.string().min(1, "Section key is required"),
+  data: z.record(z.unknown()).optional().default({}),
+});
+
+export const updateParentingPlanSectionSchema = z.object({
+  data: z.record(z.unknown()),
+});
+
+export type InsertParentingPlanSection = z.infer<typeof insertParentingPlanSectionSchema>;
+export type UpdateParentingPlanSection = z.infer<typeof updateParentingPlanSectionSchema>;
+export type ParentingPlanSection = typeof parentingPlanSections.$inferSelect;

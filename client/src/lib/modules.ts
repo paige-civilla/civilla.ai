@@ -13,6 +13,7 @@ import {
   FileStack,
   Calculator,
   Scale,
+  Heart,
   type LucideIcon
 } from "lucide-react";
 
@@ -30,7 +31,8 @@ export type ModuleKey =
   | "contacts"
   | "exhibits"
   | "child-support"
-  | "trial-prep";
+  | "trial-prep"
+  | "parenting-plan";
 
 export type StartingPoint = "served_papers" | "starting_case" | "modifying_enforcing" | "not_sure";
 
@@ -159,6 +161,15 @@ export const MODULES_REGISTRY: ModuleDef[] = [
     icon: Scale,
     group: "extras",
   },
+  {
+    key: "parenting-plan",
+    label: "Parenting Plan",
+    description: "Document parenting arrangements and schedules",
+    href: (caseId) => `/app/parenting-plan/${caseId}`,
+    icon: Heart,
+    gatedByChildren: true,
+    group: "planning",
+  },
 ];
 
 const BASE_ORDER: ModuleKey[] = [
@@ -170,6 +181,7 @@ const BASE_ORDER: ModuleKey[] = [
   "patterns",
   "library",
   "documents",
+  "parenting-plan",
   "deadlines",
   "tasks",
   "contacts",
@@ -187,6 +199,7 @@ const SERVED_PAPERS_ORDER: ModuleKey[] = [
   "patterns",
   "library",
   "documents",
+  "parenting-plan",
   "deadlines",
   "tasks",
   "contacts",
@@ -198,6 +211,7 @@ const SERVED_PAPERS_ORDER: ModuleKey[] = [
 const STARTING_CASE_ORDER: ModuleKey[] = [
   "library",
   "documents",
+  "parenting-plan",
   "evidence",
   "communications",
   "timeline",
@@ -221,6 +235,7 @@ const MODIFYING_ENFORCING_ORDER: ModuleKey[] = [
   "patterns",
   "library",
   "documents",
+  "parenting-plan",
   "deadlines",
   "tasks",
   "contacts",

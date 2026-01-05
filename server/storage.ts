@@ -100,6 +100,14 @@ import {
   type TimelineCategory,
   type InsertTimelineCategory,
   type UpdateTimelineCategory,
+  parentingPlans,
+  parentingPlanSections,
+  type ParentingPlan,
+  type InsertParentingPlan,
+  type UpdateParentingPlan,
+  type ParentingPlanSection,
+  type InsertParentingPlanSection,
+  type UpdateParentingPlanSection,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -262,6 +270,15 @@ export interface IStorage {
   deleteTimelineCategory(userId: string, categoryId: string): Promise<{ success: boolean; error?: string }>;
   seedSystemTimelineCategories(userId: string): Promise<TimelineCategory[]>;
   getTimelineCategory(userId: string, categoryId: string): Promise<TimelineCategory | undefined>;
+
+  getParentingPlanByCase(userId: string, caseId: string): Promise<ParentingPlan | undefined>;
+  createParentingPlan(userId: string, caseId: string, data?: InsertParentingPlan): Promise<ParentingPlan>;
+  updateParentingPlan(userId: string, planId: string, data: UpdateParentingPlan): Promise<ParentingPlan | undefined>;
+  getOrCreateParentingPlan(userId: string, caseId: string): Promise<ParentingPlan>;
+
+  listParentingPlanSections(userId: string, planId: string): Promise<ParentingPlanSection[]>;
+  getParentingPlanSection(userId: string, planId: string, sectionKey: string): Promise<ParentingPlanSection | undefined>;
+  upsertParentingPlanSection(userId: string, planId: string, sectionKey: string, data: Record<string, unknown>): Promise<ParentingPlanSection>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1919,6 +1936,76 @@ export class DatabaseStorage implements IStorage {
         .returning();
       created.push(row);
     }
+    return created;
+  }
+
+  async getParentingPlanByCase(userId: string, caseId: string): Promise<ParentingPlan | undefined> {
+    const [row] = await db.select().from(parentingPlans)
+      .where(and(eq(parentingPlans.userId, userId), eq(parentingPlans.caseId, caseId)));
+    return row;
+  }
+
+  async createParentingPlan(userId: string, caseId: string, data?: InsertParentingPlan): Promise<ParentingPlan> {
+    const [created] = await db.insert(parentingPlans)
+      .values({
+        userId,
+        caseId,
+        status: data?.status || "draft",
+      })
+      .returning();
+    return created;
+  }
+
+  async updateParentingPlan(userId: string, planId: string, data: UpdateParentingPlan): Promise<ParentingPlan | undefined> {
+    const [updated] = await db.update(parentingPlans)
+      .set({
+        status: data.status,
+        lastUpdatedAt: new Date(),
+      })
+      .where(and(eq(parentingPlans.id, planId), eq(parentingPlans.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async getOrCreateParentingPlan(userId: string, caseId: string): Promise<ParentingPlan> {
+    const existing = await this.getParentingPlanByCase(userId, caseId);
+    if (existing) return existing;
+    return this.createParentingPlan(userId, caseId);
+  }
+
+  async listParentingPlanSections(userId: string, planId: string): Promise<ParentingPlanSection[]> {
+    return db.select().from(parentingPlanSections)
+      .where(and(eq(parentingPlanSections.parentingPlanId, planId), eq(parentingPlanSections.userId, userId)))
+      .orderBy(asc(parentingPlanSections.sectionKey));
+  }
+
+  async getParentingPlanSection(userId: string, planId: string, sectionKey: string): Promise<ParentingPlanSection | undefined> {
+    const [row] = await db.select().from(parentingPlanSections)
+      .where(and(
+        eq(parentingPlanSections.parentingPlanId, planId),
+        eq(parentingPlanSections.userId, userId),
+        eq(parentingPlanSections.sectionKey, sectionKey)
+      ));
+    return row;
+  }
+
+  async upsertParentingPlanSection(userId: string, planId: string, sectionKey: string, data: Record<string, unknown>): Promise<ParentingPlanSection> {
+    const existing = await this.getParentingPlanSection(userId, planId, sectionKey);
+    if (existing) {
+      const [updated] = await db.update(parentingPlanSections)
+        .set({ data, updatedAt: new Date() })
+        .where(eq(parentingPlanSections.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(parentingPlanSections)
+      .values({
+        parentingPlanId: planId,
+        userId,
+        sectionKey,
+        data,
+      })
+      .returning();
     return created;
   }
 }

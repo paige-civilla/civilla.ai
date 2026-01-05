@@ -43,6 +43,7 @@ import AppDocumentLibrary from "@/pages/AppDocumentLibrary";
 import AppDisclosures from "@/pages/AppDisclosures";
 import AppTrialPrep from "@/pages/AppTrialPrep";
 import AppTrialPrepPrint from "@/pages/AppTrialPrepPrint";
+import AppParentingPlan from "@/pages/AppParentingPlan";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -90,6 +91,7 @@ function Router() {
       <Route path="/app/disclosures/:caseId" component={AppDisclosures} />
       <Route path="/app/trial-prep/:caseId" component={AppTrialPrep} />
       <Route path="/app/trial-prep/:caseId/print" component={AppTrialPrepPrint} />
+      <Route path="/app/parenting-plan/:caseId" component={AppParentingPlan} />
       <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
       <Route path="/app/documents">{() => <CaseRedirect targetPath="documents" />}</Route>
@@ -107,6 +109,7 @@ function Router() {
       <Route path="/app/library">{() => <CaseRedirect targetPath="library" />}</Route>
       <Route path="/app/disclosures">{() => <CaseRedirect targetPath="disclosures" />}</Route>
       <Route path="/app/trial-prep">{() => <CaseRedirect targetPath="trial-prep" />}</Route>
+      <Route path="/app/parenting-plan">{() => <CaseRedirect targetPath="parenting-plan" />}</Route>
       <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />
     </Switch>

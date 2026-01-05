@@ -1444,6 +1444,82 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/cases/:caseId/parenting-plan", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const plan = await storage.getOrCreateParentingPlan(userId, caseId);
+      const sections = await storage.listParentingPlanSections(userId, plan.id);
+
+      res.json({ plan, sections });
+    } catch (error) {
+      console.error("Get parenting plan error:", error);
+      res.status(500).json({ error: "Failed to get parenting plan" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/parenting-plan", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const plan = await storage.getOrCreateParentingPlan(userId, caseId);
+      res.status(201).json({ plan });
+    } catch (error) {
+      console.error("Create parenting plan error:", error);
+      res.status(500).json({ error: "Failed to create parenting plan" });
+    }
+  });
+
+  app.patch("/api/parenting-plan/:planId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { planId } = req.params;
+      const { status } = req.body;
+
+      const updated = await storage.updateParentingPlan(userId, planId, { status });
+      if (!updated) {
+        return res.status(404).json({ error: "Parenting plan not found" });
+      }
+
+      res.json({ plan: updated });
+    } catch (error) {
+      console.error("Update parenting plan error:", error);
+      res.status(500).json({ error: "Failed to update parenting plan" });
+    }
+  });
+
+  app.put("/api/parenting-plan/:planId/sections/:sectionKey", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { planId, sectionKey } = req.params;
+      const { data } = req.body;
+
+      if (!data || typeof data !== "object") {
+        return res.status(400).json({ error: "data object is required" });
+      }
+
+      const section = await storage.upsertParentingPlanSection(userId, planId, sectionKey, data);
+      await storage.updateParentingPlan(userId, planId, {});
+
+      res.json({ section });
+    } catch (error) {
+      console.error("Upsert parenting plan section error:", error);
+      res.status(500).json({ error: "Failed to save section" });
+    }
+  });
+
   app.get("/api/health/documents", async (_req, res) => {
     try {
       await pool.query("SELECT 1 FROM documents LIMIT 1");

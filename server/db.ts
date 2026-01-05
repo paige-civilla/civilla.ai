@@ -685,5 +685,34 @@ export async function initDbTables(): Promise<void> {
     console.log("timeline_events category_id index may already exist");
   }
 
+  await initTable("parenting_plans", `
+    CREATE TABLE IF NOT EXISTS parenting_plans (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      last_updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_parenting_plans_user_case ON parenting_plans(user_id, case_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plans_case_unique ON parenting_plans(case_id)`
+  ]);
+
+  await initTable("parenting_plan_sections", `
+    CREATE TABLE IF NOT EXISTS parenting_plan_sections (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      parenting_plan_id VARCHAR(255) NOT NULL,
+      user_id VARCHAR(255) NOT NULL,
+      section_key TEXT NOT NULL,
+      data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_parenting_plan_sections_plan ON parenting_plan_sections(parenting_plan_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plan_sections_key ON parenting_plan_sections(parenting_plan_id, section_key)`
+  ]);
+
   console.log("Database table initialization complete");
 }
