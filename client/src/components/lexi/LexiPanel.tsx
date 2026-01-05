@@ -327,17 +327,18 @@ export default function LexiPanel() {
             if (e.key === "Enter" || e.key === " ") setOpen(false);
           }}
           className={[
+            "hidden sm:flex",
             "fixed top-1/2 -translate-y-1/2 z-[51]",
             "h-[140px] w-[38px] shadow-lg",
             "rounded-l-md",
-            "flex items-center justify-center",
+            "items-center justify-center",
             "cursor-pointer select-none",
             "transition-colors duration-150",
             "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
           ].join(" ")}
           style={{
             backgroundColor: "#314143",
-            right: "calc(clamp(320px, 28vw, 460px) + 24px)",
+            right: "calc(clamp(320px, 72vw, 520px) + 24px)",
           }}
         >
           <div
