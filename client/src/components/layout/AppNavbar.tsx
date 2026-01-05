@@ -147,24 +147,33 @@ export default function AppNavbar() {
       "parenting-plan": Heart,
     };
 
-    const links: { label: string; href: string; icon: any }[] = [
-      { label: "Dashboard", href: caseId ? `/app/dashboard/${caseId}` : "/app", icon: LayoutDashboard },
-      ...getStaticMenuLinks(),
+    const links: { label: string; href: string; icon: any; disabled?: boolean }[] = [
+      { label: "Start Here", href: "/app/start-here", icon: HelpCircle, disabled: false },
+      { label: "Dashboard", href: caseId ? `/app/dashboard/${caseId}` : "/app/cases", icon: LayoutDashboard, disabled: false },
+      ...getStaticMenuLinks().map(l => ({ ...l, disabled: false })),
     ];
 
-    if (caseId && selectedCase) {
-      const visibleModules = getVisibleModules({
-        hasChildren: selectedCase.hasChildren || false,
+    const hasCase = !!(caseId && selectedCase);
+    const visibleModules = getVisibleModules({
+      hasChildren: selectedCase?.hasChildren || false,
+    });
+    
+    visibleModules.forEach((moduleKey) => {
+      links.push({
+        label: moduleLabel(moduleKey),
+        href: hasCase ? modulePath(moduleKey, caseId) : "#",
+        icon: MODULE_ICONS[moduleKey],
+        disabled: !hasCase,
       });
-      visibleModules.forEach((moduleKey) => {
-        links.push({
-          label: moduleLabel(moduleKey),
-          href: modulePath(moduleKey, caseId),
-          icon: MODULE_ICONS[moduleKey],
-        });
-      });
-      links.push({ label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings });
-    }
+    });
+    
+    links.push({ 
+      label: "Case Settings", 
+      href: hasCase ? `/app/case-settings/${caseId}` : "#", 
+      icon: Settings,
+      disabled: !hasCase,
+    });
+    
     return links;
   })();
 
@@ -302,17 +311,25 @@ export default function AppNavbar() {
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                   {menuLinks.map((item) => (
                     <button
-                      key={item.href}
+                      key={item.label}
                       type="button"
                       onClick={() => {
+                        if (item.disabled) return;
                         setIsMenuOpen(false);
                         setLocation(item.href);
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] text-left font-sans text-sm text-[#243032] hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white transition-colors border border-transparent"
+                      disabled={item.disabled}
+                      title={item.disabled ? "Create a case to use this module" : undefined}
+                      className={[
+                        "flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] text-left font-sans text-sm transition-colors border border-transparent",
+                        item.disabled 
+                          ? "text-[#243032]/40 cursor-not-allowed" 
+                          : "text-[#243032] hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white"
+                      ].join(" ")}
                       role="menuitem"
                       data-testid={`menu-link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <item.icon className={`h-5 w-5 flex-shrink-0 ${item.disabled ? "opacity-40" : ""}`} />
                       <span className="truncate">{item.label}</span>
                     </button>
                   ))}
