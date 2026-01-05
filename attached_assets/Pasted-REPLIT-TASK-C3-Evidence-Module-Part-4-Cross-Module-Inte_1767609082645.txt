@@ -1,0 +1,186 @@
+REPLIT TASK: C3 Evidence Module — Part 4 Cross-Module Integrations + “Run AI Analysis” action (and confirm if auto-job exists)
+
+Goal
+1) Add Evidence → Trial Prep shortlist actions
+2) Upgrade Exhibits flow so Evidence Notes/Snippets can be used cleanly
+3) Add a clear “Run AI Analysis” action for an Evidence file
+4) Confirm whether AI analyses are currently generated automatically by any backend job; if not, implement a manual run action and (optional) auto-trigger behavior.
+
+DO THIS IN ORDER.
+
+--------------------------------------------------------------------
+A) FIRST: CONFIRM CURRENT ANALYSIS GENERATION (NO GUESSING)
+Search codebase for any auto AI analysis job or trigger.
+1) Ripgrep:
+   - rg -n "evidence_ai_analyses" server client
+   - rg -n "createEvidenceAiAnalysis|ai-analyses" server
+   - rg -n "enqueue.*analysis|analysisJobs|runAnalysis" server/services
+   - rg -n "auto-trigger|trigger.*analysis|after upload" server/routes.ts
+
+2) Report back explicitly in the summary:
+   - Is there ANY background job / auto-trigger that creates evidence_ai_analyses rows?
+   - If yes: where (file + line) and what conditions trigger it?
+   - If no: say “No auto analysis job exists; only UI display exists” and proceed to implement manual action + optional auto-trigger.
+
+--------------------------------------------------------------------
+B) ADD MANUAL “RUN AI ANALYSIS” ACTION IN EVIDENCE UI
+Where: client/src/pages/AppEvidence.tsx
+
+1) Add a new button on each Evidence card actions row:
+   - Icon: Sparkles (or Brain with “Run” label), visible always
+   - Label: “Run AI Analysis”
+   - Disabled while extraction is not complete OR while analysis is already “processing” for that evidence
+   - Tooltip (or helper text): “Requires extracted text first”
+
+2) Clicking it should:
+   - Ensure extraction exists + is complete; if not complete:
+       show toast: “Run extraction first to analyze this file.”
+       optionally offer “Run Extraction” button if you already have /extraction/run
+   - Call a backend endpoint that starts analysis:
+       POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run
+   - On success:
+       invalidate queries for:
+         - evidence ai analyses list for that evidence
+         - pattern analysis if it consumes analysis outputs
+   - Show optimistic state:
+       status badge “Processing” appears in the AI Analysis sheet immediately
+
+3) In the AI Analysis sheet:
+   - If empty state: show a clear CTA “Run AI analysis to generate insights for this file.”
+   - If status=failed: show “Retry analysis” button calling the same endpoint with { refresh: true }
+
+--------------------------------------------------------------------
+C) BACKEND: IMPLEMENT RUN ANALYSIS ENDPOINT + STORAGE SUPPORT
+Where: server/routes.ts, server/storage.ts, shared/schema.ts as needed
+
+1) Add endpoint (requireAuth):
+   POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run
+
+2) Ownership validation MUST be strict:
+   - user owns caseId
+   - evidenceId belongs to caseId AND userId
+   - analysis rows created must be userId+caseId+evidenceId
+
+3) Analysis job behavior:
+   - Use extracted text from evidence_extractions (must be status=complete)
+   - Create or upsert an analysis row with:
+       status: "processing"
+       model: (your chosen model; must be consistent with Lexi backend)
+       analysisType: start with "summary_findings" (or similar)
+   - Run OpenAI call (same direct OPENAI_API_KEY flow you used for Lexi)
+   - Produce:
+       summary: 4–8 bullets max
+       findings: structured JSON-like object (store as jsonb or text; match your schema)
+         Recommended structure:
+           {
+             keyFacts: [ ... ],
+             potentialIssues: [ ... ],
+             datesAndDeadlinesMentioned: [ ... ],
+             namesAndRoles: [ ... ],
+             exhibitsCandidates: [ ... ],
+             trialBinderCandidates: [ ... ],
+             confidenceNotes: [ ... ]
+           }
+   - Update analysis row:
+       status: "complete" or "failed"
+       error: if failed (no secrets, no stack traces to user)
+       updatedAt: now()
+
+4) Rate limiting / concurrency
+   - Reuse the global concurrency limiter pattern you built for extraction (p-limit)
+   - Limit AI analyses globally (e.g., 2 at a time) so users can’t spam costs
+
+5) Add a health/diagnostic note to summary:
+   - Confirm OPENAI_API_KEY present
+   - Confirm analysis endpoint returns a clear 503 if missing
+
+--------------------------------------------------------------------
+D) OPTIONAL: AUTO-TRIGGER ANALYSIS AFTER EXTRACTION (ONLY IF SAFE)
+If no auto job exists today, implement an optional auto-trigger that is conservative:
+- After extraction completes successfully (wherever you finalize extraction status):
+   if (no existing analysis rows for this evidence) then enqueue a single analysis run
+- Do NOT auto-run multiple analysis types; start with one default
+
+If you think auto-trigger risks runaway spend, keep it OFF by default:
+- Gate with env var: AUTO_RUN_EVIDENCE_ANALYSIS=true
+- Log: “Auto evidence analysis enabled: true/false”
+
+--------------------------------------------------------------------
+E) CROSS-MODULE ACTIONS: EVIDENCE → TRIAL PREP SHORTLIST
+Where: client/src/pages/AppEvidence.tsx + backend endpoint already exists
+
+1) Add action buttons (or a dropdown “Quick Actions”) on evidence card and on each note/snippet:
+   - “Add to Trial Prep”
+   - “Pin to Trial Prep” (creates item with isPinned=true)
+   - “Choose binder section” dropdown (or modal)
+
+2) Behavior:
+   - Creates trial_prep_shortlist item with:
+       sourceType: "evidence" | "note" | "snippet"
+       sourceId: evidenceId or noteId or snippetId
+       title: filename or noteTitle or snippetTitle
+       summary: first 250 chars of extracted text / note selection / snippet text
+       binderSection: user-selected
+       importance: default 3 (editable)
+       tags: from note/snippet tags if present
+       color: inherit from note/snippet color if present
+
+3) Prevent duplicates:
+   - Respect the uniqueIndex (userId, caseId, sourceType, sourceId)
+   - If duplicate, show toast: “Already in Trial Prep.”
+
+--------------------------------------------------------------------
+F) EXHIBITS UPGRADE (MINIMUM STEP FOR NOW)
+We won’t build full PDF merge yet unless you want it now, but we will fix the “it doesn’t add evidence” confusion.
+
+1) In Exhibits page:
+   - Make Exhibit Lists show:
+       - Cover page toggle + cover page notes field
+       - “Add Evidence File” (existing exhibit_evidence link)
+       - “Add Snippet” (exhibit_snippets link)
+   - Exhibit list detail view should render in this order:
+       Cover Page (if enabled)
+       Snippets (ordered)
+       Evidence Files (ordered)
+
+2) Add a “Download Exhibit Package” button:
+   - MVP: downloads a ZIP of:
+       - cover-page.txt (or cover-page.docx if you already have docx utils)
+       - snippets.txt (compiled)
+       - the original evidence files linked
+   - Implement server endpoint:
+       GET /api/exhibit-lists/:listId/download (requireAuth)
+   - If ZIP is too heavy, do v1 as “Download manifest + links” and explicitly label it as MVP.
+
+(If you want true one-file PDF compile, we’ll plan that as Phase 2 using PDF-lib, but do not start that unless requested.)
+
+--------------------------------------------------------------------
+G) UPDATE PATTERN ANALYSIS TO CONSUME EVIDENCE ANALYSES (LIGHT TOUCH)
+Where: client/src/pages/AppPatternAnalysis.tsx + backend queries if needed
+
+- Add a new card:
+  “Evidence Insights”
+   - # of evidence files analyzed
+   - # with failures
+   - recent findings list (top 5)
+- If you already have evidence anchors, link to the evidence file detail/expand view.
+
+--------------------------------------------------------------------
+H) REQUIRED OUTPUT: DETAILED SUMMARY
+When done, reply with:
+1) Whether an auto analysis job existed before (file + line) OR “none existed”
+2) Files changed
+3) New endpoints (list)
+4) Concurrency/rate limit settings
+5) How the UI behaves:
+   - Run AI Analysis button states
+   - Empty states
+   - Retry behavior
+6) Confirm ownership validation on new endpoints
+
+Acceptance Tests (must pass)
+1) Upload evidence → extraction completes → click “Run AI Analysis” → analysis shows processing then complete.
+2) Click Brain icon shows the new analysis.
+3) Add to Trial Prep from evidence file → appears in shortlist, duplicates prevented.
+4) Add Snippet from evidence and attach to exhibit list → visible under that exhibit list.
+5) New endpoints are all requireAuth and enforce case/evidence ownership.

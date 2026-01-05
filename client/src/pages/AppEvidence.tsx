@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale, Brain, Sparkles, Scissors, BookOpen } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale, Brain, Sparkles, Scissors, BookOpen, RefreshCw } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -233,23 +233,21 @@ export default function AppEvidence() {
   });
 
   const runAiAnalysisMutation = useMutation({
-    mutationFn: async (evidenceId: string) => {
-      const file = rawFiles.find(f => f.id === evidenceId);
-      const extraction = extractionStatuses[evidenceId];
-      const text = extraction?.extractedTextFull || extraction?.extractedTextPreview || "";
-      return apiRequest("POST", `/api/cases/${caseId}/evidence/${evidenceId}/ai-analyses`, {
-        analysisType: "summary",
-        content: text || "No extracted text available",
-        status: "complete",
-        summary: "AI analysis pending - text extraction required first",
-      });
+    mutationFn: async ({ evidenceId, refresh }: { evidenceId: string; refresh?: boolean }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/evidence/${evidenceId}/ai-analyses/run`, { refresh });
     },
-    onSuccess: (_, evidenceId) => {
+    onSuccess: (_, { evidenceId }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", evidenceId, "ai-analyses"] });
-      toast({ title: "Analysis saved" });
+      toast({ title: "Analysis started", description: "AI is analyzing your document..." });
     },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message || "Failed to run analysis", variant: "destructive" });
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Analysis exists", description: "Use the Brain icon to view existing analysis." });
+      } else if (error.status === 400) {
+        toast({ title: "Extraction required", description: "Run text extraction first before AI analysis.", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: error.message || "Failed to run analysis", variant: "destructive" });
+      }
     },
   });
 
@@ -997,15 +995,27 @@ export default function AppEvidence() {
                                 <Scale className="w-4 h-4" />
                               </Button>
                               {extractionStatuses[file.id]?.status === "complete" && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => openSnippetModal(file)}
-                                  data-testid={`button-create-snippet-${file.id}`}
-                                  title="Create exhibit snippet"
-                                >
-                                  <Scissors className="w-4 h-4" />
-                                </Button>
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => openSnippetModal(file)}
+                                    data-testid={`button-create-snippet-${file.id}`}
+                                    title="Create exhibit snippet"
+                                  >
+                                    <Scissors className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => runAiAnalysisMutation.mutate({ evidenceId: file.id })}
+                                    disabled={runAiAnalysisMutation.isPending}
+                                    data-testid={`button-run-ai-${file.id}`}
+                                    title="Run AI Analysis"
+                                  >
+                                    <Sparkles className="w-4 h-4" />
+                                  </Button>
+                                </>
                               )}
                               <Button
                                 size="icon"
@@ -1706,9 +1716,25 @@ export default function AppEvidence() {
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                   </div>
                 ) : aiAnalyses.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground">
-                    <Sparkles className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-                    No AI analyses yet for this file.
+                  <div className="py-8 text-center">
+                    <Sparkles className="w-8 h-8 mx-auto mb-3 text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground mb-4">No AI analyses yet for this file.</p>
+                    {extractionStatuses[aiAnalysisFileId]?.status === "complete" ? (
+                      <Button
+                        onClick={() => runAiAnalysisMutation.mutate({ evidenceId: aiAnalysisFileId })}
+                        disabled={runAiAnalysisMutation.isPending}
+                        data-testid="button-run-analysis-empty"
+                      >
+                        {runAiAnalysisMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Sparkles className="w-4 h-4 mr-2" />
+                        )}
+                        Run AI Analysis
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-amber-600">Run text extraction first to enable AI analysis.</p>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1718,37 +1744,66 @@ export default function AppEvidence() {
                           <div className="flex items-start gap-3">
                             <Brain className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <Badge variant="outline" className="text-xs capitalize">
-                                  {analysis.analysisType}
+                                  {analysis.analysisType?.replace(/_/g, " ") || "summary"}
                                 </Badge>
                                 <Badge 
                                   variant="outline" 
                                   className={`text-xs ${
-                                    analysis.status === "complete" ? "bg-green-100 text-green-800" :
-                                    analysis.status === "processing" ? "bg-blue-100 text-blue-800" :
-                                    analysis.status === "failed" ? "bg-red-100 text-red-800" : ""
+                                    analysis.status === "complete" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
+                                    analysis.status === "processing" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
+                                    analysis.status === "failed" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" : ""
                                   }`}
                                 >
+                                  {analysis.status === "processing" && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
                                   {analysis.status}
                                 </Badge>
+                                {analysis.status === "failed" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => runAiAnalysisMutation.mutate({ evidenceId: aiAnalysisFileId!, refresh: true })}
+                                    disabled={runAiAnalysisMutation.isPending}
+                                    data-testid={`button-retry-analysis-${analysis.id}`}
+                                  >
+                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    Retry
+                                  </Button>
+                                )}
                               </div>
+                              {analysis.error && analysis.status === "failed" && (
+                                <p className="text-xs text-red-600 dark:text-red-400 mb-2">{analysis.error}</p>
+                              )}
                               {analysis.summary && (
                                 <p className="text-sm font-medium text-foreground mb-2" data-testid={`text-analysis-summary-${analysis.id}`}>
                                   {analysis.summary}
                                 </p>
                               )}
                               {analysis.findings && typeof analysis.findings === "object" && (
-                                <div className="text-xs text-muted-foreground space-y-1">
-                                  {Object.entries(analysis.findings as Record<string, unknown>).map(([key, value]) => (
-                                    <div key={key}>
-                                      <span className="font-medium capitalize">{key.replace(/_/g, " ")}:</span>{" "}
-                                      {typeof value === "string" ? value : JSON.stringify(value)}
+                                <div className="text-xs text-muted-foreground space-y-2 mt-2">
+                                  {Object.entries(analysis.findings as Record<string, unknown>)
+                                    .filter(([key]) => key !== "summary" && key !== "error")
+                                    .map(([key, value]) => (
+                                    <div key={key} className="border-l-2 border-primary/20 pl-2">
+                                      <span className="font-medium capitalize text-foreground/80">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").trim()}:</span>
+                                      {Array.isArray(value) ? (
+                                        <ul className="list-disc list-inside ml-2 mt-1">
+                                          {(value as string[]).slice(0, 5).map((item, i) => (
+                                            <li key={i} className="text-muted-foreground">{String(item)}</li>
+                                          ))}
+                                          {(value as string[]).length > 5 && (
+                                            <li className="text-muted-foreground/60">+{(value as string[]).length - 5} more...</li>
+                                          )}
+                                        </ul>
+                                      ) : (
+                                        <span className="ml-1">{typeof value === "string" ? value : JSON.stringify(value)}</span>
+                                      )}
                                     </div>
                                   ))}
                                 </div>
                               )}
-                              <p className="text-xs text-muted-foreground mt-2">
+                              <p className="text-xs text-muted-foreground mt-3">
                                 {formatDate(analysis.createdAt)}
                                 {analysis.model && ` via ${analysis.model}`}
                               </p>

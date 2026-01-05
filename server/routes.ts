@@ -31,6 +31,7 @@ import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
 import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
+import pLimit from "p-limit";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -4971,6 +4972,120 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (error) {
       console.error("Delete AI analysis error:", error);
       res.status(500).json({ error: "Failed to delete analysis" });
+    }
+  });
+
+  const analysisLimiter = pLimit(2);
+  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run", requireAuth, async (req, res) => {
+    const userId = req.session.userId as string;
+    const { caseId, evidenceId } = req.params;
+    const refresh = req.body.refresh === true;
+    
+    try {
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const evidence = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidence || evidence.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence not found" });
+      }
+      
+      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
+      if (!extraction || extraction.status !== "complete") {
+        return res.status(400).json({ error: "Text extraction must be complete before running AI analysis" });
+      }
+      
+      if (!extraction.extractedText || extraction.extractedText.trim().length === 0) {
+        return res.status(400).json({ error: "No extracted text available for analysis" });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ error: "AI analysis unavailable - OPENAI_API_KEY not configured" });
+      }
+      
+      const existingAnalyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
+      const existingProcessing = existingAnalyses.find(a => a.status === "processing");
+      if (existingProcessing && !refresh) {
+        return res.status(409).json({ error: "Analysis already in progress", analysisId: existingProcessing.id });
+      }
+      
+      const existingSummary = existingAnalyses.find(a => a.analysisType === "summary_findings" && a.status === "complete");
+      if (existingSummary && !refresh) {
+        return res.status(409).json({ error: "Analysis already exists", analysisId: existingSummary.id });
+      }
+      
+      const analysis = await storage.createEvidenceAiAnalysis(userId, caseId, {
+        evidenceId,
+        analysisType: "summary_findings",
+        content: "",
+        status: "processing",
+        model: "gpt-4o",
+      });
+      
+      res.status(202).json({ analysis, message: "Analysis started" });
+      
+      analysisLimiter(async () => {
+        try {
+          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+          const textToAnalyze = extraction.extractedText!.slice(0, 15000);
+          
+          const systemPrompt = `You are a legal document analysis assistant for family court cases. Analyze the provided document text and extract key information. Be factual and objective. Do not provide legal advice.
+
+Return a JSON object with this structure:
+{
+  "summary": "Brief 2-3 sentence summary of the document",
+  "keyFacts": ["Fact 1", "Fact 2", ...],
+  "potentialIssues": ["Issue 1", ...],
+  "datesAndDeadlinesMentioned": ["Date/deadline 1", ...],
+  "namesAndRoles": ["Name - Role", ...],
+  "exhibitCandidates": ["Description of what could be an exhibit", ...],
+  "trialBinderCandidates": ["Description of trial-relevant content", ...],
+  "confidenceNotes": ["Any caveats about extraction quality or missing info"]
+}`;
+
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: `Analyze this document:\n\n${textToAnalyze}` }
+            ],
+            temperature: 0.3,
+            max_tokens: 2000,
+            response_format: { type: "json_object" },
+          });
+          
+          const responseText = completion.choices[0]?.message?.content || "{}";
+          let parsed: Record<string, unknown> = {};
+          try {
+            parsed = JSON.parse(responseText);
+          } catch {
+            parsed = { summary: responseText, error: "Failed to parse structured response" };
+          }
+          
+          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+            status: "complete",
+            summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis complete",
+            findings: parsed,
+            content: responseText,
+          });
+          
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[AIAnalysis] Complete for evidence ${evidenceId}`);
+          }
+        } catch (error) {
+          console.error("[AIAnalysis] Failed:", error);
+          const errorMsg = error instanceof Error ? error.message : "Unknown error";
+          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+            status: "failed",
+            error: errorMsg.slice(0, 500),
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Run AI analysis error:", error);
+      res.status(500).json({ error: "Failed to start analysis" });
     }
   });
 
