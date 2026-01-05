@@ -122,14 +122,14 @@ export default function AppAccountSettings() {
         />
 
         <div className="w-full max-w-[320px] mb-6">
-          <div className="bg-[#E4ECED] border border-[#628286] rounded-xl overflow-hidden">
+          <div className="bg-[hsl(var(--module-tile))] border border-[hsl(var(--module-tile-border))] rounded-xl overflow-hidden">
             <button
               onClick={() => setSavingsExpanded(!savingsExpanded)}
-              className="w-full flex items-center justify-between p-3 hover:bg-[rgba(162,190,194,0.22)] transition-colors"
+              className="w-full flex items-center justify-between p-3 hover:bg-[hsl(var(--module-tile-hover))] transition-colors"
               data-testid="button-toggle-savings"
             >
               <div className="flex items-center gap-2">
-                <Calculator className="w-4 h-4 text-[#628286]" />
+                <Calculator className="w-4 h-4 text-[hsl(var(--module-tile-icon))]" />
                 <div className="text-left">
                   <p className="font-heading font-semibold text-sm text-[#243032]">Savings Estimate</p>
                   {!savingsExpanded && (
@@ -140,9 +140,9 @@ export default function AppAccountSettings() {
               <div className="flex items-center gap-1">
                 <span className="text-xs text-[#243032]/60">{savingsExpanded ? "Hide" : "Show"}</span>
                 {savingsExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-[#628286]" />
+                  <ChevronUp className="w-4 h-4 text-[hsl(var(--module-tile-icon))]" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-[#628286]" />
+                  <ChevronDown className="w-4 h-4 text-[hsl(var(--module-tile-icon))]" />
                 )}
               </div>
             </button>

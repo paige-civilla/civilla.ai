@@ -17,12 +17,12 @@ export default function AppDisclosures() {
           ]}
         />
 
-        <div className="mt-8 rounded-lg border border-[#628286] bg-[#E4ECED] p-6 text-center">
-          <FileSearch className="w-12 h-12 text-[#628286] mx-auto mb-4" />
-          <h3 className="font-heading font-bold text-lg text-[#1E2020] mb-2">
+        <div className="mt-8 rounded-lg border border-[hsl(var(--module-tile-border))] bg-[hsl(var(--module-tile))] p-6 text-center">
+          <FileSearch className="w-12 h-12 text-[hsl(var(--module-tile-icon))] mx-auto mb-4" />
+          <h3 className="font-heading font-bold text-lg text-[#1E2020] dark:text-[hsl(var(--foreground))] mb-2">
             Coming Soon
           </h3>
-          <p className="font-sans text-sm text-[#1E2020]/70 max-w-md mx-auto">
+          <p className="font-sans text-sm text-[#1E2020]/70 dark:text-[hsl(var(--foreground))]/70 max-w-md mx-auto">
             This module will help you manage discovery requests, track responses, and organize disclosure documents for your case.
           </p>
         </div>

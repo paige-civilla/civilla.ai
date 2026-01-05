@@ -282,7 +282,7 @@ export default function AppNavbar() {
             >
               <div className="mx-auto max-w-6xl px-3 py-2 md:py-0">
                 <div
-                  className="bg-[#E4ECED] opacity-100 z-[60] border border-[#628286] rounded-xl shadow-lg p-4"
+                  className="bg-[hsl(var(--module-tile))] opacity-100 z-[60] border border-[hsl(var(--module-tile-border))] rounded-xl shadow-lg p-4"
                   role="menu"
                   aria-label="App menu"
                 >

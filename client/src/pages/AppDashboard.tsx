@@ -311,11 +311,11 @@ export default function AppDashboard() {
             <Button
               size="sm"
               variant="outline"
-              className="bg-[#E4ECED] border-[#628286] text-[#1E2020] hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] focus-visible:ring-[#628286] w-full sm:w-auto text-xs"
+              className="bg-[hsl(var(--module-tile))] border-[hsl(var(--module-tile-border))] text-[#1E2020] dark:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--module-tile-hover))] hover:border-[#314143] focus-visible:ring-[hsl(var(--module-tile-border))] w-full sm:w-auto text-xs"
               onClick={() => setLocation("/app/cases")}
               data-testid="button-view-all-cases"
             >
-              <Briefcase className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 text-[#628286]" />
+              <Briefcase className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 text-[hsl(var(--module-tile-icon))]" />
               View all cases
             </Button>
           </div>
@@ -417,16 +417,16 @@ export default function AppDashboard() {
                       <Link
                         key={moduleKey}
                         href={modulePath(moduleKey, primaryCase.id)}
-                        className="relative bg-[#E4ECED] border border-[#628286] rounded-lg p-4 sm:p-5 hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] cursor-pointer block transition-colors min-h-[44px]"
+                        className="relative bg-[hsl(var(--module-tile))] border border-[hsl(var(--module-tile-border))] rounded-lg p-4 sm:p-5 hover:bg-[hsl(var(--module-tile-hover))] hover:border-[#314143] cursor-pointer block transition-colors min-h-[44px]"
                         data-testid={`module-card-${moduleKey}`}
                       >
-                        <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-2 sm:mb-3">
-                          <Icon className="w-5 h-5 text-[#628286]" />
+                        <div className="w-10 h-10 rounded-md bg-[#F2F2F2] dark:bg-[hsl(var(--background))] flex items-center justify-center mb-2 sm:mb-3">
+                          <Icon className="w-5 h-5 text-[hsl(var(--module-tile-icon))]" />
                         </div>
-                        <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1 break-words">
+                        <h3 className="font-heading font-bold text-base text-[#1E2020] dark:text-[hsl(var(--foreground))] mb-1 break-words">
                           {moduleLabel(moduleKey)}
                         </h3>
-                        <p className="font-sans text-sm text-[#1E2020]/70 break-words">
+                        <p className="font-sans text-sm text-[#1E2020]/70 dark:text-[hsl(var(--foreground))]/70 break-words">
                           {moduleDescription(moduleKey)}
                         </p>
                       </Link>

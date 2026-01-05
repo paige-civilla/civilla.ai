@@ -360,7 +360,7 @@ export default function AppTrialPrep() {
                           {pinnedItems.map((item, idx) => (
                             <div
                               key={item.id}
-                              className="flex items-center gap-3 p-3 bg-[#E4ECED] dark:bg-[#2a3a3c] rounded-md border border-[#628286]/30"
+                              className="flex items-center gap-3 p-3 bg-[hsl(var(--module-tile))] rounded-md border border-[hsl(var(--module-tile-border))]/30"
                               data-testid={`pinned-item-${item.id}`}
                             >
                               <Badge className="bg-[#A2BEC2] text-[#1a2a2c]">{idx + 1}</Badge>
