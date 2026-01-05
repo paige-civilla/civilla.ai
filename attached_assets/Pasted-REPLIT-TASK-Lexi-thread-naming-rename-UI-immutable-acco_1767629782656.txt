@@ -1,0 +1,212 @@
+REPLIT TASK: Lexi thread naming + rename UI + immutable account activity logs
+
+GOALS
+A) Lexi threads have a title:
+   - Auto-title defaults based on where the user started the thread (moduleKey/page)
+   - User can rename any thread later
+B) Account Settings includes an Activity Logs page:
+   - Shows logs for key actions (Lexi thread created/renamed, messages sent, etc.)
+   - User cannot delete logs from UI or API
+   - Logs are append-only
+
+--------------------------------------------
+1) DATABASE: Add thread title + add audit logs table
+--------------------------------------------
+
+A) Lexi thread title column
+File: shared/schema.ts
+- Add to lexi_threads table:
+  - title: text (nullable initially)
+  - title_updated_at: timestamp (nullable)
+
+Update types/zod if you have thread schemas:
+- Include `title` in thread response types.
+
+B) Add audit logs table (append-only)
+File: shared/schema.ts
+Create new table: account_activity_logs
+
+Columns:
+- id: uuid primary key default gen_random_uuid()
+- user_id: uuid not null
+- case_id: uuid null (optional)
+- action: text not null (e.g., "lexi.thread.created", "lexi.thread.renamed", "lexi.message.sent")
+- entity_type: text null (e.g., "lexi_thread", "lexi_message", "case")
+- entity_id: uuid/text null (thread id, message id, etc.)
+- metadata: jsonb not null default '{}'::jsonb
+- created_at: timestamp not null default now()
+
+Indexes:
+- user_id + created_at desc
+- action + created_at desc
+
+IMPORTANT:
+- Do NOT create any DELETE endpoint for logs.
+- Storage should not expose delete methods.
+
+C) Ensure migrations run on startup
+File: server/db.ts
+- Add ensureLexiThreadsColumns() to include `title` and `title_updated_at` (addColumnIfMissing)
+- Add ensureAccountActivityLogsTable() to create table if missing + indexes
+- Register both in ensureSchemaMigrations()
+
+--------------------------------------------
+2) BACKEND: Storage methods
+--------------------------------------------
+
+File: server/storage.ts
+
+A) Lexi threads
+- Update createLexiThread(...) to accept optional title
+- Add updateLexiThreadTitle(threadId, userId, title) method:
+  - updates title + title_updated_at = now()
+  - returns updated thread
+
+B) Logs
+- Add createActivityLog(userId, action, { caseId?, entityType?, entityId?, metadata? }) method
+- Add listActivityLogs(userId, { limit?, cursor? }) method
+  - order by created_at desc
+  - support pagination via created_at + id cursor if desired (simple limit ok for now)
+
+--------------------------------------------
+3) BACKEND: Routes (auth required)
+--------------------------------------------
+
+File: server/routes.ts
+
+A) Thread create auto-title behavior
+Wherever POST /api/lexi/threads exists:
+- Accept body fields:
+  - caseId?: string | null (already)
+  - moduleKey?: string | null (already exists in your Lexi wiring)
+  - mode?: string | null (already)
+  - title?: string | null (new; optional override)
+
+- Determine defaultTitle:
+  - If body.title provided and non-empty: use it
+  - Else if moduleKey provided: map to a friendly label
+    Examples:
+      "dashboard" -> "Dashboard"
+      "evidence" -> "Evidence"
+      "timeline" -> "Timeline"
+      "deadlines" -> "Deadlines"
+      "documents" -> "Document Creator"
+      "disclosures" -> "Disclosures & Discovery"
+      "trial-prep" -> "Trial Prep"
+      "parenting-plan" -> "Parenting Plan"
+      else -> "General"
+  - Save that as thread.title at creation time
+
+- After creating the thread, write an activity log:
+  action: "lexi.thread.created"
+  entity_type: "lexi_thread"
+  entity_id: thread.id
+  metadata: { moduleKey, mode, caseId: caseId ?? null, title: thread.title }
+
+B) Thread rename endpoint
+Add:
+PATCH /api/lexi/threads/:threadId
+Body: { title: string }
+
+Rules:
+- requireAuth
+- Validate:
+  - title trimmed length 1..80
+- Update via storage.updateLexiThreadTitle(threadId, userId, title)
+- Log:
+  action: "lexi.thread.renamed"
+  entity_type: "lexi_thread"
+  entity_id: threadId
+  metadata: { title }
+
+Return: { thread }
+
+C) Message send logging
+In POST /api/lexi/chat (or wherever messages are created):
+- After successfully saving user message and assistant response:
+  Create ONE log per send:
+    action: "lexi.message.sent"
+    entity_type: "lexi_thread"
+    entity_id: threadId
+    metadata: { mode, moduleKey, caseId: caseId ?? null }
+
+Do NOT log message content.
+
+D) Logs API
+Add:
+GET /api/account/activity-logs?limit=50
+- requireAuth
+- returns { logs: [...] }
+
+No DELETE route. No mutation routes.
+
+--------------------------------------------
+4) FRONTEND: Lexi thread rename UI + auto-title by page
+--------------------------------------------
+
+A) Ensure moduleKey is set when opening Lexi from a page
+You already pass moduleKey for suggested questions. Ensure:
+- When Lexi is opened from any module page, LexiPanel has moduleKey set to that module’s key.
+- For dashboard / cases page, set moduleKey = "dashboard" or "cases".
+
+B) Auto-title on create
+File: client/src/components/lexi/LexiPanel.tsx (or wherever create thread happens)
+- When calling POST /api/lexi/threads, include moduleKey and mode
+- Do NOT force a title from client unless you want to override server logic.
+  (Server should be source of truth.)
+
+C) Editable thread title UI
+In thread list / active thread header:
+- Display thread.title (fallback: "General" if null)
+- Add an Edit icon/button (or click-to-edit):
+  - On click: show input prefilled with current title
+  - Save on Enter or Save button
+  - Cancel on Esc
+- On save: call PATCH /api/lexi/threads/:threadId with { title }
+- Optimistic UI update okay, but must revert on error and show toast.
+
+Also make sure the thread list shows the updated title immediately.
+
+--------------------------------------------
+5) FRONTEND: Account Settings -> Activity Logs page (read-only)
+--------------------------------------------
+
+A) Add nav item under Account Settings:
+- "Activity Logs"
+
+B) Page behavior:
+- Query GET /api/account/activity-logs?limit=50
+- Render list newest-first
+- Each log row shows:
+  - Timestamp
+  - Human label for action:
+      "lexi.thread.created" -> "Lexi thread created"
+      "lexi.thread.renamed" -> "Lexi thread renamed"
+      "lexi.message.sent" -> "Lexi message sent"
+  - Optional context chips:
+      moduleKey label, caseId present, etc.
+- No delete buttons.
+- No “clear logs”.
+- Optional: simple filter dropdown by action (client-side filter ok).
+
+--------------------------------------------
+6) ACCEPTANCE TESTS
+--------------------------------------------
+
+1) Open Lexi from Dashboard and click Start conversation:
+   - Thread appears titled "Dashboard"
+2) Open Lexi from Evidence page and create new thread:
+   - Thread titled "Evidence"
+3) Rename a thread:
+   - Title updates in header and list
+   - Refresh page: title persists
+4) Activity logs:
+   - Shows entries for thread created, renamed, and message sent
+   - No delete capability exists
+
+REPORT BACK
+- Files changed
+- Confirm migrations added title + logs table successfully
+- Confirm thread auto-titles based on moduleKey
+- Confirm rename works
+- Confirm logs page is read-only and shows Lexi events

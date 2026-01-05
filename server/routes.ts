@@ -33,6 +33,26 @@ import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evide
 import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
 import { createLimiter } from "./utils/concurrency";
 
+const DEFAULT_THREAD_TITLES: Record<string, string> = {
+  "start-here": "Start Here",
+  "dashboard": "Dashboard",
+  "cases": "Cases",
+  "evidence": "Evidence",
+  "timeline": "Timeline",
+  "messages": "Messages & Call Log",
+  "document-library": "Document Library",
+  "documents": "Document Creator",
+  "deadlines": "Deadlines",
+  "case-todo": "Case To-Do",
+  "disclosures": "Disclosures & Discovery",
+  "exhibits": "Exhibits",
+  "trial-prep": "Trial Prep",
+  "parenting-plan": "Parenting Plan",
+  "children": "Children",
+  "child-support": "Child Support Worksheet Helper",
+  "pattern-analysis": "Pattern Analysis",
+};
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
@@ -4377,7 +4397,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       if (!parsed.success) {
         return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
       }
-      const thread = await storage.createLexiThread(userId, null, parsed.data.title);
+      const requestedTitle = (parsed.data.title ?? "").trim();
+      const moduleKey = (parsed.data.moduleKey ?? "").trim();
+      const defaultTitle = DEFAULT_THREAD_TITLES[moduleKey] ?? "General";
+      const titleToSave = requestedTitle.length ? requestedTitle : defaultTitle;
+      const thread = await storage.createLexiThread(userId, null, titleToSave);
       res.status(201).json({ thread });
     } catch (error) {
       console.error("Create general lexi thread error:", error);
@@ -4418,7 +4442,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
       }
 
-      const thread = await storage.createLexiThread(userId, caseId, parsed.data.title);
+      const requestedTitle = (parsed.data.title ?? "").trim();
+      const moduleKey = (parsed.data.moduleKey ?? "").trim();
+      const defaultTitle = DEFAULT_THREAD_TITLES[moduleKey] ?? "General";
+      const titleToSave = requestedTitle.length ? requestedTitle : defaultTitle;
+      const thread = await storage.createLexiThread(userId, caseId, titleToSave);
       res.status(201).json({ thread });
     } catch (error) {
       console.error("Create lexi thread error:", error);

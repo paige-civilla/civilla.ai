@@ -1005,7 +1005,8 @@ export const lexiThreads = pgTable("lexi_threads", {
 }));
 
 export const createLexiThreadSchema = z.object({
-  title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
+  title: z.string().max(120, "Title must be 120 characters or less").optional(),
+  moduleKey: z.string().max(50).optional(),
 });
 
 export const renameLexiThreadSchema = z.object({
