@@ -127,7 +127,7 @@ async function initStripe() {
 
   try {
     console.log('Step 1: Running Stripe migrations...');
-    await runMigrations({ databaseUrl, schema: 'stripe' });
+    await runMigrations({ databaseUrl, schema: 'stripe' } as any);
     console.log('Step 1 complete: Stripe schema ready');
     
     console.log('Step 2: Getting Stripe sync instance...');
@@ -154,10 +154,19 @@ async function initStripe() {
   }
 }
 
-(async () => {
-  await initDbTables();
-  await initStripe();
-  
+async function runBackgroundInit() {
+  try {
+    await initDbTables();
+  } catch (err) {
+    console.error("Failed to initialize DB tables:", err);
+  }
+
+  try {
+    await initStripe();
+  } catch (err) {
+    console.error("Failed to initialize Stripe:", err);
+  }
+
   try {
     const requeuedCount = await requeueStaleExtractions();
     if (requeuedCount > 0) {
@@ -166,7 +175,11 @@ async function initStripe() {
   } catch (err) {
     console.error("Failed to re-queue stale extractions:", err);
   }
-  
+
+  log("Background initialization complete");
+}
+
+(async () => {
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -199,6 +212,11 @@ async function initStripe() {
         log("WARNING: OPENAI_API_KEY not set - Lexi will be unavailable");
       }
       logGcvStatus();
+
+      // Run all async initialization in the background AFTER server is listening
+      runBackgroundInit().catch((err) => {
+        console.error("Background init error:", err);
+      });
     },
   );
 })();
