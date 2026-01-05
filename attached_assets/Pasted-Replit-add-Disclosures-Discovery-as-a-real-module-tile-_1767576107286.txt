@@ -1,0 +1,60 @@
+Replit — add “Disclosures & Discovery” as a real module tile on the Case Dashboard and wire it to the existing page.
+
+Goal:
+Show a new module tile on the dashboard (and case workspace grid if it exists) for:
+Label: “Disclosures & Discovery”
+Route: /app/disclosures/:caseId   (use the same routing pattern as the other case modules)
+
+Assumptions:
+- The page already exists (you previously implemented it). If the page file or route does NOT exist, create it with the same layout shell as other modules and a placeholder ModuleIntro so the tile isn’t dead.
+
+Steps:
+
+1) Add/verify route
+- In client/src/App.tsx (or wherever routes are defined), ensure there is a protected route:
+  <Route path="/app/disclosures/:caseId" element={<AppDisclosures />} />
+- If AppDisclosures component isn’t imported, import it.
+- If AppDisclosures does not exist, create:
+  client/src/pages/AppDisclosures.tsx
+  using the same pattern as AppEvidence/AppDeadlines pages (AppLayout wrapper, caseId from params, ModuleIntro at top, placeholder content).
+
+2) Add the module tile on the Dashboard
+- In client/src/pages/AppDashboard.tsx:
+  - Find the modules array/list that renders the module tiles.
+  - Add a new entry near Deadlines / Documents (where it logically fits):
+    key: "disclosures"
+    label: "Disclosures & Discovery"
+    href: `/app/disclosures/${caseId}`
+    background: use the standard module tile styling already in place (the new scheme: tile bg #E4ECED, border #628286, icon stroke #628286).
+    icon: pick a relevant lucide icon (e.g., FileSearch, ClipboardList, FolderSearch — your choice) and ensure the icon stroke matches #628286.
+
+3) Add to the AppNavbar menu (if all modules are present there)
+- In client/src/components/layout/AppNavbar.tsx:
+  - Add “Disclosures & Discovery” to the dropdown/menu list so users can navigate to it.
+  - Link to `/app/disclosures/${caseId}` like other modules.
+
+4) Add to Case Workspace tiles (if you have a separate case workspace grid)
+- In client/src/pages/AppCase.tsx (or wherever the case workspace module grid is):
+  - Add the same tile entry so it matches the dashboard module list.
+  - If you are gating modules by case flags, do NOT gate this one (always show it).
+
+5) Visual consistency checks
+- Ensure the tile uses:
+  - background: #E4ECED
+  - border/icon outline: #628286
+  - hover highlight/overlay: #A2BEC2 (same behavior as other tiles)
+
+6) Verify
+- Run the app.
+- Open a case dashboard:
+  - Confirm the tile appears.
+  - Clicking it navigates to /app/disclosures/:caseId successfully.
+- Confirm nav menu includes it and it routes correctly.
+
+Deliverable response:
+- List the exact files edited
+- Paste the added module object/JSX snippet for the dashboard modules array
+- Confirm the final route path string used (must be /app/disclosures/:caseId)
+
+Important:
+Do not remove or rename existing modules. Only add this new tile + nav entry + route verification.

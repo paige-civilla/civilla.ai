@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, Pencil, Trash2, Baby } from "lucide-react";
+import { FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, Pencil, Trash2, Baby, FileSearch } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -213,6 +213,14 @@ export default function AppCase() {
       href: caseId ? `/app/deadlines/${caseId}` : "/app",
       comingSoon: false,
       Icon: Clock,
+    },
+    {
+      key: "disclosures",
+      title: "Disclosures & Discovery",
+      subtitle: "Track discovery requests and responses",
+      href: caseId ? `/app/disclosures/${caseId}` : "/app",
+      comingSoon: false,
+      Icon: FileSearch,
     },
     {
       key: "patterns",
