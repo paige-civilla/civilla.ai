@@ -1,0 +1,277 @@
+REPLIT TASK: “Dashboard Flow + Navbar Flow + Lexi UX/Function Fixes (no case required)”
+Goal: (1) Make module order match an intuitive case flow on BOTH dashboard + menu, (2) add “Back to Dashboard / Continue to Next” buttons on every module page, (3) fix Lexi so it works when logged-in even without a case open and fix Lexi sizing/attachment/UX.
+
+────────────────────────────────────────────────────────
+A) DEFINE A SINGLE “CASE FLOW” ORDER (used everywhere)
+────────────────────────────────────────────────────────
+1) Create a shared helper:
+
+File: client/src/lib/caseFlow.ts
+
+Export:
+- type ModuleKey =
+  | "document-library"
+  | "evidence"
+  | "timeline"
+  | "communications"
+  | "pattern-analysis"
+  | "disclosures"
+  | "documents"
+  | "exhibits"
+  | "deadlines"
+  | "case-to-do"
+  | "contacts"
+  | "children"
+  | "child-support"
+  | "trial-prep";
+
+- export const CASE_FLOW: ModuleKey[] = [
+  "document-library",
+  "evidence",
+  "timeline",
+  "communications",
+  "pattern-analysis",
+  "disclosures",
+  "documents",
+  "exhibits",
+  "deadlines",
+  "case-to-do",
+  "contacts",
+  "children",
+  "child-support",
+  "trial-prep",
+];
+
+- export function getNextModule(current: ModuleKey, opts: { hasChildren: boolean }): ModuleKey | null
+  (skip "children" and "child-support" if hasChildren is false)
+
+- export function modulePath(key: ModuleKey, caseId?: string) -> string
+  (modules that are case-based use /app/<route>/:caseId; global pages use /app/<route>)
+
+- export function moduleLabel(key: ModuleKey) -> string
+  rename communications label to: "Message & Call Log"
+  rename documents label to: "Document Creator"
+  keep URL/route stable unless noted below
+
+- export function moduleDescription(key: ModuleKey) -> string
+  1 sentence each, non-UPL, educational/organizational/research framing
+
+────────────────────────────────────────────────────────
+B) DASHBOARD MODULE TILE ORDER + GATING + LABELS
+────────────────────────────────────────────────────────
+File: client/src/pages/AppDashboard.tsx
+
+1) Rebuild the tiles list from CASE_FLOW order, but:
+- show “Children” and “Child Support Estimator” ONLY if primaryCase.hasChildren === true
+- keep “Case Settings / Account Settings” OUT of tiles (menu only)
+
+2) Update tiles so labels come from moduleLabel(key) and descriptions from moduleDescription(key)
+
+3) Keep your existing tile styling, but ensure the click path uses modulePath(key, caseId).
+
+4) (If not already) remove any leftover “Modules” heading.
+
+────────────────────────────────────────────────────────
+C) NAVBAR MENU ORDER MUST MATCH DASHBOARD ORDER
+────────────────────────────────────────────────────────
+File: client/src/components/layout/AppNavbar.tsx
+
+1) Build the dropdown menu items using CASE_FLOW order (same gating for children).
+2) Use moduleLabel(key) and modulePath(key, activeCaseId?) to link.
+   - If no active case exists, still allow Lexi + global pages; case pages should link to /app/cases (or show disabled).
+3) Rename the menu label for communications to “Message & Call Log”
+4) Ensure dropdown background is SOLID:
+   - remove any transparency/opacity/backdrop blur that shows the page underneath
+   - use z-index high enough (e.g., z-50) and a solid background token.
+
+────────────────────────────────────────────────────────
+D) “BACK TO DASHBOARD / CONTINUE TO NEXT” BUTTONS ON ALL MODULE PAGES
+────────────────────────────────────────────────────────
+Goal: On each module page header, keep the primary “Add/New” on the right; directly UNDER it place:
+- Secondary button: “Back to Dashboard”
+- Primary/outline button: “Continue to <Next Module Label>” (if next exists)
+
+Implementation:
+1) Create a reusable component:
+
+File: client/src/components/layout/ModuleHeaderNav.tsx
+
+Props:
+- caseId?: string
+- currentModule: ModuleKey
+- hasChildren: boolean
+- rightActions?: ReactNode (existing Add/New buttons)
+
+Render:
+- Left: page title + ModuleIntro (keep what you have)
+- Right column:
+  - rightActions
+  - Back to Dashboard button (route: /app/dashboard/:caseId if you use that; otherwise whatever dashboard route is)
+  - Continue button to next module from getNextModule(currentModule, {hasChildren})
+    label: `Continue to ${moduleLabel(next)}`
+    href: modulePath(next, caseId)
+
+2) Update each module page to use ModuleHeaderNav and REMOVE the existing top-left “Back to Dashboard” link:
+Files (at minimum):
+- AppEvidence.tsx
+- AppTimeline.tsx
+- AppDocuments.tsx
+- AppDocumentLibrary.tsx (if exists)
+- AppDisclosures.tsx
+- AppCommunications.tsx
+- AppPatternAnalysis.tsx
+- AppExhibits.tsx
+- AppDeadlines.tsx
+- AppTasks.tsx (Case To-Do)
+- AppContacts.tsx
+- AppChildren.tsx (if exists)
+- AppChildSupport.tsx
+(Use currentModule key appropriately.)
+
+────────────────────────────────────────────────────────
+E) LEXI: MUST WORK WHEN LOGGED-IN EVEN WITHOUT CASE OPEN
+────────────────────────────────────────────────────────
+Right now Lexi says “Open a case…” and threads likely require caseId.
+We will make Lexi threads optionally case-scoped.
+
+1) Database schema updates (Postgres):
+File: shared/schema.ts
+- Update lexi_threads:
+  - make caseId nullable (caseId: text("case_id") without .notNull())
+- Update lexi_messages:
+  - keep threadId; no change needed if thread drives scope.
+
+2) DB init / migration safety:
+File: server/db.ts (or wherever runtime table creation occurs)
+Add a safe migration step after table exists:
+- ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL;
+(wrap in try/catch so existing installs don’t crash if already nullable)
+
+3) Update Lexi routes:
+File: server/routes.ts
+- GET /api/lexi/threads:
+  - accept optional query param caseId
+  - if caseId present: return threads for (userId, caseId)
+  - else: return “global” threads where case_id is null (userId scoped)
+- POST /api/lexi/threads:
+  - accept { title?: string, caseId?: string | null }
+  - if omitted, create with caseId = null (global thread)
+- POST /api/lexi/chat:
+  - accept { threadId, message, mode, moduleKey, caseId?: string | null }
+  - DO NOT require caseId. If provided, validate ownership of that case; if null, skip case ownership.
+
+4) Update LexiPanel:
+File: client/src/components/lexi/LexiPanel.tsx
+- Remove the “Open a case to chat…” gate.
+- Determine activeCaseId if the current route has it; else set null.
+- Threads list:
+  - show a “General” section (caseId null threads) always.
+  - if activeCaseId exists, optionally show “This Case” threads too.
+- Starting a conversation should:
+  - create a thread if none selected (global if no caseId)
+  - then send message.
+
+────────────────────────────────────────────────────────
+F) LEXI PANEL UX FIXES (from your screenshots)
+────────────────────────────────────────────────────────
+File: client/src/components/lexi/LexiPanel.tsx + LexiPanel styles
+
+1) Panel positioning MUST respect navbar:
+- Use a CSS variable for navbar height:
+  In AppLayout/AppNavbar root wrapper, set: style={{ "--app-navbar-h": "72px" } as any } (or compute actual).
+- Lexi panel container should be:
+  position: fixed;
+  top: var(--app-navbar-h);
+  height: calc(100vh - var(--app-navbar-h) - 16px);
+  right: 24px;
+  width: min(520px, 75vw);
+  (This gives “breathing room” on both sides instead of flush-to-edge.)
+
+2) The Lexi vertical tab MUST stay attached to the panel:
+- Put the tab inside the same container and position absolute relative to panel:
+  position: absolute;
+  left: -52px; (so it “hangs” off the side)
+  top: 50%;
+  transform: translateY(-50%);
+- When panel is closed, render a fixed tab on the right edge:
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+
+3) Tab text + chevron:
+- Tab should read vertically: “Lexi” (not just chevrons)
+- Add chevron that flips based on open/closed
+- Example label: “Lexi” + (open ? “›” : “‹”) (use your icon set)
+- Keep the “Lexi” name visible at all times.
+
+4) Remove Help/Chat toggle:
+- Replace with:
+  - a slim disclaimer bar under header (NOT yellow). Use a calm green/blue tint:
+    background: #A2BEC2 (or a lighter tint) with dark text.
+  - below that, show “Suggested questions” as pill bubbles (clickable)
+  - once user sends their first message in that thread, hide the suggestions automatically.
+- Keep Lexi’s header as:
+  Title: “Lexi”
+  Subtitle: “Your AI research and organizational assistant”
+  Keep X on the right.
+
+5) “Start conversation” placement:
+- Always show a “Start conversation” button if no threads exist OR no selected thread.
+- Put it directly under the suggested question bubbles area.
+
+6) Fix dropdown menus (light + dark mode) to be solid:
+- AppNavbar dropdown: ensure background is opaque in both themes.
+- Dark mode dropdown text: white/near-white, no transparency.
+
+────────────────────────────────────────────────────────
+G) DARK MODE: MUST CHANGE BOXES, NOT JUST BACKGROUND (quick fix)
+────────────────────────────────────────────────────────
+File: client/src/index.css (theme variables)
+Ensure in `.dark` (and/or `.theme-app.dark`) you define:
+- --background (dark)
+- --card / --muted / --popover (dark surfaces)
+- --border (darker)
+So cards/module tiles and panels visibly change, not just the page background.
+
+Also add a top-right toggle in AppNavbar (next to Menu) that toggles theme:
+- Default to system preference:
+  on load: if localStorage has theme use it; else use prefers-color-scheme.
+- Keep Account Settings toggle too, but the navbar toggle should update the same source of truth.
+
+────────────────────────────────────────────────────────
+H) NEW MODULE: TRIAL PREP (placeholder + routes)
+────────────────────────────────────────────────────────
+1) Create page:
+File: client/src/pages/AppTrialPrep.tsx
+- Use ModuleIntro and LexiSuggestedQuestions (trial prep prompts)
+- Placeholder sections: “Top 3 Evidence”, “Top 3 Timeline Events”, “Top 3 Communications”, “Top 3 Deadlines”
+(no UPL; explain it helps organize a binder)
+
+2) Add route:
+File: client/src/App.tsx
+- /app/trial-prep/:caseId
+
+3) Add tile + menu item via CASE_FLOW (already handled by sections B/C).
+
+────────────────────────────────────────────────────────
+I) VERIFY + REPORT BACK (be detailed)
+────────────────────────────────────────────────────────
+After implementing, Replit must:
+1) Paste a summary with:
+- files changed
+- what was fixed
+- how module order is computed
+- proof Lexi works with no case (steps to test)
+- screenshots of Lexi open + closed showing attached tab and navbar spacing
+
+2) Confirm these acceptance tests:
+- Lexi works on /app/cases without a case open (create thread, send message)
+- Lexi panel does NOT overlap navbar, and tab stays attached
+- No Help/Chat toggle; bubbles disappear after first message
+- Dashboard + Menu orders match CASE_FLOW and children gated
+- “Continue to …” works across modules
+- Dropdown menus are solid (no see-through) in light and dark mode
+- Dark mode changes cards/panels, not just background
+
+Proceed to implement now.

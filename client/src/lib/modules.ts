@@ -12,6 +12,7 @@ import {
   Contact, 
   FileStack,
   Calculator,
+  Scale,
   type LucideIcon
 } from "lucide-react";
 
@@ -28,7 +29,8 @@ export type ModuleKey =
   | "tasks"
   | "contacts"
   | "exhibits"
-  | "child-support";
+  | "child-support"
+  | "trial-prep";
 
 export type StartingPoint = "served_papers" | "starting_case" | "modifying_enforcing" | "not_sure";
 
@@ -149,6 +151,14 @@ export const MODULES_REGISTRY: ModuleDef[] = [
     gatedByChildren: true,
     group: "extras",
   },
+  {
+    key: "trial-prep",
+    label: "Trial Prep",
+    description: "Organize your binder for court",
+    href: (caseId) => `/app/trial-prep/${caseId}`,
+    icon: Scale,
+    group: "extras",
+  },
 ];
 
 const BASE_ORDER: ModuleKey[] = [
@@ -165,6 +175,7 @@ const BASE_ORDER: ModuleKey[] = [
   "contacts",
   "exhibits",
   "child-support",
+  "trial-prep",
 ];
 
 const SERVED_PAPERS_ORDER: ModuleKey[] = [
@@ -181,6 +192,7 @@ const SERVED_PAPERS_ORDER: ModuleKey[] = [
   "contacts",
   "exhibits",
   "child-support",
+  "trial-prep",
 ];
 
 const STARTING_CASE_ORDER: ModuleKey[] = [
@@ -197,6 +209,7 @@ const STARTING_CASE_ORDER: ModuleKey[] = [
   "contacts",
   "exhibits",
   "child-support",
+  "trial-prep",
 ];
 
 const MODIFYING_ENFORCING_ORDER: ModuleKey[] = [
@@ -213,6 +226,7 @@ const MODIFYING_ENFORCING_ORDER: ModuleKey[] = [
   "contacts",
   "exhibits",
   "child-support",
+  "trial-prep",
 ];
 
 function getOrderForStartingPoint(startingPoint: StartingPoint): ModuleKey[] {
