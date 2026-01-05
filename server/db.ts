@@ -850,6 +850,41 @@ export async function initDbTables(): Promise<void> {
     // Table doesn't exist, continue
   }
 
+  // C3: Add exhibit_snippets table for snippet-based exhibits
+  await initTable("exhibit_snippets", `
+    CREATE TABLE IF NOT EXISTS exhibit_snippets (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      exhibit_list_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      note_id VARCHAR(255),
+      title TEXT NOT NULL,
+      snippet_text TEXT NOT NULL,
+      page_number INTEGER,
+      timestamp_hint TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_list ON exhibit_snippets(exhibit_list_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_evidence ON exhibit_snippets(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_note ON exhibit_snippets(note_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_user_case ON exhibit_snippets(user_id, case_id)`
+  ]);
+
+  // C3: Add usedForFiling columns to exhibit_lists
+  await addColumnIfNotExists("exhibit_lists", "used_for_filing", "TEXT");
+  await addColumnIfNotExists("exhibit_lists", "used_for_filing_date", "TIMESTAMP");
+
+  // C3: Add structured AI analysis columns
+  await addColumnIfNotExists("evidence_ai_analyses", "status", "TEXT NOT NULL DEFAULT 'complete'");
+  await addColumnIfNotExists("evidence_ai_analyses", "model", "TEXT");
+  await addColumnIfNotExists("evidence_ai_analyses", "summary", "TEXT");
+  await addColumnIfNotExists("evidence_ai_analyses", "findings", "JSONB");
+  await addColumnIfNotExists("evidence_ai_analyses", "error", "TEXT");
+  await addColumnIfNotExists("evidence_ai_analyses", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+
   await initTable("trial_prep_shortlist", `
     CREATE TABLE IF NOT EXISTS trial_prep_shortlist (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,

@@ -133,6 +133,11 @@ import {
   type TrialPrepShortlist,
   type InsertTrialPrepShortlist,
   type UpdateTrialPrepShortlist,
+  exhibitSnippets,
+  type ExhibitSnippet,
+  type InsertExhibitSnippet,
+  type UpdateExhibitSnippet,
+  type UpdateEvidenceAiAnalysis,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -335,6 +340,13 @@ export interface IStorage {
 
   listEvidenceAiAnalyses(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceAiAnalysis[]>;
   createEvidenceAiAnalysis(userId: string, caseId: string, payload: InsertEvidenceAiAnalysis): Promise<EvidenceAiAnalysis>;
+  updateEvidenceAiAnalysis(userId: string, analysisId: string, payload: UpdateEvidenceAiAnalysis): Promise<EvidenceAiAnalysis | undefined>;
+  deleteEvidenceAiAnalysis(userId: string, analysisId: string): Promise<boolean>;
+
+  listExhibitSnippets(userId: string, caseId: string, exhibitListId?: string): Promise<ExhibitSnippet[]>;
+  createExhibitSnippet(userId: string, caseId: string, payload: InsertExhibitSnippet): Promise<ExhibitSnippet>;
+  updateExhibitSnippet(userId: string, snippetId: string, payload: UpdateExhibitSnippet): Promise<ExhibitSnippet | undefined>;
+  deleteExhibitSnippet(userId: string, snippetId: string): Promise<boolean>;
 
   listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]>;
   createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist>;
@@ -2351,9 +2363,78 @@ export class DatabaseStorage implements IStorage {
         analysisType: payload.analysisType,
         content: payload.content,
         metadata: payload.metadata,
+        status: payload.status || "complete",
+        model: payload.model,
+        summary: payload.summary,
+        findings: payload.findings,
+        error: payload.error,
       })
       .returning();
     return created;
+  }
+
+  async updateEvidenceAiAnalysis(userId: string, analysisId: string, payload: UpdateEvidenceAiAnalysis): Promise<EvidenceAiAnalysis | undefined> {
+    const [updated] = await db.update(evidenceAiAnalyses)
+      .set({
+        ...payload,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(evidenceAiAnalyses.id, analysisId), eq(evidenceAiAnalyses.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteEvidenceAiAnalysis(userId: string, analysisId: string): Promise<boolean> {
+    const result = await db.delete(evidenceAiAnalyses)
+      .where(and(eq(evidenceAiAnalyses.id, analysisId), eq(evidenceAiAnalyses.userId, userId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async listExhibitSnippets(userId: string, caseId: string, exhibitListId?: string): Promise<ExhibitSnippet[]> {
+    if (exhibitListId) {
+      return db.select().from(exhibitSnippets)
+        .where(and(
+          eq(exhibitSnippets.userId, userId),
+          eq(exhibitSnippets.caseId, caseId),
+          eq(exhibitSnippets.exhibitListId, exhibitListId)
+        ))
+        .orderBy(asc(exhibitSnippets.sortOrder), asc(exhibitSnippets.createdAt));
+    }
+    return db.select().from(exhibitSnippets)
+      .where(and(eq(exhibitSnippets.userId, userId), eq(exhibitSnippets.caseId, caseId)))
+      .orderBy(asc(exhibitSnippets.sortOrder), asc(exhibitSnippets.createdAt));
+  }
+
+  async createExhibitSnippet(userId: string, caseId: string, payload: InsertExhibitSnippet): Promise<ExhibitSnippet> {
+    const [created] = await db.insert(exhibitSnippets)
+      .values({
+        userId,
+        caseId,
+        exhibitListId: payload.exhibitListId,
+        evidenceId: payload.evidenceId,
+        noteId: payload.noteId,
+        title: payload.title,
+        snippetText: payload.snippetText,
+        pageNumber: payload.pageNumber,
+        timestampHint: payload.timestampHint,
+        sortOrder: payload.sortOrder ?? 0,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateExhibitSnippet(userId: string, snippetId: string, payload: UpdateExhibitSnippet): Promise<ExhibitSnippet | undefined> {
+    const [updated] = await db.update(exhibitSnippets)
+      .set(payload)
+      .where(and(eq(exhibitSnippets.id, snippetId), eq(exhibitSnippets.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteExhibitSnippet(userId: string, snippetId: string): Promise<boolean> {
+    const result = await db.delete(exhibitSnippets)
+      .where(and(eq(exhibitSnippets.id, snippetId), eq(exhibitSnippets.userId, userId)));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]> {

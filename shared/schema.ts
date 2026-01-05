@@ -833,6 +833,8 @@ export const exhibitLists = pgTable("exhibit_lists", {
   coverPageTitle: text("cover_page_title"),
   coverPageSubtitle: text("cover_page_subtitle"),
   notes: text("notes"),
+  usedForFiling: text("used_for_filing"),
+  usedForFilingDate: timestamp("used_for_filing_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -850,6 +852,8 @@ export const insertExhibitListSchema = z.object({
   coverPageTitle: z.string().max(200).optional().nullable(),
   coverPageSubtitle: z.string().max(200).optional().nullable(),
   notes: z.string().max(5000, "Notes must be 5,000 characters or less").optional().nullable(),
+  usedForFiling: z.string().max(200).optional().nullable(),
+  usedForFilingDate: z.coerce.date().optional().nullable(),
 });
 
 export const updateExhibitListSchema = z.object({
@@ -861,6 +865,8 @@ export const updateExhibitListSchema = z.object({
   coverPageTitle: z.string().max(200).optional().nullable(),
   coverPageSubtitle: z.string().max(200).optional().nullable(),
   notes: z.string().max(5000).optional().nullable(),
+  usedForFiling: z.string().max(200).optional().nullable(),
+  usedForFilingDate: z.coerce.date().optional().nullable(),
 });
 
 export type InsertExhibitList = z.infer<typeof insertExhibitListSchema>;
@@ -936,6 +942,49 @@ export const attachEvidenceToExhibitListSchema = z.object({
 export type AttachEvidenceToExhibit = z.infer<typeof attachEvidenceToExhibitSchema>;
 export type AttachEvidenceToExhibitList = z.infer<typeof attachEvidenceToExhibitListSchema>;
 export type ExhibitEvidence = typeof exhibitEvidence.$inferSelect;
+
+export const exhibitSnippets = pgTable("exhibit_snippets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  exhibitListId: varchar("exhibit_list_id").notNull().references(() => exhibitLists.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  noteId: varchar("note_id"),
+  title: text("title").notNull(),
+  snippetText: text("snippet_text").notNull(),
+  pageNumber: integer("page_number"),
+  timestampHint: text("timestamp_hint"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  listIdx: index("exhibit_snippets_list_idx").on(table.exhibitListId),
+  evidenceIdx: index("exhibit_snippets_evidence_idx").on(table.evidenceId),
+  noteIdx: index("exhibit_snippets_note_idx").on(table.noteId),
+  userCaseIdx: index("exhibit_snippets_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertExhibitSnippetSchema = z.object({
+  exhibitListId: z.string().min(1, "Exhibit list ID is required"),
+  evidenceId: z.string().min(1, "Evidence ID is required"),
+  noteId: z.string().optional().nullable(),
+  title: z.string().min(1, "Title is required").max(200),
+  snippetText: z.string().min(1, "Snippet text is required").max(10000),
+  pageNumber: z.number().int().min(1).optional().nullable(),
+  timestampHint: z.string().max(50).optional().nullable(),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
+
+export const updateExhibitSnippetSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  snippetText: z.string().min(1).max(10000).optional(),
+  pageNumber: z.number().int().min(1).optional().nullable(),
+  timestampHint: z.string().max(50).optional().nullable(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export type InsertExhibitSnippet = z.infer<typeof insertExhibitSnippetSchema>;
+export type UpdateExhibitSnippet = z.infer<typeof updateExhibitSnippetSchema>;
+export type ExhibitSnippet = typeof exhibitSnippets.$inferSelect;
 
 export const lexiMessageRoles = ["user", "assistant", "system"] as const;
 export type LexiMessageRole = typeof lexiMessageRoles[number];
@@ -1431,6 +1480,9 @@ export type EvidenceExtraction = typeof evidenceExtractions.$inferSelect;
 export const analysisTypes = ["summary", "timeline_candidates", "topics", "questions_to_ask", "credibility_flags", "follow_up_requests"] as const;
 export type AnalysisType = typeof analysisTypes[number];
 
+export const aiAnalysisStatuses = ["pending", "running", "complete", "error"] as const;
+export type AiAnalysisStatus = typeof aiAnalysisStatuses[number];
+
 export const evidenceAiAnalyses = pgTable("evidence_ai_analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -1439,11 +1491,18 @@ export const evidenceAiAnalyses = pgTable("evidence_ai_analyses", {
   analysisType: text("analysis_type").notNull(),
   content: text("content").notNull(),
   metadata: jsonb("metadata"),
+  status: text("status").notNull().default("complete"),
+  model: text("model"),
+  summary: text("summary"),
+  findings: jsonb("findings"),
+  error: text("error"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
   evidenceIdx: index("evidence_ai_analyses_evidence_idx").on(table.evidenceId),
   userCaseIdx: index("evidence_ai_analyses_user_case_idx").on(table.userId, table.caseId),
   typeIdx: index("evidence_ai_analyses_type_idx").on(table.analysisType),
+  statusIdx: index("evidence_ai_analyses_status_idx").on(table.status),
 }));
 
 export const insertEvidenceAiAnalysisSchema = z.object({
@@ -1451,9 +1510,25 @@ export const insertEvidenceAiAnalysisSchema = z.object({
   analysisType: z.enum(analysisTypes),
   content: z.string().min(1, "Content is required"),
   metadata: z.record(z.any()).optional().nullable(),
+  status: z.enum(aiAnalysisStatuses).optional().default("complete"),
+  model: z.string().optional().nullable(),
+  summary: z.string().optional().nullable(),
+  findings: z.record(z.any()).optional().nullable(),
+  error: z.string().optional().nullable(),
+});
+
+export const updateEvidenceAiAnalysisSchema = z.object({
+  content: z.string().min(1).optional(),
+  metadata: z.record(z.any()).optional().nullable(),
+  status: z.enum(aiAnalysisStatuses).optional(),
+  model: z.string().optional().nullable(),
+  summary: z.string().optional().nullable(),
+  findings: z.record(z.any()).optional().nullable(),
+  error: z.string().optional().nullable(),
 });
 
 export type InsertEvidenceAiAnalysis = z.infer<typeof insertEvidenceAiAnalysisSchema>;
+export type UpdateEvidenceAiAnalysis = z.infer<typeof updateEvidenceAiAnalysisSchema>;
 export type EvidenceAiAnalysis = typeof evidenceAiAnalyses.$inferSelect;
 
 export const noteAnchorTypes = ["page", "timestamp", "range"] as const;

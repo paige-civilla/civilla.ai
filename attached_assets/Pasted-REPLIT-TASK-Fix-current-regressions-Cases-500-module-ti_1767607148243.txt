@@ -1,0 +1,111 @@
+REPLIT TASK: Fix current regressions (Cases 500, module tile color, Lexi UX + threads, onboarding)
+
+GOALS (Acceptance Tests)
+1) Module tile background everywhere uses the token and renders as #C3D5D7 (or #C3D5D8) consistently.
+2) Creating a case never 500s. If it fails, UI shows a human error (not just “Failed to create case”) and server logs the real cause.
+3) Lexi works for any logged-in user (no caseId required).
+4) Lexi “Start a conversation” creates a thread + enables typing immediately.
+5) Lexi header shows:
+   - Title: "Lexi"
+   - Subtitle: "Your AI assistant"
+6) Lexi disclaimer bar is NOT yellow; use theme highlight (bg-[hsl(var(--accent))] or bg-[#A2BEC2] with readable text).
+7) Suggested question chips exist in Lexi panel even on /app/cases and during onboarding (chips dispatch a question and auto-start the chat).
+8) Onboarding wizard remains the 6-step flow (Intro + Info + Address + Case Details + Children + Review + Agreements) and redirect rules still work.
+
+PART A — MODULE TILE COLOR (still “weird color”)
+1) In client/src/index.css (or wherever app tokens live), set:
+   --module-tile to match #C3D5D7 (preferred) and ensure all tiles reference it.
+   If tokens are HSL-based, use:
+     --module-tile: 186 20% 80%;
+     --module-tile-hover: 186 20% 76%;
+     --module-tile-border: 187 17% 37%;
+   Confirm NO hardcoded tile bg remains:
+     ripgrep: bg-[#C3D5D7] bg-[#E4ECED] bg-[#A2BEC2] in module tiles should be 0 matches,
+     and tiles should use: bg-[hsl(var(--module-tile))] etc.
+
+PART B — “CREATE CASE” 500 FIX (this is backend, not styling)
+1) Reproduce and identify root cause:
+   - Open browser DevTools -> Network -> POST /api/cases
+   - Inspect payload being sent.
+   - Check server logs for the thrown error/stack.
+
+2) Improve server error visibility (do not leak secrets):
+   - In server/routes.ts, in the POST /api/cases handler:
+     - wrap DB insert in try/catch
+     - console.error("[CreateCase] failed", { userId, body }, err)
+     - return res.status(500).json({ error: "Failed to create case", code: "CREATE_CASE_FAILED" })
+   - If the error is a schema validation (zod) error, return 400 with field messages.
+
+3) Validate required fields explicitly:
+   - Ensure the endpoint accepts the exact fields the UI sends:
+     title, state, county, caseType, hasChildren (and any newer fields)
+   - Ensure defaults exist for optional fields so DB NOT NULL constraints aren’t hit.
+
+4) If the DB schema changed recently:
+   - Verify cases table columns match insert shape.
+   - If a column is NOT NULL (like petitioner/respondent names etc.), either:
+     (a) make it nullable, or
+     (b) set a safe default on create, or
+     (c) require it in the create form and send it.
+
+PART C — LEXI: ENABLE WITHOUT CASE + FIX “START CONVERSATION”
+PROBLEM SIGNS:
+- “All conversations (0)” + Start conversation does nothing
+- Previously it said “open a case to chat”
+This indicates threads are tied to caseId and/or the create-thread route expects caseId.
+
+Fix approach:
+1) Make Lexi threads support caseId nullable (global threads):
+   - shared/schema.ts: lexi_threads table: caseId should be nullable
+   - storage + routes: list/create threads should accept caseId optional
+   - when no case is selected, use global threads (caseId = null)
+
+2) Update Lexi routes:
+   - GET /api/lexi/threads should return threads for the user where:
+       (caseId = requested caseId) OR (caseId IS NULL when no caseId provided)
+   - POST /api/lexi/threads should allow body { title?, caseId?: string | null }
+     and create a thread with caseId null when not provided.
+
+3) Update LexiPanel.tsx logic:
+   - Determine activeCaseId safely:
+     if AppLayout provides caseId, use it; else undefined.
+   - When user clicks “Start a conversation”:
+     - POST /api/lexi/threads with caseId (or null)
+     - set activeThreadId from response
+     - focus input
+   - Remove any “must open a case” gating message for logged-in users.
+
+4) Update Lexi header + disclaimer styling:
+   - Title line: Lexi
+   - Subtitle: "Your AI assistant"
+   - Replace yellow disclaimer bar with:
+       bg-[hsl(var(--accent))] (or bg-[#A2BEC2]) and ensure readable text.
+
+5) Suggested question chips inside Lexi (no Help/Chat tab requirement):
+   - In LexiPanel, show 6–10 “chips” under the disclaimer when there are 0 user messages in the active thread.
+   - When user sends first message, chips collapse/hide automatically.
+   - Chips dispatch the same sendMessage handler (so it starts chat even if thread is new).
+   - Add a small chip set for onboarding/case creation contexts too.
+
+6) Ensure Lexi is accessible on /app/cases and onboarding:
+   - LexiPanel should mount for all authenticated routes (including /app/cases and /app/onboarding)
+   - If the app currently disables Lexi on those routes, remove that condition.
+
+PART D — ONBOARDING REGRESSION CHECK
+1) Verify routes/components:
+   - Confirm AppOnboarding still exists and the 6-step sequence is present.
+2) Verify redirect logic:
+   - authenticated + onboardingCompleted false -> /app/onboarding
+   - onboardingCompleted true -> dashboard
+3) If onboarding UI looks “older” now:
+   - confirm AppOnboarding is still the one being rendered in App.tsx routes (not an older component)
+   - ensure no accidental import swap occurred.
+
+DELIVERABLES
+After implementing, report:
+- Files changed
+- Root cause of create-case 500 (exact DB/validation failure)
+- Confirmation: case creation works
+- Confirmation: Lexi starts conversation on /app/cases with no caseId
+- Confirmation: chips appear and disappear after first message
+- Confirmation: onboarding still 6 steps and redirect works

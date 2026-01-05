@@ -4921,6 +4921,129 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.patch("/api/evidence-ai-analyses/:analysisId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { analysisId } = req.params;
+      
+      const { updateEvidenceAiAnalysisSchema } = await import("@shared/schema");
+      const parsed = updateEvidenceAiAnalysisSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const updated = await storage.updateEvidenceAiAnalysis(userId, analysisId, parsed.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+      
+      res.json({ analysis: updated });
+    } catch (error) {
+      console.error("Update AI analysis error:", error);
+      res.status(500).json({ error: "Failed to update analysis" });
+    }
+  });
+
+  app.delete("/api/evidence-ai-analyses/:analysisId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { analysisId } = req.params;
+      
+      const deleted = await storage.deleteEvidenceAiAnalysis(userId, analysisId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete AI analysis error:", error);
+      res.status(500).json({ error: "Failed to delete analysis" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/exhibit-snippets", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const exhibitListId = req.query.exhibitListId as string | undefined;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const snippets = await storage.listExhibitSnippets(userId, caseId, exhibitListId);
+      res.json({ snippets });
+    } catch (error) {
+      console.error("List exhibit snippets error:", error);
+      res.status(500).json({ error: "Failed to list snippets" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/exhibit-snippets", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertExhibitSnippetSchema } = await import("@shared/schema");
+      const parsed = insertExhibitSnippetSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const snippet = await storage.createExhibitSnippet(userId, caseId, parsed.data);
+      res.status(201).json({ snippet });
+    } catch (error) {
+      console.error("Create exhibit snippet error:", error);
+      res.status(500).json({ error: "Failed to create snippet" });
+    }
+  });
+
+  app.patch("/api/exhibit-snippets/:snippetId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { snippetId } = req.params;
+      
+      const { updateExhibitSnippetSchema } = await import("@shared/schema");
+      const parsed = updateExhibitSnippetSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const updated = await storage.updateExhibitSnippet(userId, snippetId, parsed.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Snippet not found" });
+      }
+      
+      res.json({ snippet: updated });
+    } catch (error) {
+      console.error("Update exhibit snippet error:", error);
+      res.status(500).json({ error: "Failed to update snippet" });
+    }
+  });
+
+  app.delete("/api/exhibit-snippets/:snippetId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { snippetId } = req.params;
+      
+      const deleted = await storage.deleteExhibitSnippet(userId, snippetId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Snippet not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete exhibit snippet error:", error);
+      res.status(500).json({ error: "Failed to delete snippet" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep-shortlist", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
