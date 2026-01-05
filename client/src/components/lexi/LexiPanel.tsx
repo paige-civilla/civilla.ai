@@ -312,37 +312,32 @@ export default function LexiPanel() {
   return (
     <>
       {!open && (
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           aria-label="Open Lexi"
           data-testid="lexi-toggle"
           onClick={() => setOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setOpen(true);
-          }}
-          className={[
-            "fixed right-0 top-1/2 -translate-y-1/2 z-50",
-            "h-32 w-11 shadow-lg",
-            "rounded-l-xl",
-            "flex items-center justify-center",
-            "cursor-pointer select-none",
-            "transition-colors duration-150",
-            "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
-            "border border-[hsl(var(--module-tile-border))]",
-          ].join(" ")}
+          className="fixed z-[60] rounded-l-xl shadow-lg bg-[#314143] text-white border border-[hsl(var(--module-tile-border))] hover:bg-[#263233] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--module-tile-border))] flex items-center justify-center cursor-pointer"
           style={{
-            backgroundColor: "#314143",
+            top: "50%",
+            transform: "translateY(-50%)",
+            right: 0,
+            width: 44,
+            height: 128,
           }}
         >
           <div
-            className="flex items-center gap-1.5 rotate-[-90deg]"
-            style={{ color: "#FAF8F4" }}
+            className="flex items-center gap-2"
+            style={{
+              transform: "rotate(-90deg)",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+            }}
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+            <span className="text-white text-lg leading-none">&lsaquo;</span>
+            <span className="text-white font-semibold tracking-wide">Lexi</span>
           </div>
-        </div>
+        </button>
       )}
 
       {open && (
@@ -377,20 +372,18 @@ export default function LexiPanel() {
               onClick={() => setOpen(false)}
               aria-label="Close Lexi"
               data-testid="lexi-toggle-close"
-              className={[
-                "hidden sm:flex",
-                "absolute left-[-44px] top-1/2 -translate-y-1/2",
-                "h-32 w-11 rounded-l-xl",
-                "bg-[#314143] text-[#FAF8F4]",
-                "border border-[hsl(var(--module-tile-border))]",
-                "items-center justify-center",
-                "shadow cursor-pointer",
-                "hover:bg-[#263233] transition-colors",
-              ].join(" ")}
+              className="hidden sm:flex absolute left-[-44px] top-1/2 -translate-y-1/2 h-32 w-11 rounded-l-xl bg-[#314143] text-white border border-[hsl(var(--module-tile-border))] items-center justify-center shadow cursor-pointer hover:bg-[#263233] transition-colors"
             >
-              <div className="flex items-center gap-1.5 rotate-[-90deg]">
-                <ChevronRight className="w-4 h-4" />
-                <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+              <div
+                className="flex items-center gap-2"
+                style={{
+                  transform: "rotate(-90deg)",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                }}
+              >
+                <span className="text-white text-lg leading-none">&rsaquo;</span>
+                <span className="text-white font-semibold tracking-wide">Lexi</span>
               </div>
             </button>
           )}
