@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AlertTriangle, BookOpen, DollarSign, Info, HelpCircle, RefreshCw, Loader2, Search, ExternalLink, Calculator, X } from "lucide-react";
+import { BookOpen, Info, HelpCircle, RefreshCw, Loader2, Search, ExternalLink, Calculator } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -303,7 +303,7 @@ export default function AppChildSupport() {
           </div>
 
           {activeResult && (
-            <div className="w-full bg-[#EFF3F4] rounded-lg border border-[#4F6A6E] p-5 sm:p-6 mb-6">
+            <div className="w-full bg-[#EFF3F4] rounded-lg border border-[#4F6A6E] p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="font-heading font-bold text-lg text-[#1E2020] flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-[#314143]" />
@@ -343,20 +343,6 @@ export default function AppChildSupport() {
               </div>
             </div>
           )}
-
-          <div className="w-full p-4 bg-neutral-darkest/5 rounded-lg border border-neutral-darkest/10">
-            <div className="flex gap-3">
-              <AlertTriangle className="w-5 h-5 text-neutral-darkest/60 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-sans font-medium text-sm text-neutral-darkest/80">Remember</p>
-                <p className="font-sans text-sm text-neutral-darkest/60 mt-1">
-                  This is an <em>educational tool only</em>. civilla does not provide legal advice or representation. 
-                  Child support calculations vary significantly by state and individual circumstances. 
-                  For court-accurate amounts, use your state's official calculator and consult with a family law attorney.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
