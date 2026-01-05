@@ -5,26 +5,22 @@ import { Search, X } from "lucide-react";
 
 interface SearchResult {
   type: string;
+  caseId: string;
   id: string;
   title: string;
-  snippet: string | null;
+  snippet: string;
   href: string;
-  updatedAt: string | null;
-  rank: number;
+  caseTitle?: string;
 }
 
 const TYPE_LABELS: Record<string, string> = {
   evidence: "Evidence",
-  evidence_text: "Evidence Content",
-  evidence_note: "Evidence Note",
+  note: "Note",
   timeline: "Timeline",
-  deadline: "Deadline",
-  task: "Task",
-  contact: "Contact",
   communication: "Communication",
-  trial_prep: "Trial Prep",
-  exhibit_snippet: "Exhibit Snippet",
-  child: "Child",
+  document: "Document",
+  snippet: "Exhibit Snippet",
+  trialprep: "Trial Prep",
 };
 
 function renderHighlighted(snippet: string) {
@@ -79,11 +75,13 @@ export default function QuickSearch({ caseId }: QuickSearchProps) {
     };
   }, [query]);
 
-  const { data, isLoading } = useQuery<{ results: SearchResult[] }>({
-    queryKey: ["/api/cases", caseId, "search", { q: debouncedQuery }],
-    enabled: !!caseId && debouncedQuery.length >= 2,
+  const { data, isLoading } = useQuery<{ ok: boolean; results: SearchResult[] }>({
+    queryKey: ["/api/search", { q: debouncedQuery, caseId }],
+    enabled: debouncedQuery.length >= 2,
     queryFn: async () => {
-      const res = await fetch(`/api/cases/${caseId}/search?q=${encodeURIComponent(debouncedQuery)}&limit=5`, {
+      const params = new URLSearchParams({ q: debouncedQuery });
+      if (caseId) params.set("caseId", caseId);
+      const res = await fetch(`/api/search?${params.toString()}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Search failed");
@@ -119,16 +117,7 @@ export default function QuickSearch({ caseId }: QuickSearchProps) {
   const results = data?.results || [];
   const showDropdown = isOpen && debouncedQuery.length >= 2;
 
-  if (!caseId) {
-    return (
-      <div className="relative">
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#F2F2F2]/10 border border-[#F2F2F2]/20">
-          <Search className="w-3.5 h-3.5 text-[#F2F2F2]/50" />
-          <span className="text-xs text-[#F2F2F2]/50 hidden sm:inline">Select a case</span>
-        </div>
-      </div>
-    );
-  }
+  const showCaseLabels = !caseId;
 
   return (
     <div ref={containerRef} className="relative">
@@ -146,7 +135,7 @@ export default function QuickSearch({ caseId }: QuickSearchProps) {
             if (query.length >= 2) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search case..."
+          placeholder={caseId ? "Search case..." : "Search all cases..."}
           className="bg-transparent text-xs text-[#F2F2F2] placeholder:text-[#F2F2F2]/50 outline-none w-24 sm:w-32 md:w-40"
           data-testid="input-quick-search"
         />
@@ -182,10 +171,15 @@ export default function QuickSearch({ caseId }: QuickSearchProps) {
                   className="w-full text-left px-3 py-2 hover:bg-neutral-100 transition-colors border-b border-neutral-100 last:border-b-0"
                   data-testid={`search-result-${result.type}-${result.id}`}
                 >
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wide">
                       {TYPE_LABELS[result.type] || result.type}
                     </span>
+                    {showCaseLabels && result.caseTitle && (
+                      <span className="text-[10px] text-neutral-400 truncate max-w-[150px]">
+                        {result.caseTitle}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm font-medium text-neutral-900 truncate mb-0.5">
                     {result.title}

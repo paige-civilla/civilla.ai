@@ -33,6 +33,7 @@ import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evide
 import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
 import { createLimiter } from "./utils/concurrency";
 import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
+import { searchCaseWide } from "./services/search";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -4378,6 +4379,24 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
   app.get("/api/lexi/disclaimer", requireAuth, (_req, res) => {
     res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
+  });
+
+  app.get("/api/search", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const q = (req.query.q as string || "").trim();
+      const caseId = (req.query.caseId as string) || null;
+
+      if (q.length < 2) {
+        return res.json({ ok: true, results: [] });
+      }
+
+      const results = await searchCaseWide({ userId, caseId, q, limit: 5 });
+      res.json({ ok: true, results });
+    } catch (error) {
+      console.error("Search error:", error);
+      res.status(500).json({ error: "Search failed" });
+    }
   });
 
   app.get("/api/lexi/context", requireAuth, async (_req, res) => {

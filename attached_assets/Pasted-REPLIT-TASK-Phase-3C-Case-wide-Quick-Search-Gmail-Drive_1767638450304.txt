@@ -1,0 +1,125 @@
+REPLIT TASK: Phase 3C — Case-wide Quick Search (Gmail/Drive style)
+
+Goal
+Add a global search bar in the authenticated App Navbar that searches across the user’s entire case (all modules). 
+Behaves like Gmail/Google Drive:
+- as you type, show 3–5 instant results (with a snippet showing a few words before/after the match)
+- clicking a result jumps to the correct module + item
+- supports both “within selected case” and “all cases” (default: selected case)
+
+Must include:
+- Evidence files (filename)
+- Evidence notes (noteTitle + noteText)
+- Timeline events (title + notes)
+- Communications (summary/content fields)
+- Documents (title + body)
+- Exhibit snippets (title + snippetText)
+- Trial Prep shortlist (title + summary)
+
+Non-goals
+- Don’t index raw extractedText yet (too large/costly). We’ll add later as an optional “deep search”.
+- No AI needed here; pure DB search.
+
+A) Backend: Add /api/search endpoint (requireAuth)
+
+1) Create new file: server/services/search.ts (NEW)
+Export function:
+searchCaseWide({ userId, caseId, q, limit = 5 }) -> returns:
+[
+  {
+    type: "evidence" | "note" | "timeline" | "communication" | "document" | "snippet" | "trialprep",
+    caseId,
+    id,
+    title,
+    snippet,
+    href
+  }
+]
+
+Implementation details:
+- Normalize q: trim, collapse spaces, require length >= 2
+- Use ILIKE for matching (Postgres):
+  - evidence_files: fileName ILIKE %q%
+  - evidence_notes: noteTitle ILIKE %q% OR noteText ILIKE %q%
+  - timeline_events: title ILIKE %q% OR notes ILIKE %q%
+  - communications: subject/title/content/notes (whatever fields exist)
+  - documents: title ILIKE %q% OR body ILIKE %q%
+  - exhibit_snippets: title ILIKE %q% OR snippetText ILIKE %q%
+  - trial_prep_shortlist: title ILIKE %q% OR summary ILIKE %q%
+
+Snippet rules:
+- snippet should show ~70–120 chars around the match.
+- If match position can’t be computed (null field), fallback to first 120 chars.
+- Add “…” prefix/suffix when truncated.
+
+Href rules (examples; match your actual routes):
+- evidence: /app/evidence/:caseId (and UI should open viewer for id; for now just go to module)
+- note: /app/evidence/:caseId (and pass ?noteId=...)
+- timeline: /app/timeline/:caseId (and pass ?eventId=...)
+- communication: /app/communications/:caseId (?commId=...)
+- document: /app/documents/:caseId (?docId=...)
+- snippet: /app/exhibits/:caseId (?snippetId=...)
+- trialprep: /app/trial-prep/:caseId (?itemId=...)
+
+Return result ordering:
+- Prefer exact title matches first, then partial matches.
+- If multiple modules match, mix them (don’t show 5 notes only).
+- Hard cap per type: max 2 per type in the top 5.
+
+2) Add routes in server/routes.ts (requireAuth):
+GET /api/search?q=...&caseId=... (caseId optional)
+- if caseId provided => search within that case
+- if not provided => search across all user cases (but still return caseId in each result)
+Return: { ok:true, results: [...] }
+
+B) Frontend: Navbar search UI
+
+1) Update: client/src/components/layout/AppNavbar.tsx
+Add a search input in the navbar (desktop) and a search icon button that opens a modal (mobile).
+
+Behavior:
+- Debounce typing by 200–300ms.
+- When query length < 2 => close dropdown.
+- When loading => show “Searching…”
+- Show top 3–5 results in a dropdown under the input.
+- Each result row shows:
+  - icon (based on type)
+  - title
+  - snippet (smaller text)
+  - case label if searching across all cases (e.g., “Case: Smith Divorce”)
+- On click:
+  - navigate to result.href
+  - close dropdown
+  - clear query
+
+2) Add: client/src/components/search/QuickSearchDropdown.tsx (NEW)
+Props:
+- results
+- loading
+- onSelect(result)
+- showCaseLabel boolean
+
+3) Add API hook:
+Use react-query with enabled: q.length >= 2
+Query key: ["/api/search", { q, caseId }]
+Fetch with credentials included (apiRequest helper).
+
+C) “Deep linking” highlight (optional but easy)
+On each module page, if it supports query params like ?noteId=, scroll that card into view and add a temporary highlight ring for 2 seconds.
+
+Implement at least for Evidence notes:
+- In AppEvidence.tsx: read noteId from location search params; after notes load, scroll to that element and apply a class.
+
+D) Report back
+After implementing:
+- list files changed/added
+- confirm endpoint response shape
+- confirm dropdown works on desktop + mobile
+- confirm search limited to selected case by default
+
+Important
+- Must be secure: userId enforced on every table query.
+- No raw SQL strings unless parameterized (use Drizzle where possible).
+- Keep it fast: limit each table query to small number (e.g., 5) then merge + rank.
+
+Proceed now.
