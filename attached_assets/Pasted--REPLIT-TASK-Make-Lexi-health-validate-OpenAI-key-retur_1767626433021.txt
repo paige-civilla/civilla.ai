@@ -1,0 +1,103 @@
+// REPLIT TASK: Make Lexi health validate OpenAI key + return correct 401 errors (no more misleading 500)
+//
+// Files to edit:
+// 1) server/routes.ts
+// 2) (optional) server/index.ts for safe startup log
+
+// ==========================
+// 1) server/routes.ts
+// ==========================
+
+// A) When you build the OpenAI client, TRIM the key (prevents whitespace bugs)
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
+
+// Wherever OpenAI client is initialized, make sure it uses OPENAI_API_KEY (trimmed).
+// Example (adjust to your actual import/usage):
+// const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+
+
+// B) Upgrade /api/lexi/health so it actually validates the key with a tiny OpenAI call
+// Replace your existing /api/lexi/health handler with this version:
+
+app.get("/api/lexi/health", requireAuth, async (req, res) => {
+  const key = (process.env.OPENAI_API_KEY || "").trim();
+  if (!key) {
+    return res.status(200).json({ ok: false, provider: "openai-direct", error: "missing OPENAI_API_KEY" });
+  }
+
+  try {
+    // Tiny request to verify auth works (fast + cheap)
+    // Use the same client + model you use in Lexi chat.
+    // If your code uses Responses API, keep it consistent.
+    // Below is a generic example; adjust to match your OpenAI call style.
+
+    // Example for Responses API style:
+    // await openai.responses.create({
+    //   model: "gpt-4.1-mini",
+    //   input: "ping",
+    //   max_output_tokens: 5,
+    // });
+
+    // If you currently use chat.completions:
+    await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: "ping" }],
+      max_tokens: 5,
+    });
+
+    return res.status(200).json({ ok: true, provider: "openai-direct" });
+  } catch (err: any) {
+    const status = err?.status || err?.response?.status;
+    const code = err?.code || err?.error?.code;
+
+    // If invalid key, report clearly (but do NOT leak key)
+    if (status === 401 || code === "invalid_api_key") {
+      return res.status(200).json({
+        ok: false,
+        provider: "openai-direct",
+        error: "invalid OPENAI_API_KEY (OpenAI returned 401)",
+      });
+    }
+
+    return res.status(200).json({
+      ok: false,
+      provider: "openai-direct",
+      error: "OpenAI health check failed",
+    });
+  }
+});
+
+
+// C) Fix Lexi chat route so OpenAI 401 becomes a 401 (NOT a 500)
+// In your POST /api/lexi/chat handler catch block, change it to:
+
+catch (err: any) {
+  const status = err?.status || err?.response?.status;
+  const code = err?.code || err?.error?.code;
+  const msg = err?.message || "Lexi failed";
+
+  // Invalid OpenAI key -> return 401 so frontend can show correct message
+  if (status === 401 || code === "invalid_api_key") {
+    return res.status(401).json({
+      error: "Lexi is not configured correctly (invalid OpenAI API key). Please update OPENAI_API_KEY in Replit Secrets.",
+    });
+  }
+
+  // Other OpenAI request issues
+  if (status === 429) {
+    return res.status(429).json({ error: "Lexi is temporarily rate-limited. Please try again in a moment." });
+  }
+
+  console.error("Lexi chat error:", err);
+  return res.status(500).json({ error: "Failed to process message" });
+}
+
+
+// ==========================
+// 2) (optional) server/index.ts
+// ==========================
+// Add a SAFE startup log that never prints the key.
+// Example:
+console.log(
+  `[Startup] Lexi provider: openai-direct | OPENAI_API_KEY present: ${!!(process.env.OPENAI_API_KEY || "").trim()}`
+);

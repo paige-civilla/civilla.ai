@@ -4301,16 +4301,43 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+  const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
+  const lexiApiKeyConfigured = !!OPENAI_API_KEY;
   const openai = lexiApiKeyConfigured 
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    ? new OpenAI({ apiKey: OPENAI_API_KEY })
     : null;
 
-  app.get("/api/lexi/health", requireAuth, (_req, res) => {
-    if (lexiApiKeyConfigured) {
-      res.json({ ok: true, provider: "openai-direct" });
-    } else {
-      res.status(503).json({ ok: false, error: "missing OPENAI_API_KEY" });
+  app.get("/api/lexi/health", requireAuth, async (_req, res) => {
+    if (!OPENAI_API_KEY) {
+      return res.status(200).json({ ok: false, provider: "openai-direct", error: "missing OPENAI_API_KEY" });
+    }
+
+    try {
+      const testClient = new OpenAI({ apiKey: OPENAI_API_KEY });
+      await testClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 5,
+      });
+
+      return res.status(200).json({ ok: true, provider: "openai-direct" });
+    } catch (err: any) {
+      const status = err?.status || err?.response?.status;
+      const code = err?.code || err?.error?.code;
+
+      if (status === 401 || code === "invalid_api_key") {
+        return res.status(200).json({
+          ok: false,
+          provider: "openai-direct",
+          error: "invalid OPENAI_API_KEY (OpenAI returned 401)",
+        });
+      }
+
+      return res.status(200).json({
+        ok: false,
+        provider: "openai-direct",
+        error: "OpenAI health check failed",
+      });
     }
   });
 
@@ -4566,8 +4593,21 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       );
 
       res.json({ assistantMessage: assistantMsg, intent, refused: false, hadSources: hasSources });
-    } catch (error) {
-      console.error("Lexi chat error:", error);
+    } catch (err: any) {
+      const status = err?.status || err?.response?.status;
+      const code = err?.code || err?.error?.code;
+
+      if (status === 401 || code === "invalid_api_key") {
+        return res.status(401).json({
+          error: "Lexi is not configured correctly (invalid OpenAI API key). Please update OPENAI_API_KEY in Replit Secrets.",
+        });
+      }
+
+      if (status === 429) {
+        return res.status(429).json({ error: "Lexi is temporarily rate-limited. Please try again in a moment." });
+      }
+
+      console.error("Lexi chat error:", err);
       res.status(500).json({ error: "Failed to process message" });
     }
   });
