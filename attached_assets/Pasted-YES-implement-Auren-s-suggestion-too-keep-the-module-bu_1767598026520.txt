@@ -1,0 +1,58 @@
+YES — implement Auren’s suggestion too: keep the module, but reframe it as “Worksheet Helper + optional educational estimate,” with a confidence gate.
+
+Replit: Please implement ALL items from the previous block AND add the following refinements:
+
+1) Module naming + placement
+- Keep the module in the dashboard and menu.
+- Rename everywhere user-facing:
+  "Child Support Estimator" -> "Child Support (Worksheet Helper)"
+- Keep the route the same (/app/child-support/:caseId). Do NOT break URLs.
+
+2) Three-step flow inside the module (simple, non-legal-advice wording)
+Inside client/src/pages/AppChildSupport.tsx, structure the page as:
+Step 1: "Find Your State’s Official Worksheet"
+  - Button: "Find My State’s Official Worksheet"
+  - Show cached results immediately if available.
+Step 2: "Optional: Enter Numbers (for an educational estimate)"
+  - Button: "Get an Educational Estimate"
+  - Modal collects inputs with "I don’t know yet" buttons.
+Step 3: "Result"
+  - If didCompute=true: show estimate + assumptions + math steps.
+  - If didCompute=false: show official calculator/worksheet link(s) and exactly what fields to enter.
+
+3) Add a strict confidence gate in the backend estimate endpoint
+In server/routes.ts POST /api/cases/:caseId/child-support/estimate:
+- Lexi must decide didCompute based on whether the state’s calculation can be applied reliably with the provided inputs.
+- If not confident, MUST NOT output a number.
+- MUST output worksheet guidance + official link(s) instead.
+
+4) Add caching for estimate outputs (so repeated calls don’t cost money)
+- Use existing case_rule_terms table.
+- moduleKey: "child-support"
+- termKey should include state + "estimate" + a stable hash of inputs (or JSON string key) so identical inputs return cached response.
+- Store content + lastCheckedAt and reuse if same inputs are requested again unless refresh=true.
+
+5) UX copy must be “balanced” (helpful, not spammy)
+- One banner at the top ONLY:
+  "Educational tool — not court-accurate. Verify using your state’s official worksheet/calculator."
+- Do NOT repeatedly say “get a lawyer.” Do NOT mention likelihood of success.
+- If asked for strategy, Lexi should redirect to educational explanation of what the rule says and where to verify.
+
+6) Testing checklist (include in your Replit summary)
+- With a case that has children, open Child Support module:
+  a) Click “Find My State’s Official Worksheet” -> research appears + Sources
+  b) Click “Get an Educational Estimate” -> enter incomes + # kids -> submit
+  c) Verify: either didCompute=true with math steps OR didCompute=false with worksheet guidance
+  d) Submit again with same inputs -> should return cached (no extra API cost)
+  e) Change one input -> should re-run and cache separately
+
+7) Be detailed in your final summary
+List:
+- files changed
+- endpoints added/updated
+- exact labels and buttons
+- how caching key works
+- how didCompute is decided
+- screenshots not required, but describe what to click.
+
+Important: Do not remove the module. Do not rename routes. Only rename labels and implement the workflow above.
