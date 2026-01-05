@@ -1548,24 +1548,18 @@ export default function AppEvidence() {
                     return parts.length > 0 ? <span>{parts.join(" | ")}</span> : null;
                   })()}
                 </div>
-                {(() => {
-                  const file = rawFiles.find((f: EvidenceFile) => f.id === extractionViewFileId);
-                  if (file && file.downloadUrl) {
-                    return (
-                      <a
-                        href={file.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
-                        data-testid="link-open-original-evidence"
-                      >
-                        <Download className="w-4 h-4" />
-                        Open Original
-                      </a>
-                    );
-                  }
-                  return null;
-                })()}
+                {extractionViewFileId && (
+                  <a
+                    href={`/api/evidence/${extractionViewFileId}/download`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                    data-testid="link-open-original-evidence"
+                  >
+                    <Download className="w-4 h-4" />
+                    Open Original
+                  </a>
+                )}
               </div>
               <ScrollArea className="flex-1 max-h-[60vh]">
                 <pre className="text-sm whitespace-pre-wrap font-mono p-4 bg-muted rounded-lg" data-testid="text-extracted-content">
