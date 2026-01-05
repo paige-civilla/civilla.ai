@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Users, Briefcase, Plus, Search, Edit, Trash2, Copy, Phone, Mail, Building, MapPin, StickyNote, Check, X } from "lucide-react";
+import { ArrowLeft, Users, Briefcase, Plus, Search, Edit, Trash2, Copy, Phone, Mail, Building, MapPin, StickyNote, Check, X, ArrowRightLeft } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ export default function AppContacts() {
   const [formData, setFormData] = useState({
     name: "",
     role: "other",
+    contactGroup: "case" as "case" | "witness",
     organizationOrFirm: "",
     email: "",
     phone: "",
@@ -156,11 +157,12 @@ export default function AppContacts() {
     },
   });
 
-  const openAddModal = () => {
+  const openAddModal = (defaultGroup: "case" | "witness" = "case") => {
     setEditingContact(null);
     setFormData({
       name: "",
       role: "other",
+      contactGroup: defaultGroup,
       organizationOrFirm: "",
       email: "",
       phone: "",
@@ -175,6 +177,7 @@ export default function AppContacts() {
     setFormData({
       name: contact.name,
       role: contact.role || "other",
+      contactGroup: (contact.contactGroup as "case" | "witness") || "case",
       organizationOrFirm: contact.organizationOrFirm || "",
       email: contact.email || "",
       phone: contact.phone || "",
@@ -190,6 +193,7 @@ export default function AppContacts() {
     setFormData({
       name: "",
       role: "other",
+      contactGroup: "case",
       organizationOrFirm: "",
       email: "",
       phone: "",
@@ -222,14 +226,38 @@ export default function AppContacts() {
   };
 
   const copyFullContact = (contact: CaseContact) => {
-    const parts = [contact.name];
-    if (contact.role) parts.push(getRoleLabel(contact.role));
-    if (contact.organizationOrFirm) parts.push(contact.organizationOrFirm);
-    if (contact.email) parts.push(contact.email);
-    if (contact.phone) parts.push(contact.phone);
-    if (contact.address) parts.push(contact.address);
-    copyToClipboard(parts.join("\n"), "Contact info");
+    const lines: string[] = [];
+    lines.push(`Full Name: ${contact.name}`);
+    if (contact.role) lines.push(`Role: ${getRoleLabel(contact.role)}`);
+    if (contact.organizationOrFirm) lines.push(`Organization/Firm: ${contact.organizationOrFirm}`);
+    if (contact.phone) lines.push(`Phone: ${contact.phone}`);
+    if (contact.email) lines.push(`Email: ${contact.email}`);
+    if (contact.address) lines.push(`Address: ${contact.address}`);
+    if (contact.notes) lines.push(`Notes: ${contact.notes}`);
+    copyToClipboard(lines.join("\n"), "Full contact");
+    toast({ title: "Copied full contact to clipboard" });
   };
+
+  const moveContactMutation = useMutation({
+    mutationFn: async ({ contactId, newGroup }: { contactId: string; newGroup: "case" | "witness" }) => {
+      return apiRequest("PATCH", `/api/contacts/${contactId}`, { contactGroup: newGroup });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "contacts"] });
+      toast({ title: "Contact moved", description: "Contact group updated." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to move contact", variant: "destructive" });
+    },
+  });
+
+  const caseContacts = useMemo(() => {
+    return filteredContacts.filter(c => c.contactGroup !== "witness");
+  }, [filteredContacts]);
+
+  const witnessContacts = useMemo(() => {
+    return filteredContacts.filter(c => c.contactGroup === "witness");
+  }, [filteredContacts]);
 
   if (caseLoading) {
     return (
@@ -281,7 +309,7 @@ export default function AppContacts() {
                 {currentCase.title}
               </h1>
             </div>
-            <Button onClick={openAddModal} className="min-h-[44px]" data-testid="button-add-contact">
+            <Button onClick={() => openAddModal()} className="min-h-[44px]" data-testid="button-add-contact">
               <Plus className="w-4 h-4 mr-2" />
               Add Contact
             </Button>
@@ -334,136 +362,93 @@ export default function AppContacts() {
             <div className="w-full py-12 text-center">
               <p className="font-sans text-neutral-darkest/60">Loading contacts...</p>
             </div>
-          ) : filteredContacts.length === 0 ? (
+          ) : contacts.length === 0 ? (
             <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <Users className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
-                {contacts.length === 0 ? "No Contacts Yet" : "No Matches Found"}
-              </h2>
+              <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">No Contacts Yet</h2>
               <p className="font-sans text-sm text-neutral-darkest/70 max-w-md mb-6">
-                {contacts.length === 0
-                  ? "Add attorneys, witnesses, mediators, and other parties involved in your case."
-                  : "Try adjusting your search or filter criteria."}
+                Add attorneys, witnesses, mediators, and other parties involved in your case.
               </p>
-              {contacts.length === 0 && (
-                <Button onClick={openAddModal} className="min-h-[44px]" data-testid="button-add-first-contact">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Contact
-                </Button>
-              )}
+              <Button onClick={() => openAddModal()} className="min-h-[44px]" data-testid="button-add-first-contact">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First Contact
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-              {filteredContacts.map((contact) => (
-                <Card key={contact.id} className="bg-white border border-neutral-darkest/10" data-testid={`card-contact-${contact.id}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-heading font-semibold text-neutral-darkest truncate" data-testid={`text-contact-name-${contact.id}`}>
-                          {contact.name}
-                        </h3>
-                        {contact.role && (
-                          <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-0.5 rounded mt-1">
-                            {getRoleLabel(contact.role)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" data-testid={`button-copy-menu-${contact.id}`} title="Copy">
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {contact.email && (
-                              <DropdownMenuItem onClick={() => copyToClipboard(contact.email!, "Email")}>
-                                <Mail className="w-4 h-4 mr-2" />
-                                Copy Email
-                              </DropdownMenuItem>
-                            )}
-                            {contact.phone && (
-                              <DropdownMenuItem onClick={() => copyToClipboard(contact.phone!, "Phone")}>
-                                <Phone className="w-4 h-4 mr-2" />
-                                Copy Phone
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => copyFullContact(contact)}>
-                              <Users className="w-4 h-4 mr-2" />
-                              Copy Full Contact
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button size="icon" variant="ghost" onClick={() => openEditModal(contact)} data-testid={`button-edit-contact-${contact.id}`} title="Edit">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {deleteConfirmId === contact.id ? (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              onClick={() => deleteMutation.mutate(contact.id)}
-                              disabled={deleteMutation.isPending}
-                              data-testid={`button-confirm-delete-${contact.id}`}
-                              title="Confirm"
-                            >
-                              <Check className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              onClick={() => setDeleteConfirmId(null)}
-                              data-testid={`button-cancel-delete-${contact.id}`}
-                              title="Cancel"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button size="icon" variant="ghost" onClick={() => setDeleteConfirmId(contact.id)} data-testid={`button-delete-contact-${contact.id}`} title="Delete">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-heading font-semibold text-lg text-neutral-darkest">Case Contacts</h2>
+                  <Button size="sm" variant="outline" onClick={() => openAddModal("case")} data-testid="button-add-case-contact">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                {caseContacts.length === 0 ? (
+                  <div className="bg-muted/50 rounded-lg p-6 text-center">
+                    <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No case contacts yet. Add attorneys, the other party, school, doctors, etc.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {caseContacts.map((contact) => (
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        onEdit={openEditModal}
+                        onDelete={(id) => deleteMutation.mutate(id)}
+                        onCopyFull={copyFullContact}
+                        onCopyField={copyToClipboard}
+                        onMove={(id) => moveContactMutation.mutate({ contactId: id, newGroup: "witness" })}
+                        moveLabel="Move to Witnesses"
+                        deleteConfirmId={deleteConfirmId}
+                        setDeleteConfirmId={setDeleteConfirmId}
+                        deletePending={deleteMutation.isPending}
+                        movePending={moveContactMutation.isPending}
+                        getRoleLabel={getRoleLabel}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                    <div className="space-y-1.5 text-sm text-neutral-darkest/70">
-                      {contact.organizationOrFirm && (
-                        <div className="flex items-center gap-2">
-                          <Building className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">{contact.organizationOrFirm}</span>
-                        </div>
-                      )}
-                      {contact.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">{contact.email}</span>
-                        </div>
-                      )}
-                      {contact.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">{contact.phone}</span>
-                        </div>
-                      )}
-                      {contact.address && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">{contact.address}</span>
-                        </div>
-                      )}
-                      {contact.notes && (
-                        <div className="flex items-start gap-2 pt-1">
-                          <StickyNote className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">{contact.notes}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-heading font-semibold text-lg text-neutral-darkest">Witnesses</h2>
+                  <Button size="sm" variant="outline" onClick={() => openAddModal("witness")} data-testid="button-add-witness">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                {witnessContacts.length === 0 ? (
+                  <div className="bg-muted/50 rounded-lg p-6 text-center">
+                    <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No witnesses yet. Add people who can testify or provide statements.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {witnessContacts.map((contact) => (
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        onEdit={openEditModal}
+                        onDelete={(id) => deleteMutation.mutate(id)}
+                        onCopyFull={copyFullContact}
+                        onCopyField={copyToClipboard}
+                        onMove={(id) => moveContactMutation.mutate({ contactId: id, newGroup: "case" })}
+                        moveLabel="Move to Case Contacts"
+                        deleteConfirmId={deleteConfirmId}
+                        setDeleteConfirmId={setDeleteConfirmId}
+                        deletePending={deleteMutation.isPending}
+                        movePending={moveContactMutation.isPending}
+                        getRoleLabel={getRoleLabel}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -499,6 +484,18 @@ export default function AppContacts() {
                       {opt.label}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contact-type">Contact Type</Label>
+              <Select value={formData.contactGroup} onValueChange={(v) => setFormData({ ...formData, contactGroup: v as "case" | "witness" })}>
+                <SelectTrigger id="contact-type" className="min-h-[44px]" data-testid="select-contact-type">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="case">Case Contact</SelectItem>
+                  <SelectItem value="witness">Witness</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -581,5 +578,154 @@ export default function AppContacts() {
         </DialogContent>
       </Dialog>
     </AppLayout>
+  );
+}
+
+interface ContactCardProps {
+  contact: CaseContact;
+  onEdit: (contact: CaseContact) => void;
+  onDelete: (id: string) => void;
+  onCopyFull: (contact: CaseContact) => void;
+  onCopyField: (text: string, field: string) => void;
+  onMove: (id: string) => void;
+  moveLabel: string;
+  deleteConfirmId: string | null;
+  setDeleteConfirmId: (id: string | null) => void;
+  deletePending: boolean;
+  movePending: boolean;
+  getRoleLabel: (role: string) => string;
+}
+
+function ContactCard({
+  contact,
+  onEdit,
+  onDelete,
+  onCopyFull,
+  onCopyField,
+  onMove,
+  moveLabel,
+  deleteConfirmId,
+  setDeleteConfirmId,
+  deletePending,
+  movePending,
+  getRoleLabel,
+}: ContactCardProps) {
+  return (
+    <Card className="bg-white border border-neutral-darkest/10" data-testid={`card-contact-${contact.id}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-heading font-semibold text-neutral-darkest truncate" data-testid={`text-contact-name-${contact.id}`}>
+              {contact.name}
+            </h3>
+            {contact.role && (
+              <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-0.5 rounded mt-1">
+                {getRoleLabel(contact.role)}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" data-testid={`button-copy-menu-${contact.id}`} title="Copy">
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {contact.email && (
+                  <DropdownMenuItem onClick={() => onCopyField(contact.email!, "Email")}>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Copy Email
+                  </DropdownMenuItem>
+                )}
+                {contact.phone && (
+                  <DropdownMenuItem onClick={() => onCopyField(contact.phone!, "Phone")}>
+                    <Phone className="w-4 h-4 mr-2" />
+                    Copy Phone
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => onCopyFull(contact)}>
+                  <Users className="w-4 h-4 mr-2" />
+                  Copy Full Contact
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onMove(contact.id)}
+              disabled={movePending}
+              data-testid={`button-move-${contact.id}`}
+              title={moveLabel}
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={() => onEdit(contact)} data-testid={`button-edit-contact-${contact.id}`} title="Edit">
+              <Edit className="w-4 h-4" />
+            </Button>
+            {deleteConfirmId === contact.id ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  onClick={() => onDelete(contact.id)}
+                  disabled={deletePending}
+                  data-testid={`button-confirm-delete-${contact.id}`}
+                  title="Confirm"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setDeleteConfirmId(null)}
+                  data-testid={`button-cancel-delete-${contact.id}`}
+                  title="Cancel"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button size="icon" variant="ghost" onClick={() => setDeleteConfirmId(contact.id)} data-testid={`button-delete-contact-${contact.id}`} title="Delete">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1.5 text-sm text-neutral-darkest/70">
+          {contact.organizationOrFirm && (
+            <div className="flex items-center gap-2">
+              <Building className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{contact.organizationOrFirm}</span>
+            </div>
+          )}
+          {contact.email && (
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{contact.email}</span>
+            </div>
+          )}
+          {contact.phone && (
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{contact.phone}</span>
+            </div>
+          )}
+          {contact.address && (
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{contact.address}</span>
+            </div>
+          )}
+          {contact.notes && (
+            <div className="flex items-start gap-2 pt-1">
+              <StickyNote className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span className="line-clamp-2">{contact.notes}</span>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
