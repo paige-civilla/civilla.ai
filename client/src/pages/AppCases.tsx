@@ -38,7 +38,7 @@ export default function AppCases() {
       const res = await apiRequest("POST", "/api/cases", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { case: Case }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       setTitle("");
       setState("");
@@ -47,6 +47,10 @@ export default function AppCases() {
       setHasChildren(false);
       setShowForm(false);
       setError("");
+      if (data.case?.id) {
+        localStorage.setItem("selectedCaseId", data.case.id);
+        setLocation(`/app/dashboard/${data.case.id}`);
+      }
     },
     onError: (err: any) => {
       setError(err.message || "Failed to create case");
@@ -113,24 +117,127 @@ export default function AppCases() {
               <p className="font-sans text-neutral-darkest/60">Loading cases...</p>
             </div>
           ) : noCases ? (
-            <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 text-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
-                Create your first case
-              </h2>
-              <p className="font-sans text-sm text-neutral-darkest/70 mb-6 max-w-md mx-auto">
-                Get started by creating a case. This will be your workspace for organizing documents, tracking deadlines, and preparing for your family law matter.
-              </p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-6 py-3 rounded-md button-inset-shadow"
-                data-testid="button-create-first-case"
-              >
-                <Plus className="w-4 h-4" />
-                Create Your Case
-              </button>
+            <div className="w-full bg-[#C3D5D7] rounded-lg p-8 md:p-12 mb-6">
+              {showForm ? (
+                <div className="max-w-lg mx-auto">
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-6 text-center">
+                    Create your first case
+                  </h2>
+                  <form onSubmit={handleCreateCase} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="title" className="font-sans text-sm font-medium text-neutral-darkest">
+                        Case Title <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        id="title"
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush bg-white"
+                        required
+                        placeholder="e.g., My Custody Case"
+                        data-testid="input-case-title"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="state" className="font-sans text-sm font-medium text-neutral-darkest">
+                          State
+                        </label>
+                        <input
+                          id="state"
+                          type="text"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush bg-white"
+                          placeholder="e.g., California"
+                          data-testid="input-case-state"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="county" className="font-sans text-sm font-medium text-neutral-darkest">
+                          County
+                        </label>
+                        <input
+                          id="county"
+                          type="text"
+                          value={county}
+                          onChange={(e) => setCounty(e.target.value)}
+                          className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush bg-white"
+                          placeholder="e.g., Alameda"
+                          data-testid="input-case-county"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="caseType" className="font-sans text-sm font-medium text-neutral-darkest">
+                          Case Type
+                        </label>
+                        <input
+                          id="caseType"
+                          type="text"
+                          value={caseType}
+                          onChange={(e) => setCaseType(e.target.value)}
+                          className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush bg-white"
+                          placeholder="e.g., Custody"
+                          data-testid="input-case-type"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasChildren}
+                          onChange={(e) => setHasChildren(e.target.checked)}
+                          className="w-4 h-4 rounded border-neutral-darkest/30 text-primary focus:ring-bush"
+                          data-testid="checkbox-has-children"
+                        />
+                        <span className="font-sans text-sm text-neutral-darkest">
+                          Does this case involve children?
+                        </span>
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-3 mt-4">
+                      <button
+                        type="submit"
+                        disabled={createCaseMutation.isPending}
+                        className="bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
+                        data-testid="button-create-case"
+                      >
+                        {createCaseMutation.isPending ? "Creating..." : "Create Case"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowForm(false)}
+                        className="font-sans text-sm font-medium text-neutral-darkest px-5 py-2.5 border border-neutral-darkest/20 rounded-md hover:bg-white/50 bg-white"
+                        data-testid="button-cancel-case"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Briefcase className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-2">
+                    Create your first case
+                  </h2>
+                  <p className="font-sans text-sm text-neutral-darkest/70 mb-6 max-w-md mx-auto">
+                    Get started by creating a case. This will be your workspace for organizing documents, tracking deadlines, and preparing for your family law matter.
+                  </p>
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-6 py-3 rounded-md button-inset-shadow"
+                    data-testid="button-create-first-case"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Your Case
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="w-full flex flex-col gap-4 mb-6">

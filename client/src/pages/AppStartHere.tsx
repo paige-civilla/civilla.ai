@@ -297,7 +297,7 @@ export default function AppStartHere() {
                       <CardHeader className="cursor-pointer hover-elevate py-4">
                         <CardTitle className="flex items-center justify-between text-base">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-md bg-[#E4ECED] flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-md bg-[#C3D5D7] flex items-center justify-center">
                               <Icon className="w-4 h-4 text-[#628286]" />
                             </div>
                             <span>{section.title}</span>

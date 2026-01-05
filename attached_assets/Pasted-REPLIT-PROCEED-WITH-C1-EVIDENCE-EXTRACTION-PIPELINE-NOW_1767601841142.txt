@@ -1,0 +1,160 @@
+REPLIT: PROCEED WITH C1 (EVIDENCE EXTRACTION PIPELINE) NOW — NO CONFIRMATION NEEDED
+
+GOAL
+When the user uploads evidence (PDF/image), Civilla extracts text reliably and saves it to evidence_extractions.
+Use Google Cloud Vision for OCR (images + PDF pages rendered to images). Also do native PDF text extraction as a first pass.
+Must be case/user-safe (requireAuth + ownership checks already exist).
+Must work asynchronously (job-style) so the UI doesn’t hang.
+
+------------------------------------------------------------
+1) ADD REQUIRED SECRETS + CONFIG (server-side)
+------------------------------------------------------------
+Add these Replit Secrets (Project Secrets):
+- GOOGLE_CLOUD_VISION_API_KEY  (or use GOOGLE_APPLICATION_CREDENTIALS_JSON if you prefer JSON creds)
+- If using JSON creds instead: GOOGLE_APPLICATION_CREDENTIALS_JSON
+
+Pick ONE approach:
+A) API Key (simpler): GOOGLE_CLOUD_VISION_API_KEY
+B) JSON creds (more standard): GOOGLE_APPLICATION_CREDENTIALS_JSON
+
+Implement whichever is present, prefer JSON creds if both exist.
+
+------------------------------------------------------------
+2) INSTALL SERVER DEPENDENCIES
+------------------------------------------------------------
+In server environment, add:
+- pdf-parse
+- pdfjs-dist
+- sharp
+- p-limit (optional but recommended)
+- node-fetch (if not already present; Node 18+ has fetch built-in)
+
+Commands (adjust to your package manager):
+npm i pdf-parse pdfjs-dist sharp p-limit
+
+Notes:
+- pdfjs-dist will be used to render PDF pages to PNG buffers for OCR.
+- pdf-parse will be used for native text extraction (fast when PDFs have embedded text).
+- sharp will convert/normalize images and help with buffers.
+
+------------------------------------------------------------
+3) CREATE A SINGLE EXTRACTION SERVICE MODULE
+------------------------------------------------------------
+Create: server/services/evidenceExtraction.ts
+
+Exports:
+- extractEvidenceText(opts): Promise<{ text: string, meta: {...} }>
+
+Inputs:
+- userId, caseId, evidenceId, filePath, mimeType, originalFilename
+
+Pipeline:
+A) Detect file type:
+   - if mimeType includes "pdf" OR filename endsWith .pdf -> PDF path
+   - else if image types (png/jpg/jpeg/webp/heic) -> Image path
+   - else: return empty extraction with meta.reason="unsupported"
+
+B) PDF Extraction:
+   1) Attempt native text first (pdf-parse):
+      - If extracted text length > threshold (e.g., 500 chars), accept it.
+   2) If native text is low/empty:
+      - Render pages to images using pdfjs-dist:
+        - Cap pages to a sane limit (ex: first 25 pages by default; store meta that it was capped)
+      - OCR each rendered page with Google Vision:
+        - Concurrency limit: 2–3 pages at a time (p-limit)
+      - Merge results in page order with clear separators:
+        "----- Page 1 -----\n...text...\n"
+   3) Return merged text + meta: pagesProcessed, usedNativeText(boolean), usedOcr(boolean), capped(boolean)
+
+C) Image Extraction:
+   - Normalize image via sharp:
+     - resize max width (e.g., 2000px) while maintaining aspect
+     - convert to PNG
+   - OCR with Google Vision
+   - Return text + meta: usedOcr=true
+
+Google Vision call:
+- Use Vision REST endpoint:
+  POST https://vision.googleapis.com/v1/images:annotate?key=...
+- Request feature: DOCUMENT_TEXT_DETECTION preferred; fallback TEXT_DETECTION if needed
+- Accept base64 content from buffers.
+
+If credentials missing:
+- Do NOT crash. Save extraction row with status="error" and errorMessage="Missing Google Vision credentials"
+
+------------------------------------------------------------
+4) CREATE A QUEUE-LIKE BACKGROUND RUNNER (NO EXTERNAL QUEUE REQUIRED)
+------------------------------------------------------------
+Implement “best-effort async” using a simple in-process job runner:
+
+Create: server/services/evidenceJobs.ts
+- Keep an in-memory Map<evidenceId, Promise> to avoid duplicate processing.
+- Provide:
+  - enqueueEvidenceExtraction({ userId, caseId, evidenceId, filePath, mimeType, originalFilename })
+- The job should:
+  1) Upsert evidence_extractions row with status="processing", startedAt=now
+  2) Run extractEvidenceText
+  3) Update evidence_extractions row with:
+     - status="complete"
+     - extractedText
+     - meta JSON (pages, capped, etc.)
+     - completedAt
+  4) On error:
+     - status="error"
+     - errorMessage
+     - completedAt
+
+Important:
+- If process restarts, jobs are lost. That’s OK for now.
+- Provide a manual “Re-run extraction” endpoint to retry.
+
+------------------------------------------------------------
+5) WIRE INTO EVIDENCE UPLOAD FLOW
+------------------------------------------------------------
+Find the evidence upload route (likely POST /api/cases/:caseId/evidence or similar).
+
+After the evidence DB record is created and file stored:
+- call enqueueEvidenceExtraction(...) (do NOT await)
+- return response to client immediately
+
+Also add these endpoints (auth required + ownership):
+- POST /api/cases/:caseId/evidence/:evidenceId/extraction/run
+  - triggers enqueueEvidenceExtraction even if previously complete
+- GET /api/cases/:caseId/evidence/:evidenceId/extraction
+  - already exists per summary: ensure it returns:
+    { status, extractedTextPreview, meta, errorMessage, updatedAt }
+
+Preview behavior:
+- For extractedTextPreview return first 2,000 chars for UI speed.
+
+------------------------------------------------------------
+6) UPDATE FRONTEND EVIDENCE UI (MINIMAL FOR C1)
+------------------------------------------------------------
+In AppEvidence.tsx:
+- On each evidence card, show an “Extraction” status pill:
+  - Not started / Processing / Complete / Error
+- If Complete: show “View extracted text” (opens a modal with searchable text)
+- If Error: show “Retry extraction” button (calls /extraction/run)
+- If Processing: show spinner + “Processing…” and poll every ~5–10s (react-query refetchInterval)
+
+Do NOT add AI analysis yet here — only extraction.
+
+------------------------------------------------------------
+7) SAFETY + LIMITS
+------------------------------------------------------------
+- Limit OCR pages per PDF (default 25). Store capped=true and pagesSkipped count in meta.
+- Limit max file size for OCR attempt if needed (ex: if PDF > 30MB, store error suggesting split)
+- Concurrency limit for OCR pages (2–3)
+
+------------------------------------------------------------
+8) DELIVERABLE SUMMARY BACK TO ME
+------------------------------------------------------------
+After implementing, report:
+- Which creds method you used (API key vs JSON)
+- Which pages/types are supported (PDF + images)
+- Page cap value and concurrency value
+- Where the job is enqueued (file + line)
+- Confirm DB rows in evidence_extractions are created/updated with status transitions
+- Confirm UI shows Processing -> Complete and can open extracted text modal
+
+START IMPLEMENTATION NOW.
