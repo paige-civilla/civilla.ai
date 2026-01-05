@@ -392,7 +392,7 @@ export default function LexiPanel() {
               <div>
                 <p className="font-heading font-semibold text-neutral-darkest leading-tight">{title}</p>
                 <p className="font-sans text-xs text-neutral-darkest/60 leading-tight">
-                  Your AI assistant
+                  Your AI Assistant
                 </p>
               </div>
             </div>
@@ -674,11 +674,6 @@ export default function LexiPanel() {
                       </button>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-end">
-                      <span className="text-xs font-sans text-neutral-darkest/50">
-                        Education only
-                      </span>
-                    </div>
                   </div>
                 </>
               )}
