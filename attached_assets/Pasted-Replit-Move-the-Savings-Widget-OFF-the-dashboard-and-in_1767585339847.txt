@@ -1,0 +1,51 @@
+Replit — Move the “Savings Widget” OFF the dashboard and into Account Settings as a tiny compact widget.
+
+Goal:
+- Dashboard: remove Savings Widget entirely.
+- Account Settings: add a very small widget (about 260–320px wide) that can expand/collapse. Default collapsed so it’s not “big”.
+- Keep the existing savings logic if possible; just relocate + restyle. Routes stay the same.
+
+Steps:
+
+1) REMOVE from Dashboard
+File: client/src/pages/AppDashboard.tsx
+- Search for the Savings widget component/section. Look for:
+  “Savings”, “Estimated savings”, “TurboTax”, “calculator”, “lawyer”, or a component name like SavingsWidget.
+- Delete that entire Savings widget JSX section AND any related state/hooks/mutations used only by it.
+- Ensure the module grid and calendar layout still looks correct after removal.
+
+2) ADD a compact widget to Account Settings
+File: client/src/pages/AppAccountSettings.tsx  (or whatever the Account Settings page file is called in this repo)
+- Add a small card section near the top (under profile basics) with:
+  Title: “Savings Estimate”
+  Subtitle: “Optional quick calculator”
+  A small button to expand/collapse: “Show” / “Hide”
+- When collapsed: show only title + one-line summary (e.g., “Estimate your potential legal cost savings.”)
+- When expanded: show the existing savings calculator UI (inputs + output) BUT constrained to a max width:
+  className="w-full max-w-[320px]"
+  and make inputs compact (smaller text, tighter padding).
+
+3) If the savings widget exists as a reusable component:
+- Move it into: client/src/components/SavingsWidget.tsx (if not already)
+- Export it and reuse it in Account Settings.
+- In Account Settings pass a prop like `compact` to render smaller spacing.
+
+4) Compact styling requirements (inside app theme):
+- Container: bg-[#E4ECED] border border-[#628286] rounded-xl
+- Text: text-[#243032]
+- Button: bg-[#314143] text-[#FAF8F4]
+- Keep it visually “tiny”: max-w-[320px], and do NOT span full page width on desktop.
+
+5) Make sure nothing else breaks:
+- Run TypeScript check / LSP and fix missing imports.
+- Restart the app.
+- Verify:
+  a) Dashboard no longer shows savings widget
+  b) Account Settings shows the small collapsed widget
+  c) Clicking “Show” expands it and calculator works
+  d) Mobile: widget is still full width (w-full) but remains compact vertically
+
+After you finish, paste back:
+- The removed dashboard snippet (what you deleted)
+- The new Account Settings section snippet
+- The component file name where the savings widget lives now

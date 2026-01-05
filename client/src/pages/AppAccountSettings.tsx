@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, CreditCard, Settings, Palette } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,10 @@ interface UserProfile {
 export default function AppAccountSettings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const [savingsExpanded, setSavingsExpanded] = useState(false);
+  const [savingsHours, setSavingsHours] = useState(10);
+  const [savingsHourlyRate, setSavingsHourlyRate] = useState(300);
+  const [savingsIncludeDocPrep, setSavingsIncludeDocPrep] = useState(true);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -115,6 +120,83 @@ export default function AppAccountSettings() {
             "Keep your contact information current for accurate document generation."
           ]}
         />
+
+        <div className="w-full max-w-[320px] mb-6">
+          <div className="bg-[#E4ECED] border border-[#628286] rounded-xl overflow-hidden">
+            <button
+              onClick={() => setSavingsExpanded(!savingsExpanded)}
+              className="w-full flex items-center justify-between p-3 hover:bg-[rgba(162,190,194,0.22)] transition-colors"
+              data-testid="button-toggle-savings"
+            >
+              <div className="flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-[#628286]" />
+                <div className="text-left">
+                  <p className="font-heading font-semibold text-sm text-[#243032]">Savings Estimate</p>
+                  {!savingsExpanded && (
+                    <p className="font-sans text-xs text-[#243032]/60">Estimate your potential legal cost savings.</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-[#243032]/60">{savingsExpanded ? "Hide" : "Show"}</span>
+                {savingsExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-[#628286]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#628286]" />
+                )}
+              </div>
+            </button>
+
+            {savingsExpanded && (
+              <div className="px-3 pb-3 space-y-3">
+                <div>
+                  <Label htmlFor="savings-hours" className="text-xs text-[#243032]/70">Hours organizing</Label>
+                  <Input
+                    id="savings-hours"
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={savingsHours}
+                    onChange={(e) => setSavingsHours(parseInt(e.target.value) || 0)}
+                    className="mt-1 h-8 text-sm"
+                    data-testid="input-savings-hours"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="savings-rate" className="text-xs text-[#243032]/70">Hourly value ($)</Label>
+                  <Input
+                    id="savings-rate"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={savingsHourlyRate}
+                    onChange={(e) => setSavingsHourlyRate(parseInt(e.target.value) || 0)}
+                    className="mt-1 h-8 text-sm"
+                    data-testid="input-savings-rate"
+                  />
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={savingsIncludeDocPrep}
+                    onCheckedChange={(val) => setSavingsIncludeDocPrep(val === true)}
+                    data-testid="checkbox-include-doc-prep"
+                  />
+                  <span className="text-xs text-[#243032]/70">Include doc prep (+25%)</span>
+                </label>
+
+                <div className="bg-white/60 rounded-lg p-3">
+                  <p className="text-xs text-[#243032]/60 mb-1">Estimated value saved</p>
+                  <p className="font-heading font-bold text-xl text-[#314143]" data-testid="text-savings-estimate">
+                    ${((savingsIncludeDocPrep ? savingsHours * 1.25 : savingsHours) * savingsHourlyRate).toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-[#243032]/50 mt-1">
+                    Educational estimate. Actual costs vary.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="space-y-8">
           <Card className="bg-white">
