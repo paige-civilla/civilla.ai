@@ -207,7 +207,7 @@ export default function AppChildSupport() {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="font-heading font-bold text-xl sm:text-heading-3-mobile md:text-heading-3 text-neutral-darkest">
-                Child Support (Worksheet Helper)
+                Child Support
               </h1>
               {primaryCase && (
                 <p className="font-sans text-sm text-neutral-darkest/60 mt-1">

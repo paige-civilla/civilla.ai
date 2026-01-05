@@ -296,37 +296,39 @@ export default function LexiPanel() {
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={open ? "Close Lexi" : "Open Lexi"}
-        data-testid="lexi-toggle"
-        onClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") setOpen((v) => !v);
-        }}
-        className={[
-          "fixed right-0 top-1/2 -translate-y-1/2 z-50",
-          "h-[140px] w-[38px] shadow-lg",
-          "rounded-l-md",
-          "flex items-center justify-center",
-          "cursor-pointer select-none",
-          "transition-colors duration-150",
-          "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
-          open ? "hidden" : "",
-        ].join(" ")}
-        style={{
-          backgroundColor: "#314143",
-        }}
-      >
+      {!open && (
         <div
-          className="flex flex-col items-center gap-1 [writing-mode:vertical-rl] rotate-180"
-          style={{ color: "#FAF8F4" }}
+          role="button"
+          tabIndex={0}
+          aria-label="Open Lexi"
+          data-testid="lexi-toggle"
+          onClick={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") setOpen(true);
+          }}
+          className={[
+            "fixed right-0 top-1/2 -translate-y-1/2 z-50",
+            "h-32 w-11 shadow-lg",
+            "rounded-l-xl",
+            "flex items-center justify-center",
+            "cursor-pointer select-none",
+            "transition-colors duration-150",
+            "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
+            "border border-[hsl(var(--module-tile-border))]",
+          ].join(" ")}
+          style={{
+            backgroundColor: "#314143",
+          }}
         >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+          <div
+            className="flex items-center gap-2 rotate-[-90deg]"
+            style={{ color: "#FAF8F4" }}
+          >
+            <span className="text-lg">›</span>
+            <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {open && (
         <div
@@ -337,50 +339,14 @@ export default function LexiPanel() {
         />
       )}
 
-      {open && (
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="Close Lexi"
-          data-testid="lexi-toggle-close"
-          onClick={() => setOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setOpen(false);
-          }}
-          className={[
-            "hidden sm:flex",
-            "fixed top-1/2 -translate-y-1/2 z-[51]",
-            "h-[140px] w-[38px] shadow-lg",
-            "rounded-l-md",
-            "items-center justify-center",
-            "cursor-pointer select-none",
-            "transition-colors duration-150",
-            "hover:bg-[#263233] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#628286] focus-visible:ring-offset-2",
-          ].join(" ")}
-          style={{
-            backgroundColor: "#314143",
-            right: "calc(clamp(320px, 72vw, 520px) + 24px)",
-          }}
-        >
-          <div
-            className="flex flex-col items-center gap-1 [writing-mode:vertical-rl] rotate-180"
-            style={{ color: "#FAF8F4" }}
-          >
-            <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
-            <ChevronRight className="w-4 h-4" />
-          </div>
-        </div>
-      )}
-
       <div
         className={[
-          "fixed z-50 bg-white border border-neutral-light shadow-2xl",
+          "fixed z-50",
           "w-full h-full sm:w-[clamp(320px,72vw,520px)] sm:h-auto",
-          "sm:right-6 sm:rounded-2xl",
+          "sm:right-6",
           "right-0 top-0",
           "transition-transform duration-200 ease-out",
-          "flex flex-col overflow-hidden",
-          open ? "translate-x-0" : "translate-x-full",
+          open ? "translate-x-0" : "translate-x-full pointer-events-none",
         ].join(" ")}
         style={{
           top: "calc(var(--civilla-nav-h, 64px) + 12px)",
@@ -389,7 +355,33 @@ export default function LexiPanel() {
         role="dialog"
         aria-label="Lexi panel"
       >
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="relative h-full w-full">
+          {open && (
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close Lexi"
+              data-testid="lexi-toggle-close"
+              className={[
+                "hidden sm:flex",
+                "absolute left-[-44px] top-1/2 -translate-y-1/2",
+                "h-32 w-11 rounded-l-xl",
+                "bg-[#314143] text-[#FAF8F4]",
+                "border border-[hsl(var(--module-tile-border))]",
+                "items-center justify-center",
+                "shadow cursor-pointer",
+                "hover:bg-[#263233] transition-colors",
+              ].join(" ")}
+            >
+              <div className="flex items-center gap-2 rotate-[-90deg]">
+                <span className="text-lg">‹</span>
+                <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+              </div>
+            </button>
+          )}
+
+          <div className="h-full w-full bg-white border border-neutral-light shadow-2xl sm:rounded-2xl flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-light shrink-0">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -685,6 +677,8 @@ export default function LexiPanel() {
               )}
             </>
           )}
+            </div>
+          </div>
         </div>
       </div>
     </>

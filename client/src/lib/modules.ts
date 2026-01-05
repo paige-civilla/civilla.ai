@@ -146,7 +146,7 @@ export const MODULES_REGISTRY: ModuleDef[] = [
   },
   {
     key: "child-support",
-    label: "Child Support (Worksheet Helper)",
+    label: "Child Support",
     description: "Find your state's official child support worksheet/calculator and get an educational estimate.",
     href: (caseId) => `/app/child-support/${caseId}`,
     icon: Calculator,

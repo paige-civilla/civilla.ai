@@ -50,7 +50,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   "case-to-do": "Case To-Do",
   "contacts": "Contacts",
   "children": "Children",
-  "child-support": "Child Support (Worksheet Helper)",
+  "child-support": "Child Support",
   "trial-prep": "Trial Prep",
 };
 
