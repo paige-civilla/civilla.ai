@@ -127,7 +127,7 @@
   --module-tile-border: 187 17% 37%;      /* #4F6A6E darker for distinction */
   --module-tile-hover: 190 27% 82%;       /* slightly darker hover tint */
   --module-tile-icon: 187 17% 37%;        /* matches border */
-  --module: 186 20% 80%;                  /* #C3D5D7 module surface */
+  --module: 190 27% 86%;                  /* #D4E0E2 lighter module surface (unified) */
   --module-border: 189 20% 46%;           /* #628286 legacy */
   --ink: 180 3% 12%;                      /* #1E2020 */
 
