@@ -835,6 +835,7 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_evidence ON evidence_notes(evidence_id)`,
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user_case ON evidence_notes(user_id, case_id)`
   ]);
+  await addColumnIfNotExists("evidence_notes", "is_resolved", "BOOLEAN NOT NULL DEFAULT false");
 
   // Drop old trial_prep_shortlist if it has old schema (evidence_id column)
   try {

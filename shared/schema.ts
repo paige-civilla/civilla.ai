@@ -1531,7 +1531,7 @@ export type InsertEvidenceAiAnalysis = z.infer<typeof insertEvidenceAiAnalysisSc
 export type UpdateEvidenceAiAnalysis = z.infer<typeof updateEvidenceAiAnalysisSchema>;
 export type EvidenceAiAnalysis = typeof evidenceAiAnalyses.$inferSelect;
 
-export const noteAnchorTypes = ["page", "timestamp", "range"] as const;
+export const noteAnchorTypes = ["page", "timestamp", "text", "range"] as const;
 export type NoteAnchorType = typeof noteAnchorTypes[number];
 
 export const evidenceNotes = pgTable("evidence_notes", {
@@ -1547,6 +1547,7 @@ export const evidenceNotes = pgTable("evidence_notes", {
   selectionText: text("selection_text"),
   tags: jsonb("tags"),
   color: text("color"),
+  isResolved: boolean("is_resolved").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -1564,6 +1565,7 @@ export const insertEvidenceNoteFullSchema = z.object({
   selectionText: z.string().max(5000).optional().nullable(),
   tags: z.array(z.string()).optional().nullable(),
   color: z.string().max(20).optional().nullable(),
+  isResolved: z.boolean().optional().default(false),
 });
 
 export const updateEvidenceNoteFullSchema = z.object({
@@ -1575,6 +1577,7 @@ export const updateEvidenceNoteFullSchema = z.object({
   selectionText: z.string().max(5000).optional().nullable(),
   tags: z.array(z.string()).optional().nullable(),
   color: z.string().max(20).optional().nullable(),
+  isResolved: z.boolean().optional(),
 });
 
 export type InsertEvidenceNoteFull = z.infer<typeof insertEvidenceNoteFullSchema>;
