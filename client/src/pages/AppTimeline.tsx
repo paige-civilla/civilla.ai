@@ -83,8 +83,9 @@ export default function AppTimeline() {
     enabled: !!caseId,
   });
 
-  const { data: categoriesData, isLoading: categoriesLoading } = useQuery<{ categories: TimelineCategory[] }>({
-    queryKey: ["/api/timeline-categories"],
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery<{ categories: (TimelineCategory & { eventCount?: number })[] }>({
+    queryKey: ["/api/cases", caseId, "timeline/categories"],
+    enabled: !!caseId,
   });
 
   const currentCase = caseData?.case;
@@ -92,12 +93,12 @@ export default function AppTimeline() {
   const categories = categoriesData?.categories || [];
 
   useEffect(() => {
-    if (categories.length === 0 && !categoriesLoading) {
-      apiRequest("POST", "/api/timeline-categories/seed").then(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+    if (caseId && categories.length === 0 && !categoriesLoading) {
+      apiRequest("POST", `/api/cases/${caseId}/timeline/categories/seed`).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "timeline/categories"] });
       }).catch(() => {});
     }
-  }, [categories.length, categoriesLoading]);
+  }, [caseId, categories.length, categoriesLoading]);
 
   useEffect(() => {
     if (currentCase) {
@@ -193,10 +194,10 @@ export default function AppTimeline() {
 
   const createCategoryMutation = useMutation({
     mutationFn: async (data: { name: string; color: string }) => {
-      return apiRequest("POST", "/api/timeline-categories", data);
+      return apiRequest("POST", `/api/cases/${caseId}/timeline/categories`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "timeline/categories"] });
       setNewCategoryName("");
       setNewCategoryColor(DEFAULT_COLORS[0]);
       toast({ title: "Category created" });
@@ -208,10 +209,10 @@ export default function AppTimeline() {
 
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { name?: string; color?: string } }) => {
-      return apiRequest("PATCH", `/api/timeline-categories/${id}`, data);
+      return apiRequest("PATCH", `/api/cases/${caseId}/timeline/categories/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "timeline/categories"] });
       setEditingCategoryId(null);
       toast({ title: "Category updated" });
     },
@@ -222,10 +223,10 @@ export default function AppTimeline() {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/timeline-categories/${id}`);
+      return apiRequest("DELETE", `/api/cases/${caseId}/timeline/categories/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "timeline/categories"] });
       toast({ title: "Category deleted" });
     },
     onError: (error: Error) => {
