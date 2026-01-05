@@ -628,10 +628,12 @@ export async function registerRoutes(
 
   app.post("/api/cases", requireAuth, async (req, res) => {
     const userId = req.session.userId!;
-    console.log("[CreateCase] auth sanity check", {
-      hasUser: !!userId,
-      userId: userId,
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[CreateCase] auth sanity check", {
+        hasUser: !!userId,
+        userId: userId,
+      });
+    }
     try {
       const user = await storage.getUser(userId);
       if (!user) {
