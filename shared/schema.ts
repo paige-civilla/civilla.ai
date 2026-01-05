@@ -616,12 +616,16 @@ export const contactRoles = [
 ] as const;
 export type ContactRole = typeof contactRoles[number];
 
+export const contactGroupValues = ["case", "witness"] as const;
+export type ContactGroup = typeof contactGroupValues[number];
+
 export const caseContacts = pgTable("case_contacts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   caseId: varchar("case_id").notNull().references(() => cases.id),
   name: text("name").notNull(),
   role: text("role").notNull().default("other"),
+  contactGroup: text("contact_group").notNull().default("case"),
   organizationOrFirm: text("organization_or_firm"),
   email: text("email"),
   phone: text("phone"),
@@ -632,11 +636,13 @@ export const caseContacts = pgTable("case_contacts", {
   caseIdx: index("contacts_case_idx").on(table.caseId),
   userIdx: index("contacts_user_idx").on(table.userId),
   caseRoleIdx: index("contacts_case_role_idx").on(table.caseId, table.role),
+  caseGroupIdx: index("contacts_case_group_idx").on(table.userId, table.caseId, table.contactGroup),
 }));
 
 export const insertContactSchema = z.object({
   name: z.string().min(1, "Name is required").max(200, "Name must be 200 characters or less"),
   role: z.string().max(50).optional().default("other"),
+  contactGroup: z.enum(["case", "witness"]).optional().default("case"),
   organizationOrFirm: z.string().max(200).optional().nullable(),
   email: z.string().max(200).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
@@ -647,6 +653,7 @@ export const insertContactSchema = z.object({
 export const updateContactSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   role: z.string().max(50).optional(),
+  contactGroup: z.enum(["case", "witness"]).optional(),
   organizationOrFirm: z.string().max(200).optional().nullable(),
   email: z.string().max(200).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),

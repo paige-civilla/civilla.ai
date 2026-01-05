@@ -342,6 +342,7 @@ export async function initDbTables(): Promise<void> {
       case_id VARCHAR(255) NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'other',
+      contact_group TEXT NOT NULL DEFAULT 'case',
       organization_or_firm TEXT,
       email TEXT,
       phone TEXT,
@@ -352,7 +353,9 @@ export async function initDbTables(): Promise<void> {
   `, [
     `CREATE INDEX IF NOT EXISTS idx_contacts_case_id ON case_contacts(case_id)`,
     `CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON case_contacts(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_contacts_case_role ON case_contacts(case_id, role)`
+    `CREATE INDEX IF NOT EXISTS idx_contacts_case_role ON case_contacts(case_id, role)`,
+    `ALTER TABLE case_contacts ADD COLUMN IF NOT EXISTS contact_group TEXT NOT NULL DEFAULT 'case'`,
+    `CREATE INDEX IF NOT EXISTS idx_contacts_case_group ON case_contacts(user_id, case_id, contact_group)`
   ]);
 
   await initTable("case_communications", `

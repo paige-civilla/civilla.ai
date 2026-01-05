@@ -1,0 +1,85 @@
+REPLIT — FIX 3 THINGS (App menu hover highlight + readable text + solid dropdown background + “If you’re in crisis” home hero box color)
+
+A) APP NAVBAR DROPDOWN: Make it SOLID (not transparent / not showing page behind)
+1) Open: client/src/components/layout/AppNavbar.tsx
+2) Find the dropdown panel container (the element that appears when the menu opens).
+   It will look like a div with classes similar to: "bg-..." "border" "shadow" "absolute" etc.
+3) Ensure the dropdown panel has:
+   - a solid background color
+   - an explicit opacity of 100
+   - a high z-index
+   - no backdrop blur / transparency classes
+
+Use these exact classes on the DROPDOWN PANEL CONTAINER:
+- bg-[#E4ECED]
+- opacity-100
+- z-[60]
+- shadow-lg
+- border border-[#628286]
+
+Example (adapt to your exact JSX structure):
+<div className="absolute right-0 top-full mt-2 w-[min(720px,calc(100vw-16px))] bg-[#E4ECED] opacity-100 z-[60] shadow-lg border border-[#628286] rounded-xl">
+
+Also remove any of these if present on the dropdown panel:
+- bg-white/xx, bg-black/xx, bg-*/xx
+- backdrop-blur*
+- opacity-*
+- bg-transparent
+
+B) APP NAVBAR DROPDOWN: Hover highlight is too dark + text gets lost
+Goal:
+- Hover highlight should be lighter blue/teal and readable.
+- On hover: background becomes #A2BEC2 and text becomes WHITE.
+- Default text color stays dark (#243032 or current foreground).
+
+1) In AppNavbar.tsx find the dropdown menu item element (button/link).
+2) Replace hover classes with these (exact):
+- hover:bg-[#A2BEC2]
+- hover:text-white
+- focus:bg-[#A2BEC2]
+- focus:text-white
+- active:bg-[#A2BEC2]
+- active:text-white
+
+Keep a smooth transition:
+- transition-colors
+
+Example for a dropdown item:
+className="w-full text-left rounded-lg px-3 py-2 text-[#243032] hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white transition-colors"
+
+Dark mode:
+If you have dark mode classes on these items, keep them, but ensure hover still stays readable.
+If dark mode currently makes hover unreadable, force the hover text to white in dark mode too:
+- dark:hover:text-white
+- dark:focus:text-white
+
+C) HOME PAGE: “If you’re in crisis” hero box should be DARK GREEN
+1) Find the component/page that renders that box.
+   Likely one of:
+   - client/src/pages/Landing.tsx
+   - client/src/components/CTASection.tsx
+   - client/src/components/TestimonialsSection.tsx
+   - client/src/components/ToolsSection.tsx
+   - or another marketing component
+
+Search for the text “If you’re in crisis” and open the file that contains it.
+2) Update the container classes for that hero box to use the dark green theme:
+- background: #0F3B2E
+- text: #FAF8F4
+- border (optional): a darker green or subtle border
+
+Example:
+className="rounded-2xl bg-[#0F3B2E] text-[#FAF8F4] border border-[#0C2F24] p-6"
+
+Also ensure links inside the box are readable:
+- underline + text-[#FAF8F4]
+- hover:text-[#CFD7D5] (optional)
+
+D) CONFIRMATION CHECKLIST (tell me in your summary)
+After changes, confirm:
+1) Dropdown panel is fully solid (no bleed-through of page behind it).
+2) Hover highlight is lighter (#A2BEC2) and text remains readable (white on hover).
+3) Crisis hero box is dark green (#0F3B2E) with cream text (#FAF8F4).
+4) Screenshots: one of dropdown open + hover state, and one of the crisis hero box.
+
+IMPORTANT: In your final response, list the exact files changed and paste the exact className snippets you updated so we can verify quickly.
