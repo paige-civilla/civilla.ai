@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -177,6 +177,31 @@ export default function AppEvidence() {
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message || "Failed to start extraction", variant: "destructive" });
+    },
+  });
+
+  const addToTrialPrepMutation = useMutation({
+    mutationFn: async (file: EvidenceFile) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "evidence",
+        sourceId: file.id,
+        title: file.originalName,
+        summary: file.description || null,
+        binderSection: "Key Evidence",
+        importance: 3,
+        tags: ["evidence"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
     },
   });
 
@@ -882,6 +907,16 @@ export default function AppEvidence() {
                                 data-testid={`button-delete-${file.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => addToTrialPrepMutation.mutate(file)}
+                                disabled={addToTrialPrepMutation.isPending}
+                                data-testid={`button-trial-prep-${file.id}`}
+                                title="Add to Trial Prep"
+                              >
+                                <Scale className="w-4 h-4" />
                               </Button>
                             </>
                           )}
