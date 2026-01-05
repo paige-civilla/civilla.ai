@@ -109,8 +109,10 @@ export async function initDbTables(): Promise<void> {
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
       title TEXT NOT NULL,
+      nickname TEXT,
       state TEXT,
       county TEXT,
+      case_number TEXT,
       case_type TEXT,
       has_children BOOLEAN NOT NULL DEFAULT false,
       starting_point TEXT NOT NULL DEFAULT 'not_sure',
@@ -118,9 +120,32 @@ export async function initDbTables(): Promise<void> {
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`,
-    `ALTER TABLE cases ADD COLUMN IF NOT EXISTS starting_point TEXT NOT NULL DEFAULT 'not_sure'`
+    `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`
   ]);
+
+  const ensureCasesColumns = async () => {
+    const cols = [
+      { name: "nickname", type: "TEXT" },
+      { name: "case_number", type: "TEXT" },
+      { name: "starting_point", type: "TEXT NOT NULL DEFAULT 'not_sure'" },
+    ];
+    for (const col of cols) {
+      try {
+        const check = await pool.query(`
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='cases' AND column_name=$1
+        `, [col.name]);
+        if (check.rows.length === 0) {
+          await pool.query(`ALTER TABLE cases ADD COLUMN ${col.name} ${col.type}`);
+          console.log(`cases.${col.name} added`);
+        }
+      } catch (err) {
+        console.log(`cases.${col.name} migration skipped:`, err instanceof Error ? err.message : err);
+      }
+    }
+    console.log("cases.starting_point present: true");
+  };
+  await ensureCasesColumns();
 
   await initTable("user_profiles", `
     CREATE TABLE IF NOT EXISTS user_profiles (

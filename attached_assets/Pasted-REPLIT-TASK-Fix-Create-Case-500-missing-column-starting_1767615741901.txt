@@ -1,0 +1,59 @@
+REPLIT TASK: Fix Create Case 500 (missing column "starting_point")
+
+Problem
+POST /api/cases fails with:
+column "starting_point" does not exist (Postgres 42703)
+
+Root cause
+The code now writes a "startingPoint" field (DB column starting_point) when creating cases,
+but the deployed Neon "cases" table was created before this column existed.
+
+Goal
+1) Add starting_point column to cases table in production safely.
+2) Keep shared/schema.ts in sync so Drizzle + types match.
+3) Ensure create-case works even if old DB is missing columns (defensive migration on startup).
+
+Do ALL:
+
+A) Update shared/schema.ts (cases table)
+1) Find the cases table definition.
+2) Add a new nullable column:
+   startingPoint: text("starting_point")   // nullable
+   (If you prefer an enum later, keep it text for now.)
+3) Ensure any Case insert/update zod schemas allow it as optional.
+
+B) Add DB startup migration in server/db.ts (no drizzle push required)
+We already do runtime table creation/migration patterns in this app.
+Add a small "ensureCasesColumns" step that runs on startup:
+
+1) After connecting to the DB (same place other CREATE TABLE / ALTER TABLE logic happens),
+   run a query that checks if the column exists:
+   SELECT 1
+   FROM information_schema.columns
+   WHERE table_name='cases' AND column_name='starting_point';
+
+2) If it does NOT exist, run:
+   ALTER TABLE cases ADD COLUMN starting_point text;
+
+3) This must be safe to run multiple times (only add if missing).
+
+C) Ensure server/storage.ts createCase uses the correct field mapping
+1) Confirm the insert statement includes startingPoint only if present in the input,
+   mapping to starting_point automatically via Drizzle.
+2) If any raw SQL uses "starting_point", keep it as-is once the column exists.
+
+D) Verify
+1) Restart the workflow.
+2) Create a case from the UI.
+3) Confirm server log no longer shows 42703 and POST /api/cases returns 200 with new case id.
+
+E) Report back
+When done, tell me:
+- Files changed
+- Confirmation that cases.starting_point exists (log a one-time debug: “cases.starting_point present: true”)
+- Create case now works
+
+Implementation notes (important)
+- Do NOT drop tables.
+- Do NOT reset the database.
+- This is a production-safe additive migration only.
