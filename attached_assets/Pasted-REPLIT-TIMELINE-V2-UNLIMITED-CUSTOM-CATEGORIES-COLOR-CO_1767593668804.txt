@@ -1,0 +1,170 @@
+REPLIT — TIMELINE V2: UNLIMITED CUSTOM CATEGORIES + COLOR CODING + (OPTIONAL) HORIZONTAL TIMELINE VIEW
+
+GOAL
+1) Timeline categories must be:
+- More comprehensive by default (starter set)
+- User-editable (create/edit/delete)
+- Unlimited (no hard limit)
+- Color-coded (user chooses color)
+2) Timeline can be viewed as:
+- List (existing) AND
+- A true timeline visualization (horizontal) with a toggle
+
+A) DATA MODEL (shared/schema.ts)
+
+1) Add table: timeline_categories
+- id (uuid)
+- userId (FK users)
+- name TEXT NOT NULL (max 60)
+- color TEXT NOT NULL (hex, e.g. "#628286")
+- isSystem BOOLEAN NOT NULL DEFAULT false
+- createdAt TIMESTAMP DEFAULT NOW()
+
+Indexes:
+- userId
+Unique:
+- (userId, name) unique
+
+2) Update timeline_events:
+- Add column categoryId UUID NULL (FK timeline_categories.id)
+- Keep existing legacy column category TEXT for now (do NOT break old data)
+
+Migration plan:
+- When creating new events, use categoryId
+- When loading events, if categoryId exists -> use linked category
+- If categoryId is null but category text exists -> show as “Legacy” category name + neutral color
+
+B) DB INIT (server/db.ts)
+
+1) Create timeline_categories table if not exists
+2) Add timeline_events.category_id column if not exists
+3) Seed DEFAULT system categories per user ON FIRST USE:
+System categories (examples):
+- Court / Hearings
+- Filings
+- Service / Notice
+- Communication
+- Discovery / Disclosures
+- Parenting Time
+- School
+- Medical
+- Financial
+- Incidents
+- Other
+
+Seed behavior:
+- On first GET /api/cases/:caseId/timeline or GET categories, check if user has any timeline_categories.
+- If none, insert the system set with isSystem=true and sensible default colors (use your palette; use distinct colors but not neon).
+
+C) STORAGE (server/storage.ts)
+
+Add methods:
+
+Timeline categories:
+- listTimelineCategories(userId): returns categories ordered isSystem desc, name asc
+- createTimelineCategory(userId, {name, color})
+- updateTimelineCategory(userId, categoryId, {name, color})
+- deleteTimelineCategory(userId, categoryId)
+
+Delete rules:
+- If category isSystem=true -> do not allow delete (return 400)
+- If any timeline_events reference the categoryId -> either:
+  Option A (recommended): prevent delete with friendly error “Category is in use”
+  Option B: reassign those events to “Other”
+Pick Option A for safety.
+
+Timeline events:
+- Update create/update to accept categoryId (preferred) while still accepting legacy category text for backward compatibility.
+- listTimelineEvents should join categories to include:
+  categoryName, categoryColor
+
+D) API ROUTES (server/routes.ts) — requireAuth
+
+Categories:
+1) GET  /api/timeline/categories
+2) POST /api/timeline/categories
+3) PATCH /api/timeline/categories/:categoryId
+4) DELETE /api/timeline/categories/:categoryId
+
+Timeline events:
+Update existing timeline endpoints to accept categoryId in POST/PATCH payload.
+
+Response shape for timeline events should include:
+- categoryId
+- categoryName
+- categoryColor
+- legacyCategory (optional, if old text-based category exists)
+
+E) FRONTEND — AppTimeline.tsx
+
+1) Category selection in “Add Timeline Event” form:
+- Replace the current dropdown of hardcoded categories with:
+  - Dropdown sourced from GET /api/timeline/categories
+  - Shows color dot + category name
+  - “Manage categories” link/button opens a modal
+
+2) Manage Categories Modal:
+- List existing categories with:
+  - color swatch
+  - name
+  - edit button
+  - delete button (only if !isSystem and not in use)
+- Add new category form:
+  - Name input
+  - Color picker
+    Use the SAME picker UI you used for calendar categories:
+    - A grid of preset colors + optional “Custom” color input field for hex
+- No limit on count.
+
+3) Color coding in timeline list:
+- Each event row shows category color dot/badge
+- Filtering:
+  - Add optional filter dropdown “All categories” / pick category
+
+4) TIMELINE VIEW TOGGLE (List vs Timeline)
+Add a toggle at top right:
+- “List” (default)
+- “Timeline”
+
+Timeline view UI (simple but real):
+- Horizontal scroll container
+- Group events by month/week (pick month to start)
+- Render a horizontal “line” across with nodes for events
+- Node color = categoryColor
+- Clicking a node opens the existing edit/view event modal
+- Tooltip or small label under node: date + short title (truncate)
+
+Implementation approach:
+- Create component: client/src/components/timeline/HorizontalTimeline.tsx
+- Use CSS overflow-x-auto + min-width tracks
+- Layout:
+  - A top row of month labels
+  - A line row with evenly spaced nodes by date within month
+  - A label row under each node (truncate)
+
+Keep it minimal: first pass doesn’t need perfect proportional spacing; it just needs to visually feel like a timeline and be usable.
+
+F) BACKWARD COMPATIBILITY
+- Existing events with category TEXT should still render.
+- In edit modal:
+  - If legacy category exists but no categoryId, show “Legacy category” badge and let user pick a new category to convert it.
+  - On save, write categoryId and optionally clear legacy category text.
+
+G) ACCEPTANCE TESTS
+1) Open Timeline → categories load (system seeded automatically for new user)
+2) Add custom category “Text Messages” with a custom color
+3) Add timeline event with that category → list shows correct color badge
+4) Switch to Timeline view → event appears as colored node and can be clicked
+5) Edit event → change category → color updates everywhere
+6) Try deleting a system category → blocked
+7) Try deleting a custom category in use → blocked with clear message
+
+FINAL REPLIT SUMMARY REQUIREMENTS
+- List files edited
+- List new DB tables/columns
+- List new API routes
+- Confirm system category seeding works
+- Confirm timeline list + horizontal timeline toggle works
+- Provide screenshots:
+  1) Manage Categories modal with custom category added
+  2) Horizontal timeline view with colored nodes
