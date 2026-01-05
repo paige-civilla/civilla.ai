@@ -265,11 +265,12 @@ export default function Navbar() {
 
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 bg-white rounded-md"
+              className="ml-2 p-1.5 rounded-md text-white shadow-sm transition-all hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[#16a34a]"
+              style={{ backgroundImage: 'var(--quick-exit-bg)' }}
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >
-              <LogOut className="w-4 h-4 text-neutral-darkest" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>

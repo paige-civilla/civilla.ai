@@ -267,7 +267,8 @@ export default function AppNavbar() {
               </button>
               <button 
                 onClick={handleQuickExit}
-                className="ml-1 sm:ml-2 p-1 sm:p-1.5 rounded-md bg-gradient-to-b from-bush to-bush-dark hover:from-bush-dark hover:to-bush text-cream transition-colors"
+                className="ml-1 sm:ml-2 p-1 sm:p-1.5 rounded-md text-white shadow-sm transition-all hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[#16a34a]"
+                style={{ backgroundImage: 'var(--quick-exit-bg)' }}
                 aria-label="Quick exit"
                 data-testid="button-quick-exit-app"
               >

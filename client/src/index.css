@@ -13,6 +13,12 @@
   
   /* Input field light green background - preserved across themes */
   --input-bg: #EEF7F1;
+  
+  /* Vibrant brand green gradient (matches logo leaf) */
+  --brand-green-1: #22c55e;  /* Vibrant bright green */
+  --brand-green-2: #16a34a;  /* Rich green */
+  --brand-green-3: #15803d;  /* Deep green */
+  --quick-exit-bg: linear-gradient(to bottom, var(--brand-green-1), var(--brand-green-2));
 }
 
 /* ---------------------------
