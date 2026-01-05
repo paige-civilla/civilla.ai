@@ -1,0 +1,146 @@
+REPLIT TASK: Add a Trial Prep module with binder sections + “Top 3” pinned items per section + printable view.
+
+GOAL (MVP)
+Create a Trial Prep module that:
+1) Shows binder sections (Evidence, Timeline, Message/Call Log, Deadlines, Case To-Do, Documents, Disclosures/Discovery, Contacts, Children, Child Support Estimator, Pattern Analysis)
+2) Aggregates existing case data into each section
+3) Allows the user to select and rank the “Top 3” items per section (pin + reorder)
+4) Has a “Print Binder” view that prints section cover pages with Top 3 first
+
+========================================
+A) DATABASE + SCHEMA
+========================================
+
+1) In shared/schema.ts add tables:
+
+A. trial_binder_sections
+- id (uuid text)
+- userId
+- caseId
+- key (text)   // e.g. "evidence", "timeline", "communications", etc.
+- title (text) // display name
+- sortOrder (int)
+- createdAt
+
+B. trial_binder_items
+- id (uuid text)
+- userId
+- caseId
+- sectionKey (text)  // references section key (logical)
+- sourceType (text)  // "evidence" | "timeline" | "communication" | "document" | "deadline" | "task" | "calendar"
+- sourceId (text)    // id from that source table
+- pinnedRank (int nullable) // 1-3 means it’s a Top 3 item; null means not pinned
+- note (text nullable)      // “Why I picked this”
+- createdAt
+- updatedAt
+
+2) Add Zod schemas:
+- upsertTrialBinderItemSchema: { sectionKey, sourceType, sourceId, pinnedRank?, note? }
+- updateTrialBinderItemSchema: { pinnedRank?, note? }
+
+3) In server/db.ts:
+- initTable for trial_binder_sections and trial_binder_items
+- index: (user_id, case_id, section_key)
+- index: (user_id, case_id, section_key, pinned_rank)
+
+========================================
+B) STORAGE METHODS
+========================================
+
+In server/storage.ts (IStorage + DatabaseStorage) add:
+
+1) listTrialBinderSections(userId, caseId)
+2) seedDefaultTrialBinderSectionsIfMissing(userId, caseId)
+   - Create default sections with sort order if none exist.
+3) listTrialBinderItems(userId, caseId)
+4) upsertTrialBinderItem(userId, caseId, sectionKey, sourceType, sourceId, pinnedRank, note)
+   - Enforce only 3 pinned per section:
+     - If setting pinnedRank 1-3, shift conflicts or reject with 400.
+   - If pinnedRank is null, unpin.
+5) deleteTrialBinderItem(userId, caseId, itemId)
+
+========================================
+C) API ROUTES
+========================================
+
+In server/routes.ts add (requireAuth):
+
+1) GET /api/cases/:caseId/trial-prep
+- Ensures sections are seeded
+- Returns:
+  - sections[]
+  - binderItems[]
+  - aggregated data needed for display (titles/dates) by fetching:
+    - evidence files (id, originalName, createdAt, category, description)
+    - timeline events (id, eventDate, title, category)
+    - communications (id, type, contactName, occurredAt, followUpDueAt, subject)
+    - documents (id, title, templateKey, updatedAt)
+    - deadlines (id, title, dueDate, status)
+    - tasks (id, title, dueDate, status)
+    - calendar items (id, title, startDate, isDone, category)
+
+2) POST /api/cases/:caseId/trial-prep/items
+- body: upsertTrialBinderItemSchema
+- pins/unpins/creates binder item for a source record
+
+3) PATCH /api/trial-prep/items/:itemId
+- body: updateTrialBinderItemSchema
+- updates pinnedRank and/or note
+
+4) DELETE /api/trial-prep/items/:itemId
+
+========================================
+D) FRONTEND PAGE
+========================================
+
+1) Create client/src/pages/AppTrialPrep.tsx
+Route: /app/trial-prep/:caseId
+
+UI layout:
+- Top: ModuleIntro (what it does + “not legal advice”)
+- Left column: Section list (tabs)
+- Right: Section details with:
+  - “Top 3 for this section” (shows pinnedRank 1-3)
+    - Each item row: title + date + “Why I picked this” editable textarea
+    - Buttons: Pin/Unpin, Set as #1/#2/#3 OR drag reorder
+  - “All Items” below, with “Pin to Top 3” button
+
+2) Add a “Print Binder” button:
+- Opens /app/trial-prep/:caseId/print (new route)
+- Or opens a modal with a printable layout
+
+3) Create print view page client/src/pages/AppTrialPrepPrint.tsx
+- White background
+- For each section:
+  - Section Cover Page (title, case name/nickname, date printed)
+  - Then list Top 3 items with their notes
+- Use window.print()
+
+========================================
+E) NAVIGATION + DASHBOARD TILE
+========================================
+
+1) Add module key "trial-prep" to your shared module registry (client/src/lib/modules.ts)
+2) Add it into the dashboard flow order after:
+- Evidence
+- Timeline
+- Message and Call Log
+- Disclosures and Discovery
+- Documents
+…then Trial Prep (because it’s where everything comes together)
+
+3) Add to AppNavbar dropdown order via the same getOrderedModules() output.
+
+========================================
+F) ACCEPTANCE TESTS
+========================================
+
+1) Trial Prep tile appears on dashboard and nav menu in correct order.
+2) Trial Prep page loads and shows sections.
+3) Pin 3 items in a section and they appear in “Top 3”.
+4) Attempt pinning a 4th item prompts user to replace one (or blocks with message).
+5) Print view shows each section with its Top 3 and notes.
+
+DELIVERABLE
+- Provide a clear summary of files changed.
+- Confirm MVP is user-controlled (no “best evidence” auto-judgment).

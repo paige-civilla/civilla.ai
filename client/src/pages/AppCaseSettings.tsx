@@ -97,6 +97,7 @@ export default function AppCaseSettings() {
     caseType: "",
     state: "",
     county: "",
+    startingPoint: "not_sure" as "served_papers" | "starting_case" | "modifying_enforcing" | "not_sure",
   });
 
   const { data: caseData, isLoading: caseLoading } = useQuery<{ case: Case }>({
@@ -197,6 +198,7 @@ export default function AppCaseSettings() {
         caseType: caseRecord.caseType || "",
         state: caseRecord.state || "",
         county: caseRecord.county || "",
+        startingPoint: (caseRecord as any).startingPoint || "not_sure",
       });
       setEditCaseDialogOpen(true);
     }
@@ -426,6 +428,15 @@ export default function AppCaseSettings() {
                     <Label className="text-neutral-darkest/60">County</Label>
                     <p className="font-sans text-neutral-darkest mt-1">{caseRecord.county || "Not specified"}</p>
                   </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-neutral-darkest/60">Starting Point</Label>
+                    <p className="font-sans text-neutral-darkest mt-1">
+                      {(caseRecord as any).startingPoint === "served_papers" && "I was served papers"}
+                      {(caseRecord as any).startingPoint === "starting_case" && "I want to start a case"}
+                      {(caseRecord as any).startingPoint === "modifying_enforcing" && "I already have a case"}
+                      {((caseRecord as any).startingPoint === "not_sure" || !(caseRecord as any).startingPoint) && "Not sure yet"}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -631,6 +642,24 @@ export default function AppCaseSettings() {
                 placeholder="e.g., Los Angeles County"
                 data-testid="input-case-county"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Starting Point</Label>
+              <p className="text-xs text-neutral-darkest/50 mb-2">This affects how your dashboard modules are organized.</p>
+              <Select
+                value={caseForm.startingPoint}
+                onValueChange={(value) => setCaseForm({ ...caseForm, startingPoint: value as any })}
+              >
+                <SelectTrigger data-testid="select-starting-point">
+                  <SelectValue placeholder="Select starting point" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="served_papers">I was served papers</SelectItem>
+                  <SelectItem value="starting_case">I want to start a case</SelectItem>
+                  <SelectItem value="modifying_enforcing">I already have a case</SelectItem>
+                  <SelectItem value="not_sure">I'm not sure yet</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

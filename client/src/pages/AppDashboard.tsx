@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Briefcase, FileText, Calendar, TrendingUp, Users, FolderOpen, FileStack, CheckSquare, Clock, Plus, MessageSquare, Calculator, Baby, FileSearch } from "lucide-react";
+import { Briefcase, Plus, Clock, CheckSquare, Calendar } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,89 +20,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CalendarCategory } from "@shared/schema";
-
-const getModuleCards = (caseId: string, showChildren: boolean) => {
-  const modules = [
-    {
-      title: "Evidence",
-      description: "Manage and organize case evidence",
-      icon: FolderOpen,
-      href: `/app/evidence/${caseId}`,
-    },
-    {
-      title: "Timeline",
-      description: "Track key dates and events",
-      icon: Calendar,
-      href: `/app/timeline/${caseId}`,
-    },
-    {
-      title: "Exhibits",
-      description: "Prepare exhibits for court filings",
-      icon: FileStack,
-      href: `/app/exhibits/${caseId}`,
-    },
-    {
-      title: "Documents",
-      description: "Upload and organize your case documents",
-      icon: FileText,
-      href: `/app/documents/${caseId}`,
-    },
-    {
-      title: "Case To-Do",
-      description: "Track your to-do items",
-      icon: CheckSquare,
-      href: `/app/tasks/${caseId}`,
-    },
-    {
-      title: "Deadlines",
-      description: "Never miss an important date",
-      icon: Clock,
-      href: `/app/deadlines/${caseId}`,
-    },
-    {
-      title: "Disclosures & Discovery",
-      description: "Track discovery requests and responses",
-      icon: FileSearch,
-      href: `/app/disclosures/${caseId}`,
-    },
-    {
-      title: "Pattern Analysis",
-      description: "Spot trends across your case",
-      icon: TrendingUp,
-      href: `/app/patterns/${caseId}`,
-    },
-    {
-      title: "Contacts",
-      description: "Manage case-related contacts",
-      icon: Users,
-      href: `/app/contacts/${caseId}`,
-    },
-    {
-      title: "Communications",
-      description: "Log calls, emails, and meetings",
-      icon: MessageSquare,
-      href: `/app/communications/${caseId}`,
-    },
-  ];
-
-  if (showChildren) {
-    modules.push({
-      title: "Children",
-      description: "Manage children in this case",
-      icon: Baby,
-      href: `/app/children/${caseId}`,
-    });
-  }
-
-  modules.push({
-    title: "Child Support Estimator",
-    description: "Educational support estimates",
-    icon: Calculator,
-    href: `/app/child-support/${caseId}`,
-  });
-
-  return modules;
-};
+import { getOrderedModules, type StartingPoint } from "@/lib/modules";
 
 type UpcomingEvent = {
   kind: "deadline" | "todo" | "calendar" | "communication";
@@ -476,18 +394,21 @@ export default function AppDashboard() {
             <div className="flex-1 min-w-0">
               <div className="w-full">
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                  {getModuleCards(primaryCase.id, primaryCase.hasChildren || false).map((module) => (
+                  {getOrderedModules({
+                    startingPoint: ((primaryCase as any).startingPoint || "not_sure") as StartingPoint,
+                    hasChildren: primaryCase.hasChildren || false
+                  }).map((module) => (
                     <Link
-                      key={module.title}
-                      href={module.href}
+                      key={module.key}
+                      href={module.href(primaryCase.id)}
                       className="relative bg-[#E4ECED] border border-[#628286] rounded-lg p-4 sm:p-5 hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] cursor-pointer block transition-colors min-h-[44px]"
-                      data-testid={`module-card-${module.title.toLowerCase()}`}
+                      data-testid={`module-card-${module.key}`}
                     >
                       <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-2 sm:mb-3">
                         <module.icon className="w-5 h-5 text-[#628286]" />
                       </div>
                       <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1 break-words">
-                        {module.title}
+                        {module.label}
                       </h3>
                       <p className="font-sans text-sm text-[#1E2020]/70 break-words">
                         {module.description}

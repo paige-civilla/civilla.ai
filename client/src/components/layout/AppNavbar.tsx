@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, FileText, Calendar, FolderOpen, Image, CheckSquare, Clock, TrendingUp, MessageSquare, Users, Calculator, Baby, BookOpen, FileSearch } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
+import { getOrderedModules, type StartingPoint } from "@/lib/modules";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function AppNavbar() {
     enabled: !!authData?.user,
   });
 
-  const { data: casesData } = useQuery<{ cases: { id: string; title: string; hasChildren?: boolean }[] }>({
+  const { data: casesData } = useQuery<{ cases: { id: string; title: string; hasChildren?: boolean; startingPoint?: string }[] }>({
     queryKey: ["/api/cases"],
     enabled: !!authData?.user,
   });
@@ -127,31 +128,19 @@ export default function AppNavbar() {
 
   const menuLinks = (() => {
     const caseId = selectedCaseId;
-    const links = [
+    const links: { label: string; href: string; icon: any }[] = [
       { label: "Dashboard", href: caseId ? `/app/dashboard/${caseId}` : "/app", icon: LayoutDashboard },
       ...getStaticMenuLinks(),
     ];
-    if (caseId) {
-      links.push(
-        { label: "Documents", href: `/app/documents/${caseId}`, icon: FileText },
-        { label: "Document Library", href: `/app/library/${caseId}`, icon: BookOpen },
-        { label: "Timeline", href: `/app/timeline/${caseId}`, icon: Calendar },
-        { label: "Evidence", href: `/app/evidence/${caseId}`, icon: FolderOpen },
-        { label: "Exhibits", href: `/app/exhibits/${caseId}`, icon: Image },
-        { label: "Case To-Do", href: `/app/tasks/${caseId}`, icon: CheckSquare },
-        { label: "Deadlines", href: `/app/deadlines/${caseId}`, icon: Clock },
-        { label: "Disclosures & Discovery", href: `/app/disclosures/${caseId}`, icon: FileSearch },
-        { label: "Pattern Analysis", href: `/app/patterns/${caseId}`, icon: TrendingUp },
-        { label: "Contacts", href: `/app/contacts/${caseId}`, icon: Users },
-        { label: "Communications", href: `/app/communications/${caseId}`, icon: MessageSquare },
-      );
-      if (selectedCase?.hasChildren) {
-        links.push({ label: "Children", href: `/app/children/${caseId}`, icon: Baby });
-      }
-      links.push(
-        { label: "Child Support Estimator", href: `/app/child-support/${caseId}`, icon: Calculator },
-        { label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings },
-      );
+    if (caseId && selectedCase) {
+      const orderedModules = getOrderedModules({
+        startingPoint: (selectedCase.startingPoint || "not_sure") as StartingPoint,
+        hasChildren: selectedCase.hasChildren || false,
+      });
+      orderedModules.forEach((mod) => {
+        links.push({ label: mod.label, href: mod.href(caseId), icon: mod.icon });
+      });
+      links.push({ label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings });
     }
     return links;
   })();
