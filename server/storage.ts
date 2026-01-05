@@ -355,6 +355,16 @@ export interface IStorage {
   createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist>;
   updateTrialPrepShortlistItem(userId: string, itemId: string, payload: UpdateTrialPrepShortlist): Promise<TrialPrepShortlist | undefined>;
   deleteTrialPrepShortlistItem(userId: string, itemId: string): Promise<boolean>;
+
+  searchCase(userId: string, caseId: string, q: string, limit: number): Promise<Array<{
+    type: string;
+    id: string;
+    title: string;
+    snippet: string | null;
+    href: string;
+    updatedAt: string | null;
+    rank: number;
+  }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2531,6 +2541,206 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(trialPrepShortlist)
       .where(and(eq(trialPrepShortlist.id, itemId), eq(trialPrepShortlist.userId, userId)));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async searchCase(userId: string, caseId: string, q: string, limit: number): Promise<Array<{
+    type: string;
+    id: string;
+    title: string;
+    snippet: string | null;
+    href: string;
+    updatedAt: string | null;
+    rank: number;
+  }>> {
+    const query = q.trim();
+    if (!query) return [];
+
+    const headlineOpts = `'MaxFragments=2, MinWords=6, MaxWords=18, StartSel=[[H]], StopSel=[[/H]]'`;
+
+    const result = await db.execute(sql`
+      WITH q AS (
+        SELECT plainto_tsquery('english', ${query}) AS tsq
+      )
+      SELECT * FROM (
+        /* Evidence files: filename */
+        SELECT
+          'evidence'::text AS type,
+          ef.id::text AS id,
+          ef.original_name::text AS title,
+          ts_headline('english', COALESCE(ef.original_name,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/evidence/' || ef.case_id)::text AS href,
+          ef.created_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(ef.original_name,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM evidence_files ef
+        WHERE ef.user_id = ${userId} AND ef.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(ef.original_name,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Evidence extracted text */
+        SELECT
+          'evidence_text'::text AS type,
+          ex.evidence_id::text AS id,
+          ef.original_name::text AS title,
+          ts_headline('english', COALESCE(ex.extracted_text,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/evidence/' || ef.case_id)::text AS href,
+          ex.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(ex.extracted_text,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM evidence_extractions ex
+        JOIN evidence_files ef ON ef.id = ex.evidence_id
+        WHERE ef.user_id = ${userId} AND ef.case_id = ${caseId}
+          AND ex.status = 'complete'
+          AND to_tsvector('english', COALESCE(ex.extracted_text,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Evidence notes */
+        SELECT
+          'evidence_note'::text AS type,
+          en.id::text AS id,
+          COALESCE(en.note_title, ef.original_name)::text AS title,
+          ts_headline('english', COALESCE(en.note_text,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/evidence/' || ef.case_id)::text AS href,
+          en.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(en.note_title,'') || ' ' || COALESCE(en.note_text,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM evidence_notes en
+        JOIN evidence_files ef ON ef.id = en.evidence_id
+        WHERE en.user_id = ${userId} AND en.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(en.note_title,'') || ' ' || COALESCE(en.note_text,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Timeline events */
+        SELECT
+          'timeline'::text AS type,
+          te.id::text AS id,
+          te.title::text AS title,
+          ts_headline('english', COALESCE(te.notes,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/timeline/' || te.case_id)::text AS href,
+          te.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(te.title,'') || ' ' || COALESCE(te.notes,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM timeline_events te
+        WHERE te.user_id = ${userId} AND te.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(te.title,'') || ' ' || COALESCE(te.notes,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Deadlines */
+        SELECT
+          'deadline'::text AS type,
+          d.id::text AS id,
+          d.title::text AS title,
+          ts_headline('english', COALESCE(d.notes,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/deadlines/' || d.case_id)::text AS href,
+          d.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(d.title,'') || ' ' || COALESCE(d.notes,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM deadlines d
+        WHERE d.user_id = ${userId} AND d.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(d.title,'') || ' ' || COALESCE(d.notes,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Tasks */
+        SELECT
+          'task'::text AS type,
+          t.id::text AS id,
+          t.title::text AS title,
+          ts_headline('english', COALESCE(t.description,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/tasks/' || t.case_id)::text AS href,
+          t.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(t.title,'') || ' ' || COALESCE(t.description,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM tasks t
+        WHERE t.user_id = ${userId} AND t.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(t.title,'') || ' ' || COALESCE(t.description,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Contacts */
+        SELECT
+          'contact'::text AS type,
+          cc.id::text AS id,
+          cc.name::text AS title,
+          ts_headline('english',
+            COALESCE(cc.role,'') || ' ' || COALESCE(cc.organization_or_firm,'') || ' ' || COALESCE(cc.email,'') || ' ' || COALESCE(cc.phone,''),
+            (SELECT tsq FROM q),
+            ${sql.raw(headlineOpts)}
+          ) AS snippet,
+          ('/app/contacts/' || cc.case_id)::text AS href,
+          cc.created_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english',
+            COALESCE(cc.name,'') || ' ' || COALESCE(cc.role,'') || ' ' || COALESCE(cc.organization_or_firm,'') || ' ' || COALESCE(cc.email,'') || ' ' || COALESCE(cc.phone,'')
+          ), (SELECT tsq FROM q))::float8 AS rank
+        FROM case_contacts cc
+        WHERE cc.user_id = ${userId} AND cc.case_id = ${caseId}
+          AND to_tsvector('english',
+            COALESCE(cc.name,'') || ' ' || COALESCE(cc.role,'') || ' ' || COALESCE(cc.organization_or_firm,'') || ' ' || COALESCE(cc.email,'') || ' ' || COALESCE(cc.phone,'')
+          ) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Communications */
+        SELECT
+          'communication'::text AS type,
+          cm.id::text AS id,
+          COALESCE(cm.subject, 'Communication')::text AS title,
+          ts_headline('english', COALESCE(cm.summary,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/communications/' || cm.case_id)::text AS href,
+          cm.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(cm.subject,'') || ' ' || COALESCE(cm.summary,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM case_communications cm
+        WHERE cm.user_id = ${userId} AND cm.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(cm.subject,'') || ' ' || COALESCE(cm.summary,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Trial prep shortlist */
+        SELECT
+          'trial_prep'::text AS type,
+          tp.id::text AS id,
+          tp.title::text AS title,
+          ts_headline('english', COALESCE(tp.summary,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/trial-prep/' || tp.case_id)::text AS href,
+          tp.updated_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(tp.title,'') || ' ' || COALESCE(tp.summary,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM trial_prep_shortlist tp
+        WHERE tp.user_id = ${userId} AND tp.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(tp.title,'') || ' ' || COALESCE(tp.summary,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Exhibit snippets */
+        SELECT
+          'exhibit_snippet'::text AS type,
+          es.id::text AS id,
+          es.title::text AS title,
+          ts_headline('english', COALESCE(es.snippet_text,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/exhibits/' || es.case_id)::text AS href,
+          es.created_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(es.title,'') || ' ' || COALESCE(es.snippet_text,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM exhibit_snippets es
+        WHERE es.user_id = ${userId} AND es.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(es.title,'') || ' ' || COALESCE(es.snippet_text,'')) @@ (SELECT tsq FROM q)
+
+        UNION ALL
+
+        /* Children */
+        SELECT
+          'child'::text AS type,
+          ch.id::text AS id,
+          (COALESCE(ch.first_name,'') || ' ' || COALESCE(ch.last_name,''))::text AS title,
+          ts_headline('english', COALESCE(ch.notes,''), (SELECT tsq FROM q), ${sql.raw(headlineOpts)}) AS snippet,
+          ('/app/children/' || ch.case_id)::text AS href,
+          ch.created_at::text AS "updatedAt",
+          ts_rank_cd(to_tsvector('english', COALESCE(ch.first_name,'') || ' ' || COALESCE(ch.last_name,'') || ' ' || COALESCE(ch.notes,'')), (SELECT tsq FROM q))::float8 AS rank
+        FROM case_children ch
+        WHERE ch.user_id = ${userId} AND ch.case_id = ${caseId}
+          AND to_tsvector('english', COALESCE(ch.first_name,'') || ' ' || COALESCE(ch.last_name,'') || ' ' || COALESCE(ch.notes,'')) @@ (SELECT tsq FROM q)
+      ) s
+      ORDER BY s.rank DESC, s."updatedAt" DESC NULLS LAST
+      LIMIT ${limit}
+    `);
+
+    return (result.rows ?? result) as any;
   }
 }
 

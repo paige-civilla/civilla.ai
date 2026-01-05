@@ -1,0 +1,348 @@
+REPLIT TASK: Full Case-Wide Quick Search (Gmail/Drive-style) across ALL modules
+
+GOAL
+- Add a top-nav Quick Search input (desktop) and icon-triggered search (mobile optional) that searches the entire current case across all modules.
+- As user types, show 3–5 instant results in a dropdown:
+  - Title
+  - Module type label (Evidence, Timeline, Deadlines, etc.)
+  - Snippet with a few words before/after the match (like Gmail/Drive)
+- Clicking a result navigates to the correct module and (if possible) opens/scrolls to the item.
+
+HARD REQUIREMENTS
+- Must be case-scoped and user-owned:
+  - requireAuth
+  - ensure user owns caseId and content rows
+- Must include these modules/sources:
+  Evidence: filename, extracted text, notes
+  Timeline: title, notes, category
+  Deadlines: title, notes
+  Tasks: title, description/notes
+  Documents: generated docs title, template key/type, content preview if stored
+  Exhibits: exhibit list title, snippet title/text, linked evidence file name
+  Communications: subject/summary/notes (and participant if stored)
+  Contacts: name, role, org, email, phone
+  Trial Prep shortlist: title, summary, tags
+  Parenting Plan: section title + body (if stored)
+  Disclosures/Discovery: entries/snippets/notes (if stored)
+  Children: child name + notes (if stored)
+- Must return:
+  id, type, title, snippet (with highlighting markers), href, updatedAt, rank
+
+IMPLEMENTATION STRATEGY
+- Backend endpoint: GET /api/cases/:caseId/search?q=...&limit=5
+- Use Postgres FTS:
+  - plainto_tsquery('english', q)  (or 'simple' if you prefer)
+  - to_tsvector over relevant text fields
+  - rank = ts_rank_cd(...)
+  - snippet = ts_headline(..., query, 'MaxFragments=2, MinWords=6, MaxWords=18, StartSel=[[H]], StopSel=[[\/H]]')
+- UNION ALL across tables, filter by userId + caseId in each SELECT.
+- Return top results by rank then updatedAt.
+- Frontend:
+  - Debounced query (200–300ms)
+  - Dropdown shows top 5 items with snippet
+  - Arrow key navigation + Enter opens selected
+  - Esc closes dropdown
+  - Clicking outside closes dropdown
+  - Snippet highlight rendering: replace [[H]]...[[/H]] with <mark> styled span (NOT raw HTML)
+
+FILES TO CHANGE
+
+1) server/storage.ts
+Add method signature to IStorage:
+  searchCase(userId: string, caseId: number, q: string, limit: number): Promise<Array<{
+    type: string;
+    id: string;
+    title: string;
+    snippet: string | null;
+    href: string;
+    updatedAt: string | null;
+    rank: number;
+  }>>;
+
+Implement in DatabaseStorage using a single SQL UNION ALL query.
+Use drizzle `sql` tagged template so we can use tsquery/tsvector/headline.
+
+IMPORTANT: Your schema uses UUIDs for many tables and numeric IDs for others. Cast all to text in result rows (id::text) to unify.
+
+Example implementation (adapt table/column names to your repo):
+----------------------------------------------------------------
+In server/storage.ts (near other methods):
+
+import { sql } from "drizzle-orm";
+
+async searchCase(userId: string, caseId: number, q: string, limit: number) {
+  const query = q.trim();
+  if (!query) return [];
+
+  // Choose config. 'english' stems words; 'simple' avoids stemming.
+  const cfg = sql.raw(`'english'`);
+
+  // Use plainto_tsquery to avoid syntax errors from user input
+  const tsq = sql`plainto_tsquery(${cfg}, ${query})`;
+
+  // Helper: ts_headline options with our safe markers
+  const headlineOpts = "MaxFragments=2, MinWords=6, MaxWords=18, StartSel=[[H]], StopSel=[[/H]]";
+
+  // NOTE: Update table/column names below to match your schema.
+  // The query structure is what matters.
+
+  const rows = await this.db.execute(sql`
+    WITH q AS (
+      SELECT ${tsq} AS tsq
+    )
+    SELECT * FROM (
+      /* Evidence files: filename */
+      SELECT
+        'evidence'::text AS type,
+        ef.id::text AS id,
+        ef.filename::text AS title,
+        ts_headline(${cfg}, COALESCE(ef.filename,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/evidence/' || ef.case_id)::text AS href,
+        ef.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(ef.filename,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM evidence_files ef
+      WHERE ef.user_id = ${userId} AND ef.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(ef.filename,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Evidence extracted text */
+      SELECT
+        'evidence_text'::text AS type,
+        ex.evidence_id::text AS id,
+        ef.filename::text AS title,
+        ts_headline(${cfg}, COALESCE(ex.extracted_text,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/evidence/' || ef.case_id)::text AS href,
+        ex.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(ex.extracted_text,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM evidence_extractions ex
+      JOIN evidence_files ef ON ef.id = ex.evidence_id
+      WHERE ef.user_id = ${userId} AND ef.case_id = ${caseId}
+        AND ex.status = 'complete'
+        AND to_tsvector(${cfg}, COALESCE(ex.extracted_text,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Evidence notes */
+      SELECT
+        'evidence_note'::text AS type,
+        en.id::text AS id,
+        COALESCE(en.note_title, ef.filename)::text AS title,
+        ts_headline(${cfg}, COALESCE(en.note_body,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/evidence/' || ef.case_id)::text AS href,
+        en.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(en.note_title,'') || ' ' || COALESCE(en.note_body,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM evidence_notes en
+      JOIN evidence_files ef ON ef.id = en.evidence_id
+      WHERE en.user_id = ${userId} AND en.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(en.note_title,'') || ' ' || COALESCE(en.note_body,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Timeline events */
+      SELECT
+        'timeline'::text AS type,
+        te.id::text AS id,
+        te.title::text AS title,
+        ts_headline(${cfg}, COALESCE(te.notes,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/timeline/' || te.case_id)::text AS href,
+        te.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(te.title,'') || ' ' || COALESCE(te.notes,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM timeline_events te
+      WHERE te.user_id = ${userId} AND te.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(te.title,'') || ' ' || COALESCE(te.notes,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Deadlines */
+      SELECT
+        'deadline'::text AS type,
+        d.id::text AS id,
+        d.title::text AS title,
+        ts_headline(${cfg}, COALESCE(d.notes,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/deadlines/' || d.case_id)::text AS href,
+        d.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(d.title,'') || ' ' || COALESCE(d.notes,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM deadlines d
+      WHERE d.user_id = ${userId} AND d.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(d.title,'') || ' ' || COALESCE(d.notes,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Tasks */
+      SELECT
+        'task'::text AS type,
+        t.id::text AS id,
+        t.title::text AS title,
+        ts_headline(${cfg}, COALESCE(t.description,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/tasks/' || t.case_id)::text AS href,
+        t.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(t.title,'') || ' ' || COALESCE(t.description,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM tasks t
+      WHERE t.user_id = ${userId} AND t.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(t.title,'') || ' ' || COALESCE(t.description,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Contacts */
+      SELECT
+        'contact'::text AS type,
+        cc.id::text AS id,
+        cc.name::text AS title,
+        ts_headline(${cfg},
+          COALESCE(cc.role,'') || ' ' || COALESCE(cc.organization,'') || ' ' || COALESCE(cc.email,'') || ' ' || COALESCE(cc.phone,''),
+          (SELECT tsq FROM q),
+          ${headlineOpts}
+        ) AS snippet,
+        ('/app/contacts/' || cc.case_id)::text AS href,
+        cc.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg},
+          COALESCE(cc.name,'') || ' ' || COALESCE(cc.role,'') || ' ' || COALESCE(cc.organization,'') || ' ' || COALESCE(cc.email,'') || ' ' || COALESCE(cc.phone,'')
+        ), (SELECT tsq FROM q))::float8 AS rank
+      FROM case_contacts cc
+      WHERE cc.user_id = ${userId} AND cc.case_id = ${caseId}
+        AND to_tsvector(${cfg},
+          COALESCE(cc.name,'') || ' ' || COALESCE(cc.role,'') || ' ' || COALESCE(cc.organization,'') || ' ' || COALESCE(cc.email,'') || ' ' || COALESCE(cc.phone,'')
+        ) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Communications */
+      SELECT
+        'communication'::text AS type,
+        cm.id::text AS id,
+        COALESCE(cm.subject, 'Communication')::text AS title,
+        ts_headline(${cfg}, COALESCE(cm.notes,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/communications/' || cm.case_id)::text AS href,
+        cm.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(cm.subject,'') || ' ' || COALESCE(cm.notes,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM case_communications cm
+      WHERE cm.user_id = ${userId} AND cm.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(cm.subject,'') || ' ' || COALESCE(cm.notes,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Trial prep shortlist */
+      SELECT
+        'trial_prep'::text AS type,
+        tp.id::text AS id,
+        tp.title::text AS title,
+        ts_headline(${cfg}, COALESCE(tp.summary,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/trial-prep/' || tp.case_id)::text AS href,
+        tp.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(tp.title,'') || ' ' || COALESCE(tp.summary,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM trial_prep_shortlist tp
+      WHERE tp.user_id = ${userId} AND tp.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(tp.title,'') || ' ' || COALESCE(tp.summary,'')) @@ (SELECT tsq FROM q)
+
+      UNION ALL
+
+      /* Exhibit snippets */
+      SELECT
+        'exhibit_snippet'::text AS type,
+        es.id::text AS id,
+        es.title::text AS title,
+        ts_headline(${cfg}, COALESCE(es.snippet_text,''), (SELECT tsq FROM q), ${headlineOpts}) AS snippet,
+        ('/app/exhibits/' || es.case_id)::text AS href,
+        es.updated_at::text AS "updatedAt",
+        ts_rank_cd(to_tsvector(${cfg}, COALESCE(es.title,'') || ' ' || COALESCE(es.snippet_text,'')), (SELECT tsq FROM q))::float8 AS rank
+      FROM exhibit_snippets es
+      WHERE es.user_id = ${userId} AND es.case_id = ${caseId}
+        AND to_tsvector(${cfg}, COALESCE(es.title,'') || ' ' || COALESCE(es.snippet_text,'')) @@ (SELECT tsq FROM q)
+
+      /* Add additional UNIONs for Parenting Plan, Documents, Disclosures, Children if your schema stores searchable text */
+    ) s
+    ORDER BY s.rank DESC, s."updatedAt" DESC NULLS LAST
+    LIMIT ${limit}
+  `);
+
+  // drizzle execute may return driver-specific shape; normalize to array of objects.
+  return (rows.rows ?? rows) as any;
+}
+
+Also: consider adding indexes later (optional) on big text columns (extractions/notes) for performance.
+For now, this works without migrations.
+
+2) server/routes.ts
+Add endpoint (near other case routes):
+----------------------------------------------------------------
+app.get("/api/cases/:caseId/search", requireAuth, async (req, res) => {
+  const userId = req.user!.id;
+  const caseId = Number(req.params.caseId);
+  const q = String(req.query.q || "").trim();
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit || 5)));
+
+  if (!q || q.length < 2) return res.json({ results: [] });
+
+  const c = await storage.getCase(caseId, userId);
+  if (!c) return res.status(404).json({ error: "Case not found" });
+
+  const results = await storage.searchCase(userId, caseId, q, limit);
+  return res.json({ results });
+});
+
+3) client/src/components/layout/AppNavbar.tsx
+Add Quick Search input in the top bar (authenticated).
+- Debounce typing (useRef + setTimeout 250ms)
+- useQuery hitting /api/cases/:caseId/search?q=...&limit=5
+- Show dropdown with 3–5 results.
+- Render snippet with highlight markers [[H]] and [[/H]] into <mark> spans safely.
+
+Helper renderer:
+----------------------------------------------------------------
+function renderHighlighted(snippet: string) {
+  // snippet contains [[H]]...[[/H]]
+  const parts = snippet.split(/\[\[H\]\]|\[\[\/H\]\]/g);
+  // Odd parts are highlighted if we preserve markers; easiest is regex with exec:
+  const tokens: Array<{ text: string; highlight: boolean }> = [];
+  let idx = 0;
+  const re = /\[\[H\]\]([\s\S]*?)\[\[\/H\]\]/g;
+  let last = 0;
+  let m;
+  while ((m = re.exec(snippet)) !== null) {
+    if (m.index > last) tokens.push({ text: snippet.slice(last, m.index), highlight: false });
+    tokens.push({ text: m[1], highlight: true });
+    last = m.index + m[0].length;
+  }
+  if (last < snippet.length) tokens.push({ text: snippet.slice(last), highlight: false });
+
+  return (
+    <span className="text-sm text-neutral-darkest/70">
+      {tokens.map((t, i) =>
+        t.highlight ? (
+          <mark key={i} className="px-1 rounded bg-[hsl(var(--module-tile-hover))] text-neutral-darkest">
+            {t.text}
+          </mark>
+        ) : (
+          <span key={i}>{t.text}</span>
+        )
+      )}
+    </span>
+  );
+}
+
+Dropdown item:
+- left: module label (type)
+- title bold
+- snippet underneath
+- onClick => navigate to href
+
+Important:
+- Use current selectedCaseId from localStorage or from navbar props to know caseId.
+- Disable search input if no case is selected; show placeholder "Select a case to search".
+
+4) OPTIONAL BUT RECOMMENDED: Create /app/search/:caseId page (View all)
+- When user presses Enter or clicks "View all results", route to /app/search/:caseId?q=...
+- That page calls same endpoint with limit=50 and shows grouped sections.
+
+CONFIRMATION OUTPUT REQUIRED
+After implementation, report:
+- Files changed
+- Which modules are included based on existing tables
+- Confirm quick dropdown returns 3–5
+- Confirm snippets show words before/after match
+- Confirm ownership enforcement
+
+NOTES
+- If some modules do not store searchable text (e.g., parenting plan content not stored), skip those UNIONs until the schema supports them.
+- This task is strictly search + navigation. Do NOT add any “recommendations” or “what you should do” behavior.
