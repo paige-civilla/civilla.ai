@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale, Brain, Sparkles, Scissors, BookOpen, RefreshCw } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale, Brain, Sparkles, Scissors, BookOpen, RefreshCw, Eye } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
+import EvidenceViewer from "@/components/app/EvidenceViewer";
 
 const CATEGORIES = [
   { value: "document", label: "Document" },
@@ -110,6 +111,7 @@ export default function AppEvidence() {
   const [aiAnalysisFileId, setAiAnalysisFileId] = useState<string | null>(null);
   const [snippetModalFileId, setSnippetModalFileId] = useState<string | null>(null);
   const [snippetForm, setSnippetForm] = useState<{ title: string; snippetText: string; pageNumber: string; exhibitListId: string }>({ title: "", snippetText: "", pageNumber: "", exhibitListId: "" });
+  const [viewerFileId, setViewerFileId] = useState<string | null>(null);
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -973,6 +975,15 @@ export default function AppEvidence() {
                                 data-testid={`button-download-${file.id}`}
                               >
                                 <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="default"
+                                onClick={() => setViewerFileId(file.id)}
+                                data-testid={`button-open-annotate-${file.id}`}
+                                title="Open & Annotate"
+                              >
+                                <Eye className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="icon"
@@ -1989,6 +2000,21 @@ export default function AppEvidence() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {viewerFileId && (() => {
+        const viewerFile = rawFiles.find(f => f.id === viewerFileId);
+        if (!viewerFile) return null;
+        const extraction = extractionStatuses[viewerFileId];
+        return (
+          <EvidenceViewer
+            caseId={caseId!}
+            evidence={viewerFile}
+            onClose={() => setViewerFileId(null)}
+            extractedText={extraction?.extractedTextFull || null}
+            extractionStatus={extraction?.status}
+          />
+        );
+      })()}
     </AppLayout>
   );
 }

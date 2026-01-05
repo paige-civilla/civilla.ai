@@ -107,7 +107,7 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const isPdf = evidence.mimeType === "application/pdf";
   const isImage = evidence.mimeType?.startsWith("image/");
   const isAudioVideo = evidence.mimeType?.startsWith("audio/") || evidence.mimeType?.startsWith("video/");
-  const fileUrl = evidence.fileUrl || `/api/cases/${caseId}/evidence/${evidence.id}/download`;
+  const fileUrl = `/api/cases/${caseId}/evidence/${evidence.id}/download`;
 
   const { data: notesData, isLoading: notesLoading } = useQuery<{ notes: EvidenceNoteFull[] }>({
     queryKey: ["/api/cases", caseId, "evidence", evidence.id, "notes-full"],
