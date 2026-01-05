@@ -103,6 +103,7 @@ export default function LexiPanel() {
   const [showThreadList, setShowThreadList] = useState(false);
   const [currentModuleKey, setCurrentModuleKey] = useState<string | undefined>();
   const [pendingAsk, setPendingAsk] = useState<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string } | null>(null);
+  const [threadError, setThreadError] = useState<string | null>(null);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const title = "Lexi";
