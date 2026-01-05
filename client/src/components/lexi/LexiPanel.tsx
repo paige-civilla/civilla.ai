@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { getLexiHelp, type LexiHelpContent } from "@/lib/lexiHelpContent";
-import { HelpCircle, MessageSquare, Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock } from "lucide-react";
+import { HelpCircle, MessageSquare, Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -305,19 +305,13 @@ export default function LexiPanel() {
           backgroundColor: "#314143",
         }}
       >
-        <span
-          className={[
-            "font-mono font-bold tracking-wider",
-            "text-base",
-            "[writing-mode:vertical-rl]",
-            "[text-orientation:mixed]",
-            "rotate-180",
-            "leading-none",
-          ].join(" ")}
+        <div
+          className="flex flex-col items-center gap-1 [writing-mode:vertical-rl] rotate-180"
           style={{ color: "#FAF8F4" }}
         >
-          &lt;/&gt;
-        </span>
+          <ChevronLeft className="w-4 h-4" />
+          <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+        </div>
       </div>
 
       {open && (
@@ -353,19 +347,13 @@ export default function LexiPanel() {
             right: "min(380px, 92vw)",
           }}
         >
-          <span
-            className={[
-              "font-mono font-bold tracking-wider",
-              "text-base",
-              "[writing-mode:vertical-rl]",
-              "[text-orientation:mixed]",
-              "rotate-180",
-              "leading-none",
-            ].join(" ")}
+          <div
+            className="flex flex-col items-center gap-1 [writing-mode:vertical-rl] rotate-180"
             style={{ color: "#FAF8F4" }}
           >
-            &lt;/&gt;
-          </span>
+            <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
+            <ChevronRight className="w-4 h-4" />
+          </div>
         </div>
       )}
 
