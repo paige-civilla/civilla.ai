@@ -5326,5 +5326,134 @@ Return a JSON object with this structure:
     }
   });
 
+  app.get("/api/cases/:caseId/trial-prep/export", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const items = await storage.listTrialPrepShortlist(userId, caseId);
+      
+      const { binderSectionValues } = await import("@shared/schema");
+      
+      const groupedItems: Record<string, typeof items> = {};
+      for (const section of binderSectionValues) {
+        const sectionItems = items.filter(i => i.binderSection === section);
+        const pinned = sectionItems.filter(i => i.isPinned).sort((a, b) => b.importance - a.importance);
+        const unpinned = sectionItems.filter(i => !i.isPinned).sort((a, b) => b.importance - a.importance);
+        groupedItems[section] = [...pinned, ...unpinned];
+      }
+
+      function getTop3(sectionItems: typeof items) {
+        const sorted = [...sectionItems].sort((a, b) => {
+          if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+          if (a.importance !== b.importance) return b.importance - a.importance;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        return sorted.slice(0, 3);
+      }
+
+      function formatItem(item: typeof items[0]): string {
+        const tags = Array.isArray(item.tags) ? item.tags.join(", ") : "";
+        let text = `Title: ${item.title}\n`;
+        if (item.summary) text += `Summary: ${item.summary}\n`;
+        text += `Source Type: ${item.sourceType}\n`;
+        text += `Source Reference: ${item.sourceType}:${item.sourceId}\n`;
+        if (tags) text += `Tags: ${tags}\n`;
+        text += `Importance: ${item.importance}/5\n`;
+        if (item.isPinned) text += `Status: PINNED\n`;
+        return text;
+      }
+
+      const archive = archiver("zip", { zlib: { level: 9 } });
+      const chunks: Buffer[] = [];
+      const PassThrough = (await import("stream")).PassThrough;
+      const passThrough = new PassThrough();
+
+      passThrough.on("data", (chunk) => chunks.push(chunk));
+
+      const archiveComplete = new Promise<Buffer>((resolve, reject) => {
+        passThrough.on("end", () => resolve(Buffer.concat(chunks)));
+        passThrough.on("error", reject);
+        archive.on("error", reject);
+      });
+
+      archive.pipe(passThrough);
+
+      const readme = `TRIAL BINDER EXPORT
+==================
+
+Case: ${caseRecord.nickname || caseRecord.title}
+Exported: ${new Date().toLocaleString()}
+Total Items: ${items.length}
+
+IMPORTANT NOTES:
+- This binder is for organizational purposes only.
+- Always verify information against original documents.
+- This export contains references to evidence items, not the original files.
+- Consider printing relevant evidence files separately.
+
+STRUCTURE:
+Each folder represents a binder section.
+- 00_TOP3.txt contains your top 3 strongest examples for that section.
+- 01_ALL_ITEMS.txt contains all items in that section.
+
+Top 3 selection criteria:
+1. Pinned items first
+2. Then by importance rating (highest first)
+3. Then by date added (newest first)
+`;
+
+      archive.append(readme, { name: "00_README.txt" });
+
+      let folderIndex = 1;
+      for (const section of binderSectionValues) {
+        const sectionItems = groupedItems[section] || [];
+        if (sectionItems.length === 0) continue;
+
+        const folderName = `${String(folderIndex).padStart(2, "0")}_${section.replace(/[\/\\:*?"<>|&]/g, "_")}`;
+        
+        const top3 = getTop3(sectionItems);
+        let top3Content = `TOP 3 FOR: ${section}\n${"=".repeat(50)}\n\n`;
+        if (top3.length === 0) {
+          top3Content += "(No items in this section)\n";
+        } else {
+          top3.forEach((item, idx) => {
+            top3Content += `--- ${idx + 1}. ---\n${formatItem(item)}\n`;
+          });
+        }
+        archive.append(top3Content, { name: `${folderName}/00_TOP3.txt` });
+
+        let allContent = `ALL ITEMS IN: ${section}\n${"=".repeat(50)}\n\n`;
+        if (sectionItems.length === 0) {
+          allContent += "(No items)\n";
+        } else {
+          sectionItems.forEach((item, idx) => {
+            allContent += `--- Item ${idx + 1} ---\n${formatItem(item)}\n`;
+          });
+        }
+        archive.append(allContent, { name: `${folderName}/01_ALL_ITEMS.txt` });
+
+        folderIndex++;
+      }
+
+      await archive.finalize();
+      const zipBuffer = await archiveComplete;
+
+      const fileName = `trial-binder-${caseRecord.nickname || caseRecord.id}-${Date.now()}.zip`;
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+      res.setHeader("Content-Length", zipBuffer.length);
+      res.send(zipBuffer);
+    } catch (error) {
+      console.error("Trial prep export error:", error);
+      res.status(500).json({ error: "Failed to export trial binder" });
+    }
+  });
+
   return httpServer;
 }
