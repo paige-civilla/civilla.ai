@@ -1133,6 +1133,317 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/cases/:caseId/evidence-notes", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const notes = await storage.listAllCaseEvidenceNotes(userId, caseId);
+      res.json({ notes });
+    } catch (error) {
+      console.error("List all case evidence notes error:", error);
+      res.status(500).json({ error: "Failed to list evidence notes" });
+    }
+  });
+
+  app.post("/api/evidence-notes/:noteId/link-exhibit", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { noteId } = req.params;
+      const { exhibitListId, label } = req.body;
+
+      if (!exhibitListId) {
+        return res.status(400).json({ error: "exhibitListId is required" });
+      }
+
+      const note = await storage.getEvidenceNote(userId, noteId);
+      if (!note) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+
+      const exhibitList = await storage.getExhibitList(userId, exhibitListId);
+      if (!exhibitList) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const link = await storage.linkEvidenceNoteToExhibitList(
+        userId,
+        note.caseId,
+        noteId,
+        exhibitListId,
+        { label }
+      );
+
+      res.status(201).json({ link });
+    } catch (error) {
+      console.error("Link note to exhibit error:", error);
+      res.status(500).json({ error: "Failed to link note to exhibit" });
+    }
+  });
+
+  app.delete("/api/evidence-notes/:noteId/unlink-exhibit/:exhibitListId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { noteId, exhibitListId } = req.params;
+
+      const unlinked = await storage.unlinkEvidenceNoteFromExhibitList(userId, exhibitListId, noteId);
+      res.json({ ok: unlinked });
+    } catch (error) {
+      console.error("Unlink note from exhibit error:", error);
+      res.status(500).json({ error: "Failed to unlink note from exhibit" });
+    }
+  });
+
+  app.post("/api/evidence-notes/:noteId/create-timeline-event", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { noteId } = req.params;
+      const { date, categoryId } = req.body;
+
+      const note = await storage.getEvidenceNote(userId, noteId);
+      if (!note) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+
+      if (!date) {
+        return res.status(400).json({ error: "date is required" });
+      }
+
+      const event = await storage.createTimelineEvent(note.caseId, userId, {
+        date,
+        title: note.label || "Evidence Note",
+        description: note.note,
+        categoryId: categoryId || null,
+      });
+
+      res.status(201).json({ event });
+    } catch (error) {
+      console.error("Create timeline event from note error:", error);
+      res.status(500).json({ error: "Failed to create timeline event" });
+    }
+  });
+
+  app.get("/api/exhibit-lists/:listId/items", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+
+      const exhibitList = await storage.getExhibitList(userId, listId);
+      if (!exhibitList) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const evidenceLinks = await storage.listExhibitListEvidence(userId, listId);
+      const noteLinks = await storage.listExhibitNoteLinks(userId, listId);
+
+      res.json({ evidenceLinks, noteLinks });
+    } catch (error) {
+      console.error("List exhibit list items error:", error);
+      res.status(500).json({ error: "Failed to list exhibit list items" });
+    }
+  });
+
+  app.post("/api/exhibit-lists/:listId/evidence", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+      const { evidenceFileId, label, notes } = req.body;
+
+      if (!evidenceFileId) {
+        return res.status(400).json({ error: "evidenceFileId is required" });
+      }
+
+      const exhibitList = await storage.getExhibitList(userId, listId);
+      if (!exhibitList) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const evidenceFile = await storage.getEvidenceFile(evidenceFileId, userId);
+      if (!evidenceFile) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const link = await storage.addEvidenceToExhibitList(
+        userId,
+        exhibitList.caseId,
+        listId,
+        evidenceFileId,
+        { label, notes }
+      );
+
+      res.status(201).json({ link });
+    } catch (error) {
+      console.error("Add evidence to exhibit list error:", error);
+      res.status(500).json({ error: "Failed to add evidence to exhibit list" });
+    }
+  });
+
+  app.delete("/api/exhibit-lists/:listId/evidence/:evidenceFileId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId, evidenceFileId } = req.params;
+
+      const removed = await storage.removeEvidenceFromExhibitList(userId, listId, evidenceFileId);
+      res.json({ ok: removed });
+    } catch (error) {
+      console.error("Remove evidence from exhibit list error:", error);
+      res.status(500).json({ error: "Failed to remove evidence from exhibit list" });
+    }
+  });
+
+  app.post("/api/exhibit-lists/:listId/notes", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+      const { evidenceNoteId, label } = req.body;
+
+      if (!evidenceNoteId) {
+        return res.status(400).json({ error: "evidenceNoteId is required" });
+      }
+
+      const exhibitList = await storage.getExhibitList(userId, listId);
+      if (!exhibitList) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const note = await storage.getEvidenceNote(userId, evidenceNoteId);
+      if (!note) {
+        return res.status(404).json({ error: "Evidence note not found" });
+      }
+
+      const link = await storage.linkEvidenceNoteToExhibitList(
+        userId,
+        exhibitList.caseId,
+        evidenceNoteId,
+        listId,
+        { label }
+      );
+
+      res.status(201).json({ link });
+    } catch (error) {
+      console.error("Add note to exhibit list error:", error);
+      res.status(500).json({ error: "Failed to add note to exhibit list" });
+    }
+  });
+
+  app.delete("/api/exhibit-lists/:listId/notes/:evidenceNoteId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId, evidenceNoteId } = req.params;
+
+      const removed = await storage.unlinkEvidenceNoteFromExhibitList(userId, listId, evidenceNoteId);
+      res.json({ ok: removed });
+    } catch (error) {
+      console.error("Remove note from exhibit list error:", error);
+      res.status(500).json({ error: "Failed to remove note from exhibit list" });
+    }
+  });
+
+  app.post("/api/exhibit-lists/:listId/reorder", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+      const { evidenceOrder, noteOrder } = req.body;
+
+      const exhibitList = await storage.getExhibitList(userId, listId);
+      if (!exhibitList) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      if (Array.isArray(evidenceOrder)) {
+        await storage.reorderExhibitListEvidence(userId, listId, evidenceOrder);
+      }
+
+      if (Array.isArray(noteOrder)) {
+        await storage.reorderExhibitNoteLinks(userId, listId, noteOrder);
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Reorder exhibit list items error:", error);
+      res.status(500).json({ error: "Failed to reorder exhibit list items" });
+    }
+  });
+
+  app.get("/api/timeline-categories", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const categories = await storage.listTimelineCategories(userId);
+      res.json({ categories });
+    } catch (error) {
+      console.error("List timeline categories error:", error);
+      res.status(500).json({ error: "Failed to list timeline categories" });
+    }
+  });
+
+  app.post("/api/timeline-categories", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { name, color } = req.body;
+
+      if (!name || !color) {
+        return res.status(400).json({ error: "name and color are required" });
+      }
+
+      const category = await storage.createTimelineCategory(userId, { name, color });
+      res.status(201).json({ category });
+    } catch (error) {
+      console.error("Create timeline category error:", error);
+      res.status(500).json({ error: "Failed to create timeline category" });
+    }
+  });
+
+  app.patch("/api/timeline-categories/:categoryId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { categoryId } = req.params;
+      const { name, color } = req.body;
+
+      const updated = await storage.updateTimelineCategory(userId, categoryId, { name, color });
+      if (!updated) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+
+      res.json({ category: updated });
+    } catch (error) {
+      console.error("Update timeline category error:", error);
+      res.status(500).json({ error: "Failed to update timeline category" });
+    }
+  });
+
+  app.delete("/api/timeline-categories/:categoryId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { categoryId } = req.params;
+
+      const result = await storage.deleteTimelineCategory(userId, categoryId);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Delete timeline category error:", error);
+      res.status(500).json({ error: "Failed to delete timeline category" });
+    }
+  });
+
+  app.post("/api/timeline-categories/seed", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const categories = await storage.seedSystemTimelineCategories(userId);
+      res.json({ categories });
+    } catch (error) {
+      console.error("Seed timeline categories error:", error);
+      res.status(500).json({ error: "Failed to seed timeline categories" });
+    }
+  });
+
   app.get("/api/health/documents", async (_req, res) => {
     try {
       await pool.query("SELECT 1 FROM documents LIMIT 1");
