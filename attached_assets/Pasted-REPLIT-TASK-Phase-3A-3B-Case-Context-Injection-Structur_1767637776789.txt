@@ -1,0 +1,161 @@
+REPLIT TASK: Phase 3A + 3B — Case Context Injection + Structured Output (Lexi)
+
+Goal
+Make Lexi feel “case-aware” and stop the run-on responses by:
+1) Injecting a lightweight, safe, read-only case context into every Lexi reply (when caseId exists).
+2) Enforcing structured, readable formatting in every reply (bullets, headings, short paragraphs).
+3) Keeping Lexi available even without a case (general threads), but still structured.
+
+Constraints
+- NO legal advice, NO outcome predictions, NO “you should file X”.
+- Case context must be READ ONLY and minimal (counts + top themes/patterns/dates), not full raw data dumps.
+- Must work for:
+  a) case-scoped threads (caseId present)
+  b) general threads (no caseId)
+
+Implementation Steps
+
+A) Add a Case Context Builder (server)
+Create: server/services/lexiContext.ts (NEW)
+Export: buildLexiContext({ userId, caseId, moduleKey? })
+
+What it returns (example shape):
+{
+  caseId,
+  caseTitle,
+  state,
+  caseType,
+  hasChildren,
+  counts: {
+    evidenceFiles,
+    evidenceNotes,
+    timelineEvents,
+    communications,
+    exhibitSnippets,
+    trialPrepItems,
+    aiAnalyses
+  },
+  highlights: {
+    topThemes: [{ label, exampleCount }],
+    topPatterns: [{ label, exampleCount }],
+    keyDates: [{ date, label, sourceType }],
+    keyNames: [{ name, mentions }]
+  }
+}
+
+How to compute it (use existing storage + existing tables; keep it fast):
+- counts:
+  - evidence_files count by caseId+userId
+  - evidence_notes count by caseId+userId
+  - timeline_events count by caseId+userId
+  - communications count by caseId+userId
+  - exhibit_snippets count by caseId+userId
+  - trial_prep_shortlist count by caseId+userId
+  - evidence_ai_analyses count by caseId+userId
+- highlights:
+  - topThemes/topPatterns: derive from evidence_ai_analyses.findings JSON if present
+    - If findings has themes/patterns arrays, tally by label, take top 3-5
+  - keyDates/keyNames: derive from findings if present (dates/names arrays), take top 5
+If nothing exists yet, return empty arrays.
+
+Performance guard:
+- hard cap highlights: max 5 per list
+- if queries are heavy, skip highlights and only return counts
+
+B) Add endpoints to inspect context (server)
+In server/routes.ts add (requireAuth):
+GET /api/lexi/context
+- Returns context for “general” mode: { ok:true, context:null } (no case)
+
+GET /api/cases/:caseId/lexi/context
+- Validates ownership (user owns case)
+- Returns { ok:true, context: <builtContext> }
+
+These are mainly for debugging + future UI, but also useful for testing.
+
+C) Inject context into Lexi Chat route (server)
+In POST /api/lexi/chat (or whichever endpoint generates assistant messages):
+- Determine caseId:
+  - Use thread.caseId if present
+  - If “general” thread, caseId is null
+- Determine moduleKey:
+  - From thread.moduleKey if stored
+  - Or from request body if you already send it
+- Build context ONLY if caseId exists:
+  const context = await buildLexiContext({ userId, caseId, moduleKey })
+
+Then prepend a hidden system message (or append to system prompt) like:
+
+"CASE CONTEXT (READ ONLY):
+<json stringify context, but keep concise; do NOT include raw user documents>
+Use this ONLY to:
+- Reference what the user already has in the case (counts + highlights)
+- Avoid duplication (suggest summarizing existing items)
+Do NOT claim you reviewed files unless the context indicates extracted/analysis exists."
+
+D) Enforce Structured Output (server)
+Update the Lexi system prompt to force readable format.
+
+Add a strict “Response Format” section to the system prompt:
+
+Response formatting rules:
+- Use short paragraphs (max 2–3 sentences each).
+- Prefer headings + bullet points.
+- Never output a single paragraph longer than ~5 lines.
+- Always end with a small “Next options” section (2–4 bullets) that are SAFE:
+  Examples:
+  - “Add this as a note”
+  - “Add to Trial Prep”
+  - “Ask me to research your state’s rule name”
+  - “Summarize what you already uploaded”
+
+Also add intent-specific templates:
+
+If intent == "research":
+- Heading: “What this is”
+- “What it’s called in your state (if known)”
+- “Where to verify (official sources)”
+- “Common inputs or terms”
+- “Sources” (bullets)
+
+If intent == "organization":
+- “What you already have in Civilla”
+- “How it connects”
+- “Suggested next step inside Civilla”
+
+If intent == "analysis":
+- “Summary”
+- “What stands out”
+- “Possible gaps / what to verify”
+- “Next options”
+
+Do NOT spam “get a lawyer”.
+Keep disclaimer minimal (one short line) if needed.
+
+E) Case-awareness behavior
+When case context exists:
+- Start replies with:
+  “Based on what you’ve already added to this case…”
+- If the user asks for something that already exists (e.g., patterns), say:
+  “You already have X analyses / Y notes. I can summarize them or look for new themes.”
+
+F) Make sure it doesn’t break general Lexi
+If no caseId:
+- Do not inject context
+- Still use structured formatting
+- Keep it “general educational/research/organization” oriented
+
+G) Report back
+After implementing, output:
+- Files changed / created
+- Example response showing structured formatting
+- Confirm context endpoint outputs
+- Confirm Lexi works with:
+  1) general thread (no case)
+  2) case thread (caseId present)
+  3) moduleKey present (e.g., evidence)
+
+Notes
+- Do NOT add any new DB columns for this task.
+- Use existing storage or direct Drizzle queries.
+- Keep context builder safe and fast; never include extracted text or full evidence content in the context blob.

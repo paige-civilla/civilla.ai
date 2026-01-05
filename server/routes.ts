@@ -32,6 +32,7 @@ import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
 import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
 import { createLimiter } from "./utils/concurrency";
+import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -4379,6 +4380,28 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
   });
 
+  app.get("/api/lexi/context", requireAuth, async (_req, res) => {
+    res.json({ ok: true, context: null });
+  });
+
+  app.get("/api/cases/:caseId/lexi/context", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const context = await buildLexiContext({ userId, caseId });
+      res.json({ ok: true, context });
+    } catch (error) {
+      console.error("Get lexi context error:", error);
+      res.status(500).json({ error: "Failed to get context" });
+    }
+  });
+
   app.get("/api/lexi/threads", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -4590,32 +4613,65 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         caseType: caseRecord?.caseType || undefined,
       });
 
+      let caseContextBlock = "";
+      if (effectiveCaseId) {
+        const lexiContext = await buildLexiContext({ userId, caseId: effectiveCaseId });
+        if (lexiContext) {
+          caseContextBlock = `\n\n${formatContextForPrompt(lexiContext)}\n`;
+        }
+      }
+
       const formattingPolicies: Record<string, string> = {
         bullets: `FORMATTING POLICY (MUST FOLLOW):
-- Start with "Quick answer:" (1–2 sentences).
-- Then "Details:" using bullet points.
-- Use short paragraphs (max 2 sentences).
-- If steps are needed, use a short numbered list.
-- Avoid run-on text.`,
+- Use short paragraphs (max 2-3 sentences each).
+- Prefer headings + bullet points.
+- Never output a single paragraph longer than 5 lines.
+- Always end with a "Next options" section (2-4 bullets) that are SAFE actions:
+  - "Add this as a note"
+  - "Add to Trial Prep"
+  - "Ask me to research your state's rule"
+  - "Summarize what you already uploaded"`,
         steps: `FORMATTING POLICY (MUST FOLLOW):
-- Start with "Quick answer:" (1–2 sentences).
-- Then "Steps:" as a numbered list (1–8 steps max).
+- Start with a brief summary (1-2 sentences).
+- Then "Steps:" as a numbered list (1-8 steps max).
 - Include brief bullets under a step only if necessary.
-- Keep each step to 1–2 sentences.`,
+- Keep each step to 1-2 sentences.
+- End with "Next options" (2-4 safe action bullets).`,
         short: `FORMATTING POLICY (MUST FOLLOW):
 - Respond in 5 bullets max.
 - No extra sections unless asked.
-- Be direct. No long explanations.`,
+- Be direct. No long explanations.
+- End with 1-2 "Next options" bullets.`,
         detailed: `FORMATTING POLICY (MUST FOLLOW):
-- Start with "Quick answer:" (1–2 sentences).
-- Then headings: "Key points", "Examples", "Next steps".
+- Start with a brief summary (1-2 sentences).
+- Use headings: "Key points", "Examples", "Next steps".
 - Use bullets heavily.
-- Keep paragraphs short.`,
+- Keep paragraphs short (2-3 sentences max).
+- End with "Next options" section (2-4 safe action bullets).`,
+      };
+
+      const intentTemplates: Record<string, string> = {
+        research: `RESPONSE STRUCTURE FOR RESEARCH:
+- "What this is" (brief definition)
+- "What it's called in your state" (if known)
+- "Where to verify" (official sources)
+- "Common terms or inputs"
+- "Sources" (bullet list of official links/rules)`,
+        organization: `RESPONSE STRUCTURE FOR ORGANIZATION:
+- "What you already have in Civilla" (reference counts from context)
+- "How it connects" (relationships between items)
+- "Suggested next step inside Civilla"`,
+        analysis: `RESPONSE STRUCTURE FOR ANALYSIS:
+- "Summary" (1-2 sentences)
+- "What stands out" (key observations)
+- "Possible gaps / what to verify"
+- "Next options" (safe actions)`,
       };
 
       const activeStyle = stylePreset || "bullets";
       const formattingPolicy = formattingPolicies[activeStyle] || formattingPolicies.bullets;
-      const systemPrompt = `${baseSystemPrompt}\n\n${formattingPolicy}`;
+      const intentTemplate = intentTemplates[intent] || "";
+      const systemPrompt = `${baseSystemPrompt}${caseContextBlock}\n\n${formattingPolicy}${intentTemplate ? `\n\n${intentTemplate}` : ""}`;
 
       const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
