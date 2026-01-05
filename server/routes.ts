@@ -627,32 +627,38 @@ export async function registerRoutes(
   });
 
   app.post("/api/cases", requireAuth, async (req, res) => {
+    const userId = req.session.userId!;
     try {
-      const userId = req.session.userId!;
-      
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(401).json({ error: "User not found" });
+        return res.status(401).json({ error: "User not found", code: "USER_NOT_FOUND" });
       }
 
       const caseCount = await storage.getCaseCountByUserId(userId);
       if (caseCount >= user.casesAllowed) {
         return res.status(403).json({ 
           error: "Case limit reached", 
-          message: `You can only create ${user.casesAllowed} case(s). Upgrade to create more.` 
+          message: `You can only create ${user.casesAllowed} case(s). Upgrade to create more.`,
+          code: "CASE_LIMIT_REACHED"
         });
       }
 
       const parseResult = insertCaseSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ error: "Invalid case data", details: parseResult.error.errors });
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const field = err.path[0]?.toString() || "unknown";
+          fields[field] = err.message;
+        }
+        console.error("[CreateCase] validation failed", { userId, body: req.body, errors: parseResult.error.errors });
+        return res.status(400).json({ error: "Invalid case data", fields, code: "VALIDATION_FAILED" });
       }
 
       const newCase = await storage.createCase(userId, parseResult.data);
       res.status(201).json({ case: newCase });
     } catch (error) {
-      console.error("Create case error:", error);
-      res.status(500).json({ error: "Failed to create case" });
+      console.error("[CreateCase] failed", { userId, body: req.body }, error);
+      res.status(500).json({ error: "Failed to create case", code: "CREATE_CASE_FAILED" });
     }
   });
 

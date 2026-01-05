@@ -324,7 +324,7 @@ export default function AppNavbar() {
                         "flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] text-left font-sans text-sm transition-colors border border-transparent",
                         item.disabled 
                           ? "text-[#243032]/40 cursor-not-allowed" 
-                          : "text-[#243032] hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white"
+                          : "text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white"
                       ].join(" ")}
                       role="menuitem"
                       data-testid={`menu-link-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
@@ -343,7 +343,7 @@ export default function AppNavbar() {
                         setIsMenuOpen(false);
                         setLocation("/app/account");
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white transition-colors border border-transparent"
+                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors border border-transparent"
                       data-testid="menu-link-account-settings"
                     >
                       <Settings className="h-5 w-5 flex-shrink-0" />
@@ -357,7 +357,7 @@ export default function AppNavbar() {
                         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
                         setLocation("/");
                       }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white transition-colors border border-transparent"
+                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors border border-transparent"
                       data-testid="button-logout-menu"
                     >
                       <LogOut className="h-5 w-5 flex-shrink-0" />
@@ -368,7 +368,7 @@ export default function AppNavbar() {
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen(false)}
-                    className="rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032]/70 hover:bg-[#A2BEC2] hover:text-white focus:bg-[#A2BEC2] focus:text-white active:bg-[#A2BEC2] active:text-white transition-colors"
+                    className="rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032]/70 hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors"
                     data-testid="button-close-menu"
                   >
                     Close

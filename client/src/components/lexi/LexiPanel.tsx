@@ -377,7 +377,7 @@ export default function LexiPanel() {
               <div>
                 <p className="font-heading font-semibold text-neutral-darkest leading-tight">{title}</p>
                 <p className="font-sans text-xs text-neutral-darkest/60 leading-tight">
-                  Your legal education assistant
+                  Your AI assistant
                 </p>
               </div>
             </div>
@@ -394,8 +394,8 @@ export default function LexiPanel() {
           </div>
 
           {disclaimerData?.disclaimer && (
-            <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 shrink-0">
-              <p className="font-sans text-xs text-amber-800">
+            <div className="px-4 py-2 bg-[hsl(var(--accent))] border-b border-[hsl(var(--accent-border))] shrink-0">
+              <p className="font-sans text-xs text-[hsl(var(--accent-foreground))]">
                 {disclaimerData.disclaimer}
               </p>
             </div>
@@ -530,9 +530,10 @@ export default function LexiPanel() {
                                 key={idx}
                                 type="button"
                                 onClick={() => {
-                                  setInput(q);
+                                  sendMessageMutation.mutate({ text: q });
                                 }}
-                                className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors"
+                                disabled={sendMessageMutation.isPending}
+                                className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
                                 data-testid={`suggested-question-${idx}`}
                               >
                                 {q}
