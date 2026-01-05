@@ -1528,6 +1528,7 @@ export const shortlistSourceTypeValues = [
   "communication",
   "document",
   "exhibit_item",
+  "manual",
 ] as const;
 
 export const trialPrepShortlist = pgTable("trial_prep_shortlist", {

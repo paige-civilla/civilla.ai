@@ -4947,7 +4947,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       
       const item = await storage.createTrialPrepShortlistItem(userId, caseId, parsed.data);
       res.status(201).json({ item });
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { code?: string; constraint?: string };
+      if (err.code === "23505" || (err.constraint && err.constraint.includes("unique"))) {
+        return res.status(409).json({ ok: false, error: "duplicate" });
+      }
       console.error("Create trial prep shortlist item error:", error);
       res.status(500).json({ error: "Failed to create shortlist item" });
     }
