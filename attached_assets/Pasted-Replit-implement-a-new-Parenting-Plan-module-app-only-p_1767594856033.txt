@@ -1,0 +1,101 @@
+Replit — implement a new Parenting Plan module (app-only, post-login).
+
+GOAL
+Add a comprehensive, court-ready Parenting Plan module that:
+• Is educational and organizational (NOT legal advice)
+• Is fully structured, all-encompassing, and age-aware
+• Can later generate a Parenting Plan document
+• Fits correctly in the case workflow
+
+MODULE PLACEMENT
+• Dashboard order: AFTER “Exhibits” and AFTER “Document Creator”
+• Navigation menu must match dashboard order
+• Route pattern: /app/parenting-plan/:caseId
+
+DATA MODEL (REQUIRED)
+Add these tables in shared/schema.ts:
+
+1) parenting_plans
+- id (uuid, pk)
+- userId
+- caseId
+- status ("draft" | "reviewed")
+- lastUpdatedAt
+- createdAt
+
+2) parenting_plan_sections
+- id (uuid, pk)
+- parentingPlanId
+- sectionKey (string, e.g. "medical", "education")
+- data (jsonb) ← flexible structured content
+- createdAt
+- updatedAt
+
+Do NOT hardcode answers — store structured user input only.
+
+BACKEND
+• Add full CRUD endpoints:
+  GET /api/cases/:caseId/parenting-plan
+  POST /api/cases/:caseId/parenting-plan
+  PATCH /api/parenting-plan/:id
+• Enforce userId + caseId ownership
+• No legal logic, no recommendations
+
+FRONTEND
+Create:
+client/src/pages/AppParentingPlan.tsx
+
+Page structure:
+• ModuleIntro at top:
+  Title: “Parenting Plan”
+  Description:
+  “A parenting plan organizes parenting responsibilities, schedules, and decision-making areas. Civilla helps you organize information — it does not provide legal advice or recommendations.”
+
+• Accordion-based sections for:
+  - Decision-Making
+  - Parenting Time
+  - Holidays
+  - Medical
+  - Education
+  - Communication
+  - Extracurriculars
+  - Travel
+  - Childcare
+  - Safety
+  - Financial Responsibilities
+  - Modification
+
+Each section:
+• Uses neutral prompts (“Describe how decisions are handled”)
+• Supports text fields, toggles, schedules
+• Saves automatically (draft mode)
+
+LEXI INTEGRATION
+• Add LexiSuggestedQuestions under ModuleIntro
+• Example prompts:
+  - “What does my state require in a parenting plan?”
+  - “What topics are usually included in parenting plans?”
+  - “How do courts typically structure holiday schedules?”
+
+Lexi must respond in EDUCATIONAL + RESEARCH mode only.
+
+DOCUMENT INTEGRATION (later use)
+• Parenting Plan data must be structured so it can be used by:
+  - Document Creator
+  - Exhibits
+• Do NOT generate filings automatically
+
+UI / THEME
+• Module tile:
+  bg: var(--module-tile)
+  border: var(--module-tile-border)
+  icon: Users (lucide-react)
+• Matches existing module styles
+
+ACCEPTANCE CHECK
+✔ Parenting Plan appears after Exhibits
+✔ Sections are comprehensive and editable
+✔ No legal advice language anywhere
+✔ Lexi research prompts appear
+✔ Data persists per case
+✔ Ready for future DOCX export

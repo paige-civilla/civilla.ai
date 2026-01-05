@@ -5,6 +5,7 @@ import {
   cases,
   authIdentities,
   timelineEvents,
+  timelineCategories,
   evidenceFiles,
   documents,
   userProfiles,
@@ -29,6 +30,7 @@ import {
   exhibitPacketEvidence,
   generatedExhibitPackets,
   caseEvidenceNotes,
+  caseExhibitNoteLinks,
   type User,
   type InsertUser,
   type Case,
@@ -93,6 +95,11 @@ import {
   type EvidenceNote,
   type InsertEvidenceNote,
   type UpdateEvidenceNote,
+  type ExhibitNoteLink,
+  type InsertExhibitNoteLink,
+  type TimelineCategory,
+  type InsertTimelineCategory,
+  type UpdateTimelineCategory,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -233,10 +240,28 @@ export interface IStorage {
   createGeneratedExhibitPacket(userId: string, caseId: string, packetId: string, title: string, fileKey: string, fileName: string, metaJson: Record<string, unknown>): Promise<GeneratedExhibitPacket>;
 
   listEvidenceNotes(userId: string, caseId: string, evidenceFileId: string): Promise<EvidenceNote[]>;
+  listAllCaseEvidenceNotes(userId: string, caseId: string): Promise<EvidenceNote[]>;
   getEvidenceNote(userId: string, noteId: string): Promise<EvidenceNote | undefined>;
   createEvidenceNote(userId: string, caseId: string, evidenceFileId: string, data: InsertEvidenceNote): Promise<EvidenceNote>;
   updateEvidenceNote(userId: string, noteId: string, data: UpdateEvidenceNote): Promise<EvidenceNote | undefined>;
   deleteEvidenceNote(userId: string, noteId: string): Promise<boolean>;
+
+  linkEvidenceNoteToExhibitList(userId: string, caseId: string, evidenceNoteId: string, exhibitListId: string, data?: InsertExhibitNoteLink): Promise<ExhibitNoteLink>;
+  unlinkEvidenceNoteFromExhibitList(userId: string, exhibitListId: string, evidenceNoteId: string): Promise<boolean>;
+  listExhibitNoteLinks(userId: string, exhibitListId: string): Promise<ExhibitNoteLink[]>;
+  reorderExhibitNoteLinks(userId: string, exhibitListId: string, ordered: { id: string; sortOrder: number }[]): Promise<boolean>;
+
+  addEvidenceToExhibitList(userId: string, caseId: string, exhibitListId: string, evidenceFileId: string, data?: { label?: string; notes?: string }): Promise<ExhibitEvidence>;
+  removeEvidenceFromExhibitList(userId: string, exhibitListId: string, evidenceFileId: string): Promise<boolean>;
+  listExhibitListEvidence(userId: string, exhibitListId: string): Promise<ExhibitEvidence[]>;
+  reorderExhibitListEvidence(userId: string, exhibitListId: string, ordered: { id: string; sortOrder: number }[]): Promise<boolean>;
+
+  listTimelineCategories(userId: string): Promise<TimelineCategory[]>;
+  createTimelineCategory(userId: string, data: InsertTimelineCategory): Promise<TimelineCategory>;
+  updateTimelineCategory(userId: string, categoryId: string, data: UpdateTimelineCategory): Promise<TimelineCategory | undefined>;
+  deleteTimelineCategory(userId: string, categoryId: string): Promise<{ success: boolean; error?: string }>;
+  seedSystemTimelineCategories(userId: string): Promise<TimelineCategory[]>;
+  getTimelineCategory(userId: string, categoryId: string): Promise<TimelineCategory | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1643,8 +1668,10 @@ export class DatabaseStorage implements IStorage {
         caseId,
         evidenceFileId,
         pageNumber: data.pageNumber ?? null,
+        timestampSeconds: data.timestampSeconds ?? null,
         label: data.label ?? null,
         note: data.note,
+        isKey: data.isKey ?? false,
       })
       .returning();
     return created;
@@ -1657,8 +1684,10 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(caseEvidenceNotes)
       .set({
         pageNumber: data.pageNumber !== undefined ? data.pageNumber : existing.pageNumber,
+        timestampSeconds: data.timestampSeconds !== undefined ? data.timestampSeconds : existing.timestampSeconds,
         label: data.label !== undefined ? data.label : existing.label,
         note: data.note ?? existing.note,
+        isKey: data.isKey !== undefined ? data.isKey : existing.isKey,
       })
       .where(and(eq(caseEvidenceNotes.id, noteId), eq(caseEvidenceNotes.userId, userId)))
       .returning();
@@ -1670,6 +1699,227 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(caseEvidenceNotes.id, noteId), eq(caseEvidenceNotes.userId, userId)))
       .returning();
     return res.length > 0;
+  }
+
+  async listAllCaseEvidenceNotes(userId: string, caseId: string): Promise<EvidenceNote[]> {
+    return db.select().from(caseEvidenceNotes)
+      .where(and(
+        eq(caseEvidenceNotes.userId, userId),
+        eq(caseEvidenceNotes.caseId, caseId)
+      ))
+      .orderBy(desc(caseEvidenceNotes.createdAt));
+  }
+
+  async linkEvidenceNoteToExhibitList(userId: string, caseId: string, evidenceNoteId: string, exhibitListId: string, data?: InsertExhibitNoteLink): Promise<ExhibitNoteLink> {
+    const existing = await db.select().from(caseExhibitNoteLinks)
+      .where(and(
+        eq(caseExhibitNoteLinks.userId, userId),
+        eq(caseExhibitNoteLinks.exhibitListId, exhibitListId),
+        eq(caseExhibitNoteLinks.evidenceNoteId, evidenceNoteId)
+      ));
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    const maxSort = await db.select().from(caseExhibitNoteLinks)
+      .where(and(eq(caseExhibitNoteLinks.userId, userId), eq(caseExhibitNoteLinks.exhibitListId, exhibitListId)))
+      .orderBy(desc(caseExhibitNoteLinks.sortOrder));
+    const nextSort = (maxSort[0]?.sortOrder ?? -1) + 1;
+
+    const [created] = await db.insert(caseExhibitNoteLinks)
+      .values({
+        userId,
+        caseId,
+        exhibitListId,
+        evidenceNoteId,
+        sortOrder: nextSort,
+        label: data?.label ?? null,
+      })
+      .returning();
+    return created;
+  }
+
+  async unlinkEvidenceNoteFromExhibitList(userId: string, exhibitListId: string, evidenceNoteId: string): Promise<boolean> {
+    const res = await db.delete(caseExhibitNoteLinks)
+      .where(and(
+        eq(caseExhibitNoteLinks.userId, userId),
+        eq(caseExhibitNoteLinks.exhibitListId, exhibitListId),
+        eq(caseExhibitNoteLinks.evidenceNoteId, evidenceNoteId)
+      ))
+      .returning();
+    return res.length > 0;
+  }
+
+  async listExhibitNoteLinks(userId: string, exhibitListId: string): Promise<ExhibitNoteLink[]> {
+    return db.select().from(caseExhibitNoteLinks)
+      .where(and(
+        eq(caseExhibitNoteLinks.userId, userId),
+        eq(caseExhibitNoteLinks.exhibitListId, exhibitListId)
+      ))
+      .orderBy(asc(caseExhibitNoteLinks.sortOrder));
+  }
+
+  async reorderExhibitNoteLinks(userId: string, exhibitListId: string, ordered: { id: string; sortOrder: number }[]): Promise<boolean> {
+    for (const item of ordered) {
+      await db.update(caseExhibitNoteLinks)
+        .set({ sortOrder: item.sortOrder })
+        .where(and(
+          eq(caseExhibitNoteLinks.id, item.id),
+          eq(caseExhibitNoteLinks.userId, userId),
+          eq(caseExhibitNoteLinks.exhibitListId, exhibitListId)
+        ));
+    }
+    return true;
+  }
+
+  async addEvidenceToExhibitList(userId: string, caseId: string, exhibitListId: string, evidenceFileId: string, data?: { label?: string; notes?: string }): Promise<ExhibitEvidence> {
+    const existing = await db.select().from(exhibitEvidence)
+      .where(and(
+        eq(exhibitEvidence.userId, userId),
+        eq(exhibitEvidence.exhibitListId, exhibitListId),
+        eq(exhibitEvidence.evidenceFileId, evidenceFileId)
+      ));
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    const maxSort = await db.select().from(exhibitEvidence)
+      .where(and(eq(exhibitEvidence.userId, userId), eq(exhibitEvidence.exhibitListId, exhibitListId)))
+      .orderBy(desc(exhibitEvidence.sortOrder));
+    const nextSort = (maxSort[0]?.sortOrder ?? -1) + 1;
+
+    const [created] = await db.insert(exhibitEvidence)
+      .values({
+        userId,
+        caseId,
+        exhibitListId,
+        evidenceFileId,
+        sortOrder: nextSort,
+        label: data?.label ?? null,
+        notes: data?.notes ?? null,
+      })
+      .returning();
+    return created;
+  }
+
+  async removeEvidenceFromExhibitList(userId: string, exhibitListId: string, evidenceFileId: string): Promise<boolean> {
+    const res = await db.delete(exhibitEvidence)
+      .where(and(
+        eq(exhibitEvidence.userId, userId),
+        eq(exhibitEvidence.exhibitListId, exhibitListId),
+        eq(exhibitEvidence.evidenceFileId, evidenceFileId)
+      ))
+      .returning();
+    return res.length > 0;
+  }
+
+  async listExhibitListEvidence(userId: string, exhibitListId: string): Promise<ExhibitEvidence[]> {
+    return db.select().from(exhibitEvidence)
+      .where(and(
+        eq(exhibitEvidence.userId, userId),
+        eq(exhibitEvidence.exhibitListId, exhibitListId)
+      ))
+      .orderBy(asc(exhibitEvidence.sortOrder));
+  }
+
+  async reorderExhibitListEvidence(userId: string, exhibitListId: string, ordered: { id: string; sortOrder: number }[]): Promise<boolean> {
+    for (const item of ordered) {
+      await db.update(exhibitEvidence)
+        .set({ sortOrder: item.sortOrder })
+        .where(and(
+          eq(exhibitEvidence.id, item.id),
+          eq(exhibitEvidence.userId, userId),
+          eq(exhibitEvidence.exhibitListId, exhibitListId)
+        ));
+    }
+    return true;
+  }
+
+  async listTimelineCategories(userId: string): Promise<TimelineCategory[]> {
+    return db.select().from(timelineCategories)
+      .where(eq(timelineCategories.userId, userId))
+      .orderBy(desc(timelineCategories.isSystem), asc(timelineCategories.name));
+  }
+
+  async getTimelineCategory(userId: string, categoryId: string): Promise<TimelineCategory | undefined> {
+    const [row] = await db.select().from(timelineCategories)
+      .where(and(eq(timelineCategories.id, categoryId), eq(timelineCategories.userId, userId)));
+    return row;
+  }
+
+  async createTimelineCategory(userId: string, data: InsertTimelineCategory): Promise<TimelineCategory> {
+    const [created] = await db.insert(timelineCategories)
+      .values({
+        userId,
+        name: data.name,
+        color: data.color,
+        isSystem: false,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateTimelineCategory(userId: string, categoryId: string, data: UpdateTimelineCategory): Promise<TimelineCategory | undefined> {
+    const existing = await this.getTimelineCategory(userId, categoryId);
+    if (!existing) return undefined;
+
+    const [updated] = await db.update(timelineCategories)
+      .set({
+        name: data.name ?? existing.name,
+        color: data.color ?? existing.color,
+      })
+      .where(and(eq(timelineCategories.id, categoryId), eq(timelineCategories.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteTimelineCategory(userId: string, categoryId: string): Promise<{ success: boolean; error?: string }> {
+    const existing = await this.getTimelineCategory(userId, categoryId);
+    if (!existing) return { success: false, error: "Category not found" };
+    if (existing.isSystem) return { success: false, error: "Cannot delete system categories" };
+
+    const eventsUsingCategory = await db.select().from(timelineEvents)
+      .where(and(eq(timelineEvents.userId, userId), eq(timelineEvents.categoryId, categoryId)));
+    if (eventsUsingCategory.length > 0) {
+      return { success: false, error: "Category is in use by timeline events" };
+    }
+
+    await db.delete(timelineCategories)
+      .where(and(eq(timelineCategories.id, categoryId), eq(timelineCategories.userId, userId)));
+    return { success: true };
+  }
+
+  async seedSystemTimelineCategories(userId: string): Promise<TimelineCategory[]> {
+    const existing = await this.listTimelineCategories(userId);
+    if (existing.length > 0) {
+      return existing;
+    }
+
+    const systemCategories = [
+      { name: "Court / Hearings", color: "#1565C0" },
+      { name: "Filings", color: "#2E7D32" },
+      { name: "Service / Notice", color: "#F9A825" },
+      { name: "Communication", color: "#6A1B9A" },
+      { name: "Discovery / Disclosures", color: "#00838F" },
+      { name: "Parenting Time", color: "#D84315" },
+      { name: "School", color: "#5D4037" },
+      { name: "Medical", color: "#C62828" },
+      { name: "Financial", color: "#558B2F" },
+      { name: "Incidents", color: "#AD1457" },
+      { name: "Other", color: "#546E7A" },
+    ];
+
+    const created: TimelineCategory[] = [];
+    for (const cat of systemCategories) {
+      const [row] = await db.insert(timelineCategories)
+        .values({
+          userId,
+          name: cat.name,
+          color: cat.color,
+          isSystem: true,
+        })
+        .returning();
+      created.push(row);
+    }
+    return created;
   }
 }
 
