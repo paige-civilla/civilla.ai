@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, Settings, LayoutList, LayoutGrid, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,28 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, TimelineEvent } from "@shared/schema";
+import type { Case, TimelineEvent, TimelineCategory } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
-const CATEGORIES = [
-  { value: "court", label: "Court" },
-  { value: "filing", label: "Filing" },
-  { value: "communication", label: "Communication" },
-  { value: "incident", label: "Incident" },
-  { value: "parenting_time", label: "Parenting Time" },
-  { value: "expense", label: "Expense" },
-  { value: "medical", label: "Medical" },
-  { value: "school", label: "School" },
-  { value: "other", label: "Other" },
-] as const;
-
-function getCategoryLabel(value: string): string {
-  const cat = CATEGORIES.find((c) => c.value === value);
-  return cat ? cat.label : value;
-}
+const DEFAULT_COLORS = [
+  "#1565C0", "#2E7D32", "#F9A825", "#6A1B9A", "#00838F",
+  "#D84315", "#5D4037", "#C62828", "#558B2F", "#AD1457", "#546E7A",
+];
 
 function formatDate(date: string | Date): string {
   const d = new Date(date);
@@ -54,14 +45,14 @@ function formatDateTimeLocal(date: string | Date): string {
 interface EventFormData {
   eventDate: string;
   title: string;
-  category: string;
+  categoryId: string;
   notes: string;
 }
 
 const initialFormData: EventFormData = {
   eventDate: formatDateTimeLocal(new Date()),
   title: "",
-  category: "",
+  categoryId: "",
   notes: "",
 };
 
@@ -74,6 +65,13 @@ export default function AppTimeline() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>(initialFormData);
+  const [viewMode, setViewMode] = useState<"vertical" | "horizontal">("vertical");
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState(DEFAULT_COLORS[0]);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryColor, setEditCategoryColor] = useState("");
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -85,8 +83,21 @@ export default function AppTimeline() {
     enabled: !!caseId,
   });
 
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery<{ categories: TimelineCategory[] }>({
+    queryKey: ["/api/timeline-categories"],
+  });
+
   const currentCase = caseData?.case;
   const events = timelineData?.events || [];
+  const categories = categoriesData?.categories || [];
+
+  useEffect(() => {
+    if (categories.length === 0 && !categoriesLoading) {
+      apiRequest("POST", "/api/timeline-categories/seed").then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      }).catch(() => {});
+    }
+  }, [categories.length, categoriesLoading]);
 
   useEffect(() => {
     if (currentCase) {
@@ -105,7 +116,8 @@ export default function AppTimeline() {
       return apiRequest("POST", `/api/cases/${caseId}/timeline`, {
         eventDate: new Date(data.eventDate).toISOString(),
         title: data.title,
-        category: data.category,
+        category: getCategoryName(data.categoryId),
+        categoryId: data.categoryId || undefined,
         notes: data.notes || undefined,
       });
     },
@@ -125,7 +137,8 @@ export default function AppTimeline() {
       return apiRequest("PATCH", `/api/timeline/${eventId}`, {
         eventDate: new Date(data.eventDate).toISOString(),
         title: data.title,
-        category: data.category,
+        category: getCategoryName(data.categoryId),
+        categoryId: data.categoryId || undefined,
         notes: data.notes,
       });
     },
@@ -153,9 +166,67 @@ export default function AppTimeline() {
     },
   });
 
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: { name: string; color: string }) => {
+      return apiRequest("POST", "/api/timeline-categories", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      setNewCategoryName("");
+      setNewCategoryColor(DEFAULT_COLORS[0]);
+      toast({ title: "Category created" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to create category", variant: "destructive" });
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name?: string; color?: string } }) => {
+      return apiRequest("PATCH", `/api/timeline-categories/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      setEditingCategoryId(null);
+      toast({ title: "Category updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to update category", variant: "destructive" });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/timeline-categories/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline-categories"] });
+      toast({ title: "Category deleted" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to delete category", variant: "destructive" });
+    },
+  });
+
+  const getCategoryName = (categoryId: string): string => {
+    const cat = categories.find((c) => c.id === categoryId);
+    return cat?.name || "Other";
+  };
+
+  const getCategoryColor = (categoryId: string | null): string => {
+    if (!categoryId) return "#546E7A";
+    const cat = categories.find((c) => c.id === categoryId);
+    return cat?.color || "#546E7A";
+  };
+
+  const getCategoryById = (categoryId: string | null): TimelineCategory | undefined => {
+    if (!categoryId) return undefined;
+    return categories.find((c) => c.id === categoryId);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.category || !formData.eventDate) {
+    if (!formData.title.trim() || !formData.categoryId || !formData.eventDate) {
       toast({ title: "Validation error", description: "Please fill in all required fields.", variant: "destructive" });
       return;
     }
@@ -168,10 +239,11 @@ export default function AppTimeline() {
 
   const handleEdit = (event: TimelineEvent) => {
     setEditingEventId(event.id);
+    const cat = categories.find((c) => c.name === event.category || c.id === event.categoryId);
     setFormData({
       eventDate: formatDateTimeLocal(event.eventDate),
       title: event.title,
-      category: event.category,
+      categoryId: cat?.id || event.categoryId || "",
       notes: event.notes || "",
     });
     setShowAddForm(false);
@@ -191,6 +263,31 @@ export default function AppTimeline() {
     if (confirm("Are you sure you want to delete this event?")) {
       deleteMutation.mutate(eventId);
     }
+  };
+
+  const handleCreateCategory = () => {
+    if (!newCategoryName.trim()) return;
+    createCategoryMutation.mutate({ name: newCategoryName.trim(), color: newCategoryColor });
+  };
+
+  const handleUpdateCategory = () => {
+    if (!editingCategoryId || !editCategoryName.trim()) return;
+    updateCategoryMutation.mutate({
+      id: editingCategoryId,
+      data: { name: editCategoryName.trim(), color: editCategoryColor },
+    });
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    if (confirm("Delete this category? Events using it will be set to 'Other'.")) {
+      deleteCategoryMutation.mutate(id);
+    }
+  };
+
+  const startEditCategory = (cat: TimelineCategory) => {
+    setEditingCategoryId(cat.id);
+    setEditCategoryName(cat.name);
+    setEditCategoryColor(cat.color);
   };
 
   if (caseLoading) {
@@ -225,6 +322,8 @@ export default function AppTimeline() {
 
   const isFormPending = createMutation.isPending || updateMutation.isPending;
 
+  const sortedEvents = [...events].sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+
   return (
     <AppLayout>
       <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
@@ -250,19 +349,39 @@ export default function AppTimeline() {
                 {currentCase.caseType && <span>{currentCase.caseType}</span>}
               </div>
             </div>
-            {!showAddForm && !editingEventId && (
+            <div className="flex flex-wrap items-center gap-2">
               <Button
-                onClick={() => {
-                  setShowAddForm(true);
-                  setFormData(initialFormData);
-                }}
-                className="flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
-                data-testid="button-add-event"
+                size="icon"
+                variant="outline"
+                onClick={() => setViewMode(viewMode === "vertical" ? "horizontal" : "vertical")}
+                title={viewMode === "vertical" ? "Switch to horizontal view" : "Switch to vertical view"}
+                data-testid="button-toggle-view"
               >
-                <Plus className="w-4 h-4" />
-                Add Event
+                {viewMode === "vertical" ? <LayoutGrid className="w-4 h-4" /> : <LayoutList className="w-4 h-4" />}
               </Button>
-            )}
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => setShowCategoryManager(true)}
+                title="Manage categories"
+                data-testid="button-manage-categories"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              {!showAddForm && !editingEventId && (
+                <Button
+                  onClick={() => {
+                    setShowAddForm(true);
+                    setFormData(initialFormData);
+                  }}
+                  className="flex items-center gap-2 min-h-[44px]"
+                  data-testid="button-add-event"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Event
+                </Button>
+              )}
+            </div>
           </div>
 
           <ModuleIntro
@@ -303,16 +422,22 @@ export default function AppTimeline() {
                         Category <span className="text-destructive">*</span>
                       </label>
                       <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        value={formData.categoryId}
+                        onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
                       >
                         <SelectTrigger data-testid="select-category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              {cat.label}
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: cat.color }}
+                                />
+                                {cat.name}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -366,9 +491,9 @@ export default function AppTimeline() {
             </Card>
           )}
 
-          {timelineLoading ? (
+          {timelineLoading || categoriesLoading ? (
             <div className="w-full flex items-center justify-center py-12">
-              <p className="font-sans text-neutral-darkest/60">Loading events...</p>
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : events.length === 0 ? (
             <div className="w-full bg-muted/30 rounded-lg p-8 md:p-12 flex flex-col items-center justify-center text-center">
@@ -395,59 +520,255 @@ export default function AppTimeline() {
                 </Button>
               )}
             </div>
-          ) : (
+          ) : viewMode === "vertical" ? (
             <div className="w-full space-y-4">
-              {events.map((event) => (
-                <Card key={event.id} className="w-full" data-testid={`card-event-${event.id}`}>
-                  <CardContent className="pt-6">
-                    {editingEventId === event.id ? null : (
-                      <div className="flex flex-col md:flex-row md:items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {getCategoryLabel(event.category)}
+              {sortedEvents.map((event) => {
+                const catColor = getCategoryColor(event.categoryId);
+                const cat = getCategoryById(event.categoryId);
+                return (
+                  <Card key={event.id} className="w-full" data-testid={`card-event-${event.id}`}>
+                    <CardContent className="pt-6">
+                      {editingEventId === event.id ? null : (
+                        <div className="flex flex-col md:flex-row md:items-start gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs"
+                                style={{ backgroundColor: catColor, color: "#fff" }}
+                              >
+                                {cat?.name || event.category}
+                              </Badge>
+                              <span className="text-sm text-neutral-darkest/60">
+                                {formatDate(event.eventDate)}
+                              </span>
+                            </div>
+                            <h3 className="font-heading font-semibold text-base text-neutral-darkest break-words">
+                              {event.title}
+                            </h3>
+                            {event.notes && (
+                              <p className="font-sans text-sm text-neutral-darkest/70 mt-2 break-words whitespace-pre-wrap">
+                                {event.notes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEdit(event)}
+                              data-testid={`button-edit-event-${event.id}`}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(event.id)}
+                              disabled={deleteMutation.isPending}
+                              data-testid={`button-delete-event-${event.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="w-full">
+              <ScrollArea className="w-full whitespace-nowrap rounded-lg border">
+                <div className="flex py-6 px-4 gap-4">
+                  {sortedEvents.map((event) => {
+                    const catColor = getCategoryColor(event.categoryId);
+                    const cat = getCategoryById(event.categoryId);
+                    return (
+                      <Card
+                        key={event.id}
+                        className="flex-shrink-0 w-64"
+                        data-testid={`card-event-horizontal-${event.id}`}
+                      >
+                        <CardContent className="pt-4 pb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs"
+                              style={{ backgroundColor: catColor, color: "#fff" }}
+                            >
+                              {cat?.name || event.category}
                             </Badge>
-                            <span className="text-sm text-neutral-darkest/60">
+                            <span className="text-xs text-muted-foreground">
                               {formatDate(event.eventDate)}
                             </span>
                           </div>
-                          <h3 className="font-heading font-semibold text-base text-neutral-darkest break-words">
+                          <h3 className="font-semibold text-sm text-neutral-darkest line-clamp-2 mb-2">
                             {event.title}
                           </h3>
                           {event.notes && (
-                            <p className="font-sans text-sm text-neutral-darkest/70 mt-2 break-words whitespace-pre-wrap">
+                            <p className="text-xs text-muted-foreground line-clamp-3">
                               {event.notes}
                             </p>
                           )}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleEdit(event)}
-                            data-testid={`button-edit-event-${event.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDelete(event.id)}
-                            disabled={deleteMutation.isPending}
-                            data-testid={`button-delete-event-${event.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                          <div className="flex items-center gap-1 mt-3 pt-2 border-t">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => handleEdit(event)}
+                              data-testid={`button-edit-event-h-${event.id}`}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => handleDelete(event.id)}
+                              disabled={deleteMutation.isPending}
+                              data-testid={`button-delete-event-h-${event.id}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </div>
           )}
         </div>
       </section>
+
+      <Dialog open={showCategoryManager} onOpenChange={setShowCategoryManager}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Manage Categories</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label>Add New Category</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  maxLength={50}
+                  data-testid="input-new-category-name"
+                />
+                <input
+                  type="color"
+                  value={newCategoryColor}
+                  onChange={(e) => setNewCategoryColor(e.target.value)}
+                  className="w-10 h-9 rounded border cursor-pointer"
+                  data-testid="input-new-category-color"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleCreateCategory}
+                  disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                  data-testid="button-create-category"
+                >
+                  {createCategoryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <Label className="mb-2 block">Existing Categories</Label>
+              <div className="space-y-2">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center gap-2 p-2 rounded-md bg-muted/50"
+                    data-testid={`category-item-${cat.id}`}
+                  >
+                    {editingCategoryId === cat.id ? (
+                      <>
+                        <Input
+                          value={editCategoryName}
+                          onChange={(e) => setEditCategoryName(e.target.value)}
+                          className="flex-1 h-8"
+                          maxLength={50}
+                          data-testid="input-edit-category-name"
+                        />
+                        <input
+                          type="color"
+                          value={editCategoryColor}
+                          onChange={(e) => setEditCategoryColor(e.target.value)}
+                          className="w-8 h-8 rounded border cursor-pointer"
+                          data-testid="input-edit-category-color"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 px-2"
+                          onClick={handleUpdateCategory}
+                          disabled={updateCategoryMutation.isPending}
+                          data-testid="button-save-category"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 px-2"
+                          onClick={() => setEditingCategoryId(null)}
+                          data-testid="button-cancel-edit-category"
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        <span className="flex-1 text-sm">{cat.name}</span>
+                        {cat.isSystem && (
+                          <Badge variant="outline" className="text-xs">System</Badge>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => startEditCategory(cat)}
+                          data-testid={`button-edit-category-${cat.id}`}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        {!cat.isSystem && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => handleDeleteCategory(cat.id)}
+                            disabled={deleteCategoryMutation.isPending}
+                            data-testid={`button-delete-category-${cat.id}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCategoryManager(false)} data-testid="button-close-category-manager">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
