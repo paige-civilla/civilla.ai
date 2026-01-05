@@ -1,0 +1,96 @@
+Replit: implement ONLY item C (Lexi UX/layout), and confirm Lexi works for any logged-in user with NO caseId requirement.
+
+Scope: DO NOT touch Savings widget or Cases ordering. Only Lexi panel + navbar/menu overlay if needed for Lexi positioning.
+
+C1) Remove caseId requirement (logged-in = can chat)
+Files to inspect/update:
+- client/src/components/lexi/LexiPanel.tsx
+- server/routes.ts (Lexi endpoints)
+- server/storage.ts (Lexi thread/message storage)
+- any shared “currentCase” hooks used by Lexi
+
+Required behavior:
+- If user is authenticated, Lexi chat must work everywhere in the app, even when no case is selected.
+- When no caseId is available:
+  - Use a “general thread” per user (thread.caseId = NULL) OR a special string key like "general".
+  - UI must NOT show “Open a case to chat…”
+  - Messages still persist + show full chat history.
+- When user later opens a case:
+  - Lexi should switch to case-specific threads (existing behavior) BUT general thread remains accessible.
+  - If thread separation already exists, keep it. Just remove the blocking requirement.
+
+C2) Fix Lexi panel positioning to respect the navbar
+Problem: panel is positioned from top of viewport and overlaps navbar.
+Implementation:
+- Ensure the Lexi panel container uses:
+  top: var(--app-navbar-height)
+  height: calc(100vh - var(--app-navbar-height))
+- Provide a stable CSS variable:
+  Option A (recommended): set --app-navbar-height in CSS to a constant matching the real navbar height (e.g., 72px).
+  Option B: measure navbar height once on mount and set document.documentElement.style.setProperty("--app-navbar-height", `${height}px`).
+
+Files:
+- client/src/components/layout/AppNavbar.tsx (or AppLayout) to set the CSS var if using Option B
+- client/src/index.css to define default fallback:
+  :root { --app-navbar-height: 72px; }
+
+C3) Lexi width + “3/4 size but centered” requirement
+Goal: Lexi should not consume the entire page; it should appear as a right-side panel but with comfortable gutters so it’s fully visible and usable.
+Implementation:
+- Panel width should be constrained:
+  width: clamp(320px, 72vw, 520px)
+- Position it on the right with a small outer gutter:
+  right: 16px (or 20px)
+- Add vertical padding so it visually “floats” under navbar:
+  top offset handled by C2
+- On small screens (mobile):
+  use w-full, right: 0, and still respect top offset.
+
+C4) Toggle tab must show “Lexi” + chevron (not chevrons only, not </>)
+Goal: the closed state shows a vertical tab hugging the right edge that reads “Lexi” vertically + a chevron indicating open. When open, tab stays at panel edge with “Lexi” + chevron indicating close.
+Implementation details:
+- Use CSS writing-mode for vertical text:
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);  (as needed so “Lexi” reads bottom-to-top or top-to-bottom cleanly)
+- Closed tab:
+  shows “Lexi” + chevron-right (or left depending on direction)
+- Open tab:
+  shows “Lexi” + chevron-left (or right depending on direction)
+- Keep background color #314143 and text color #FAF8F4 (or token equivalents).
+Files:
+- client/src/components/lexi/LexiPanel.tsx
+
+C5) Replace heavy Help/Chat tabs with small in-chat helper bars
+Current issue: big Help/Chat tabs consume vertical space and feel like primary UI.
+New behavior:
+- Default to “Chat”.
+- Show a small helper bar below the disclaimer with:
+  - 3 suggested prompt chips relevant to current module/page (reuse existing LexiSuggestedQuestions if present)
+  - A small “Hide” x
+- The helper bar disappears when:
+  - user focuses input, OR
+  - user types the first character, OR
+  - user sends first message in that session.
+- Keep “Help mode” as optional (if you already have it), but make it a small dropdown or a subtle toggle in the header, not large tabs.
+
+C6) Fix menu dropdown translucency only if it’s caused by Lexi z-index/overlay
+Observed: dropdown panel appears “see-through” / picking up page beneath it.
+If current dropdown uses any semi-transparent backgrounds (e.g., bg-white/70, opacity-*, backdrop blur), replace with fully opaque panel background:
+- Use solid background (no alpha) and ensure z-index is above content:
+  z-index: 60 (example)
+Files likely:
+- client/src/components/layout/AppNavbar.tsx
+
+Verification checklist (must confirm):
+1) Log in, go to Dashboard (no case selected): Lexi can send messages and receive responses; history persists.
+2) Open a case: Lexi continues working and uses case thread; general thread still exists.
+3) Lexi panel starts below navbar, never overlaps it.
+4) Lexi width is constrained and usable; mobile goes full width.
+5) Toggle tab reads “Lexi” vertically + chevron; no icon-only toggle.
+6) Helper bar prompts appear and then disappear on typing/focus.
+7) Dropdown menu is solid/opaque and not see-through.
+
+Deliverables:
+- List every file changed and why.
+- Provide a clear summary of the new “general thread” behavior (how it’s stored and retrieved).
+- Include screenshots of Lexi closed/open on Dashboard and inside a case.

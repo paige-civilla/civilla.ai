@@ -857,13 +857,15 @@ export type CreateLexiMessage = z.infer<typeof createLexiMessageSchema>;
 export type LexiMessage = typeof lexiMessages.$inferSelect;
 
 export const lexiChatRequestSchema = z.object({
-  caseId: z.string().min(1, "Case ID is required"),
+  caseId: z.string().nullable().optional(),
   threadId: z.string().min(1, "Thread ID is required"),
   message: z.string().min(1, "Message is required").max(10000, "Message too long"),
   stateOverride: z.string().optional(),
   mode: z.enum(["help", "chat", "research"]).optional(),
   moduleKey: z.string().optional(),
 });
+
+export const LEXI_GENERAL_CASE_ID = "__general__";
 
 export const caseRuleTerms = pgTable("case_rule_terms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

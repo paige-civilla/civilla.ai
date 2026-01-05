@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, LEXI_GENERAL_CASE_ID } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -2898,6 +2898,32 @@ export async function registerRoutes(
     res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
   });
 
+  app.get("/api/lexi/threads", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const threads = await storage.listLexiThreads(userId, LEXI_GENERAL_CASE_ID);
+      res.json({ threads });
+    } catch (error) {
+      console.error("List general lexi threads error:", error);
+      res.status(500).json({ error: "Failed to list threads" });
+    }
+  });
+
+  app.post("/api/lexi/threads", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const parsed = createLexiThreadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+      }
+      const thread = await storage.createLexiThread(userId, LEXI_GENERAL_CASE_ID, parsed.data.title);
+      res.status(201).json({ thread });
+    } catch (error) {
+      console.error("Create general lexi thread error:", error);
+      res.status(500).json({ error: "Failed to create thread" });
+    }
+  });
+
   app.get("/api/cases/:caseId/lexi/threads", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -3003,15 +3029,19 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
       }
 
-      const { caseId, threadId, message, stateOverride } = parsed.data;
+      const { threadId, message, stateOverride } = parsed.data;
+      const effectiveCaseId = parsed.data.caseId || LEXI_GENERAL_CASE_ID;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+      let caseRecord = null;
+      if (effectiveCaseId !== LEXI_GENERAL_CASE_ID) {
+        caseRecord = await storage.getCase(effectiveCaseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
       }
 
       const thread = await storage.getLexiThread(userId, threadId);
-      if (!thread || thread.caseId !== caseId) {
+      if (!thread || thread.caseId !== effectiveCaseId) {
         return res.status(404).json({ error: "Thread not found" });
       }
 
@@ -3020,7 +3050,7 @@ export async function registerRoutes(
 
       if (isDisallowed(message)) {
         const userMsg = await storage.createLexiMessage(
-          userId, caseId, threadId, "user", message, 
+          userId, effectiveCaseId, threadId, "user", message, 
           { disallowed: true }, null, { intent, refused: true }
         );
         
@@ -3030,7 +3060,7 @@ export async function registerRoutes(
         }
         
         const assistantMsg = await storage.createLexiMessage(
-          userId, caseId, threadId, "assistant", responseContent, 
+          userId, effectiveCaseId, threadId, "assistant", responseContent, 
           { safety_template: true }, null, { intent, refused: true, hadSources: false }
         );
         return res.json({ userMessage: userMsg, assistantMessage: assistantMsg, intent, refused: true });
@@ -3039,7 +3069,7 @@ export async function registerRoutes(
       const uplTemplate = detectUPLRequest(message);
       if (uplTemplate) {
         const userMsg = await storage.createLexiMessage(
-          userId, caseId, threadId, "user", message, 
+          userId, effectiveCaseId, threadId, "user", message, 
           { upl_detected: true }, null, { intent, refused: true }
         );
         
@@ -3049,7 +3079,7 @@ export async function registerRoutes(
         }
         
         const assistantMsg = await storage.createLexiMessage(
-          userId, caseId, threadId, "assistant", responseContent, 
+          userId, effectiveCaseId, threadId, "assistant", responseContent, 
           { safety_template: true }, null, { intent, refused: true, hadSources: false }
         );
         return res.json({ userMessage: userMsg, assistantMessage: assistantMsg, intent, refused: true });
@@ -3060,15 +3090,15 @@ export async function registerRoutes(
       }
 
       await storage.createLexiMessage(
-        userId, caseId, threadId, "user", message, 
+        userId, effectiveCaseId, threadId, "user", message, 
         null, null, { intent }
       );
 
       const existingMessages = await storage.listLexiMessages(userId, threadId);
       const systemPrompt = buildLexiSystemPrompt({
-        state: stateOverride || caseRecord.state || undefined,
-        county: caseRecord.county || undefined,
-        caseType: caseRecord.caseType || undefined,
+        state: stateOverride || caseRecord?.state || undefined,
+        county: caseRecord?.county || undefined,
+        caseType: caseRecord?.caseType || undefined,
       });
 
       const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
@@ -3097,7 +3127,7 @@ export async function registerRoutes(
       }
       
       const assistantMsg = await storage.createLexiMessage(
-        userId, caseId, threadId, "assistant", finalContent, 
+        userId, effectiveCaseId, threadId, "assistant", finalContent, 
         null, "gpt-4.1", { intent, refused: false, hadSources: hasSources }
       );
 
