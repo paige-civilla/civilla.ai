@@ -1,0 +1,126 @@
+REPLIT TASK: C3 Evidence Module — Finish Parts 3–6 (Frontend + Exhibits + Pattern Analysis + Reporting)
+
+IMPORTANT
+- Do NOT ask for any new keys or secrets during this task.
+- Assume OCR auth is already solved via GOOGLE_CLOUD_VISION_API_KEY.
+- Focus only on product behavior/UI + wiring to the backend routes that already exist.
+
+PART 3 — Evidence Frontend: Notes Panel + AI Analysis Panel + Quick Actions (AppEvidence.tsx)
+Goal: For each evidence file card, user can:
+A) Add notes (with page/time anchor, quote/snippet, tags, relevance)
+B) Run/see AI analysis (status, summary, findings) and re-run
+C) Convert notes/snippets into Exhibit Snippets and Trial Prep Shortlist
+
+Implement:
+1) Evidence Notes UI
+- Add a “Notes” button on each evidence card.
+- Notes drawer/modal shows:
+  - List of notes for this evidence (newest first)
+  - Each note shows: title (or first line), anchor (page/time), tags, created date
+  - Buttons: Edit, Delete, “Add to Trial Prep”, “Create Exhibit Snippet”
+- Add note form fields:
+  - AnchorType: Page / Timestamp / None
+  - AnchorValue: page number or timestamp string
+  - Quote/Snippet (optional)
+  - Notes body (required)
+  - Tags (comma separated)
+  - “Why it matters” (optional)
+- Wire to existing notes-full endpoints:
+  - GET /api/cases/:caseId/evidence/notes-full (filter by evidenceId client-side or add query param if backend supports)
+  - POST/PATCH/DELETE /api/cases/:caseId/evidence/notes-full
+
+2) AI Analysis UI
+- Add “AI Analysis” button on each evidence card.
+- Panel shows:
+  - Status: queued/processing/complete/failed
+  - Summary (short)
+  - Findings (bulleted)
+  - Error message if failed (friendly + “Retry”)
+  - “Run analysis” / “Re-run” button
+- Wire to:
+  - POST /api/cases/:caseId/evidence/ai-analyses (create/run)
+  - PATCH /api/evidence-ai-analyses/:analysisId (update)
+  - DELETE /api/evidence-ai-analyses/:analysisId (delete if needed)
+- Use polling while status is queued/processing.
+
+3) Quick Actions (from notes/analysis)
+- Add “Add to Trial Prep” action that creates shortlist items:
+  - POST /api/cases/:caseId/trial-prep-shortlist
+  - sourceType: "evidence_note" OR "evidence_analysis"
+  - sourceId: noteId or analysisId
+  - binderSection selection dropdown (with sane defaults)
+  - importance 1–5
+- Add “Create Exhibit Snippet” action:
+  - POST /api/cases/:caseId/exhibit-snippets
+  - sourceType: "evidence"
+  - sourceId: evidenceId
+  - title, quote/snippet, anchor (page/time), notes
+  - optional exhibitListId selection
+
+PART 4 — Exhibits Upgrades: Snippet-Based Exhibits + Used-For-Filing History
+Goal: Exhibits are not just “an exhibit entry”; they include:
+- Exhibit List metadata (usedForFiling, usedForFilingDate)
+- Snippets linked to evidence/notes (exhibit_snippets table)
+- Ability to export/download one combined “packet” (even if MVP is a merged PDF later, start with a structured download plan)
+
+Implement in AppExhibits.tsx:
+1) Exhibit Lists
+- Add fields on exhibit list edit:
+  - “Used for filing” (checkbox)
+  - “Filing date” (date input)
+- Save via existing exhibit list update route (or add PATCH if missing).
+2) Snippets
+- On an Exhibit List page, show “Snippets” section:
+  - List snippets in the list (ordered by createdAt)
+  - Snippet card shows: title, anchor, quote, notes, linked evidence file name
+  - Buttons: Edit, Remove (delete), “Open evidence”
+- Add “Add snippet” button:
+  - Select evidence (dropdown)
+  - Paste quote/snippet + anchor
+  - Save to POST /api/cases/:caseId/exhibit-snippets
+3) Evidence → Exhibits integration
+- In AppEvidence “Add to Exhibit” flow:
+  - Add second option: “Add as snippet” (user selects page/time + quote)
+  - This creates an exhibit_snippets record instead of the old exhibit_evidence mapping.
+4) Export/Download (MVP)
+- Add “Download Packet (MVP)” button that downloads a ZIP-like structure later.
+For now:
+  - Generate a single downloadable JSON + manifest (server route) OR client-side download:
+    - Exhibit list metadata
+    - Snippets
+    - Links to evidence file ids/urls
+- Label clearly “Packet export (MVP)” so expectations are correct.
+
+PART 5 — Pattern Analysis Integration
+Goal: Pattern Analysis should incorporate:
+- Evidence extraction completion status counts
+- AI analyses counts (complete/failed/processing)
+- Top tags used in notes
+- “Overdue follow-ups” already exists; keep it
+
+Implement in Pattern Analysis page:
+- Add cards:
+  1) Evidence Processing: total files, extracted complete, queued/processing, failed
+  2) Evidence Notes: total notes, top 5 tags
+  3) Evidence AI: analyses complete/processing/failed
+- Add “Recent Activity” items for:
+  - New evidence note
+  - AI analysis completed
+  - Snippet created
+
+PART 6 — REPORTING
+After completing Parts 3–5, respond with:
+- Files changed
+- Endpoints used (list)
+- What is now possible end-to-end:
+  - upload → extract → note → analysis → snippet → exhibit list → trial prep shortlist → pattern analysis surface
+- Any remaining gaps (e.g., true PDF merge export)
+
+QUALITY REQUIREMENTS
+- No UI regressions to Lexi, onboarding, cases.
+- Use existing design tokens for colors; no new hardcoded colors.
+- Empty states everywhere (“No notes yet”, “No analyses yet”, “No snippets yet”).
+- Mobile: maintain 44px touch targets and responsive layouts.
+
+Proceed now with Parts 3–4 first, then 5, then 6 summary.
+Be extremely detailed about what you changed and where.

@@ -1,0 +1,79 @@
+REPLIT TASK: Fix “Create Case” 500 + Fix Lexi “Start conversation” reliability
+
+Goal
+- Brand-new user can create a case successfully every time.
+- If it fails, user gets a clear UI error (not just 500).
+- Lexi “Start a conversation” works reliably even when not inside a case.
+
+PART 1 — Create Case 500: Find root cause + fix (NOT just error handling)
+A) Reproduce with logs
+1) Run app, login as a user.
+2) Attempt to create a case.
+3) In server logs, capture the full “[CreateCase] …” log line(s).
+
+B) Add explicit “auth sanity” logging (safe)
+In server/routes.ts inside POST /api/cases:
+- Log:
+  - hasUser: boolean (!!req.user)
+  - userId: req.user?.id (OK)
+  - email: req.user?.email (OK)
+- Do NOT log cookies/tokens/passwords.
+
+C) Fix the actual failure
+Common causes we must handle:
+1) req.user missing (middleware not attached or session not loaded)
+   - Ensure requireAuth is applied to POST /api/cases
+   - Ensure requireAuth attaches req.user correctly (and that session store works)
+2) USER_NOT_FOUND triggered because the session userId doesn’t exist in DB
+   - This happens when DB was wiped but cookies still point to an old user.
+   - Fix: if req.user exists but DB lookup fails, force logout:
+     - return 401 { error: "SESSION_INVALID" }
+   - Frontend: on SESSION_INVALID, redirect to /login and show “Session expired, please sign in again.”
+3) Validation failed (empty fields / type mismatch)
+   - Ensure server validates required fields: title, state, county, caseType
+   - Ensure client sends correct keys and types.
+4) CASE_LIMIT_REACHED
+   - Ensure the limit logic is correct and the UI message is friendly.
+
+D) Frontend UI: Show the real error message
+In client/src/pages/AppCases.tsx:
+- When create-case returns error JSON:
+  - show a readable banner:
+    - SESSION_INVALID → “Please sign in again.”
+    - VALIDATION_FAILED → show field messages
+    - CASE_LIMIT_REACHED → show upgrade CTA
+    - CREATE_CASE_FAILED → show “Try again or contact support”
+- Also log the raw response to console in dev mode only.
+
+PART 2 — Lexi “Start a conversation” button
+A) Remove “Open a case…” gating
+Lexi must work when user is logged in even with no case selected.
+- If caseId is missing:
+  - Still allow threads to be created and messages sent.
+  - Use caseId = null in DB (or a sentinel) if schema supports it.
+  - If schema requires caseId, create a “global” case-less thread table path:
+    - Option 1: allow lexi_threads.caseId nullable
+    - Option 2: store global threads under a pseudo-case “global” per user
+
+B) Make “Start a conversation” always create a thread
+- Clicking “Start a conversation” should:
+  - POST /api/lexi/threads (or existing route) and set activeThreadId
+  - Immediately focus the message input
+- If it fails, show toast: “Couldn’t start a conversation. Try again.”
+
+C) Suggested-question chips behavior
+- Confirm chip click sends immediately (already updated).
+- If a thread doesn’t exist, chip click should create one first, then send.
+
+PART 3 — Confirm onboarding hasn’t regressed
+- Verify the 6-step flow still redirects correctly:
+  - completed onboarding → dashboard
+  - incomplete onboarding → onboarding
+- If a user gets sent back to onboarding repeatedly, identify why the flag isn’t persisting.
+
+DELIVERABLE
+Reply with:
+- Root cause of the Create Case 500 (the exact one)
+- Files changed
+- Test steps that prove it’s fixed
+- Confirmation that Lexi works without caseId (logged-in global mode)

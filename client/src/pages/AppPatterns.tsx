@@ -111,12 +111,11 @@ export default function AppPatterns() {
   );
 
   const unresolvedCommunications = communications.filter(c => c.status !== "resolved");
-  const followUpsDue = communications.filter(c => c.requiresFollowUp && !c.followUpCompleted);
+  const followUpsDue = communications.filter(c => c.needsFollowUp);
   const overdueFollowUps = communications.filter(c => 
-    c.requiresFollowUp && 
-    !c.followUpCompleted && 
-    c.followUpDueDate && 
-    new Date(c.followUpDueDate) < now
+    c.needsFollowUp && 
+    c.followUpAt && 
+    new Date(c.followUpAt) < now
   );
 
   const upcomingDeadlines = deadlines.filter(d => 
@@ -182,7 +181,7 @@ export default function AppPatterns() {
     recentActivity.push({
       type: "communication",
       id: c.id,
-      title: c.subject || `${c.channel} with ${c.contactName || "contact"}`,
+      title: c.subject || `${c.channel} communication`,
       updatedAt: new Date(c.updatedAt || c.createdAt),
       status: c.status === "resolved" ? "Resolved" : "Pending",
     });
@@ -308,10 +307,10 @@ export default function AppPatterns() {
                         <MessageSquare className="w-4 h-4 text-[#9575CD] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-neutral-darkest truncate">
-                            {c.subject || `Follow-up: ${c.contactName || "contact"}`}
+                            {c.subject || `Follow-up needed`}
                           </p>
                           <p className="text-xs text-neutral-darkest/60">
-                            Follow-up Due {c.followUpDueDate ? new Date(c.followUpDueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
+                            Follow-up Due {c.followUpAt ? new Date(c.followUpAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
                           </p>
                         </div>
                         <Badge variant="destructive" className="text-xs">Overdue</Badge>
