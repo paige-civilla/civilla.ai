@@ -243,10 +243,31 @@ export default function LexiPanel() {
 
   async function send() {
     const text = input.trim();
-    if (!text || sendMessageMutation.isPending || !activeThreadId) return;
+    if (!text || sendMessageMutation.isPending) return;
+
+    if (!activeThreadId) {
+      const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      setPendingAsk({ text, moduleKey: currentModuleKey });
+      createThreadMutation.mutate(`New conversation - ${timestamp}`);
+      setInput("");
+      return;
+    }
 
     setInput("");
     sendMessageMutation.mutate({ text, moduleKey: currentModuleKey });
+  }
+
+  async function handleSuggestedQuestion(question: string) {
+    if (sendMessageMutation.isPending || createThreadMutation.isPending) return;
+
+    if (!activeThreadId) {
+      const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      setPendingAsk({ text: question });
+      createThreadMutation.mutate(`New conversation - ${timestamp}`);
+      return;
+    }
+
+    sendMessageMutation.mutate({ text: question });
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -494,8 +515,8 @@ export default function LexiPanel() {
               </div>
 
               {!activeThreadId ? (
-                <div className="flex-1 flex items-center justify-center px-4">
-                  <div className="text-center">
+                <div className="flex-1 flex flex-col items-center justify-center px-4">
+                  <div className="text-center mb-6">
                     <p className="font-sans text-sm text-neutral-darkest/60 mb-3">
                       {disclaimerData?.welcome || "Start a conversation with Lexi"}
                     </p>
@@ -504,10 +525,28 @@ export default function LexiPanel() {
                       onClick={startNewThread}
                       disabled={createThreadMutation.isPending}
                       className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:opacity-50"
+                      data-testid="button-start-conversation"
                     >
                       <Plus className="w-4 h-4" />
-                      Start a conversation
+                      {createThreadMutation.isPending ? "Starting..." : "Start a conversation"}
                     </button>
+                  </div>
+                  <div className="w-full max-w-sm">
+                    <p className="text-xs font-medium text-neutral-darkest/60 mb-2 text-center">Or ask a question:</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {SUGGESTED_QUESTIONS.slice(0, 3).map((q, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSuggestedQuestion(q)}
+                          disabled={sendMessageMutation.isPending || createThreadMutation.isPending}
+                          className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
+                          data-testid={`suggested-question-nothread-${idx}`}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : messagesLoading ? (
@@ -529,10 +568,8 @@ export default function LexiPanel() {
                               <button
                                 key={idx}
                                 type="button"
-                                onClick={() => {
-                                  sendMessageMutation.mutate({ text: q });
-                                }}
-                                disabled={sendMessageMutation.isPending}
+                                onClick={() => handleSuggestedQuestion(q)}
+                                disabled={sendMessageMutation.isPending || createThreadMutation.isPending}
                                 className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
                                 data-testid={`suggested-question-${idx}`}
                               >

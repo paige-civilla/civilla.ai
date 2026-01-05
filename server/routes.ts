@@ -628,10 +628,15 @@ export async function registerRoutes(
 
   app.post("/api/cases", requireAuth, async (req, res) => {
     const userId = req.session.userId!;
+    console.log("[CreateCase] auth sanity check", {
+      hasUser: !!userId,
+      userId: userId,
+    });
     try {
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(401).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        console.error("[CreateCase] SESSION_INVALID - userId not in DB", { userId });
+        return res.status(401).json({ error: "Session expired. Please sign in again.", code: "SESSION_INVALID" });
       }
 
       const caseCount = await storage.getCaseCountByUserId(userId);

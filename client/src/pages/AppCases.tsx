@@ -35,8 +35,17 @@ export default function AppCases() {
 
   const createCaseMutation = useMutation({
     mutationFn: async (data: { title: string; state?: string; county?: string; caseType?: string; hasChildren?: boolean }) => {
-      const res = await apiRequest("POST", "/api/cases", data);
-      return res.json();
+      const res = await fetch("/api/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw { status: res.status, ...json };
+      }
+      return json;
     },
     onSuccess: (data: { case: Case }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
@@ -53,7 +62,34 @@ export default function AppCases() {
       }
     },
     onError: (err: any) => {
-      setError(err.message || "Failed to create case");
+      const code = err?.code;
+      const fields = err?.fields;
+      
+      if (code === "SESSION_INVALID" || code === "USER_NOT_FOUND") {
+        setError("Your session has expired. Please sign in again.");
+        setTimeout(() => setLocation("/login"), 2000);
+        return;
+      }
+      
+      if (code === "VALIDATION_FAILED" && fields) {
+        const fieldErrors = Object.entries(fields)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join(", ");
+        setError(`Please fix: ${fieldErrors}`);
+        return;
+      }
+      
+      if (code === "CASE_LIMIT_REACHED") {
+        setError(err.message || "You've reached your case limit. Upgrade to create more cases.");
+        return;
+      }
+      
+      if (code === "CREATE_CASE_FAILED") {
+        setError("Something went wrong. Please try again or contact support.");
+        return;
+      }
+      
+      setError(err.message || err.error || "Failed to create case");
     },
   });
 
