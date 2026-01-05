@@ -115,8 +115,8 @@ export default function LexiPanel() {
   });
 
   const { data: threadsData, isLoading: threadsLoading } = useQuery<{ threads: LexiThread[] }>({
-    queryKey: ["/api/cases", caseId, "lexi", "threads"],
-    enabled: open && mode === "chat" && !!caseId,
+    queryKey: caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"],
+    enabled: open && mode === "chat",
   });
 
   const threads = threadsData?.threads ?? [];
@@ -130,11 +130,13 @@ export default function LexiPanel() {
 
   const createThreadMutation = useMutation({
     mutationFn: async (threadTitle: string) => {
-      const res = await apiRequest("POST", `/api/cases/${caseId}/lexi/threads`, { title: threadTitle });
+      const url = caseId ? `/api/cases/${caseId}/lexi/threads` : "/api/lexi/threads";
+      const res = await apiRequest("POST", url, { title: threadTitle });
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "lexi", "threads"] });
+      const key = caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"];
+      queryClient.invalidateQueries({ queryKey: key });
       setActiveThreadId(data.thread.id);
       setShowThreadList(false);
     },
@@ -145,7 +147,8 @@ export default function LexiPanel() {
       await apiRequest("DELETE", `/api/lexi/threads/${threadId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "lexi", "threads"] });
+      const key = caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"];
+      queryClient.invalidateQueries({ queryKey: key });
       if (activeThreadId && threads.length <= 1) {
         setActiveThreadId(null);
       } else if (threads.length > 1) {
@@ -278,7 +281,6 @@ export default function LexiPanel() {
     setLocation(`/app/deadlines/${caseId}`);
   }
 
-  const noCaseSelected = !caseId;
 
   return (
     <>
@@ -360,13 +362,17 @@ export default function LexiPanel() {
       <div
         className={[
           "fixed z-50 bg-white border border-neutral-light shadow-2xl",
-          "w-full h-full sm:w-[clamp(320px,28vw,460px)] sm:h-auto",
-          "sm:right-6 sm:top-6 sm:bottom-6 sm:rounded-2xl",
+          "w-full h-full sm:w-[clamp(320px,72vw,520px)] sm:h-auto",
+          "sm:right-6 sm:rounded-2xl",
           "right-0 top-0",
           "transition-transform duration-200 ease-out",
           "flex flex-col overflow-hidden",
           open ? "translate-x-0" : "translate-x-full",
         ].join(" ")}
+        style={{
+          top: "calc(var(--civilla-nav-h, 64px) + 12px)",
+          bottom: "12px",
+        }}
         role="dialog"
         aria-label="Lexi panel"
       >
@@ -460,15 +466,6 @@ export default function LexiPanel() {
                     This information is for educational purposes only. Always consult your court's local rules and procedures.
                   </p>
                 </div>
-              </div>
-            </div>
-          ) : noCaseSelected ? (
-            <div className="flex-1 flex items-center justify-center px-4">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 mx-auto text-neutral-darkest/30 mb-3" />
-                <p className="font-sans text-sm text-neutral-darkest/60">
-                  Open a case to chat with Lexi about your questions.
-                </p>
               </div>
             </div>
           ) : showThreadList ? (
