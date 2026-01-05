@@ -1,0 +1,97 @@
+REPLIT TASK: Add “Fast Mode” + Response Style presets for Lexi (speed + readability)
+
+Goal
+Give users an easy toggle to control:
+1) Speed (Fast Mode)
+2) Response style (Bullets, Steps, Short, Detailed)
+So Lexi answers quickly and in the clean format Paige wants.
+
+What to build
+A) Frontend: Add a small “Response style” control in LexiPanel
+- Add a compact dropdown (or segmented buttons) near the message input:
+  Styles:
+  - "Bullet points" (default)
+  - "Step-by-step"
+  - "Short answer"
+  - "Detailed"
+- Add a toggle switch: “Fast mode”
+  Tooltip: “Shorter, faster answers.”
+
+B) Send these values with every Lexi message
+- Update the payload sent to POST /api/lexi/chat to include:
+  {
+    stylePreset: "bullets" | "steps" | "short" | "detailed",
+    fastMode: boolean
+  }
+- Store these in message metadata (optional) so the thread history shows which setting was used.
+
+C) Backend: Enforce formatting + speed behavior
+In the Lexi chat route (server/routes.ts):
+1) Read stylePreset + fastMode from body.
+2) Add a “FORMATTING POLICY” block into the system message that changes based on stylePreset.
+
+Use these exact formatting blocks:
+
+1) bullets preset
+FORMATTING POLICY (MUST FOLLOW):
+- Start with "Quick answer:" (1–2 sentences).
+- Then "Details:" using bullet points.
+- Use short paragraphs (max 2 sentences).
+- If steps are needed, use a short numbered list.
+- Avoid run-on text.
+
+2) steps preset
+FORMATTING POLICY (MUST FOLLOW):
+- Start with "Quick answer:" (1–2 sentences).
+- Then "Steps:" as a numbered list (1–8 steps max).
+- Include brief bullets under a step only if necessary.
+- Keep each step to 1–2 sentences.
+
+3) short preset
+FORMATTING POLICY (MUST FOLLOW):
+- Respond in 5 bullets max.
+- No extra sections unless asked.
+- Be direct. No long explanations.
+
+4) detailed preset
+FORMATTING POLICY (MUST FOLLOW):
+- Start with "Quick answer:" (1–2 sentences).
+- Then headings: "Key points", "Examples", "Next steps".
+- Use bullets heavily.
+- Keep paragraphs short.
+
+D) Make Fast Mode actually faster
+When fastMode === true:
+- Set max_output_tokens lower (example: 350–500)
+- Set temperature lower (example: 0.2)
+- Reduce context sent (do NOT include long extracted text unless the user explicitly asks about it)
+- Prefer shorter system prompt variant (still includes the formatting policy)
+
+When fastMode === false:
+- max_output_tokens can be higher (example: 900–1400)
+- temperature: 0.3–0.5
+
+E) Optional but recommended: perceived speed via streaming
+If not already streaming responses to the client:
+- Enable OpenAI streaming on the backend
+- Stream tokens to the UI so the user sees Lexi “typing” instead of waiting for the full answer
+
+F) Defaults
+- Default stylePreset = "bullets"
+- Default fastMode = true on mobile, false on desktop (optional)
+- Persist user choice in localStorage so it sticks across sessions
+
+G) Verify
+1) Ask: “What should I do first after being served?”
+- Bullets preset: quick answer + bullet list.
+- Steps preset: numbered steps.
+2) Toggle fast mode ON and ask a short question:
+- Should respond noticeably faster and shorter.
+3) Toggle fast mode OFF and ask a complex question:
+- Should be more thorough but still structured.
+
+Deliverable
+- List files changed
+- Confirm payload includes stylePreset + fastMode
+- Confirm backend applies formatting policy and token limits
+- Confirm defaults + persistence work

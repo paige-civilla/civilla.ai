@@ -1046,6 +1046,8 @@ export const lexiChatRequestSchema = z.object({
   stateOverride: z.string().optional(),
   mode: z.enum(["help", "chat", "research"]).optional(),
   moduleKey: z.string().optional(),
+  stylePreset: z.enum(["bullets", "steps", "short", "detailed"]).optional(),
+  fastMode: z.boolean().optional(),
 });
 
 export const caseRuleTerms = pgTable("case_rule_terms", {

@@ -8,6 +8,17 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { LexiThread, LexiMessage } from "@shared/schema";
 
 const OPEN_KEY = "civilla_lexi_open_v1";
+const STYLE_KEY = "civilla_lexi_style_v1";
+const FAST_KEY = "civilla_lexi_fast_v1";
+
+type StylePreset = "bullets" | "steps" | "short" | "detailed";
+
+const STYLE_OPTIONS: { value: StylePreset; label: string }[] = [
+  { value: "bullets", label: "Bullets" },
+  { value: "steps", label: "Steps" },
+  { value: "short", label: "Short" },
+  { value: "detailed", label: "Detailed" },
+];
 
 const SUGGESTED_QUESTIONS = [
   "What are deadlines I should know about in family court?",
@@ -104,6 +115,22 @@ export default function LexiPanel() {
   const [currentModuleKey, setCurrentModuleKey] = useState<string | undefined>();
   const [pendingAsk, setPendingAsk] = useState<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string } | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
+  const [stylePreset, setStylePreset] = useState<StylePreset>(() => {
+    try {
+      const saved = localStorage.getItem(STYLE_KEY);
+      if (saved && ["bullets", "steps", "short", "detailed"].includes(saved)) {
+        return saved as StylePreset;
+      }
+    } catch {}
+    return "bullets";
+  });
+  const [fastMode, setFastMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(FAST_KEY);
+      if (saved !== null) return saved === "true";
+    } catch {}
+    return window.innerWidth < 768;
+  });
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const title = "Lexi";
@@ -181,6 +208,8 @@ export default function LexiPanel() {
         message: payload.text,
         mode: payload.mode,
         moduleKey: payload.moduleKey,
+        stylePreset,
+        fastMode,
       });
       return res.json();
     },
@@ -189,6 +218,16 @@ export default function LexiPanel() {
       setCurrentModuleKey(undefined);
     },
   });
+
+  const handleStyleChange = (value: StylePreset) => {
+    setStylePreset(value);
+    try { localStorage.setItem(STYLE_KEY, value); } catch {}
+  };
+
+  const handleFastModeChange = (value: boolean) => {
+    setFastMode(value);
+    try { localStorage.setItem(FAST_KEY, String(value)); } catch {}
+  };
 
   useEffect(() => {
     try {
@@ -649,6 +688,44 @@ export default function LexiPanel() {
                   </div>
 
                   <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)] shrink-0">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1">
+                        {STYLE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => handleStyleChange(opt.value)}
+                            className={`px-2 py-1 text-xs rounded-md font-sans transition-colors ${
+                              stylePreset === opt.value
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-neutral-lightest text-neutral-darkest/70 hover:bg-neutral-light"
+                            }`}
+                            data-testid={`lexi-style-${opt.value}`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <label className="flex items-center gap-1.5 cursor-pointer" title="Shorter, faster answers">
+                        <span className="text-xs text-neutral-darkest/60 font-sans">Fast</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={fastMode}
+                          onClick={() => handleFastModeChange(!fastMode)}
+                          className={`relative w-8 h-5 rounded-full transition-colors ${
+                            fastMode ? "bg-primary" : "bg-neutral-light"
+                          }`}
+                          data-testid="lexi-fast-toggle"
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                              fastMode ? "translate-x-3" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </label>
+                    </div>
                     <div className="flex gap-2">
                       <input
                         className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
@@ -673,7 +750,6 @@ export default function LexiPanel() {
                         )}
                       </button>
                     </div>
-
                   </div>
                 </>
               )}
