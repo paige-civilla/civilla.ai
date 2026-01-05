@@ -728,6 +728,30 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/cases/:caseId/search", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const caseId = req.params.caseId;
+      const q = String(req.query.q || "").trim();
+      const limit = Math.min(50, Math.max(1, Number(req.query.limit || 5)));
+
+      if (!q || q.length < 2) {
+        return res.json({ results: [] });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const results = await storage.searchCase(userId, caseId, q, limit);
+      return res.json({ results });
+    } catch (error) {
+      console.error("Case search error:", error);
+      res.status(500).json({ error: "Failed to search case" });
+    }
+  });
+
   app.get("/api/health/timeline", async (_req, res) => {
     try {
       await db.select().from(timelineEvents).limit(1);
