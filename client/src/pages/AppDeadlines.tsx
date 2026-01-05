@@ -419,6 +419,7 @@ function DeadlineFormDialog({
   title: string;
   defaultValues?: Deadline;
 }) {
+  const [dueDateCalendarOpen, setDueDateCalendarOpen] = useState(false);
   const form = useForm<InsertDeadline>({
     resolver: zodResolver(insertDeadlineSchema),
     defaultValues: {
@@ -471,7 +472,7 @@ function DeadlineFormDialog({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Due Date</FormLabel>
-                  <Popover>
+                  <Popover open={dueDateCalendarOpen} onOpenChange={setDueDateCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -481,17 +482,34 @@ function DeadlineFormDialog({
                             !field.value && "text-muted-foreground"
                           )}
                           data-testid="button-deadline-due-date"
+                          onClick={() => setDueDateCalendarOpen(true)}
                         >
                           <Calendar className="mr-2 h-4 w-4" />
                           {field.value ? format(new Date(field.value), "PPP") : "Pick a date"}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent
+                      className="w-auto p-0"
+                      align="start"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const active = document.activeElement as HTMLElement | null;
+                          if (active && active.tagName === "BUTTON") {
+                            active.click();
+                            setDueDateCalendarOpen(false);
+                            e.preventDefault();
+                          }
+                        }
+                      }}
+                    >
                       <CalendarComponent
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={field.onChange}
+                        onSelect={(d) => {
+                          field.onChange(d);
+                          setDueDateCalendarOpen(false);
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
