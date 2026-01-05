@@ -47,7 +47,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   "case-to-do": "Case To-Do",
   "contacts": "Contacts",
   "children": "Children",
-  "child-support": "Child Support Estimator",
+  "child-support": "Child Support (Worksheet Helper)",
   "trial-prep": "Trial Prep",
 };
 
@@ -65,7 +65,7 @@ const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
   "case-to-do": "Manage your tasks and action items to keep your case organized.",
   "contacts": "Keep track of people involved in your case for easy reference.",
   "children": "Manage information about children involved in your case.",
-  "child-support": "Estimate child support calculations based on your state guidelines.",
+  "child-support": "Find your state's official child support worksheet/calculator and get an educational estimate.",
   "trial-prep": "Organize your key materials into a structured binder for court hearings.",
 };
 

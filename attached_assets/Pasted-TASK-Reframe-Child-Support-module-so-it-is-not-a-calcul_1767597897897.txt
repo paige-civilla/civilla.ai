@@ -1,0 +1,64 @@
+TASK: Reframe Child Support module so it is not a “calculator promise”, and add an optional Lexi-driven educational estimate flow (only when confident). Be detailed in your summary of edits.
+
+A) Rename module labels (no route changes)
+1) In client/src/lib/modules.ts:
+- Change label from "Child Support Estimator" to "Child Support (Worksheet Helper)"
+- Change description to "Find your state's official child support worksheet/calculator and get an educational estimate."
+
+2) Anywhere in UI where the header says "Child Support Estimator", change to "Child Support (Worksheet Helper)" (likely client/src/pages/AppChildSupport.tsx and nav/menu labels).
+
+B) Update AppChildSupport.tsx UI to support TWO actions:
+1) Primary button (existing research):
+- Keep the existing research button but rename it to:
+  "Find My State’s Official Worksheet"
+- Under the button, add helper text:
+  "We’ll save this research to this case so you can come back later."
+
+2) Add a SECONDARY action:
+- Add a button labeled:
+  "Get an Educational Estimate"
+- When clicked, open a modal (or inline step) that collects the minimum inputs needed:
+  - gross monthly income Parent A
+  - gross monthly income Parent B
+  - number of children
+  - (optional) overnights/parenting time
+  - (optional) monthly childcare
+  - (optional) monthly health insurance for child(ren)
+Include "I don’t know yet" per field.
+
+C) Add a new backend endpoint to request Lexi to compute an estimate *from official sources*
+1) In server/routes.ts add:
+POST /api/cases/:caseId/child-support/estimate
+Body: { state: string, inputs: { parentAIncome?: number, parentBIncome?: number, children?: number, overnights?: number, childcare?: number, healthInsurance?: number } }
+
+Behavior:
+- requireAuth and verify case ownership
+- Use Lexi in RESEARCH mode to:
+  (1) fetch/confirm the official guideline/calculator name and link(s) for the state
+  (2) attempt to compute an EDUCATIONAL estimate from the provided inputs ONLY IF the guideline can be confidently applied
+  (3) If not confident, return a safe response:
+      "This state’s calculation is too complex to compute reliably without the official calculator. Here is the official calculator/worksheet link and exactly how to enter your inputs."
+- Response shape: { ok: true, content: string, didCompute: boolean }
+- Content must include:
+  - a short disclaimer (single paragraph)
+  - a “Sources” section with official links
+  - if didCompute=true: show the math steps and what assumptions were used
+
+D) Wire the frontend to this estimate endpoint
+1) In AppChildSupport.tsx:
+- When user clicks “Get an Educational Estimate” and submits inputs, call:
+  POST /api/cases/:caseId/child-support/estimate
+- Render the returned content in the same results area as research, but with a heading:
+  "Educational Estimate" or "Worksheet Guidance" depending on didCompute
+
+E) Make it clear but not scary
+- Remove any wording that implies court-accurate results.
+- Keep one banner at top: "Educational tool — not court-accurate; verify with official calculator/worksheet."
+
+F) Output requirements
+- After implementing, provide a detailed summary:
+  - files changed
+  - endpoints added
+  - what inputs the modal collects
+  - how you decide didCompute true vs false
+  - how to test in the UI
