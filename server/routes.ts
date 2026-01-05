@@ -1645,6 +1645,183 @@ This is educational and research information only. It is NOT legal advice. Child
     }
   });
 
+  // Child Support Educational Estimate endpoint
+  app.post("/api/cases/:caseId/child-support/estimate", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { state, inputs } = req.body;
+
+      if (!state || typeof state !== "string") {
+        return res.status(400).json({ error: "State is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      // Check if OpenAI is configured
+      const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+      if (!lexiApiKeyConfigured) {
+        return res.status(503).json({ error: "AI integration not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Build input summary for the prompt
+      const inputParts: string[] = [];
+      if (inputs?.parentAIncome !== undefined && inputs.parentAIncome !== null) {
+        inputParts.push(`Parent A gross monthly income: $${inputs.parentAIncome}`);
+      }
+      if (inputs?.parentBIncome !== undefined && inputs.parentBIncome !== null) {
+        inputParts.push(`Parent B gross monthly income: $${inputs.parentBIncome}`);
+      }
+      if (inputs?.children !== undefined && inputs.children !== null) {
+        inputParts.push(`Number of children: ${inputs.children}`);
+      }
+      if (inputs?.overnights !== undefined && inputs.overnights !== null) {
+        inputParts.push(`Overnights with non-custodial parent: ${inputs.overnights} per year`);
+      }
+      if (inputs?.childcare !== undefined && inputs.childcare !== null) {
+        inputParts.push(`Monthly childcare costs: $${inputs.childcare}`);
+      }
+      if (inputs?.healthInsurance !== undefined && inputs.healthInsurance !== null) {
+        inputParts.push(`Monthly health insurance for children: $${inputs.healthInsurance}`);
+      }
+
+      const inputSummary = inputParts.length > 0 
+        ? inputParts.join('\n') 
+        : "No specific inputs provided";
+
+      const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
+
+Your task: Attempt to provide an EDUCATIONAL estimate of child support for ${state} based on the provided inputs.
+
+CRITICAL RULES:
+1. You are EDUCATIONAL + ORGANIZATIONAL + RESEARCH focused only.
+2. You do NOT provide legal advice.
+3. You must FIRST identify what ${state} calls its child support guidelines/worksheet and the official source.
+4. ONLY attempt a calculation if:
+   - The state uses a straightforward income shares or percentage-of-income model
+   - You have enough inputs to apply the basic formula
+   - You are CONFIDENT in the calculation methodology
+5. If the state has a complex formula (deviations, multiple worksheets, sliding scales, or requires specific software), you MUST:
+   - Set didCompute = false
+   - Explain WHY you cannot compute it reliably
+   - Provide the official calculator/worksheet link
+   - Give step-by-step instructions on how to enter the inputs into the official tool
+
+RESPONSE FORMAT (use this exact JSON structure):
+{
+  "didCompute": true or false,
+  "officialName": "What the state calls its child support guidelines/worksheet",
+  "officialLink": "URL to official calculator or worksheet, or null if you cannot confidently provide one",
+  "estimate": {
+    "monthlyAmount": number or null,
+    "range": { "low": number, "high": number } or null,
+    "methodology": "Brief explanation of how you calculated this",
+    "assumptions": ["List of assumptions made"]
+  },
+  "guidance": "If didCompute is false, explain why and provide step-by-step instructions for using the official tool",
+  "disclaimer": "This is an educational estimate only. It is NOT court-accurate and should NOT be relied upon for legal decisions. Child support calculations vary based on many factors not captured here. Always verify with your state's official calculator and consult with a family law attorney for accurate figures. civilla does not provide legal advice."
+}
+
+STATES WHERE YOU SHOULD SET didCompute=false:
+- States with complex deviation factors or multiple worksheet types
+- If any required input is missing (both incomes + number of children minimum)
+- If the state requires software or detailed worksheets you cannot replicate
+- If you are uncertain about the current formula or thresholds
+
+When in doubt, set didCompute=false and provide guidance instead.`;
+
+      const userMessage = `Please analyze and attempt to compute an educational child support estimate for ${state}.
+
+User-provided inputs:
+${inputSummary}
+
+Remember: Only compute if you're confident in the methodology. If not, provide the official worksheet/calculator link and step-by-step guidance instead.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage }
+        ],
+        temperature: 0.2,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
+      });
+
+      const rawContent = completion.choices[0]?.message?.content || "{}";
+      
+      let parsed: {
+        didCompute?: boolean;
+        officialName?: string;
+        officialLink?: string | null;
+        estimate?: {
+          monthlyAmount?: number | null;
+          range?: { low: number; high: number } | null;
+          methodology?: string;
+          assumptions?: string[];
+        };
+        guidance?: string;
+        disclaimer?: string;
+      };
+
+      try {
+        parsed = JSON.parse(rawContent);
+      } catch {
+        parsed = { didCompute: false, guidance: "Unable to parse response. Please try again." };
+      }
+
+      // Format the response into readable content
+      const didCompute = parsed.didCompute === true;
+      let formattedContent = "";
+
+      formattedContent += `## ${didCompute ? "Educational Estimate" : "Worksheet Guidance"}\n\n`;
+
+      if (parsed.officialName) {
+        formattedContent += `### Official Name\n${parsed.officialName}\n\n`;
+      }
+
+      if (parsed.officialLink) {
+        formattedContent += `### Official Source\n${parsed.officialLink}\n\n`;
+      }
+
+      if (didCompute && parsed.estimate) {
+        if (parsed.estimate.monthlyAmount !== null && parsed.estimate.monthlyAmount !== undefined) {
+          formattedContent += `### Estimated Amount\n**$${parsed.estimate.monthlyAmount.toLocaleString()} per month**\n\n`;
+        } else if (parsed.estimate.range) {
+          formattedContent += `### Estimated Range\n**$${parsed.estimate.range.low.toLocaleString()} - $${parsed.estimate.range.high.toLocaleString()} per month**\n\n`;
+        }
+
+        if (parsed.estimate.methodology) {
+          formattedContent += `### How This Was Calculated\n${parsed.estimate.methodology}\n\n`;
+        }
+
+        if (parsed.estimate.assumptions && parsed.estimate.assumptions.length > 0) {
+          formattedContent += `### Assumptions Made\n`;
+          parsed.estimate.assumptions.forEach((a: string) => {
+            formattedContent += `- ${a}\n`;
+          });
+          formattedContent += "\n";
+        }
+      }
+
+      if (parsed.guidance) {
+        formattedContent += `### ${didCompute ? "Additional Guidance" : "How to Use the Official Calculator"}\n${parsed.guidance}\n\n`;
+      }
+
+      formattedContent += `### Important Disclaimer\n${parsed.disclaimer || "This is an educational estimate only. It is NOT court-accurate. Always verify with your state's official calculator and consult a family law attorney."}\n`;
+
+      res.json({ ok: true, content: formattedContent, didCompute });
+    } catch (error) {
+      console.error("Child support estimate error:", error);
+      res.status(500).json({ error: "Failed to generate child support estimate" });
+    }
+  });
+
   app.get("/api/health/documents", async (_req, res) => {
     try {
       await pool.query("SELECT 1 FROM documents LIMIT 1");
