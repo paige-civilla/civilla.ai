@@ -215,6 +215,13 @@ async function ensureExhibitEvidenceColumns(): Promise<void> {
     "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_sort ON exhibit_evidence(exhibit_list_id, sort_order)");
 }
 
+async function ensureLexiThreadsColumns(): Promise<void> {
+  await addColumnIfMissing("lexi_threads", "disclaimer_shown", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("lexi_threads", "mode", "TEXT");
+  await addColumnIfMissing("lexi_threads", "module_key", "TEXT");
+  await addColumnIfMissing("lexi_threads", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+}
+
 export async function ensureSchemaMigrations(): Promise<void> {
   console.log("[DB MIGRATION] Running schema migrations...");
   
@@ -231,14 +238,17 @@ export async function ensureSchemaMigrations(): Promise<void> {
   await ensureTimelineEventsColumns();
   await ensureCaseEvidenceNotesColumns();
   await ensureExhibitEvidenceColumns();
+  await ensureLexiThreadsColumns();
   
   const casesStartingPoint = await columnExists("cases", "starting_point");
   const timelineCategoriesCaseId = await columnExists("timeline_categories", "case_id");
   const evidenceAiStatus = await columnExists("evidence_ai_analyses", "status");
+  const lexiThreadsDisclaimerShown = await columnExists("lexi_threads", "disclaimer_shown");
   
   console.log(`[DB MIGRATION] Verification: cases.starting_point present: ${casesStartingPoint}`);
   console.log(`[DB MIGRATION] Verification: timeline_categories.case_id present: ${timelineCategoriesCaseId}`);
   console.log(`[DB MIGRATION] Verification: evidence_ai_analyses.status present: ${evidenceAiStatus}`);
+  console.log(`[DB MIGRATION] Verification: lexi_threads.disclaimer_shown present: ${lexiThreadsDisclaimerShown}`);
   console.log("[DB MIGRATION] Schema migrations complete");
 }
 
