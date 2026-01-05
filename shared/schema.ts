@@ -910,3 +910,64 @@ export const upsertCaseRuleTermSchema = z.object({
 
 export type UpsertCaseRuleTerm = z.infer<typeof upsertCaseRuleTermSchema>;
 export type CaseRuleTerm = typeof caseRuleTerms.$inferSelect;
+
+export const trialBinderSections = pgTable("trial_binder_sections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  key: text("key").notNull(),
+  title: text("title").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("trial_binder_sections_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export type TrialBinderSection = typeof trialBinderSections.$inferSelect;
+
+export const trialBinderItemSourceTypes = [
+  "evidence",
+  "timeline",
+  "communication",
+  "document",
+  "deadline",
+  "task",
+  "calendar",
+  "contact",
+  "child",
+  "disclosure",
+] as const;
+export type TrialBinderItemSourceType = typeof trialBinderItemSourceTypes[number];
+
+export const trialBinderItems = pgTable("trial_binder_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  sectionKey: text("section_key").notNull(),
+  sourceType: text("source_type").notNull(),
+  sourceId: text("source_id").notNull(),
+  pinnedRank: integer("pinned_rank"),
+  note: text("note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseSectionIdx: index("trial_binder_items_user_case_section_idx").on(table.userId, table.caseId, table.sectionKey),
+  userCaseSectionPinnedIdx: index("trial_binder_items_user_case_section_pinned_idx").on(table.userId, table.caseId, table.sectionKey, table.pinnedRank),
+}));
+
+export const upsertTrialBinderItemSchema = z.object({
+  sectionKey: z.string().min(1),
+  sourceType: z.enum(trialBinderItemSourceTypes),
+  sourceId: z.string().min(1),
+  pinnedRank: z.number().int().min(1).max(3).optional().nullable(),
+  note: z.string().max(1000).optional().nullable(),
+});
+
+export const updateTrialBinderItemSchema = z.object({
+  pinnedRank: z.number().int().min(1).max(3).optional().nullable(),
+  note: z.string().max(1000).optional().nullable(),
+});
+
+export type UpsertTrialBinderItem = z.infer<typeof upsertTrialBinderItemSchema>;
+export type UpdateTrialBinderItem = z.infer<typeof updateTrialBinderItemSchema>;
+export type TrialBinderItem = typeof trialBinderItems.$inferSelect;

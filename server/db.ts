@@ -492,5 +492,37 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)`
   ]);
 
+  await initTable("trial_binder_sections", `
+    CREATE TABLE IF NOT EXISTS trial_binder_sections (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      key TEXT NOT NULL,
+      title TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_trial_binder_sections_user_case ON trial_binder_sections(user_id, case_id)`
+  ]);
+
+  await initTable("trial_binder_items", `
+    CREATE TABLE IF NOT EXISTS trial_binder_items (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      section_key TEXT NOT NULL,
+      source_type TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      pinned_rank INTEGER,
+      note TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section ON trial_binder_items(user_id, case_id, section_key)`,
+    `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section_pinned ON trial_binder_items(user_id, case_id, section_key, pinned_rank)`
+  ]);
+
   console.log("Database table initialization complete");
 }
