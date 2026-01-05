@@ -1506,32 +1506,77 @@ export type InsertEvidenceNoteFull = z.infer<typeof insertEvidenceNoteFullSchema
 export type UpdateEvidenceNoteFull = z.infer<typeof updateEvidenceNoteFullSchema>;
 export type EvidenceNoteFull = typeof evidenceNotes.$inferSelect;
 
+export const binderSectionValues = [
+  "Overview",
+  "Key Facts",
+  "Key Evidence",
+  "Timeline Highlights",
+  "Communications",
+  "Discovery & Disclosures",
+  "Witnesses",
+  "Financial",
+  "Parenting",
+  "Safety",
+  "Other",
+  "General",
+] as const;
+
+export const shortlistSourceTypeValues = [
+  "evidence",
+  "evidence_note",
+  "timeline_event",
+  "communication",
+  "document",
+  "exhibit_item",
+] as const;
+
 export const trialPrepShortlist = pgTable("trial_prep_shortlist", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   caseId: varchar("case_id").notNull().references(() => cases.id),
-  evidenceId: varchar("evidence_id").references(() => evidenceFiles.id),
-  noteId: varchar("note_id"),
-  analysisId: varchar("analysis_id"),
-  itemType: text("item_type").notNull(),
+  sourceType: text("source_type").notNull(),
+  sourceId: varchar("source_id").notNull(),
   title: text("title").notNull(),
-  excerpt: text("excerpt"),
-  sortOrder: integer("sort_order").notNull().default(0),
+  summary: text("summary"),
+  binderSection: text("binder_section").notNull().default("General"),
+  importance: integer("importance").notNull().default(3),
+  tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
+  color: text("color"),
+  isPinned: boolean("is_pinned").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
   caseIdx: index("trial_prep_shortlist_case_idx").on(table.caseId),
   userCaseIdx: index("trial_prep_shortlist_user_case_idx").on(table.userId, table.caseId),
+  sectionIdx: index("trial_prep_shortlist_section_idx").on(table.caseId, table.binderSection),
+  uniqueSource: uniqueIndex("trial_prep_shortlist_unique_source_idx").on(table.userId, table.caseId, table.sourceType, table.sourceId),
 }));
 
+export const binderSectionEnum = z.enum(binderSectionValues);
+export const shortlistSourceTypeEnum = z.enum(shortlistSourceTypeValues);
+
 export const insertTrialPrepShortlistSchema = z.object({
-  evidenceId: z.string().optional().nullable(),
-  noteId: z.string().optional().nullable(),
-  analysisId: z.string().optional().nullable(),
-  itemType: z.enum(["evidence", "note", "analysis", "timeline"]),
+  sourceType: shortlistSourceTypeEnum,
+  sourceId: z.string().min(1, "Source ID is required"),
   title: z.string().min(1, "Title is required").max(200),
-  excerpt: z.string().max(1000).optional().nullable(),
-  sortOrder: z.number().int().optional().default(0),
+  summary: z.string().max(1000).optional().nullable(),
+  binderSection: binderSectionEnum.optional().default("General"),
+  importance: z.number().int().min(1).max(5).optional().default(3),
+  tags: z.array(z.string()).optional().default([]),
+  color: z.string().max(20).optional().nullable(),
+  isPinned: z.boolean().optional().default(false),
+});
+
+export const updateTrialPrepShortlistSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  summary: z.string().max(1000).optional().nullable(),
+  binderSection: binderSectionEnum.optional(),
+  importance: z.number().int().min(1).max(5).optional(),
+  tags: z.array(z.string()).optional(),
+  color: z.string().max(20).optional().nullable(),
+  isPinned: z.boolean().optional(),
 });
 
 export type InsertTrialPrepShortlist = z.infer<typeof insertTrialPrepShortlistSchema>;
+export type UpdateTrialPrepShortlist = z.infer<typeof updateTrialPrepShortlistSchema>;
 export type TrialPrepShortlist = typeof trialPrepShortlist.$inferSelect;

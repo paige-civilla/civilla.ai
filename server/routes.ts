@@ -4863,6 +4863,29 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.patch("/api/trial-prep-shortlist/:itemId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      
+      const { updateTrialPrepShortlistSchema } = await import("@shared/schema");
+      const parsed = updateTrialPrepShortlistSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const updated = await storage.updateTrialPrepShortlistItem(userId, itemId, parsed.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      
+      res.json({ item: updated });
+    } catch (error) {
+      console.error("Update trial prep shortlist item error:", error);
+      res.status(500).json({ error: "Failed to update shortlist item" });
+    }
+  });
+
   app.delete("/api/trial-prep-shortlist/:itemId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

@@ -836,23 +836,42 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user_case ON evidence_notes(user_id, case_id)`
   ]);
 
+  // Drop old trial_prep_shortlist if it has old schema (evidence_id column)
+  try {
+    const checkOldSchema = await pool.query(`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'trial_prep_shortlist' AND column_name = 'evidence_id'
+    `);
+    if (checkOldSchema.rows.length > 0) {
+      console.log("Migrating trial_prep_shortlist to new schema...");
+      await pool.query(`DROP TABLE IF EXISTS trial_prep_shortlist CASCADE`);
+    }
+  } catch (e) {
+    // Table doesn't exist, continue
+  }
+
   await initTable("trial_prep_shortlist", `
     CREATE TABLE IF NOT EXISTS trial_prep_shortlist (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
       case_id VARCHAR(255) NOT NULL,
-      evidence_id VARCHAR(255),
-      note_id VARCHAR(255),
-      analysis_id VARCHAR(255),
-      item_type TEXT NOT NULL,
+      source_type TEXT NOT NULL,
+      source_id VARCHAR(255) NOT NULL,
       title TEXT NOT NULL,
-      excerpt TEXT,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      summary TEXT,
+      binder_section TEXT NOT NULL DEFAULT 'General',
+      importance INTEGER NOT NULL DEFAULT 3,
+      tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+      color TEXT,
+      is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
     `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_case ON trial_prep_shortlist(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_user_case ON trial_prep_shortlist(user_id, case_id)`
+    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_user_case ON trial_prep_shortlist(user_id, case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_section ON trial_prep_shortlist(case_id, binder_section)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_trial_prep_shortlist_unique_source ON trial_prep_shortlist(user_id, case_id, source_type, source_id)`
   ]);
 
   console.log("Database table initialization complete");

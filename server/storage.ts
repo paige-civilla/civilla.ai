@@ -132,6 +132,7 @@ import {
   type InsertEvidenceAiAnalysis,
   type TrialPrepShortlist,
   type InsertTrialPrepShortlist,
+  type UpdateTrialPrepShortlist,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -334,6 +335,7 @@ export interface IStorage {
 
   listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]>;
   createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist>;
+  updateTrialPrepShortlistItem(userId: string, itemId: string, payload: UpdateTrialPrepShortlist): Promise<TrialPrepShortlist | undefined>;
   deleteTrialPrepShortlistItem(userId: string, itemId: string): Promise<boolean>;
 }
 
@@ -2326,7 +2328,7 @@ export class DatabaseStorage implements IStorage {
   async listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]> {
     return db.select().from(trialPrepShortlist)
       .where(and(eq(trialPrepShortlist.userId, userId), eq(trialPrepShortlist.caseId, caseId)))
-      .orderBy(asc(trialPrepShortlist.sortOrder));
+      .orderBy(asc(trialPrepShortlist.importance), desc(trialPrepShortlist.createdAt));
   }
 
   async createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist> {
@@ -2334,16 +2336,34 @@ export class DatabaseStorage implements IStorage {
       .values({
         userId,
         caseId,
-        evidenceId: payload.evidenceId,
-        noteId: payload.noteId,
-        analysisId: payload.analysisId,
-        itemType: payload.itemType,
+        sourceType: payload.sourceType,
+        sourceId: payload.sourceId,
         title: payload.title,
-        excerpt: payload.excerpt,
-        sortOrder: payload.sortOrder ?? 0,
+        summary: payload.summary,
+        binderSection: payload.binderSection ?? "General",
+        importance: payload.importance ?? 3,
+        tags: payload.tags ?? [],
+        color: payload.color,
+        isPinned: payload.isPinned ?? false,
       })
       .returning();
     return created;
+  }
+
+  async updateTrialPrepShortlistItem(userId: string, itemId: string, payload: UpdateTrialPrepShortlist): Promise<TrialPrepShortlist | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (payload.title !== undefined) updateData.title = payload.title;
+    if (payload.summary !== undefined) updateData.summary = payload.summary;
+    if (payload.binderSection !== undefined) updateData.binderSection = payload.binderSection;
+    if (payload.importance !== undefined) updateData.importance = payload.importance;
+    if (payload.tags !== undefined) updateData.tags = payload.tags;
+    if (payload.color !== undefined) updateData.color = payload.color;
+    if (payload.isPinned !== undefined) updateData.isPinned = payload.isPinned;
+    const [updated] = await db.update(trialPrepShortlist)
+      .set(updateData)
+      .where(and(eq(trialPrepShortlist.id, itemId), eq(trialPrepShortlist.userId, userId)))
+      .returning();
+    return updated;
   }
 
   async deleteTrialPrepShortlistItem(userId: string, itemId: string): Promise<boolean> {
