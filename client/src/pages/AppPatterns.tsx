@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag, FolderOpen, Brain, Sparkles, Check, Loader2, AlertTriangle, Scale } from "lucide-react";
+import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag, FolderOpen, Brain, Sparkles, Check, Loader2, AlertTriangle, Scale, Users } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,30 +9,70 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication, EvidenceAnchor, EvidenceFile, EvidenceAiAnalysis } from "@shared/schema";
+import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 
-type PatternDataResponse = {
-  deadlines: Deadline[];
-  tasks: Task[];
-  calendarItems: CaseCalendarItem[];
-  categories: CalendarCategory[];
+type ExampleItem = {
+  sourceType: string;
+  sourceId: string;
+  title: string;
+  excerpt: string;
+  occurredAt?: string;
+  evidenceId?: string;
+  fileName?: string;
+  pageNumber?: number;
+  tags?: string[];
+  importance?: number;
+};
+
+type ThemeEntry = {
+  label: string;
+  count: number;
+  examples: ExampleItem[];
+};
+
+type PatternEntry = {
+  label: string;
+  count: number;
+  examples: ExampleItem[];
+};
+
+type KeyDateEntry = {
+  date: string;
+  label: string;
+  sources: ExampleItem[];
+};
+
+type KeyNameEntry = {
+  name: string;
+  count: number;
+  examples: ExampleItem[];
 };
 
 type PatternAnalysisResponse = {
-  anchors: (EvidenceAnchor & { evidenceFile: EvidenceFile | null })[];
-};
-
-type EvidenceStatsResponse = {
-  total: number;
-  extracted: number;
-  processing: number;
-  failed: number;
-  pending: number;
-};
-
-type AiAnalysesAllResponse = {
-  analyses: EvidenceAiAnalysis[];
+  ok: boolean;
+  status: {
+    evidenceTotal: number;
+    extractedComplete: number;
+    extractedProcessing: number;
+    extractedFailed: number;
+    analysesComplete: number;
+    analysesProcessing: number;
+    analysesFailed: number;
+    notesTotal: number;
+    timelineTotal: number;
+    communicationsTotal: number;
+  };
+  themes: ThemeEntry[];
+  patterns: PatternEntry[];
+  keyDates: KeyDateEntry[];
+  conflictsAndGaps: ExampleItem[];
+  keyNames: KeyNameEntry[];
+  topExamples: {
+    themes: ExampleItem[];
+    patterns: ExampleItem[];
+    dates: ExampleItem[];
+  };
 };
 
 export default function AppPatterns() {
@@ -42,6 +82,11 @@ export default function AppPatterns() {
 
   const { data: caseData, isLoading: caseLoading, isError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
+    enabled: !!caseId,
+  });
+
+  const { data: patternData, isLoading: patternLoading } = useQuery<PatternAnalysisResponse>({
+    queryKey: ["/api/cases", caseId, "pattern-analysis"],
     enabled: !!caseId,
   });
 
@@ -80,21 +125,6 @@ export default function AppPatterns() {
     enabled: !!caseId,
   });
 
-  const { data: patternAnalysisData, isLoading: anchorsLoading } = useQuery<PatternAnalysisResponse>({
-    queryKey: ["/api/cases", caseId, "pattern-analysis"],
-    enabled: !!caseId,
-  });
-
-  const { data: evidenceData } = useQuery<{ files: EvidenceFile[] }>({
-    queryKey: ["/api/cases", caseId, "evidence"],
-    enabled: !!caseId,
-  });
-
-  const { data: aiAnalysesAllData } = useQuery<AiAnalysesAllResponse>({
-    queryKey: ["/api/cases", caseId, "ai-analyses"],
-    enabled: !!caseId,
-  });
-
   const { toast } = useToast();
 
   const addToTrialPrepMutation = useMutation({
@@ -120,77 +150,18 @@ export default function AppPatterns() {
   });
 
   const currentCase = caseData?.case;
+  const status = patternData?.status;
+  const themes = patternData?.themes || [];
+  const patterns = patternData?.patterns || [];
+  const keyDates = patternData?.keyDates || [];
+  const conflictsAndGaps = patternData?.conflictsAndGaps || [];
+  const keyNames = patternData?.keyNames || [];
+
   const deadlines = deadlinesData?.deadlines || [];
   const tasks = tasksData?.tasks || [];
   const calendarItems = calendarItemsData?.items || [];
   const categories = categoriesData?.categories || [];
-  const evidenceFiles = evidenceData?.files || [];
-  const allAiAnalyses = aiAnalysesAllData?.analyses || [];
-
-  const evidenceStats = {
-    total: evidenceFiles.length,
-    extracted: evidenceFiles.filter(f => f.extractionStatus === "complete").length,
-    processing: evidenceFiles.filter(f => f.extractionStatus === "processing" || f.extractionStatus === "queued").length,
-    failed: evidenceFiles.filter(f => f.extractionStatus === "failed").length,
-    pending: evidenceFiles.filter(f => !f.extractionStatus || f.extractionStatus === "pending").length,
-  };
-
-  const aiAnalysisStats = {
-    total: allAiAnalyses.length,
-    complete: allAiAnalyses.filter(a => a.status === "complete").length,
-    processing: allAiAnalyses.filter(a => a.status === "processing").length,
-    failed: allAiAnalyses.filter(a => a.status === "failed").length,
-  };
-
-  const keyThemes = allAiAnalyses
-    .filter(a => a.status === "complete" && a.findings && typeof a.findings === "object")
-    .flatMap(a => {
-      const findings = a.findings as Record<string, unknown>;
-      const themes: string[] = [];
-      if (Array.isArray(findings.keyFacts)) {
-        themes.push(...(findings.keyFacts as string[]).slice(0, 3));
-      }
-      if (Array.isArray(findings.potentialIssues)) {
-        themes.push(...(findings.potentialIssues as string[]).slice(0, 2));
-      }
-      return themes;
-    })
-    .slice(0, 8);
-
-  const keyDates = allAiAnalyses
-    .filter(a => a.status === "complete" && a.findings && typeof a.findings === "object")
-    .flatMap(a => {
-      const findings = a.findings as Record<string, unknown>;
-      if (Array.isArray(findings.dates)) {
-        return (findings.dates as string[]).slice(0, 5);
-      }
-      return [];
-    })
-    .slice(0, 10);
-
-  const keyNames = allAiAnalyses
-    .filter(a => a.status === "complete" && a.findings && typeof a.findings === "object")
-    .flatMap(a => {
-      const findings = a.findings as Record<string, unknown>;
-      if (Array.isArray(findings.names)) {
-        return (findings.names as string[]).slice(0, 5);
-      }
-      return [];
-    })
-    .slice(0, 10);
   const communications = communicationsData?.communications || [];
-  const evidenceAnchors = patternAnalysisData?.anchors || [];
-
-  const anchorsByFile = evidenceAnchors.reduce<Record<string, typeof evidenceAnchors>>((acc, anchor) => {
-    const fileId = anchor.evidenceId;
-    if (!acc[fileId]) acc[fileId] = [];
-    acc[fileId].push(anchor);
-    return acc;
-  }, {});
-
-  const allTags = Array.from(new Set(evidenceAnchors.flatMap(a => 
-    Array.isArray(a.tags) ? (a.tags as string[]) : []
-  )));
 
   useEffect(() => {
     if (currentCase) {
@@ -214,8 +185,6 @@ export default function AppPatterns() {
     t.status !== "completed" && t.dueDate && new Date(t.dueDate) < now
   );
 
-  const unresolvedCommunications = communications.filter(c => c.status !== "resolved");
-  const followUpsDue = communications.filter(c => c.needsFollowUp);
   const overdueFollowUps = communications.filter(c => 
     c.needsFollowUp && 
     c.followUpAt && 
@@ -230,69 +199,12 @@ export default function AppPatterns() {
     t.status !== "completed" && t.dueDate && new Date(t.dueDate) >= now
   );
 
-  const upcomingCalendarItems = calendarItems.filter(item => 
-    !item.isDone && new Date(item.startDate) >= now
-  );
-
-  const categoryMap = new Map(categories.map(c => [c.id, c]));
-
   const categoryStats = categories.map(cat => {
     const itemCount = calendarItems.filter(item => item.categoryId === cat.id && !item.isDone).length;
     return { ...cat, count: itemCount };
   });
 
   const uncategorizedCount = calendarItems.filter(item => !item.categoryId && !item.isDone).length;
-
-  const recentActivity: Array<{ 
-    type: "deadline" | "task" | "calendar" | "communication"; 
-    id: string; 
-    title: string; 
-    updatedAt: Date; 
-    status: string;
-  }> = [];
-
-  for (const d of deadlines.slice(0, 10)) {
-    recentActivity.push({
-      type: "deadline",
-      id: d.id,
-      title: d.title,
-      updatedAt: new Date(d.updatedAt || d.createdAt),
-      status: d.status === "done" ? "Completed" : "Pending",
-    });
-  }
-
-  for (const t of tasks.slice(0, 10)) {
-    recentActivity.push({
-      type: "task",
-      id: t.id,
-      title: t.title,
-      updatedAt: new Date(t.updatedAt || t.createdAt),
-      status: t.status === "completed" ? "Completed" : "Pending",
-    });
-  }
-
-  for (const item of calendarItems.slice(0, 10)) {
-    recentActivity.push({
-      type: "calendar",
-      id: item.id,
-      title: item.title,
-      updatedAt: new Date(item.updatedAt || item.createdAt),
-      status: item.isDone ? "Completed" : "Scheduled",
-    });
-  }
-
-  for (const c of communications.slice(0, 10)) {
-    recentActivity.push({
-      type: "communication",
-      id: c.id,
-      title: c.subject || `${c.channel} communication`,
-      updatedAt: new Date(c.updatedAt || c.createdAt),
-      status: c.status === "resolved" ? "Resolved" : "Pending",
-    });
-  }
-
-  recentActivity.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-  const top10Activity = recentActivity.slice(0, 10);
 
   if (caseLoading) {
     return (
@@ -324,6 +236,42 @@ export default function AppPatterns() {
     );
   }
 
+  const renderExampleItem = (item: ExampleItem, index: number) => (
+    <div 
+      key={`${item.sourceType}-${item.sourceId}-${index}`}
+      className="flex items-start gap-2 p-2 bg-muted/50 rounded-md"
+      data-testid={`example-item-${item.sourceType}-${item.sourceId}`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-neutral-darkest truncate">{item.title}</p>
+        <p className="text-xs text-muted-foreground line-clamp-2">{item.excerpt}</p>
+        {item.fileName && (
+          <p className="text-xs text-muted-foreground mt-1">
+            <FileText className="w-3 h-3 inline-block mr-1" />
+            {item.fileName}
+            {item.pageNumber && ` (p. ${item.pageNumber})`}
+          </p>
+        )}
+      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-6 w-6 flex-shrink-0"
+        onClick={() => addToTrialPrepMutation.mutate({
+          sourceType: item.sourceType,
+          sourceId: item.sourceId,
+          title: item.title,
+          summary: item.excerpt,
+        })}
+        disabled={addToTrialPrepMutation.isPending}
+        title="Add to Trial Prep"
+        data-testid={`button-trial-prep-${item.sourceId}`}
+      >
+        <Scale className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+
   return (
     <AppLayout>
       <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
@@ -344,7 +292,7 @@ export default function AppPatterns() {
                 Pattern Analysis
               </h1>
               <p className="font-sans text-sm sm:text-base text-neutral-darkest/60 mt-2">
-                Spot trends across tasks, deadlines, and calendar items over time.
+                Spot trends across evidence, communications, and timeline events.
               </p>
             </div>
           </div>
@@ -352,519 +300,446 @@ export default function AppPatterns() {
           <ModuleIntro
             title="About Pattern Analysis"
             paragraphs={[
-              "This tool analyzes your logged communications to identify recurring themes and patterns. Recognizing patterns can help you understand the overall picture.",
-              "Pattern analysis is for your own organization and understanding."
+              "This tool analyzes your evidence, notes, communications, and timeline to identify recurring themes and patterns.",
+              "Pattern analysis helps you understand the overall picture of your case."
             ]}
           />
 
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <Card className="border border-[#A2BEC2]" data-testid="card-evidence-status">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FolderOpen className="w-4 h-4 text-primary" />
-                  Evidence Processing
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {evidenceStats.total === 0 ? (
-                  <p className="text-sm text-muted-foreground">No evidence files uploaded yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total Files</span>
-                      <span className="font-medium">{evidenceStats.total}</span>
-                    </div>
-                    <Progress 
-                      value={(evidenceStats.extracted / evidenceStats.total) * 100} 
-                      className="h-2" 
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        <Check className="w-3 h-3 mr-1" />
-                        {evidenceStats.extracted} extracted
-                      </Badge>
-                      {evidenceStats.processing > 0 && (
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          {evidenceStats.processing} processing
-                        </Badge>
-                      )}
-                      {evidenceStats.failed > 0 && (
-                        <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          {evidenceStats.failed} failed
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2]" data-testid="card-ai-status">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Brain className="w-4 h-4 text-primary" />
-                  AI Analyses
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {aiAnalysisStats.total === 0 ? (
-                  <p className="text-sm text-muted-foreground">No AI analyses run yet. Run from Evidence section.</p>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total Analyses</span>
-                      <span className="font-medium">{aiAnalysisStats.total}</span>
-                    </div>
-                    <Progress 
-                      value={(aiAnalysisStats.complete / aiAnalysisStats.total) * 100} 
-                      className="h-2" 
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        <Check className="w-3 h-3 mr-1" />
-                        {aiAnalysisStats.complete} complete
-                      </Badge>
-                      {aiAnalysisStats.processing > 0 && (
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          {aiAnalysisStats.processing} processing
-                        </Badge>
-                      )}
-                      {aiAnalysisStats.failed > 0 && (
-                        <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          {aiAnalysisStats.failed} failed
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2]" data-testid="card-key-themes">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  Key Themes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {keyThemes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No themes identified yet. Run AI analyses on evidence.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {keyThemes.map((theme, i) => (
-                      <div 
-                        key={i}
-                        className="flex items-start gap-2 p-2 bg-muted/50 rounded-md"
-                        data-testid={`theme-item-${i}`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-muted-foreground line-clamp-2">{theme}</p>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 flex-shrink-0"
-                          onClick={() => addToTrialPrepMutation.mutate({
-                            sourceType: "manual",
-                            sourceId: `theme-${i}-${Date.now()}`,
-                            title: `Theme: ${theme.slice(0, 50)}`,
-                            summary: theme,
-                          })}
-                          disabled={addToTrialPrepMutation.isPending}
-                          title="Add to Trial Prep"
-                          data-testid={`button-theme-trial-prep-${i}`}
-                        >
-                          <Scale className="w-3 h-3" />
-                        </Button>
+          {patternLoading ? (
+            <div className="w-full flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="ml-2 text-muted-foreground">Analyzing patterns...</span>
+            </div>
+          ) : (
+            <>
+              <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="border border-[#A2BEC2]" data-testid="card-evidence-status">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FolderOpen className="w-4 h-4 text-primary" />
+                      Evidence
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Total Files</span>
+                        <span className="font-medium">{status?.evidenceTotal || 0}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                      {status && status.evidenceTotal > 0 && (
+                        <>
+                          <Progress 
+                            value={(status.extractedComplete / status.evidenceTotal) * 100} 
+                            className="h-2" 
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              <Check className="w-3 h-3 mr-1" />
+                              {status.extractedComplete}
+                            </Badge>
+                            {status.extractedProcessing > 0 && (
+                              <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                {status.extractedProcessing}
+                              </Badge>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {(keyDates.length > 0 || keyNames.length > 0) && (
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {keyDates.length > 0 && (
+                <Card className="border border-[#A2BEC2]" data-testid="card-ai-status">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Brain className="w-4 h-4 text-primary" />
+                      AI Analyses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Complete</span>
+                        <span className="font-medium">{status?.analysesComplete || 0}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(status?.analysesProcessing || 0) > 0 && (
+                          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            {status?.analysesProcessing} processing
+                          </Badge>
+                        )}
+                        {(status?.analysesFailed || 0) > 0 && (
+                          <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            {status?.analysesFailed} failed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[#A2BEC2]" data-testid="card-notes-status">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FileText className="w-4 h-4 text-primary" />
+                      Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center p-2">
+                      <p className="text-2xl font-bold text-neutral-darkest">{status?.notesTotal || 0}</p>
+                      <p className="text-sm text-muted-foreground">Evidence notes</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[#A2BEC2]" data-testid="card-timeline-status">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      Timeline
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center p-2">
+                      <p className="text-2xl font-bold text-neutral-darkest">{status?.timelineTotal || 0}</p>
+                      <p className="text-sm text-muted-foreground">Events logged</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <Card className="border border-[#A2BEC2]" data-testid="card-themes">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      Themes Detected
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {themes.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No themes identified yet. Add more evidence and notes.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {themes.map((theme, i) => (
+                          <div key={i} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary" className="text-xs">
+                                {theme.label}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">{theme.count} occurrence(s)</span>
+                            </div>
+                            {theme.examples.length > 0 && (
+                              <div className="space-y-1 ml-2">
+                                {theme.examples.slice(0, 2).map((ex, j) => renderExampleItem(ex, j))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[#A2BEC2]" data-testid="card-patterns">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Patterns Found
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {patterns.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No patterns identified yet. Add more timeline events and communications.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {patterns.map((pattern, i) => (
+                          <div key={i} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-xs">
+                                {pattern.label}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">{pattern.count} item(s)</span>
+                            </div>
+                            {pattern.examples.length > 0 && (
+                              <div className="space-y-1 ml-2">
+                                {pattern.examples.slice(0, 2).map((ex, j) => renderExampleItem(ex, j))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <Card className="border border-[#A2BEC2]" data-testid="card-key-dates">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Calendar className="w-4 h-4 text-primary" />
-                      Key Dates (from AI)
+                      Key Dates
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {keyDates.map((date, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {date}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {keyNames.length > 0 && (
-                <Card className="border border-[#A2BEC2]" data-testid="card-key-names">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Tag className="w-4 h-4 text-primary" />
-                      Key Names (from AI)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {keyNames.map((name, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">
-                          {name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border border-[#A2BEC2]">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <AlertCircle className="w-5 h-5 text-[#E57373]" />
-                  Overdue / At Risk
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {overdueDeadlines.length === 0 && overdueTasks.length === 0 && overdueFollowUps.length === 0 ? (
-                  <p className="text-sm text-neutral-darkest/60">No overdue items. Great job staying on track!</p>
-                ) : (
-                  <div className="space-y-3">
-                    {overdueDeadlines.map(d => (
-                      <div 
-                        key={`deadline-${d.id}`}
-                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
-                        data-testid={`overdue-deadline-${d.id}`}
-                      >
-                        <Clock className="w-4 h-4 text-[#E57373] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-darkest truncate">{d.title}</p>
-                          <p className="text-xs text-neutral-darkest/60">
-                            Deadline - Due {new Date(d.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </p>
-                        </div>
-                        <Badge variant="destructive" className="text-xs">Overdue</Badge>
-                      </div>
-                    ))}
-                    {overdueTasks.map(t => (
-                      <div 
-                        key={`task-${t.id}`}
-                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
-                        data-testid={`overdue-task-${t.id}`}
-                      >
-                        <CheckSquare className="w-4 h-4 text-[#64B5F6] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-darkest truncate">{t.title}</p>
-                          <p className="text-xs text-neutral-darkest/60">
-                            Case To-Do - Due {t.dueDate ? new Date(t.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
-                          </p>
-                        </div>
-                        <Badge variant="destructive" className="text-xs">Overdue</Badge>
-                      </div>
-                    ))}
-                    {overdueFollowUps.map(c => (
-                      <div 
-                        key={`followup-${c.id}`}
-                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
-                        data-testid={`overdue-followup-${c.id}`}
-                      >
-                        <MessageSquare className="w-4 h-4 text-[#9575CD] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-darkest truncate">
-                            {c.subject || `Follow-up needed`}
-                          </p>
-                          <p className="text-xs text-neutral-darkest/60">
-                            Follow-up Due {c.followUpAt ? new Date(c.followUpAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
-                          </p>
-                        </div>
-                        <Badge variant="destructive" className="text-xs">Overdue</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2]">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="w-5 h-5 text-[#7BA3A8]" />
-                  By Category
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[#E57373]" />
-                      <span className="text-sm font-medium text-neutral-darkest">Deadlines</span>
-                    </div>
-                    <Badge variant="outline">{upcomingDeadlines.length} upcoming</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[#64B5F6]" />
-                      <span className="text-sm font-medium text-neutral-darkest">Case To-Do</span>
-                    </div>
-                    <Badge variant="outline">{upcomingTasks.length} upcoming</Badge>
-                  </div>
-                  {categoryStats.map(cat => (
-                    <div 
-                      key={cat.id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <span className="text-sm font-medium text-neutral-darkest">{cat.name}</span>
-                      </div>
-                      <Badge variant="outline">{cat.count} upcoming</Badge>
-                    </div>
-                  ))}
-                  {uncategorizedCount > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-[#7BA3A8]" />
-                        <span className="text-sm font-medium text-neutral-darkest">Uncategorized</span>
-                      </div>
-                      <Badge variant="outline">{uncategorizedCount} upcoming</Badge>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2] lg:col-span-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Activity className="w-5 h-5 text-primary" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {top10Activity.length === 0 ? (
-                  <p className="text-sm text-neutral-darkest/60">No recent activity yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {top10Activity.map(item => (
-                      <div 
-                        key={`${item.type}-${item.id}`}
-                        className="flex items-center gap-3 p-3 bg-muted/30 rounded-md border border-neutral-darkest/5"
-                        data-testid={`activity-${item.type}-${item.id}`}
-                      >
-                        {item.type === "deadline" && <Clock className="w-4 h-4 text-[#E57373] flex-shrink-0" />}
-                        {item.type === "task" && <CheckSquare className="w-4 h-4 text-[#64B5F6] flex-shrink-0" />}
-                        {item.type === "calendar" && <Calendar className="w-4 h-4 text-[#7BA3A8] flex-shrink-0" />}
-                        {item.type === "communication" && <MessageSquare className="w-4 h-4 text-[#9575CD] flex-shrink-0" />}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-darkest truncate">{item.title}</p>
-                          <p className="text-xs text-neutral-darkest/60">
-                            {item.type === "deadline" ? "Deadline" : item.type === "task" ? "Case To-Do" : item.type === "communication" ? "Communication" : "Calendar"} - {item.status}
-                          </p>
-                        </div>
-                        <span className="text-xs text-neutral-darkest/50 whitespace-nowrap">
-                          {item.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2] lg:col-span-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-neutral-darkest">{deadlines.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Total Deadlines</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-neutral-darkest">{tasks.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Total Tasks</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-neutral-darkest">{calendarItems.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Calendar Items</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-[#E57373]">{overdueDeadlines.length + overdueTasks.length + overdueFollowUps.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Overdue Items</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2]">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MessageSquare className="w-5 h-5 text-[#9575CD]" />
-                  Communications Log
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-neutral-darkest">{communications.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Total Logged</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-neutral-darkest">{unresolvedCommunications.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Unresolved</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-neutral-darkest">{followUpsDue.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Follow-ups Due</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-md">
-                    <p className="text-2xl font-bold text-[#E57373]">{overdueFollowUps.length}</p>
-                    <p className="text-sm text-neutral-darkest/60">Overdue Follow-ups</p>
-                  </div>
-                </div>
-                {communications.length === 0 && (
-                  <p className="text-sm text-neutral-darkest/60 mt-4 text-center">
-                    No communications logged yet. Track co-parenting or counsel communications in the Communications Log.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#A2BEC2] lg:col-span-2" data-testid="card-evidence-anchors">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="w-5 h-5 text-[#7BA3A8]" />
-                  Confirmed Evidence Anchors
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {anchorsLoading ? (
-                  <p className="text-sm text-neutral-darkest/60 text-center py-4">Loading anchors...</p>
-                ) : evidenceAnchors.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-neutral-darkest/60">
-                      No confirmed text anchors yet. Use the Evidence Files module to extract and confirm key text passages from your documents.
-                    </p>
-                    <Link 
-                      href={`/app/evidence/${caseId}`}
-                      className="inline-flex items-center gap-2 text-sm text-primary font-medium mt-3 min-h-[44px]"
-                      data-testid="link-go-to-evidence"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Go to Evidence Files
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {allTags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pb-3 border-b border-neutral-darkest/10">
-                        <span className="text-sm text-neutral-darkest/60 flex items-center gap-1">
-                          <Tag className="w-4 h-4" /> Tags found:
-                        </span>
-                        {allTags.map((tag, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs" data-testid={`tag-${tag}`}>
-                            {tag}
-                          </Badge>
+                    {keyDates.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No key dates found. Add timeline events with dates.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {keyDates.slice(0, 5).map((entry, i) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-neutral-darkest">
+                                {new Date(entry.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </span>
+                              <span className="text-xs text-muted-foreground">{entry.label}</span>
+                            </div>
+                            {entry.sources.length > 0 && (
+                              <div className="space-y-1 ml-2">
+                                {entry.sources.slice(0, 2).map((src, j) => renderExampleItem(src, j))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4">
-                      <div className="text-center p-4 bg-muted/50 rounded-md">
-                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-total-anchors">
-                          {evidenceAnchors.length}
-                        </p>
-                        <p className="text-sm text-neutral-darkest/60">Confirmed Anchors</p>
-                      </div>
-                      <div className="text-center p-4 bg-muted/50 rounded-md">
-                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-files-with-anchors">
-                          {Object.keys(anchorsByFile).length}
-                        </p>
-                        <p className="text-sm text-neutral-darkest/60">Files with Anchors</p>
-                      </div>
-                      <div className="text-center p-4 bg-muted/50 rounded-md">
-                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-unique-tags">
-                          {allTags.length}
-                        </p>
-                        <p className="text-sm text-neutral-darkest/60">Unique Tags</p>
-                      </div>
-                      <div className="text-center p-4 bg-muted/50 rounded-md">
-                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-anchors-with-notes">
-                          {evidenceAnchors.filter(a => a.note).length}
-                        </p>
-                        <p className="text-sm text-neutral-darkest/60">With Notes</p>
-                      </div>
-                    </div>
+                  </CardContent>
+                </Card>
 
-                    <div className="space-y-3">
-                      {Object.entries(anchorsByFile).map(([fileId, fileAnchors]) => {
-                        const firstAnchor = fileAnchors[0];
-                        const fileName = firstAnchor?.evidenceFile?.originalName || "Unknown file";
-                        return (
+                <Card className="border border-[#A2BEC2]" data-testid="card-conflicts">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <AlertCircle className="w-4 h-4 text-[#E57373]" />
+                      Conflicts & Gaps
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {conflictsAndGaps.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No conflicts or gaps detected. Great job!</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {conflictsAndGaps.slice(0, 5).map((item, i) => renderExampleItem(item, i))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {keyNames.length > 0 && (
+                <div className="w-full mb-6">
+                  <Card className="border border-[#A2BEC2]" data-testid="card-key-names">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Users className="w-4 h-4 text-primary" />
+                        Key Names
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {keyNames.map((entry, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {entry.name} ({entry.count})
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border border-[#A2BEC2]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <AlertCircle className="w-5 h-5 text-[#E57373]" />
+                      Overdue / At Risk
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {overdueDeadlines.length === 0 && overdueTasks.length === 0 && overdueFollowUps.length === 0 ? (
+                      <p className="text-sm text-neutral-darkest/60">No overdue items. Great job staying on track!</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {overdueDeadlines.map(d => (
                           <div 
-                            key={fileId}
-                            className="p-3 bg-muted/30 rounded-md border border-neutral-darkest/5"
-                            data-testid={`anchors-file-${fileId}`}
+                            key={`deadline-${d.id}`}
+                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
+                            data-testid={`overdue-deadline-${d.id}`}
                           >
-                            <div className="flex items-center gap-2 mb-2">
-                              <FileText className="w-4 h-4 text-[#7BA3A8] flex-shrink-0" />
-                              <span className="text-sm font-medium text-neutral-darkest truncate">{fileName}</span>
-                              <Badge variant="outline" className="ml-auto text-xs">
-                                {fileAnchors.length} anchor{fileAnchors.length !== 1 ? "s" : ""}
-                              </Badge>
+                            <Clock className="w-4 h-4 text-[#E57373] flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-neutral-darkest truncate">{d.title}</p>
+                              <p className="text-xs text-neutral-darkest/60">
+                                Deadline - Due {new Date(d.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </p>
                             </div>
-                            <div className="space-y-2 ml-6">
-                              {fileAnchors.map(anchor => (
-                                <div 
-                                  key={anchor.id}
-                                  className="text-sm p-2 bg-background/50 rounded border border-neutral-darkest/5"
-                                  data-testid={`anchor-item-${anchor.id}`}
-                                >
-                                  <p className="text-neutral-darkest/80 line-clamp-2">{anchor.excerpt}</p>
-                                  {anchor.note && (
-                                    <p className="text-xs text-neutral-darkest/50 mt-1 italic">{anchor.note}</p>
-                                  )}
-                                  {Array.isArray(anchor.tags) && (anchor.tags as string[]).length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {(anchor.tags as string[]).map((t: string, i: number) => (
-                                        <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
+                            <Badge variant="destructive" className="text-xs">Overdue</Badge>
                           </div>
-                        );
-                      })}
+                        ))}
+                        {overdueTasks.map(t => (
+                          <div 
+                            key={`task-${t.id}`}
+                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
+                            data-testid={`overdue-task-${t.id}`}
+                          >
+                            <CheckSquare className="w-4 h-4 text-[#64B5F6] flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-neutral-darkest truncate">{t.title}</p>
+                              <p className="text-xs text-neutral-darkest/60">
+                                Case To-Do - Due {t.dueDate ? new Date(t.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
+                              </p>
+                            </div>
+                            <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                          </div>
+                        ))}
+                        {overdueFollowUps.map(c => (
+                          <div 
+                            key={`followup-${c.id}`}
+                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-md border border-neutral-darkest/10"
+                            data-testid={`overdue-followup-${c.id}`}
+                          >
+                            <MessageSquare className="w-4 h-4 text-[#9575CD] flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-neutral-darkest truncate">
+                                {c.subject || `Follow-up needed`}
+                              </p>
+                              <p className="text-xs text-neutral-darkest/60">
+                                Follow-up Due {c.followUpAt ? new Date(c.followUpAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A"}
+                              </p>
+                            </div>
+                            <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[#A2BEC2]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Calendar className="w-5 h-5 text-[#7BA3A8]" />
+                      By Category
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-[#E57373]" />
+                          <span className="text-sm font-medium text-neutral-darkest">Deadlines</span>
+                        </div>
+                        <Badge variant="outline">{upcomingDeadlines.length} upcoming</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-[#64B5F6]" />
+                          <span className="text-sm font-medium text-neutral-darkest">Case To-Do</span>
+                        </div>
+                        <Badge variant="outline">{upcomingTasks.length} upcoming</Badge>
+                      </div>
+                      {categoryStats.map(cat => (
+                        <div 
+                          key={cat.id}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            <span className="text-sm font-medium text-neutral-darkest">{cat.name}</span>
+                          </div>
+                          <Badge variant="outline">{cat.count} upcoming</Badge>
+                        </div>
+                      ))}
+                      {uncategorizedCount > 0 && (
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full bg-[#7BA3A8]" />
+                            <span className="text-sm font-medium text-neutral-darkest">Uncategorized</span>
+                          </div>
+                          <Badge variant="outline">{uncategorizedCount} upcoming</Badge>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[#A2BEC2] lg:col-span-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{status?.evidenceTotal || 0}</p>
+                        <p className="text-sm text-neutral-darkest/60">Evidence Files</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{themes.length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Themes Found</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{patterns.length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Patterns Found</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{keyDates.length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Key Dates</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-[#E57373]">{conflictsAndGaps.length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Conflicts/Gaps</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[#A2BEC2] lg:col-span-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <MessageSquare className="w-5 h-5 text-[#9575CD]" />
+                      Communications Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{status?.communicationsTotal || communications.length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Total Logged</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{communications.filter(c => c.status !== "resolved").length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Unresolved</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest">{communications.filter(c => c.needsFollowUp).length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Follow-ups Due</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-[#E57373]">{overdueFollowUps.length}</p>
+                        <p className="text-sm text-neutral-darkest/60">Overdue Follow-ups</p>
+                      </div>
+                    </div>
+                    {communications.length === 0 && (
+                      <p className="text-sm text-neutral-darkest/60 mt-4 text-center">
+                        No communications logged yet. Track co-parenting or counsel communications in the Communications Log.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </div>
       </section>
     </AppLayout>
