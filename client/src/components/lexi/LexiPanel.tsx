@@ -131,8 +131,12 @@ export default function LexiPanel() {
 
   const createThreadMutation = useMutation({
     mutationFn: async (threadTitle: string) => {
+      setThreadError(null);
       const url = caseId ? `/api/cases/${caseId}/lexi/threads` : "/api/lexi/threads";
       const res = await apiRequest("POST", url, { title: threadTitle });
+      if (!res.ok) {
+        throw new Error("Failed to create thread");
+      }
       return res.json();
     },
     onSuccess: (data) => {
@@ -140,6 +144,16 @@ export default function LexiPanel() {
       queryClient.invalidateQueries({ queryKey: key });
       setActiveThreadId(data.thread.id);
       setShowThreadList(false);
+      setThreadError(null);
+    },
+    onError: () => {
+      setThreadError("Could not start Lexi chat. Please try again.");
+      setPendingAsk(null);
+      toast({
+        title: "Error",
+        description: "Could not start Lexi chat. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -523,6 +537,11 @@ export default function LexiPanel() {
                       <Plus className="w-4 h-4" />
                       {createThreadMutation.isPending ? "Starting..." : "Start a conversation"}
                     </button>
+                    {threadError && (
+                      <p className="mt-2 text-xs text-destructive" data-testid="lexi-thread-error">
+                        {threadError}
+                      </p>
+                    )}
                   </div>
                   <div className="w-full max-w-sm">
                     <p className="text-xs font-medium text-neutral-darkest/60 mb-2 text-center">Or ask a question:</p>
