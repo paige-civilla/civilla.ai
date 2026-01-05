@@ -1,0 +1,80 @@
+Replit — Fix Lexi panel sizing/position so it does NOT cover the whole page and is usable.
+
+Goal (Desktop):
+- When Lexi is OPEN, show it as a “floating side panel” on the right, NOT full height and not edge-to-edge.
+- It should be centered vertically, with breathing room around it:
+  - Leave ~24px (about “an inch” visually) from the top and bottom of the viewport
+  - Leave ~24px from the right edge
+- Width should be about 25–30% of the page (or clamp for usability):
+  - Use: width: clamp(320px, 28vw, 460px)
+- Height should be less than full viewport so user can always see the page behind:
+  - Use: height: calc(100vh - 48px)
+- Add a subtle shadow and rounded corners so it reads like a floating panel.
+- The message list must scroll, not the entire page, and the input must always be visible.
+
+Mobile:
+- Keep current mobile behavior OR make it full-screen modal on very small screens, but:
+  - Input must always be visible
+  - Chat must be scrollable
+
+Where to change:
+- Lexi panel component (likely):
+  client/src/components/lexi/LexiPanel.tsx  (or similar)
+Search for the container that positions the panel (look for fixed/right-0/top-0/h-screen/w-...).
+
+Exact changes:
+1) Change the OPEN panel wrapper from “full height sidebar” to floating card:
+
+Replace something like:
+  className="fixed right-0 top-0 h-screen w-96 ..."
+with:
+  className="
+    fixed
+    right-6 top-6 bottom-6
+    w-[clamp(320px,28vw,460px)]
+    rounded-2xl
+    shadow-lg
+    border
+    overflow-hidden
+    z-50
+    flex flex-col
+    bg-background
+  "
+
+(Keep your border color tokens—use your existing border token so it matches the theme.)
+
+2) Ensure internal layout uses flex so the input stays accessible:
+- Header: shrink-0
+- Messages area: flex-1 overflow-y-auto
+- Composer/input: shrink-0
+
+Example structure inside panel:
+<div className="flex flex-col h-full">
+  <div className="shrink-0">...header...</div>
+  <div className="flex-1 overflow-y-auto">...messages...</div>
+  <div className="shrink-0 border-t">...input...</div>
+</div>
+
+3) If the messages container currently has no scrolling, add:
+  className="flex-1 overflow-y-auto min-h-0"
+(min-h-0 is important for flex children to allow scrolling.)
+
+4) Make sure nothing else is forcing the panel to exceed viewport:
+- Remove any h-screen/h-full mismatch inside nested containers that causes overflow.
+- The outer wrapper should control the height via top/bottom.
+
+5) Quick check that Lexi is actually working (no UI guessing):
+- Add a small “Status” line in the Lexi header temporarily (remove later):
+  - On open, call GET /api/lexi/health
+  - Show “Lexi: Connected” or “Lexi: Not configured”
+This confirms backend is responding and the OpenAI key is set.
+
+Acceptance tests:
+- Open Lexi: panel appears as a floating card on the right with margins.
+- You can always see the input box and type.
+- Messages scroll inside the panel.
+- Page behind remains visible around Lexi (top/bottom/right margins).
+- /api/lexi/health returns ok:true and the UI shows Connected.
+
+After implementing:
+Paste back ONLY the Lexi panel wrapper div (the outermost container) and the messages/input container section so I can verify the flex + scrolling is correct.

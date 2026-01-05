@@ -344,7 +344,7 @@ export default function LexiPanel() {
           ].join(" ")}
           style={{
             backgroundColor: "#314143",
-            right: "min(380px, 92vw)",
+            right: "calc(clamp(320px, 28vw, 460px) + 24px)",
           }}
         >
           <div
@@ -359,16 +359,19 @@ export default function LexiPanel() {
 
       <div
         className={[
-          "fixed top-0 right-0 h-screen z-50 bg-white border-l border-neutral-light shadow-xl",
-          "w-full sm:w-[380px] sm:max-w-[92vw]",
+          "fixed z-50 bg-white border border-neutral-light shadow-2xl",
+          "w-full h-full sm:w-[clamp(320px,28vw,460px)] sm:h-auto",
+          "sm:right-6 sm:top-6 sm:bottom-6 sm:rounded-2xl",
+          "right-0 top-0",
           "transition-transform duration-200 ease-out",
+          "flex flex-col overflow-hidden",
           open ? "translate-x-0" : "translate-x-full",
         ].join(" ")}
         role="dialog"
         aria-label="Lexi panel"
       >
-        <div className="h-full flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-light">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-light shrink-0">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
                 L
@@ -393,14 +396,14 @@ export default function LexiPanel() {
           </div>
 
           {disclaimerData?.disclaimer && (
-            <div className="px-4 py-2 bg-amber-50 border-b border-amber-200">
+            <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 shrink-0">
               <p className="font-sans text-xs text-amber-800">
                 {disclaimerData.disclaimer}
               </p>
             </div>
           )}
 
-          <div className="flex border-b border-neutral-light">
+          <div className="flex border-b border-neutral-light shrink-0">
             <button
               type="button"
               onClick={() => setMode("help")}
@@ -432,7 +435,7 @@ export default function LexiPanel() {
           </div>
 
           {mode === "help" ? (
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
               <div className="space-y-4">
                 <h3 className="font-heading font-semibold text-lg text-neutral-darkest">
                   {helpContent.title}
@@ -469,7 +472,7 @@ export default function LexiPanel() {
               </div>
             </div>
           ) : showThreadList ? (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <div className="px-4 py-3 border-b border-neutral-light flex items-center justify-between gap-2">
                 <p className="font-sans text-sm font-medium text-neutral-darkest">Conversations</p>
                 <button
@@ -539,7 +542,7 @@ export default function LexiPanel() {
             </div>
           ) : (
             <>
-              <div className="px-4 py-2 border-b border-neutral-light flex items-center justify-between gap-2">
+              <div className="px-4 py-2 border-b border-neutral-light flex items-center justify-between gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowThreadList(true)}
@@ -583,7 +586,7 @@ export default function LexiPanel() {
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                  <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
                     {messages.length === 0 && (
                       <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
                         {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
@@ -658,7 +661,7 @@ export default function LexiPanel() {
                     <div ref={endRef} />
                   </div>
 
-                  <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+                  <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)] shrink-0">
                     <div className="flex gap-2">
                       <input
                         className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
