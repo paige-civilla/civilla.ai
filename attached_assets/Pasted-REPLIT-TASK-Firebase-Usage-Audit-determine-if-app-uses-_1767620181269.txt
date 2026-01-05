@@ -1,0 +1,83 @@
+REPLIT TASK: Firebase Usage Audit (determine if app uses Firebase keys, SDK, or endpoints)
+
+Goal:
+Tell Paige definitively:
+1) Is Firebase used anywhere at runtime?
+2) Are any Firebase keys/secrets present?
+3) If Firebase is used, what features rely on it and what needs rerouting?
+
+Do ALL checks and report results with file paths + line numbers.
+
+A) Package / dependency check
+- Inspect package.json for any of:
+  firebase
+  firebase-admin
+  @firebase/*
+  reactfire
+  firebase-functions
+  firebase-tools
+Report:
+- which packages exist
+- whether they are used/imported
+
+B) Code import + config search (whole repo)
+Search for these strings across client + server:
+- "firebase"
+- "firebase-admin"
+- "initializeApp"
+- "getAuth"
+- "getFirestore"
+- "getStorage"
+- "functions"
+- "firestore"
+- "google-services.json"
+- "GoogleService-Info.plist"
+- "FIREBASE"
+- "VITE_FIREBASE"
+- "NEXT_PUBLIC_FIREBASE"
+Report:
+- every match with file + line number
+- whether it’s dead code or active code path
+
+C) Env / secrets check
+Search for any Firebase-related env usage:
+- process.env.FIREBASE*
+- process.env.VITE_FIREBASE*
+- process.env.NEXT_PUBLIC_FIREBASE*
+- process.env.GOOGLE_APPLICATION_CREDENTIALS (sometimes used with firebase-admin)
+Also check any config files:
+- .env*, replit secrets references, config modules
+Report:
+- which env vars exist and where referenced
+
+D) Network endpoints check
+Search for any calls to Firebase/Google endpoints:
+- "firestore.googleapis.com"
+- "identitytoolkit.googleapis.com" (Firebase Auth REST)
+- "googleapis.com"
+- "firebaseapp.com"
+- "web.app"
+Report:
+- any usage and where it happens
+
+E) Runtime confirmation (quick smoke test)
+If Firebase libs exist, add a safe startup log (dev only) that prints:
+- "Firebase used: true/false"
+based on whether any firebase initialization function runs.
+DO NOT print any key values.
+
+F) Conclusion (plain-English)
+Return a clear conclusion in this exact format:
+
+Firebase runtime usage: YES/NO
+Firebase keys present in repo/secrets: YES/NO
+If YES, what depends on it:
+- Auth:
+- Database:
+- Storage:
+- Analytics:
+What must be rerouted if we unlink Firebase:
+- (list items)
+
+Important:
+If Firebase is NOT used, recommend removing firebase packages and deleting firebase env vars to prevent confusion.
