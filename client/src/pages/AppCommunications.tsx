@@ -880,6 +880,8 @@ function CommunicationDialog({
 }) {
   const [occurredDate, setOccurredDate] = useState<Date | undefined>(new Date());
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
+  const [occurredCalendarOpen, setOccurredCalendarOpen] = useState(false);
+  const [followUpCalendarOpen, setFollowUpCalendarOpen] = useState(false);
 
   const form = useForm<InsertCommunication>({
     resolver: zodResolver(insertCommunicationSchema),
@@ -1046,22 +1048,40 @@ function CommunicationDialog({
 
               <FormItem>
                 <FormLabel>Date/Time</FormLabel>
-                <Popover>
+                <Popover open={occurredCalendarOpen} onOpenChange={setOccurredCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className="w-full justify-start text-left font-normal"
                       data-testid="button-occurred-date"
+                      onClick={() => setOccurredCalendarOpen(true)}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
                       {occurredDate ? format(occurredDate, "MMM d, yyyy") : "Pick date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent
+                    className="w-auto p-0"
+                    align="start"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const active = document.activeElement as HTMLElement | null;
+                        if (active && active.tagName === "BUTTON") {
+                          active.click();
+                          setOccurredCalendarOpen(false);
+                          e.preventDefault();
+                        }
+                      }
+                    }}
+                  >
                     <CalendarComponent
                       mode="single"
                       selected={occurredDate}
-                      onSelect={setOccurredDate}
+                      onSelect={(d) => {
+                        if (!d) return;
+                        setOccurredDate(d);
+                        setOccurredCalendarOpen(false);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -1141,22 +1161,40 @@ function CommunicationDialog({
             {form.watch("needsFollowUp") && (
               <FormItem>
                 <FormLabel>Follow-up Date</FormLabel>
-                <Popover>
+                <Popover open={followUpCalendarOpen} onOpenChange={setFollowUpCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className="w-full justify-start text-left font-normal"
                       data-testid="button-followup-date"
+                      onClick={() => setFollowUpCalendarOpen(true)}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
                       {followUpDate ? format(followUpDate, "MMM d, yyyy") : "Pick follow-up date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent
+                    className="w-auto p-0"
+                    align="start"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const active = document.activeElement as HTMLElement | null;
+                        if (active && active.tagName === "BUTTON") {
+                          active.click();
+                          setFollowUpCalendarOpen(false);
+                          e.preventDefault();
+                        }
+                      }
+                    }}
+                  >
                     <CalendarComponent
                       mode="single"
                       selected={followUpDate}
-                      onSelect={setFollowUpDate}
+                      onSelect={(d) => {
+                        if (!d) return;
+                        setFollowUpDate(d);
+                        setFollowUpCalendarOpen(false);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
