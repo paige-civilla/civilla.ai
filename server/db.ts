@@ -222,6 +222,33 @@ async function ensureLexiThreadsColumns(): Promise<void> {
   await addColumnIfMissing("lexi_threads", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
 }
 
+async function ensureLexiMessagesColumns(): Promise<void> {
+  await addColumnIfMissing("lexi_messages", "role", "TEXT NOT NULL DEFAULT 'user'");
+  await addColumnIfMissing("lexi_messages", "content", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("lexi_messages", "safety_flags", "JSONB");
+  await addColumnIfMissing("lexi_messages", "metadata", "JSONB");
+  await addColumnIfMissing("lexi_messages", "model", "TEXT");
+  await addColumnIfMissing("lexi_messages", "created_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addIndexIfMissing("idx_lexi_messages_thread_created",
+    "CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)");
+}
+
+async function ensureCaseRuleTermsColumns(): Promise<void> {
+  await addColumnIfMissing("case_rule_terms", "module_key", "TEXT NOT NULL DEFAULT 'general'");
+  await addColumnIfMissing("case_rule_terms", "term_key", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("case_rule_terms", "jurisdiction_state", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("case_rule_terms", "jurisdiction_county", "TEXT");
+  await addColumnIfMissing("case_rule_terms", "official_label", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("case_rule_terms", "also_known_as", "TEXT");
+  await addColumnIfMissing("case_rule_terms", "summary", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("case_rule_terms", "sources_json", "JSONB NOT NULL DEFAULT '[]'::jsonb");
+  await addColumnIfMissing("case_rule_terms", "last_checked_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addIndexIfMissing("idx_case_rule_terms_user_case",
+    "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)");
+  await addIndexIfMissing("idx_case_rule_terms_term",
+    "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)");
+}
+
 export async function ensureSchemaMigrations(): Promise<void> {
   console.log("[DB MIGRATION] Running schema migrations...");
   
@@ -239,17 +266,34 @@ export async function ensureSchemaMigrations(): Promise<void> {
   await ensureCaseEvidenceNotesColumns();
   await ensureExhibitEvidenceColumns();
   await ensureLexiThreadsColumns();
+  await ensureLexiMessagesColumns();
+  await ensureCaseRuleTermsColumns();
   
   const casesStartingPoint = await columnExists("cases", "starting_point");
   const timelineCategoriesCaseId = await columnExists("timeline_categories", "case_id");
   const evidenceAiStatus = await columnExists("evidence_ai_analyses", "status");
   const lexiThreadsDisclaimerShown = await columnExists("lexi_threads", "disclaimer_shown");
+  const evidenceExtractionsStatus = await columnExists("evidence_extractions", "status");
+  const caseRuleTermsModuleKey = await columnExists("case_rule_terms", "module_key");
   
   console.log(`[DB MIGRATION] Verification: cases.starting_point present: ${casesStartingPoint}`);
   console.log(`[DB MIGRATION] Verification: timeline_categories.case_id present: ${timelineCategoriesCaseId}`);
   console.log(`[DB MIGRATION] Verification: evidence_ai_analyses.status present: ${evidenceAiStatus}`);
   console.log(`[DB MIGRATION] Verification: lexi_threads.disclaimer_shown present: ${lexiThreadsDisclaimerShown}`);
+  console.log(`[DB MIGRATION] Verification: evidence_extractions.status present: ${evidenceExtractionsStatus}`);
+  console.log(`[DB MIGRATION] Verification: case_rule_terms.module_key present: ${caseRuleTermsModuleKey}`);
   console.log("[DB MIGRATION] Schema migrations complete");
+}
+
+export async function checkAiTableColumns(): Promise<{ ok: boolean; checks: Record<string, boolean> }> {
+  const checks: Record<string, boolean> = {
+    "lexi_threads.disclaimer_shown": await columnExists("lexi_threads", "disclaimer_shown"),
+    "evidence_ai_analyses.status": await columnExists("evidence_ai_analyses", "status"),
+    "evidence_extractions.status": await columnExists("evidence_extractions", "status"),
+    "case_rule_terms.module_key": await columnExists("case_rule_terms", "module_key"),
+  };
+  const ok = Object.values(checks).every(v => v === true);
+  return { ok, checks };
 }
 
 async function initTable(tableName: string, createSQL: string, indexSQL: string[] = []): Promise<boolean> {
