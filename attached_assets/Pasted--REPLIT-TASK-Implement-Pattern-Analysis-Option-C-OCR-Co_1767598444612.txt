@@ -1,0 +1,264 @@
+# REPLIT TASK: Implement Pattern Analysis Option C (OCR + Confirm + Analyze) with Google Cloud Vision “double-check”
+
+Goal
+- Build a robust Evidence Text Extraction pipeline:
+  1) Extract text from PDFs/images
+  2) “Double-check” extraction with Google Cloud Vision (GCV)
+  3) Store per-page text + confidence + diffs
+  4) Provide a Review UI for users to confirm/correct anchors
+  5) Feed confirmed anchors into Pattern Analysis v1 (taxonomy + tallies + best examples)
+
+Non-goals
+- Do NOT generate legal advice, strategy, likelihood of success, or “you should file X”
+- Do NOT auto-file documents
+- Do NOT silently analyze unconfirmed low-confidence OCR (must be reviewable + correctable)
+
+------------------------------------
+A) Secrets / Env Vars (Replit)
+Add these secrets:
+- GOOGLE_CLOUD_PROJECT_ID
+- GOOGLE_CLOUD_VISION_CLIENT_EMAIL
+- GOOGLE_CLOUD_VISION_PRIVATE_KEY   (IMPORTANT: preserve line breaks; if stored with \n, replace at runtime)
+Optional:
+- OCR_PROVIDER_MODE = "gcv_primary" | "dual_compare" (default dual_compare)
+- OCR_MAX_PAGES = 50  (default 50)
+- OCR_MAX_FILE_MB = 25 (default 25)
+
+Create server helper that constructs Google credentials from env vars (do NOT rely on local service account json file).
+
+------------------------------------
+B) Install deps
+Server:
+- npm i @google-cloud/vision pdfjs-dist sharp p-queue zod
+Optional fallback OCR:
+- npm i tesseract.js
+(If you add tesseract.js, ensure it runs only as a fallback or compare mode due to performance.)
+
+Client:
+- no new deps required (use existing UI components)
+
+------------------------------------
+C) DB / Schema additions (shared/schema.ts)
+Add new tables:
+
+1) evidence_ocr_pages
+- id (uuid)
+- userId
+- caseId
+- evidenceId (FK to existing evidence/files table)
+- pageNumber (int, null for images)
+- providerPrimary (text: "gcv" | "pdf_text" | "tesseract")
+- providerSecondary (text nullable)
+- textPrimary (text)
+- textSecondary (text nullable)
+- confidencePrimary (real nullable)
+- confidenceSecondary (real nullable)
+- diffScore (real nullable)  // 0..1 similarity score or normalized distance
+- needsReview (boolean default true)
+- createdAt, updatedAt
+
+2) evidence_anchors
+- id (uuid)
+- userId
+- caseId
+- evidenceId
+- pageNumber (int nullable)
+- startChar (int nullable)      // optional for future highlight ranges
+- endChar (int nullable)
+- excerpt (text)                // user-confirmed snippet
+- note (text nullable)
+- tags (jsonb nullable)         // e.g., ["medical_obstruction","withheld_info"]
+- createdAt, updatedAt
+
+3) evidence_processing_jobs
+- id (uuid)
+- userId
+- caseId
+- evidenceId
+- status (text: "queued"|"processing"|"done"|"error")
+- progress (int default 0)
+- error (text nullable)
+- createdAt, updatedAt
+
+Update db.ts auto-create to include these tables.
+
+------------------------------------
+D) Storage layer additions (server/storage.ts)
+Add methods (follow existing “userId enforced” patterns):
+
+Jobs:
+- createEvidenceProcessingJob(userId, caseId, evidenceId)
+- updateEvidenceProcessingJob(userId, jobId, patch)
+- getEvidenceProcessingJob(userId, jobId)
+- getEvidenceProcessingJobsForCase(userId, caseId)
+
+OCR pages:
+- upsertEvidenceOcrPage(userId, caseId, evidenceId, pageNumber, payload)
+- listEvidenceOcrPages(userId, caseId, evidenceId)
+- markOcrPageReviewed(userId, ocrPageId, needsReview=false)
+
+Anchors:
+- createEvidenceAnchor(userId, caseId, payload)
+- updateEvidenceAnchor(userId, anchorId, payload)
+- deleteEvidenceAnchor(userId, anchorId)
+- listEvidenceAnchors(userId, caseId, evidenceId)
+
+------------------------------------
+E) OCR Service (server/services/ocr.ts)
+Create a single OCR pipeline with provider abstraction.
+
+1) Input handling
+- Evidence files already exist (uploads). Use the stored file path or blob URL.
+- Determine file type:
+  - PDF: extract per page
+  - image (png/jpg/webp): single “page”
+
+2) PDF extraction (two-phase)
+Phase 1: “pdf_text” extraction
+- Use pdfjs-dist to extract text per page.
+- This yields fast + cheap baseline.
+Phase 2: Google Cloud Vision (GCV) “Document Text Detection”
+- Convert each PDF page to an image (PNG) before sending to Vision:
+  - Use pdfjs-dist render to canvas (node-canvas approach) OR
+  - If node-canvas is too heavy, use an existing server-side render util if already present.
+  - If rendering is complex on Replit, fallback to:
+    - Extracting only pdf_text + run GCV only on pages flagged low-confidence or empty text
+- Respect OCR_MAX_PAGES.
+
+3) Image extraction (GCV first)
+- Send image buffer to GCV documentTextDetection.
+- Also optionally run a secondary provider for “double-check”:
+  - Option 1: tesseract.js fallback
+  - Option 2: if pdf_text exists, compare pdf_text vs gcv for similarity
+
+4) Double-check logic (“dual_compare”)
+- Primary: GCV output
+- Secondary: pdf_text (for PDFs) or tesseract (for images)
+Compute diffScore:
+- Use a normalized similarity function:
+  - token overlap / Jaccard OR
+  - normalized Levenshtein distance (implement simple token-based)
+Set needsReview:
+- true if:
+  - textPrimary length < threshold OR
+  - diffScore < 0.75 OR
+  - confidencePrimary < threshold (if provided)
+- else false (but still allow user to open page and confirm)
+
+5) Write results
+- Store one evidence_ocr_pages row per page with:
+  - providerPrimary="gcv"
+  - providerSecondary=("pdf_text" or "tesseract")
+  - textPrimary/textSecondary
+  - diffScore
+  - needsReview
+
+6) Queue / Rate limiting
+- Use p-queue with concurrency=1 or 2 for Vision calls to avoid bursts.
+- Store progress in evidence_processing_jobs.
+
+------------------------------------
+F) API routes (server/routes.ts) — all requireAuth
+Evidence processing:
+1) POST /api/cases/:caseId/evidence/:evidenceId/process
+- Creates job, queues OCR
+- Returns { ok:true, jobId }
+
+2) GET /api/cases/:caseId/evidence/:evidenceId/process
+- Returns job status + progress
+
+OCR pages:
+3) GET /api/cases/:caseId/evidence/:evidenceId/ocr-pages
+- Returns pages with needsReview, diffScore, confidence
+
+4) PATCH /api/ocr-pages/:ocrPageId
+- Body: { needsReview?: boolean } (mark reviewed)
+
+Anchors:
+5) GET /api/cases/:caseId/evidence/:evidenceId/anchors
+6) POST /api/cases/:caseId/evidence/:evidenceId/anchors
+7) PATCH /api/anchors/:anchorId
+8) DELETE /api/anchors/:anchorId
+
+Pattern analysis input:
+9) GET /api/cases/:caseId/pattern-analysis/input
+- Returns “confirmed anchors only” + metadata (source evidence, page, excerpt, tags)
+(Do not include unreviewed OCR unless user confirms anchors.)
+
+------------------------------------
+G) Frontend UI changes
+
+1) Evidence module: add “Review & Extract Text” + “Notes/Anchors” UI
+File: client/src/pages/AppEvidence.tsx
+
+Per evidence file card:
+- Add a button: “Extract Text”
+  - calls POST process route
+  - shows progress state (queued/processing/done/error)
+- Add a button: “Review Highlights”
+  - opens modal/drawer:
+    - left: page selector list (Page 1..n) with badges:
+      - “Needs review” if needsReview
+      - diffScore indicator
+    - center: extracted text view (read-only)
+    - right: “Create Anchor” form:
+      - excerpt (textarea)
+      - page number (auto)
+      - tags multi-select (use existing tag UI if present)
+      - note
+      - Save anchor
+- Under evidence card, collapsible “Notes & Highlights” list:
+  - list anchors with excerpt + note + tags
+  - actions: edit/delete
+  - action: “Add to Exhibit” (future integration) OR at minimum link to exhibit module selection modal
+
+UX rules:
+- Anchors are always user-confirmed (typed/pasted) even if extracted text exists.
+- If user selects some text in the extracted text panel, prefill excerpt (optional stretch).
+
+2) Pattern Analysis page: upgrade to v1 engine using anchors
+File: client/src/pages/AppPatterns.tsx (or whatever current path is)
+- Add a new section: “Evidence Patterns (Confirmed Highlights)”
+- Show:
+  - Pattern tallies based on tags
+  - “Top examples” (up to 3 anchors per pattern)
+  - “Recent highlights”
+- Keep existing stats (deadlines/tasks/calendar) but separate as “Case Activity”
+
+3) Lexi: allow “Analyze these highlights” (optional)
+- Add a button in Pattern Analysis: “Ask Lexi about these patterns”
+- Send a structured prompt to Lexi using ORGANIZATION/RESEARCH mode:
+  - Lexi should describe patterns neutrally, suggest what additional info might be missing, and cite sources only when doing research
+  - Never output legal advice/strategy
+
+------------------------------------
+H) Safety / Guardrails
+- DO NOT auto-label anything as “abuse” or “illegal” as a definitive claim.
+- Use neutral language: “Possible pattern of X based on these excerpts.”
+- Lexi outputs must avoid:
+  - “you should file…”
+  - likelihood of success
+  - personalized legal strategy
+- Keep one non-spam disclaimer at top of Lexi panel (already implemented).
+- Ensure all OCR/anchors routes enforce userId and caseId ownership.
+
+------------------------------------
+I) Acceptance tests (what you must verify)
+1) Upload PDF evidence → click “Extract Text” → job progresses → OCR pages created
+2) OCR pages show diffScore and needsReview
+3) User creates anchors from OCR text → anchors persist and display under the evidence card
+4) Pattern Analysis tallies reflect anchor tags + show top examples
+5) No case/user can access another user’s OCR pages/anchors
+6) Large PDFs respect OCR_MAX_PAGES and OCR_MAX_FILE_MB gracefully
+7) If GOOGLE creds missing → process route returns 503 with clear message; app continues running
+
+------------------------------------
+J) Output a detailed summary
+At the end, print a Replit summary including:
+- Files changed
+- New env vars used
+- New routes
+- New tables
+- What remains as future enhancements (text selection-to-anchor, exhibit binder export, advanced taxonomy)
+
+Implement all of the above now.
