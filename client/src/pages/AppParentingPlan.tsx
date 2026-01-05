@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import ModuleIntro from "@/components/app/ModuleIntro";
-import LexiSuggestedQuestions from "@/components/lexi/LexiSuggestedQuestions";
+import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 import {
   Accordion,
   AccordionContent,
