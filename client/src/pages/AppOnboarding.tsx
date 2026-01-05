@@ -735,6 +735,44 @@ export default function AppOnboarding() {
                       <span>Some info was skipped. You can finish later in Account Settings.</span>
                     </div>
                   )}
+
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Where are you starting from?</Label>
+                    <p className="text-sm text-neutral-darkest/60">This helps Civilla organize your dashboard in the order most people need.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { value: "served_papers", label: "I was served papers", desc: "I need to respond" },
+                        { value: "starting_case", label: "I want to start a case", desc: "I'm filing first" },
+                        { value: "modifying_enforcing", label: "I already have a case", desc: "I'm modifying/enforcing" },
+                        { value: "not_sure", label: "I'm not sure yet", desc: "Help me figure it out" },
+                      ].map(opt => (
+                        <label
+                          key={opt.value}
+                          className={`flex flex-col p-4 border rounded-lg cursor-pointer transition-colors ${
+                            data.case.startingPoint === opt.value
+                              ? "border-primary bg-primary/5"
+                              : "border-neutral-light hover:border-primary/50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="startingPoint"
+                              value={opt.value}
+                              checked={data.case.startingPoint === opt.value}
+                              onChange={e => updateCase("startingPoint", e.target.value as any)}
+                              className="accent-bush"
+                              data-testid={`radio-starting-${opt.value}`}
+                            />
+                            <div>
+                              <span className="font-medium text-sm">{opt.label}</span>
+                              <p className="text-xs text-neutral-darkest/60">{opt.desc}</p>
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">

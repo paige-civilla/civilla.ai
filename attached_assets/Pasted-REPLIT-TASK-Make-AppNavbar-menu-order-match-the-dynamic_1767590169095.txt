@@ -1,0 +1,116 @@
+REPLIT TASK: Make AppNavbar menu order match the dynamic Dashboard flow (same ordering + gating)
+
+GOAL
+The module order in the AppNavbar dropdown must match the exact same ordered module list used on the Dashboard, including:
+- Starting Point–based ordering (served papers / starting case / modifying-enforcing / not sure)
+- Children gating (only show Children if hasChildren = true)
+- Same labels/renames (Message and Call Log, Document Library, Document Creator, etc.)
+- Same inclusion/exclusion of modules as Dashboard
+
+========================================================
+1) Create ONE shared source of truth for module definitions + ordering
+========================================================
+
+A) Add new file:
+`client/src/lib/modules.ts`
+
+Export:
+1. `ModuleKey` union type (keys you use across app)
+2. `ModuleDef` type:
+   - key: ModuleKey
+   - label: string
+   - href: (caseId: string) => string
+   - icon: LucideIcon (optional if you want icons in menu)
+   - gatedByChildren?: boolean
+   - group?: "core" | "planning" | "analysis" | "extras" (optional, if you later want section headers)
+3. `MODULES_REGISTRY: ModuleDef[]` in the canonical “base” order (your chosen flow)
+4. `getOrderedModules(args)` function that returns `ModuleDef[]`:
+   - inputs:
+     - startingPoint: "served_papers" | "starting_case" | "modifying_enforcing" | "not_sure"
+     - hasChildren: boolean
+   - logic:
+     - choose the correct ordering array of keys based on startingPoint
+     - filter out children if hasChildren is false
+     - map keys to ModuleDef from registry
+
+IMPORTANT:
+- Dashboard must ALSO use getOrderedModules() from this file (no duplicate ordering logic in AppDashboard).
+- Navbar must ALSO use getOrderedModules() from this file (same output = same ordering).
+
+========================================================
+2) Update Dashboard to use the shared module ordering (if not already)
+========================================================
+
+In `client/src/pages/AppDashboard.tsx`:
+- Remove any local “modules” array and any local ordering logic.
+- Import:
+  - `getOrderedModules` from `client/src/lib/modules`
+- Build:
+  - `const orderedModules = getOrderedModules({ startingPoint: currentCase.startingPoint, hasChildren: currentCase.hasChildren })`
+- Render tiles from `orderedModules`.
+
+This ensures Navbar and Dashboard are literally driven by the same function.
+
+========================================================
+3) Update AppNavbar menu to match the same ordered list
+========================================================
+
+In `client/src/components/layout/AppNavbar.tsx`:
+
+A) Identify the “current case”
+- AppNavbar needs to know which case is active to compute the correct menu links and ordering.
+- Use whatever your app already uses:
+  - If there is a “primaryCase” in query/cache: use it.
+  - If you have `useParams()` with `caseId`, prefer that.
+  - Fallback: primaryCase.
+
+B) Build the menu items from shared ordering
+- Import:
+  - `getOrderedModules` from `client/src/lib/modules`
+- Compute:
+  - `const orderedModules = activeCase ? getOrderedModules({ startingPoint: activeCase.startingPoint, hasChildren: activeCase.hasChildren }) : []`
+
+C) Render dropdown module links in EXACT order:
+- For each module in `orderedModules`:
+  - Link to module.href(activeCase.id)
+  - Use module.label
+  - Optional: module.icon
+
+D) Behavior when there is no active case:
+- Show a small message:
+  - “Pick a case to see your workflow menu.”
+- Provide a button: “View All Cases”
+- Do NOT show module links (because they depend on caseId).
+
+========================================================
+4) Keep naming consistent everywhere
+========================================================
+
+Make sure menu labels match dashboard labels, for example:
+- Communications → “Message and Call Log”
+- Documents → “Document Creator”
+- Library tile/menu label remains “Document Library”
+- Disclosures page label “Disclosures and Discovery”
+- Pattern Analysis label unchanged
+- Case To-Do label unchanged
+
+========================================================
+5) Acceptance Tests
+========================================================
+
+1) Served papers case:
+- Dashboard module tiles show the served-papers order.
+- Navbar dropdown module list shows the SAME order.
+
+2) Case with hasChildren = false:
+- Children module does not appear on dashboard OR menu.
+
+3) Case with hasChildren = true:
+- Children module appears after Timeline on dashboard AND menu.
+
+4) Switching cases:
+- When user changes active case, menu reorders accordingly.
+
+DELIVERABLE
+- Provide a concise “What changed” summary and list of files edited.
+- Confirm Dashboard and Navbar both import the same getOrderedModules() from client/src/lib/modules.ts (no duplicated ordering logic).
