@@ -1521,6 +1521,130 @@ export async function registerRoutes(
     }
   });
 
+// Child Support Research endpoints
+  app.get("/api/cases/:caseId/child-support/research", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const state = req.query.state as string;
+
+      if (!state) {
+        return res.status(400).json({ error: "State is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const termKey = `child_support_${state.toLowerCase().replace(/\s+/g, '_')}`;
+      const terms = await storage.getCaseRuleTerms(userId, caseId, "child-support");
+      const cached = terms.find(t => t.termKey === termKey);
+
+      if (cached) {
+        return res.json({ ok: true, content: cached.summary, cached: true, lastCheckedAt: cached.lastCheckedAt });
+      }
+
+      res.json({ ok: true, content: null, cached: false });
+    } catch (error) {
+      console.error("Get child support research error:", error);
+      res.status(500).json({ error: "Failed to get child support research" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/child-support/research", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { state, refresh } = req.body;
+
+      if (!state || typeof state !== "string") {
+        return res.status(400).json({ error: "State is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const termKey = `child_support_${state.toLowerCase().replace(/\s+/g, '_')}`;
+      const moduleKey = "child-support";
+
+      // Check for cached result first (unless refresh requested)
+      if (!refresh) {
+        const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
+        const cached = terms.find(t => t.termKey === termKey);
+        if (cached && cached.summary) {
+          return res.json({ ok: true, content: cached.summary, cached: true });
+        }
+      }
+
+      // Check if OpenAI is configured
+      const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+      if (!lexiApiKeyConfigured) {
+        return res.status(503).json({ error: "AI integration not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
+
+Your task: Research and provide general educational information about child support in ${state}.
+
+STRICT RULES:
+1. Be EDUCATIONAL + ORGANIZATIONAL + RESEARCH focused only.
+2. Do NOT provide legal advice, strategy, or likelihood of outcomes.
+3. Do NOT invent citations or URLs. If you cannot confidently name an official source URL, say "I couldn't verify the official page" and provide step-by-step instructions to find it on official sites.
+4. Focus on what the state calls its child support guidelines/worksheet, what inputs are typically required, and where to find official resources.
+
+You MUST format your response EXACTLY like this:
+
+## Child Support in ${state}
+
+### What It's Called
+[What the state calls its child support guidelines, worksheet, or schedule]
+
+### Official Sources to Verify
+[List known official sources like state judiciary website, forms page, or legislature site. If you can't verify a specific URL, say so and provide instructions on how to find it]
+
+### Inputs Commonly Required
+[List typical inputs: gross income, number of children, overnights/parenting time, childcare costs, health insurance, etc.]
+
+### How to Double-Check
+[Step-by-step instructions to find the official worksheet on state judiciary or court websites]
+
+### Important Disclaimer
+This is educational and research information only. It is NOT legal advice. Child support calculations vary significantly by individual circumstances. For court-accurate amounts, use your state's official calculator and consult with a family law attorney. civilla does not provide legal advice or representation.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Please research and provide educational information about child support guidelines in ${state}.` }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      });
+
+      const content = completion.choices[0]?.message?.content || "Unable to generate research content.";
+
+      // Save to case_rule_terms
+      await storage.upsertCaseRuleTerm(userId, caseId, {
+        moduleKey,
+        jurisdictionState: state,
+        termKey,
+        officialLabel: `Child Support Guidelines - ${state}`,
+        summary: content,
+        sourcesJson: [],
+      });
+
+      res.json({ ok: true, content, cached: false });
+    } catch (error) {
+      console.error("Child support research error:", error);
+      res.status(500).json({ error: "Failed to research child support guidelines" });
+    }
+  });
+
   app.get("/api/health/documents", async (_req, res) => {
     try {
       await pool.query("SELECT 1 FROM documents LIMIT 1");

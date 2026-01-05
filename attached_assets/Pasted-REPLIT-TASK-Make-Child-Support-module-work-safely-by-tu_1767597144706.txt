@@ -1,0 +1,110 @@
+REPLIT TASK: Make Child Support module “work” safely by turning it into a state-specific Worksheet/Calculator helper powered by Lexi Research Mode (NOT a fake numeric calculator). Remove the $XXX placeholder, add a “Research my state’s worksheet/calculator” flow that saves + reuses results per case.
+
+GOAL (what “working” means):
+- User selects/has a State (prefill from case).
+- User clicks ONE primary action: “Find my state’s child support worksheet/calculator”.
+- Lexi (Research mode) returns:
+  1) What the state calls it (e.g., “Child Support Guidelines / Worksheet / Schedule”)
+  2) The official source(s) to verify (state judiciary/forms page, legislature site, or court rules page)
+  3) What inputs are typically required (income, overnights, childcare, insurance, etc.)
+  4) A clear disclaimer: educational + research + organization only, not legal advice, no guaranteed accuracy.
+- Cache that answer per case+state so the user doesn’t have to ask again.
+- The module should NOT output a dollar amount unless we later build real state calculators.
+
+--------------------------------------------------------------------
+1) BACKEND: add a dedicated research endpoint that uses Lexi + caches results
+
+A) Add a new route in server/routes.ts (requireAuth) like:
+POST /api/cases/:caseId/child-support/research
+Body: { state: string }
+Response: { ok: true, content: string, cached: boolean }
+
+B) Use the existing case_rule_terms table & storage methods already built:
+- termKey: `child_support_${state.toLowerCase().replace(/\s+/g,'_')}`
+- moduleKey: `child-support`
+
+C) Logic:
+- Validate user owns the case.
+- Check if a cached rule term exists via storage.getCaseRuleTerms(userId, caseId, moduleKey).
+  - If termKey exists and content is non-empty, return it with cached:true.
+- Otherwise, call Lexi/OpenAI with STRICT system prompt (Research mode) and save via storage.upsertCaseRuleTerm.
+
+D) System prompt (IMPORTANT):
+- Lexi is EDUCATIONAL + ORGANIZATIONAL + RESEARCH.
+- Must avoid legal advice, strategy, likelihood of outcome.
+- Must NOT invent citations. If it cannot confidently name an official source URL, it must say “I couldn’t verify the official page from here” and instead provide step-by-step instructions to find it on official sites:
+  - state judiciary/courts website forms page
+  - state legislature site for guidelines statute/rule
+- Must output in a structured format:
+
+Return format:
+Title: Child support in <STATE>
+What it’s called:
+Official sources to verify:
+Inputs commonly required:
+How to double-check:
+Disclaimer:
+
+E) Store returned text as:
+upsertCaseRuleTerm(userId, caseId, moduleKey="child-support", termKey, content)
+
+--------------------------------------------------------------------
+2) FRONTEND: update AppChildSupport.tsx to use the new research flow and remove placeholder estimate
+
+A) Remove:
+- showEstimate UI that displays “$XXX - $XXX / month”
+- the “Calculate Estimate” button text
+
+B) Add state research UI:
+- Primary button: “Find my state’s worksheet/calculator”
+- On click:
+  - POST /api/cases/:caseId/child-support/research with { state }
+  - Show loading state
+  - Display the returned content in a “Research Results” card
+  - Add a small “Refresh research” secondary button that forces re-fetch (optional: add `?refresh=1` or body flag; if you don’t want refresh, omit it)
+
+C) Cache display:
+- On component mount, if state is present, you MAY auto-fetch cached results (nice), but do not spam.
+  - Use react-query:
+    queryKey: ["/api/cases", caseId, "child-support", "research", state]
+    enabled: !!caseId && !!state
+    queryFn: GET endpoint if you add one, OR keep it POST-only and don’t auto-run. (Simpler: keep POST-only and only fetch on button click.)
+
+Recommended approach:
+- Add a GET route too:
+  GET /api/cases/:caseId/child-support/research?state=Idaho
+  returns cached if exists, otherwise { ok:true, content:null }
+Then AppChildSupport can show previously researched results immediately.
+
+D) Keep the existing form fields (income, overnights, childcare, insurance) but relabel them as “Optional — helps you understand which worksheet fields apply” and add a note:
+- “We don’t calculate a court amount yet. These fields help you prepare for your state worksheet.”
+
+E) Update warning banner copy (less alarming, more helpful):
+- “Educational + research helper. Not legal advice. Use official worksheet/calculator for court numbers.”
+
+--------------------------------------------------------------------
+3) UX DETAILS YOU MUST DO
+- Remove anything implying we generate a “court-accurate” number.
+- Make the button enabled if state is set.
+- If state is missing, show inline helper:
+  “Select a state to find the official worksheet/calculator.”
+- If Lexi returns “couldn’t verify URL,” show a little “How to find it” section (already in the returned content).
+
+--------------------------------------------------------------------
+4) FILES TO EDIT
+- server/routes.ts (add POST route; optional GET route)
+- server/storage.ts (only if needed; but you said rule-terms methods exist already)
+- client/src/pages/AppChildSupport.tsx (replace placeholder estimate flow with research flow)
+- Optional: update module description strings if they imply calculation
+
+--------------------------------------------------------------------
+5) FINISHING REQUIREMENT
+At the end, output a VERY DETAILED Replit summary:
+- Which files edited
+- Which endpoints added
+- What the new button does
+- How caching works (termKey/moduleKey)
+- What the UI shows now instead of $XXX placeholder
+- How to test in the browser (step-by-step)
+
+DO THIS NOW.
