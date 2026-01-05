@@ -1,0 +1,101 @@
+REPLIT TASK: Timeline Categories v2 (unlimited custom categories + colors) + optional horizontal timeline view
+
+Goal
+Timeline needs:
+- richer preset categories (but editable)
+- unlimited user-created categories
+- per-category colors (user chooses)
+- timeline events assigned to a category
+- option to switch between List view and Horizontal Timeline view
+- all changes scoped per case (caseId) and per user (userId)
+
+A) Data model
+1) Add new table: timeline_categories
+Columns:
+- id (pk)
+- userId
+- caseId
+- name (text)
+- color (text hex like "#A2BEC2")
+- createdAt, updatedAt
+Indexes:
+- (caseId)
+Unique:
+- (userId, caseId, lower(name)) to prevent duplicates
+
+2) Extend timeline_events table (if not already):
+- categoryId (nullable FK-like reference to timeline_categories.id)
+- categoryName (optional legacy string if currently used; keep temporarily for migration)
+
+B) Backend (server/storage.ts + server/routes.ts)
+1) Categories CRUD:
+- GET /api/cases/:caseId/timeline/categories
+- POST /api/cases/:caseId/timeline/categories  body: { name, color }
+- PATCH /api/timeline/categories/:categoryId    body: { name?, color? }
+- DELETE /api/timeline/categories/:categoryId
+
+Ownership enforcement on every route:
+- requireAuth
+- user owns caseId
+- category belongs to caseId + userId
+
+2) Timeline events update
+- Ensure POST/PUT/PATCH timeline event endpoints accept categoryId
+- On create/update: validate that categoryId belongs to same caseId+userId (or allow null)
+
+3) Migration behavior (safe, no destructive)
+On server startup/db init:
+- Create timeline_categories if missing
+- If timeline_events currently have category as text:
+  - Create default categories for common values found (per case)
+  - Backfill timeline_events.categoryId accordingly
+  - Preserve original text in categoryName (optional) until stable
+
+C) Frontend (client/src/pages/AppTimeline.tsx)
+1) Add a view toggle near the top:
+- Tabs or segmented control: "List" | "Timeline"
+Default: List
+
+2) Category management UI
+- In the “Add Event” modal:
+  - Category dropdown (existing categories)
+  - “+ Add category” inline
+  - Color picker (simple palette + optional color wheel if you already have one; palette is fine)
+- In the Timeline page header:
+  - “Manage Categories” button opens modal:
+    - list categories
+    - edit name/color
+    - delete
+    - show count of events in category
+
+3) Event display
+List view:
+- Show category pill with color dot (and name)
+- Allow filtering by category (multi-select) + "All"
+
+Horizontal timeline view:
+- Render events grouped by month (or quarter) across a horizontal axis
+- Each event is a card/dot with:
+  - date
+  - title
+  - colored category indicator
+- Clicking an event opens the existing edit/view sheet
+- Must be mobile-friendly:
+  - horizontal scroll container
+  - snap points optional
+  - touch targets min-h-[44px]
+
+D) Color rules
+- Category color used for:
+  - pill background (low opacity)
+  - dot indicator (solid)
+- Do NOT hardcode colors. Use existing app tokens for borders/text and only store the category color itself.
+
+E) Report back (detailed)
+After implementing, summarize:
+- Files changed
+- New table + columns
+- Routes added
+- How migration/backfill works
+- Confirm categories are unlimited + per case
+- Confirm horizontal timeline works at 320px width

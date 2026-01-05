@@ -1486,27 +1486,46 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/timeline-categories", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/timeline/categories", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const categories = await storage.listTimelineCategories(userId);
-      res.json({ categories });
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const categories = await storage.listTimelineCategories(userId, caseId);
+      const categoriesWithCounts = await Promise.all(
+        categories.map(async (cat) => ({
+          ...cat,
+          eventCount: await storage.getEventCountByCategory(userId, caseId, cat.id),
+        }))
+      );
+      res.json({ categories: categoriesWithCounts });
     } catch (error) {
       console.error("List timeline categories error:", error);
       res.status(500).json({ error: "Failed to list timeline categories" });
     }
   });
 
-  app.post("/api/timeline-categories", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/timeline/categories", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const { caseId } = req.params;
       const { name, color } = req.body;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
 
       if (!name || !color) {
         return res.status(400).json({ error: "name and color are required" });
       }
 
-      const category = await storage.createTimelineCategory(userId, { name, color });
+      const category = await storage.createTimelineCategory(userId, caseId, { name, color });
       res.status(201).json({ category });
     } catch (error) {
       console.error("Create timeline category error:", error);
@@ -1514,13 +1533,18 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/timeline-categories/:categoryId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { categoryId } = req.params;
+      const { caseId, categoryId } = req.params;
       const { name, color } = req.body;
 
-      const updated = await storage.updateTimelineCategory(userId, categoryId, { name, color });
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const updated = await storage.updateTimelineCategory(userId, caseId, categoryId, { name, color });
       if (!updated) {
         return res.status(404).json({ error: "Category not found" });
       }
@@ -1532,12 +1556,17 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/timeline-categories/:categoryId", requireAuth, async (req, res) => {
+  app.delete("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { categoryId } = req.params;
+      const { caseId, categoryId } = req.params;
 
-      const result = await storage.deleteTimelineCategory(userId, categoryId);
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const result = await storage.deleteTimelineCategory(userId, caseId, categoryId);
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
@@ -1549,10 +1578,17 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/timeline-categories/seed", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/timeline/categories/seed", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const categories = await storage.seedSystemTimelineCategories(userId);
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const categories = await storage.seedSystemTimelineCategories(userId, caseId);
       res.json({ categories });
     } catch (error) {
       console.error("Seed timeline categories error:", error);

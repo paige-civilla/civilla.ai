@@ -674,9 +674,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS idx_timeline_categories_user ON timeline_categories(user_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS idx_timeline_categories_unique_user_name ON timeline_categories(user_id, name)`
+    `CREATE INDEX IF NOT EXISTS idx_timeline_categories_user ON timeline_categories(user_id)`
   ]);
+
+  await addColumnIfNotExists("timeline_categories", "case_id", "VARCHAR(255)");
+  await addColumnIfNotExists("timeline_categories", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  try {
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_categories_case ON timeline_categories(case_id)`);
+  } catch (e) {
+    console.log("timeline_categories case_id index may already exist");
+  }
 
   await addColumnIfNotExists("timeline_events", "category_id", "VARCHAR(255)");
   try {

@@ -294,12 +294,13 @@ export interface IStorage {
   listExhibitListEvidence(userId: string, exhibitListId: string): Promise<ExhibitEvidence[]>;
   reorderExhibitListEvidence(userId: string, exhibitListId: string, ordered: { id: string; sortOrder: number }[]): Promise<boolean>;
 
-  listTimelineCategories(userId: string): Promise<TimelineCategory[]>;
-  createTimelineCategory(userId: string, data: InsertTimelineCategory): Promise<TimelineCategory>;
-  updateTimelineCategory(userId: string, categoryId: string, data: UpdateTimelineCategory): Promise<TimelineCategory | undefined>;
-  deleteTimelineCategory(userId: string, categoryId: string): Promise<{ success: boolean; error?: string }>;
-  seedSystemTimelineCategories(userId: string): Promise<TimelineCategory[]>;
-  getTimelineCategory(userId: string, categoryId: string): Promise<TimelineCategory | undefined>;
+  listTimelineCategories(userId: string, caseId: string): Promise<TimelineCategory[]>;
+  createTimelineCategory(userId: string, caseId: string, data: InsertTimelineCategory): Promise<TimelineCategory>;
+  updateTimelineCategory(userId: string, caseId: string, categoryId: string, data: UpdateTimelineCategory): Promise<TimelineCategory | undefined>;
+  deleteTimelineCategory(userId: string, caseId: string, categoryId: string): Promise<{ success: boolean; error?: string }>;
+  seedSystemTimelineCategories(userId: string, caseId: string): Promise<TimelineCategory[]>;
+  getTimelineCategory(userId: string, caseId: string, categoryId: string): Promise<TimelineCategory | undefined>;
+  getEventCountByCategory(userId: string, caseId: string, categoryId: string): Promise<number>;
 
   getParentingPlanByCase(userId: string, caseId: string): Promise<ParentingPlan | undefined>;
   createParentingPlan(userId: string, caseId: string, data?: InsertParentingPlan): Promise<ParentingPlan>;
@@ -1923,22 +1924,40 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async listTimelineCategories(userId: string): Promise<TimelineCategory[]> {
+  async listTimelineCategories(userId: string, caseId: string): Promise<TimelineCategory[]> {
     return db.select().from(timelineCategories)
-      .where(eq(timelineCategories.userId, userId))
+      .where(and(
+        eq(timelineCategories.userId, userId),
+        eq(timelineCategories.caseId, caseId)
+      ))
       .orderBy(desc(timelineCategories.isSystem), asc(timelineCategories.name));
   }
 
-  async getTimelineCategory(userId: string, categoryId: string): Promise<TimelineCategory | undefined> {
+  async getTimelineCategory(userId: string, caseId: string, categoryId: string): Promise<TimelineCategory | undefined> {
     const [row] = await db.select().from(timelineCategories)
-      .where(and(eq(timelineCategories.id, categoryId), eq(timelineCategories.userId, userId)));
+      .where(and(
+        eq(timelineCategories.id, categoryId),
+        eq(timelineCategories.userId, userId),
+        eq(timelineCategories.caseId, caseId)
+      ));
     return row;
   }
 
-  async createTimelineCategory(userId: string, data: InsertTimelineCategory): Promise<TimelineCategory> {
+  async getEventCountByCategory(userId: string, caseId: string, categoryId: string): Promise<number> {
+    const events = await db.select().from(timelineEvents)
+      .where(and(
+        eq(timelineEvents.userId, userId),
+        eq(timelineEvents.caseId, caseId),
+        eq(timelineEvents.categoryId, categoryId)
+      ));
+    return events.length;
+  }
+
+  async createTimelineCategory(userId: string, caseId: string, data: InsertTimelineCategory): Promise<TimelineCategory> {
     const [created] = await db.insert(timelineCategories)
       .values({
         userId,
+        caseId,
         name: data.name,
         color: data.color,
         isSystem: false,
@@ -1947,38 +1966,51 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateTimelineCategory(userId: string, categoryId: string, data: UpdateTimelineCategory): Promise<TimelineCategory | undefined> {
-    const existing = await this.getTimelineCategory(userId, categoryId);
+  async updateTimelineCategory(userId: string, caseId: string, categoryId: string, data: UpdateTimelineCategory): Promise<TimelineCategory | undefined> {
+    const existing = await this.getTimelineCategory(userId, caseId, categoryId);
     if (!existing) return undefined;
 
     const [updated] = await db.update(timelineCategories)
       .set({
         name: data.name ?? existing.name,
         color: data.color ?? existing.color,
+        updatedAt: new Date(),
       })
-      .where(and(eq(timelineCategories.id, categoryId), eq(timelineCategories.userId, userId)))
+      .where(and(
+        eq(timelineCategories.id, categoryId),
+        eq(timelineCategories.userId, userId),
+        eq(timelineCategories.caseId, caseId)
+      ))
       .returning();
     return updated;
   }
 
-  async deleteTimelineCategory(userId: string, categoryId: string): Promise<{ success: boolean; error?: string }> {
-    const existing = await this.getTimelineCategory(userId, categoryId);
+  async deleteTimelineCategory(userId: string, caseId: string, categoryId: string): Promise<{ success: boolean; error?: string }> {
+    const existing = await this.getTimelineCategory(userId, caseId, categoryId);
     if (!existing) return { success: false, error: "Category not found" };
     if (existing.isSystem) return { success: false, error: "Cannot delete system categories" };
 
     const eventsUsingCategory = await db.select().from(timelineEvents)
-      .where(and(eq(timelineEvents.userId, userId), eq(timelineEvents.categoryId, categoryId)));
+      .where(and(
+        eq(timelineEvents.userId, userId),
+        eq(timelineEvents.caseId, caseId),
+        eq(timelineEvents.categoryId, categoryId)
+      ));
     if (eventsUsingCategory.length > 0) {
       return { success: false, error: "Category is in use by timeline events" };
     }
 
     await db.delete(timelineCategories)
-      .where(and(eq(timelineCategories.id, categoryId), eq(timelineCategories.userId, userId)));
+      .where(and(
+        eq(timelineCategories.id, categoryId),
+        eq(timelineCategories.userId, userId),
+        eq(timelineCategories.caseId, caseId)
+      ));
     return { success: true };
   }
 
-  async seedSystemTimelineCategories(userId: string): Promise<TimelineCategory[]> {
-    const existing = await this.listTimelineCategories(userId);
+  async seedSystemTimelineCategories(userId: string, caseId: string): Promise<TimelineCategory[]> {
+    const existing = await this.listTimelineCategories(userId, caseId);
     if (existing.length > 0) {
       return existing;
     }
@@ -2002,6 +2034,7 @@ export class DatabaseStorage implements IStorage {
       const [row] = await db.insert(timelineCategories)
         .values({
           userId,
+          caseId,
           name: cat.name,
           color: cat.color,
           isSystem: true,

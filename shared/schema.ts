@@ -190,13 +190,16 @@ export type TimelineEventCategory = typeof timelineEventCategories[number];
 export const timelineCategories = pgTable("timeline_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").references(() => cases.id),
   name: text("name").notNull(),
   color: text("color").notNull().default("#628286"),
   isSystem: boolean("is_system").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
   userIdx: index("timeline_categories_user_idx").on(table.userId),
-  uniqueUserName: uniqueIndex("timeline_categories_unique_user_name_idx").on(table.userId, table.name),
+  caseIdx: index("timeline_categories_case_idx").on(table.caseId),
+  uniqueUserCaseName: uniqueIndex("timeline_categories_unique_user_case_name_idx").on(table.userId, table.caseId, table.name),
 }));
 
 export const insertTimelineCategorySchema = z.object({
