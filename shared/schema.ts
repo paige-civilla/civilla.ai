@@ -299,6 +299,37 @@ export type UpdateEvidenceMetadata = z.infer<typeof updateEvidenceMetadataSchema
 export type InsertEvidenceFile = z.infer<typeof insertEvidenceFileSchema>;
 export type EvidenceFile = typeof evidenceFiles.$inferSelect;
 
+export const caseEvidenceNotes = pgTable("case_evidence_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceFileId: varchar("evidence_file_id").notNull().references(() => evidenceFiles.id),
+  pageNumber: integer("page_number"),
+  label: text("label"),
+  note: text("note").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("evidence_notes_case_idx").on(table.caseId),
+  fileIdx: index("evidence_notes_file_idx").on(table.evidenceFileId),
+  userIdx: index("evidence_notes_user_idx").on(table.userId),
+}));
+
+export const insertEvidenceNoteSchema = z.object({
+  pageNumber: z.number().int().positive().optional().nullable(),
+  label: z.string().max(80).optional().nullable(),
+  note: z.string().min(1, "Note is required").max(5000),
+});
+
+export const updateEvidenceNoteSchema = z.object({
+  pageNumber: z.number().int().positive().optional().nullable(),
+  label: z.string().max(80).optional().nullable(),
+  note: z.string().min(1).max(5000).optional(),
+});
+
+export type InsertEvidenceNote = z.infer<typeof insertEvidenceNoteSchema>;
+export type UpdateEvidenceNote = z.infer<typeof updateEvidenceNoteSchema>;
+export type EvidenceNote = typeof caseEvidenceNotes.$inferSelect;
+
 export const documentTemplateKeys = [
   "declaration",
   "affidavit",
