@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare } from "lucide-react";
+import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication } from "@shared/schema";
+import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication, EvidenceAnchor, EvidenceFile } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 
 type PatternDataResponse = {
@@ -13,6 +13,10 @@ type PatternDataResponse = {
   tasks: Task[];
   calendarItems: CaseCalendarItem[];
   categories: CalendarCategory[];
+};
+
+type PatternAnalysisResponse = {
+  anchors: (EvidenceAnchor & { evidenceFile: EvidenceFile | null })[];
 };
 
 export default function AppPatterns() {
@@ -60,12 +64,29 @@ export default function AppPatterns() {
     enabled: !!caseId,
   });
 
+  const { data: patternAnalysisData, isLoading: anchorsLoading } = useQuery<PatternAnalysisResponse>({
+    queryKey: ["/api/cases", caseId, "pattern-analysis"],
+    enabled: !!caseId,
+  });
+
   const currentCase = caseData?.case;
   const deadlines = deadlinesData?.deadlines || [];
   const tasks = tasksData?.tasks || [];
   const calendarItems = calendarItemsData?.items || [];
   const categories = categoriesData?.categories || [];
   const communications = communicationsData?.communications || [];
+  const evidenceAnchors = patternAnalysisData?.anchors || [];
+
+  const anchorsByFile = evidenceAnchors.reduce<Record<string, typeof evidenceAnchors>>((acc, anchor) => {
+    const fileId = anchor.evidenceId;
+    if (!acc[fileId]) acc[fileId] = [];
+    acc[fileId].push(anchor);
+    return acc;
+  }, {});
+
+  const allTags = Array.from(new Set(evidenceAnchors.flatMap(a => 
+    Array.isArray(a.tags) ? (a.tags as string[]) : []
+  )));
 
   useEffect(() => {
     if (currentCase) {
@@ -449,6 +470,119 @@ export default function AppPatterns() {
                   <p className="text-sm text-neutral-darkest/60 mt-4 text-center">
                     No communications logged yet. Track co-parenting or counsel communications in the Communications Log.
                   </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border border-[#A2BEC2] lg:col-span-2" data-testid="card-evidence-anchors">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="w-5 h-5 text-[#7BA3A8]" />
+                  Confirmed Evidence Anchors
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {anchorsLoading ? (
+                  <p className="text-sm text-neutral-darkest/60 text-center py-4">Loading anchors...</p>
+                ) : evidenceAnchors.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-neutral-darkest/60">
+                      No confirmed text anchors yet. Use the Evidence Files module to extract and confirm key text passages from your documents.
+                    </p>
+                    <Link 
+                      href={`/app/evidence/${caseId}`}
+                      className="inline-flex items-center gap-2 text-sm text-primary font-medium mt-3 min-h-[44px]"
+                      data-testid="link-go-to-evidence"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Go to Evidence Files
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pb-3 border-b border-neutral-darkest/10">
+                        <span className="text-sm text-neutral-darkest/60 flex items-center gap-1">
+                          <Tag className="w-4 h-4" /> Tags found:
+                        </span>
+                        {allTags.map((tag, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs" data-testid={`tag-${tag}`}>
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4">
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-total-anchors">
+                          {evidenceAnchors.length}
+                        </p>
+                        <p className="text-sm text-neutral-darkest/60">Confirmed Anchors</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-files-with-anchors">
+                          {Object.keys(anchorsByFile).length}
+                        </p>
+                        <p className="text-sm text-neutral-darkest/60">Files with Anchors</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-unique-tags">
+                          {allTags.length}
+                        </p>
+                        <p className="text-sm text-neutral-darkest/60">Unique Tags</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-md">
+                        <p className="text-2xl font-bold text-neutral-darkest" data-testid="count-anchors-with-notes">
+                          {evidenceAnchors.filter(a => a.note).length}
+                        </p>
+                        <p className="text-sm text-neutral-darkest/60">With Notes</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {Object.entries(anchorsByFile).map(([fileId, fileAnchors]) => {
+                        const firstAnchor = fileAnchors[0];
+                        const fileName = firstAnchor?.evidenceFile?.originalName || "Unknown file";
+                        return (
+                          <div 
+                            key={fileId}
+                            className="p-3 bg-muted/30 rounded-md border border-neutral-darkest/5"
+                            data-testid={`anchors-file-${fileId}`}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="w-4 h-4 text-[#7BA3A8] flex-shrink-0" />
+                              <span className="text-sm font-medium text-neutral-darkest truncate">{fileName}</span>
+                              <Badge variant="outline" className="ml-auto text-xs">
+                                {fileAnchors.length} anchor{fileAnchors.length !== 1 ? "s" : ""}
+                              </Badge>
+                            </div>
+                            <div className="space-y-2 ml-6">
+                              {fileAnchors.map(anchor => (
+                                <div 
+                                  key={anchor.id}
+                                  className="text-sm p-2 bg-background/50 rounded border border-neutral-darkest/5"
+                                  data-testid={`anchor-item-${anchor.id}`}
+                                >
+                                  <p className="text-neutral-darkest/80 line-clamp-2">{anchor.excerpt}</p>
+                                  {anchor.note && (
+                                    <p className="text-xs text-neutral-darkest/50 mt-1 italic">{anchor.note}</p>
+                                  )}
+                                  {Array.isArray(anchor.tags) && (anchor.tags as string[]).length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {(anchor.tags as string[]).map((t: string, i: number) => (
+                                        <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
