@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, LEXI_GENERAL_CASE_ID } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, LEXI_GENERAL_CASE_ID, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -3229,6 +3229,263 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting trial prep item:", error);
       res.status(500).json({ error: "Failed to delete item" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/exhibit-packets", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const packets = await storage.listExhibitPackets(userId, caseId);
+      res.json({ packets });
+    } catch (error) {
+      console.error("List exhibit packets error:", error);
+      res.status(500).json({ error: "Failed to list packets" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/exhibit-packets", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const parsed = insertExhibitPacketSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+      }
+      const packet = await storage.createExhibitPacket(userId, caseId, parsed.data);
+      res.status(201).json({ packet });
+    } catch (error) {
+      console.error("Create exhibit packet error:", error);
+      res.status(500).json({ error: "Failed to create packet" });
+    }
+  });
+
+  app.get("/api/exhibit-packets/:packetId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const packet = await storage.getExhibitPacket(userId, packetId);
+      if (!packet) {
+        return res.status(404).json({ error: "Packet not found" });
+      }
+      res.json({ packet });
+    } catch (error) {
+      console.error("Get exhibit packet error:", error);
+      res.status(500).json({ error: "Failed to get packet" });
+    }
+  });
+
+  app.patch("/api/exhibit-packets/:packetId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const parsed = updateExhibitPacketSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+      }
+      const packet = await storage.updateExhibitPacket(userId, packetId, parsed.data);
+      if (!packet) {
+        return res.status(404).json({ error: "Packet not found" });
+      }
+      res.json({ packet });
+    } catch (error) {
+      console.error("Update exhibit packet error:", error);
+      res.status(500).json({ error: "Failed to update packet" });
+    }
+  });
+
+  app.delete("/api/exhibit-packets/:packetId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const deleted = await storage.deleteExhibitPacket(userId, packetId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Packet not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete exhibit packet error:", error);
+      res.status(500).json({ error: "Failed to delete packet" });
+    }
+  });
+
+  app.get("/api/exhibit-packets/:packetId/items", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const packet = await storage.getExhibitPacket(userId, packetId);
+      if (!packet) {
+        return res.status(404).json({ error: "Packet not found" });
+      }
+      const items = await storage.listPacketItems(userId, packetId);
+      res.json({ items });
+    } catch (error) {
+      console.error("List packet items error:", error);
+      res.status(500).json({ error: "Failed to list items" });
+    }
+  });
+
+  app.post("/api/exhibit-packets/:packetId/items", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const packet = await storage.getExhibitPacket(userId, packetId);
+      if (!packet) {
+        return res.status(404).json({ error: "Packet not found" });
+      }
+      const parsed = insertExhibitPacketItemSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+      }
+      const item = await storage.createPacketItem(userId, packetId, packet.caseId, parsed.data);
+      res.status(201).json({ item });
+    } catch (error) {
+      console.error("Create packet item error:", error);
+      res.status(500).json({ error: "Failed to create item" });
+    }
+  });
+
+  app.patch("/api/packet-items/:itemId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      const parsed = updateExhibitPacketItemSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+      }
+      const item = await storage.updatePacketItem(userId, itemId, parsed.data);
+      if (!item) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      res.json({ item });
+    } catch (error) {
+      console.error("Update packet item error:", error);
+      res.status(500).json({ error: "Failed to update item" });
+    }
+  });
+
+  app.delete("/api/packet-items/:itemId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      const deleted = await storage.deletePacketItem(userId, itemId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete packet item error:", error);
+      res.status(500).json({ error: "Failed to delete item" });
+    }
+  });
+
+  app.post("/api/exhibit-packets/:packetId/items/reorder", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const { orderedIds } = req.body;
+      if (!Array.isArray(orderedIds)) {
+        return res.status(400).json({ error: "orderedIds must be an array" });
+      }
+      await storage.reorderPacketItems(userId, packetId, orderedIds);
+      const items = await storage.listPacketItems(userId, packetId);
+      res.json({ items });
+    } catch (error) {
+      console.error("Reorder packet items error:", error);
+      res.status(500).json({ error: "Failed to reorder items" });
+    }
+  });
+
+  app.get("/api/packet-items/:itemId/evidence", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      const item = await storage.getPacketItem(userId, itemId);
+      if (!item) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      const files = await storage.listPacketItemEvidence(userId, itemId);
+      res.json({ evidence: files });
+    } catch (error) {
+      console.error("List packet item evidence error:", error);
+      res.status(500).json({ error: "Failed to list evidence" });
+    }
+  });
+
+  app.post("/api/packet-items/:itemId/evidence/attach", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      const { evidenceId } = req.body;
+      if (!evidenceId) {
+        return res.status(400).json({ error: "evidenceId is required" });
+      }
+      const item = await storage.getPacketItem(userId, itemId);
+      if (!item) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      const link = await storage.addEvidenceToPacketItem(userId, item.caseId, itemId, evidenceId);
+      res.status(201).json({ link });
+    } catch (error) {
+      console.error("Attach packet item evidence error:", error);
+      res.status(500).json({ error: "Failed to attach evidence" });
+    }
+  });
+
+  app.post("/api/packet-items/:itemId/evidence/detach", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      const { evidenceId } = req.body;
+      if (!evidenceId) {
+        return res.status(400).json({ error: "evidenceId is required" });
+      }
+      const detached = await storage.removeEvidenceFromPacketItem(userId, itemId, evidenceId);
+      res.json({ success: detached });
+    } catch (error) {
+      console.error("Detach packet item evidence error:", error);
+      res.status(500).json({ error: "Failed to detach evidence" });
+    }
+  });
+
+  app.post("/api/packet-items/:itemId/evidence/reorder", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      const { orderedEvidenceIds } = req.body;
+      if (!Array.isArray(orderedEvidenceIds)) {
+        return res.status(400).json({ error: "orderedEvidenceIds must be an array" });
+      }
+      await storage.reorderPacketItemEvidence(userId, itemId, orderedEvidenceIds);
+      const files = await storage.listPacketItemEvidence(userId, itemId);
+      res.json({ evidence: files });
+    } catch (error) {
+      console.error("Reorder packet item evidence error:", error);
+      res.status(500).json({ error: "Failed to reorder evidence" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/generated-exhibit-packets", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const generated = await storage.listGeneratedExhibitPackets(userId, caseId);
+      res.json({ generated });
+    } catch (error) {
+      console.error("List generated exhibit packets error:", error);
+      res.status(500).json({ error: "Failed to list generated packets" });
     }
   });
 

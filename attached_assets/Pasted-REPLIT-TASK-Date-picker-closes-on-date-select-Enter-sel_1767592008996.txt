@@ -1,0 +1,72 @@
+REPLIT TASK: Date picker closes on date select + Enter selects date
+
+GOAL
+- When user clicks a day in the calendar, the calendar popover closes immediately.
+- Keyboard: user can move focus in the calendar and press Enter to select the focused date (and then close).
+- Keep existing Tab behavior; add Enter behavior.
+
+WHERE TO CHANGE
+Search for date pickers implemented with:
+- <Popover open={...} onOpenChange={...}>
+- <Calendar ... onSelect={...} />
+Common locations: AppDeadlines.tsx, AppTasks.tsx, AppDashboard (Add item modal), AppOnboarding, any “Due date” fields.
+
+IMPLEMENTATION PATTERN (apply to every date picker)
+1) Introduce controlled popover state:
+   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+2) Wrap the calendar in a controlled Popover:
+   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+     <PopoverTrigger asChild>
+       <Button ... onClick={() => setIsCalendarOpen(true)}>...</Button>
+     </PopoverTrigger>
+     <PopoverContent ...>
+       <Calendar
+         mode="single"
+         selected={date}
+         onSelect={(d) => {
+           if (!d) return;
+           setDate(d);
+           setIsCalendarOpen(false); // CLOSE ON CLICK
+         }}
+         initialFocus
+       />
+     </PopoverContent>
+   </Popover>
+
+3) Add Enter-to-select support:
+   - Wrap PopoverContent with an onKeyDown handler that listens for Enter.
+   - When Enter is pressed, click the currently focused day button in the calendar.
+   - Then close the popover.
+
+Example:
+
+<PopoverContent
+  onKeyDown={(e) => {
+    if (e.key !== "Enter") return;
+    const active = document.activeElement as HTMLElement | null;
+    // Day buttons in shadcn Calendar are <button> elements.
+    if (active && active.tagName === "BUTTON") {
+      active.click();              // triggers Calendar's onSelect
+      setIsCalendarOpen(false);    // CLOSE
+      e.preventDefault();
+    }
+  }}
+>
+
+NOTE: The active.click() approach is the safest with the existing Calendar component because it preserves DayPicker behavior and selection logic.
+
+ACCEPTANCE TESTS
+1) Mouse: click date -> date field updates -> calendar closes immediately.
+2) Keyboard:
+   - Open date picker.
+   - Use arrow keys to move around days (DayPicker supports this).
+   - Press Enter -> date selects -> calendar closes.
+3) Regression:
+   - Tab still navigates.
+   - Escape still closes (Popover default).
+   - Clicking outside still closes.
+
+DELIVERABLE
+- Apply this pattern to all date pickers in the app (dashboard add modal, deadlines, tasks, onboarding, communications follow-up dates, etc.)
+- Provide a summary listing each file updated.
