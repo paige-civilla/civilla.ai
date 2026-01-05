@@ -46,7 +46,7 @@ export function logGcvStatus(): void {
 
 export async function checkVisionHealth(): Promise<{ ok: boolean; error?: string }> {
   if (!isGcvConfigured()) {
-    return { ok: false, error: "Google Cloud Vision API key not configured" };
+    return { ok: false, error: "OCR not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets." };
   }
   return { ok: true };
 }
