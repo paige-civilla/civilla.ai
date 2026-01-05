@@ -206,7 +206,7 @@ async function runBackgroundInit() {
     },
     () => {
       log(`serving on port ${port}`);
-      const lexiKeyPresent = !!(process.env.OPENAI_API_KEY || "").trim();
+      const lexiKeyPresent = !!(process.env.OPENAI_API_KEY || process.env.OPEN_AI_KEY || "").trim();
       log(`[Startup] Lexi provider: openai-direct | OPENAI_API_KEY present: ${lexiKeyPresent}`);
       if (!lexiKeyPresent) {
         log("WARNING: OPENAI_API_KEY not set - Lexi will be unavailable");

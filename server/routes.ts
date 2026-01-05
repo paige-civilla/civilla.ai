@@ -4301,7 +4301,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
+  const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || process.env.OPEN_AI_KEY || "").trim();
   const lexiApiKeyConfigured = !!OPENAI_API_KEY;
   const openai = lexiApiKeyConfigured 
     ? new OpenAI({ apiKey: OPENAI_API_KEY })
@@ -4547,7 +4547,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       if (!openai) {
-        return res.status(503).json({ error: "Lexi is unavailable - OPENAI_API_KEY not configured" });
+        return res.status(503).json({ error: "Lexi is not configured. Add OPENAI_API_KEY in Replit Secrets and restart the app." });
       }
 
       await storage.createLexiMessage(
@@ -4599,7 +4599,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       if (status === 401 || code === "invalid_api_key") {
         return res.status(401).json({
-          error: "Lexi is not configured correctly (invalid OpenAI API key). Please update OPENAI_API_KEY in Replit Secrets.",
+          error: "Lexi cannot authenticate to OpenAI (invalid API key). Update OPENAI_API_KEY in Replit Secrets and restart.",
         });
       }
 
