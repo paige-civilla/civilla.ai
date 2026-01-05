@@ -4421,5 +4421,230 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.post("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const { isGcvConfigured } = await import("./services/ocr");
+      if (!isGcvConfigured()) {
+        return res.status(503).json({ 
+          error: "Text extraction is not configured. Please add Google Cloud Vision credentials." 
+        });
+      }
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const evidence = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidence || evidence.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence not found" });
+      }
+      
+      const existingJob = await storage.getEvidenceProcessingJobByEvidence(userId, evidenceId);
+      if (existingJob && (existingJob.status === "queued" || existingJob.status === "processing")) {
+        return res.json({ ok: true, jobId: existingJob.id, status: existingJob.status });
+      }
+      
+      const job = await storage.createEvidenceProcessingJob(userId, caseId, evidenceId);
+      
+      const filePath = evidence.storageKey;
+      const { processEvidenceFile } = await import("./services/ocr");
+      processEvidenceFile(userId, caseId, evidenceId, job.id, filePath, evidence.mimeType);
+      
+      res.json({ ok: true, jobId: job.id, status: "queued" });
+    } catch (error) {
+      console.error("Start OCR processing error:", error);
+      res.status(500).json({ error: "Failed to start text extraction" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const job = await storage.getEvidenceProcessingJobByEvidence(userId, evidenceId);
+      if (!job) {
+        return res.json({ job: null });
+      }
+      
+      res.json({ job });
+    } catch (error) {
+      console.error("Get OCR job status error:", error);
+      res.status(500).json({ error: "Failed to get job status" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/ocr-pages", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const pages = await storage.listEvidenceOcrPages(userId, caseId, evidenceId);
+      res.json({ pages });
+    } catch (error) {
+      console.error("List OCR pages error:", error);
+      res.status(500).json({ error: "Failed to list OCR pages" });
+    }
+  });
+
+  app.patch("/api/ocr-pages/:ocrPageId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { ocrPageId } = req.params;
+      const { needsReview } = req.body;
+      
+      const updated = await storage.markOcrPageReviewed(userId, ocrPageId, needsReview ?? false);
+      if (!updated) {
+        return res.status(404).json({ error: "OCR page not found" });
+      }
+      
+      res.json({ page: updated });
+    } catch (error) {
+      console.error("Update OCR page error:", error);
+      res.status(500).json({ error: "Failed to update OCR page" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const anchors = await storage.listEvidenceAnchors(userId, caseId, evidenceId);
+      res.json({ anchors });
+    } catch (error) {
+      console.error("List evidence anchors error:", error);
+      res.status(500).json({ error: "Failed to list anchors" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertEvidenceAnchorSchema } = await import("@shared/schema");
+      const parsed = insertEvidenceAnchorSchema.safeParse({ ...req.body, evidenceId });
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const anchor = await storage.createEvidenceAnchor(userId, caseId, parsed.data);
+      res.status(201).json({ anchor });
+    } catch (error) {
+      console.error("Create evidence anchor error:", error);
+      res.status(500).json({ error: "Failed to create anchor" });
+    }
+  });
+
+  app.patch("/api/anchors/:anchorId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { anchorId } = req.params;
+      
+      const { updateEvidenceAnchorSchema } = await import("@shared/schema");
+      const parsed = updateEvidenceAnchorSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const anchor = await storage.updateEvidenceAnchor(userId, anchorId, parsed.data);
+      if (!anchor) {
+        return res.status(404).json({ error: "Anchor not found" });
+      }
+      
+      res.json({ anchor });
+    } catch (error) {
+      console.error("Update evidence anchor error:", error);
+      res.status(500).json({ error: "Failed to update anchor" });
+    }
+  });
+
+  app.delete("/api/anchors/:anchorId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { anchorId } = req.params;
+      
+      const deleted = await storage.deleteEvidenceAnchor(userId, anchorId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Anchor not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete evidence anchor error:", error);
+      res.status(500).json({ error: "Failed to delete anchor" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/pattern-analysis/input", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const anchors = await storage.listEvidenceAnchors(userId, caseId);
+      
+      const evidenceFiles = await storage.getEvidenceFilesByCase(caseId, userId);
+      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
+      
+      const enrichedAnchors = anchors.map(anchor => ({
+        ...anchor,
+        evidenceName: evidenceMap.get(anchor.evidenceId)?.originalName || "Unknown",
+      }));
+      
+      res.json({ anchors: enrichedAnchors });
+    } catch (error) {
+      console.error("Get pattern analysis input error:", error);
+      res.status(500).json({ error: "Failed to get pattern analysis input" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/anchors", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const anchors = await storage.listEvidenceAnchors(userId, caseId);
+      res.json({ anchors });
+    } catch (error) {
+      console.error("List case anchors error:", error);
+      res.status(500).json({ error: "Failed to list anchors" });
+    }
+  });
+
   return httpServer;
 }
