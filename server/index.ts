@@ -9,6 +9,7 @@ import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
 import { requeueStaleExtractions } from "./services/evidenceJobs";
+import { logGcvStatus } from "./services/evidenceExtraction";
 
 const app = express();
 const httpServer = createServer(app);
@@ -197,6 +198,7 @@ async function initStripe() {
       } else {
         log("WARNING: OPENAI_API_KEY not set - Lexi will be unavailable");
       }
+      logGcvStatus();
     },
   );
 })();

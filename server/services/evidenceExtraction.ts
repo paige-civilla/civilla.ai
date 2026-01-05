@@ -47,6 +47,28 @@ export function isGcvConfigured(): boolean {
   );
 }
 
+export function logGcvStatus(): void {
+  const configured = isGcvConfigured();
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || "not-set";
+  console.log(`Vision OCR configured: ${configured} (project=${projectId})`);
+}
+
+export async function checkVisionHealth(): Promise<{ ok: boolean; error?: string }> {
+  if (!isGcvConfigured()) {
+    return { ok: false, error: "Google Cloud Vision credentials not configured" };
+  }
+
+  try {
+    const client = getVisionClient();
+    if (!client) {
+      return { ok: false, error: "Failed to initialize Vision client" };
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
 interface ExtractionResult {
   text: string;
   meta: {

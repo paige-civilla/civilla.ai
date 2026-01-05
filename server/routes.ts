@@ -30,6 +30,7 @@ import { extractSourcesFromContent } from "./lexi/sources";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
+import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -411,6 +412,15 @@ export async function registerRoutes(
       sessionID: req.sessionID,
       hasUserId: !!req.session.userId,
     });
+  });
+
+  app.get("/api/vision/health", requireAuth, async (_req, res) => {
+    try {
+      const result = await checkVisionHealth();
+      res.json(result);
+    } catch (error) {
+      res.json({ ok: false, error: "Health check failed" });
+    }
   });
 
   app.get("/api/turnstile/site-key", (_req, res) => {

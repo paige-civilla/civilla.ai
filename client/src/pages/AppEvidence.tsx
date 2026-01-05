@@ -1300,16 +1300,20 @@ export default function AppEvidence() {
                 <div>
                   <h3 className="font-heading font-bold text-lg text-neutral-darkest">Extraction Failed</h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-2">
-                    {ocrJob.error || "An error occurred during text extraction. Please try again."}
+                    {ocrJob.error?.includes("not configured") 
+                      ? "OCR is not configured yet. Contact support."
+                      : ocrJob.error || "An error occurred during text extraction. Please try again."}
                   </p>
                 </div>
-                <Button
-                  onClick={() => textExtractFileId && handleStartProcessing(textExtractFileId)}
-                  disabled={startProcessingMutation.isPending}
-                  data-testid="button-retry-extraction"
-                >
-                  Retry Extraction
-                </Button>
+                {!ocrJob.error?.includes("not configured") && (
+                  <Button
+                    onClick={() => textExtractFileId && handleStartProcessing(textExtractFileId)}
+                    disabled={startProcessingMutation.isPending}
+                    data-testid="button-retry-extraction"
+                  >
+                    Retry Extraction
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-6">
