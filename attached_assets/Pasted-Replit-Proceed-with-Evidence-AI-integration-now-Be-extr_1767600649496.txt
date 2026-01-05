@@ -1,0 +1,128 @@
+Replit: Proceed with Evidence AI integration now. Be extremely detailed about what you change, and do it in this exact order. Do NOT “refactor for cleanliness” unless required to ship the feature. After each step, verify it works with a simple test.
+
+GOAL
+Evidence must support:
+1) Text extraction (PDF + images)
+2) Searchable extracted text per file
+3) Evidence Notes (anchored highlights) with page number/time stamp
+4) AI analysis that is EDUCATIONAL + ORGANIZATIONAL + RESEARCH (not legal advice)
+5) Cross-module actions: “Send to Pattern Analysis”, “Add Note to Timeline”, “Add as Exhibit candidate”, “Add to Trial Prep shortlist”
+6) Safe-guardrails: No strategy/outcome predictions, no “you should file X”, no drafting legal arguments as advice; allow educational explanations and factual summarization with sources when asked.
+
+STEP A — Data model (DB)
+Add these tables (case-scoped + user-scoped):
+1) evidence_extractions
+- id
+- userId
+- caseId
+- evidenceId (FK to evidence)
+- status: queued|processing|complete|failed
+- provider: "internal" | "gcv" (google cloud vision)
+- mimeType
+- pageCount (nullable)
+- extractedText (text) OR extractedChunks (json) (choose one and explain)
+- metadata json (OCR confidence, language, etc.)
+- createdAt, updatedAt
+
+2) evidence_notes
+- id
+- userId
+- caseId
+- evidenceId
+- noteTitle (optional)
+- noteText
+- anchorType: "page" | "timestamp" | "range"
+- pageNumber (nullable)
+- timestamp (nullable)
+- selectionText (nullable)  // what user highlighted/copied
+- tags (json array of strings) // user categories
+- color (nullable) // for visual grouping
+- createdAt, updatedAt
+
+3) evidence_ai_analyses
+- id
+- userId
+- caseId
+- evidenceId
+- analysisType: "summary" | "timeline_candidates" | "topics" | "questions_to_ask" | "credibility_flags" | "follow_up_requests"
+- content (text or json)
+- createdAt
+
+Make sure runtime table creation is consistent with existing db.ts patterns.
+
+STEP B — Backend routes
+Add routes (all requireAuth, must verify case ownership):
+1) POST /api/cases/:caseId/evidence/:evidenceId/extract
+- queues extraction and returns status
+2) GET /api/cases/:caseId/evidence/:evidenceId/extract
+- returns extraction status + extracted text/chunks
+3) POST /api/cases/:caseId/evidence/:evidenceId/notes
+4) GET /api/cases/:caseId/evidence/:evidenceId/notes
+5) PATCH /api/evidence-notes/:noteId
+6) DELETE /api/evidence-notes/:noteId
+
+AI routes:
+7) POST /api/cases/:caseId/evidence/:evidenceId/analyze
+Body: { analysisType, focus?: string }
+- uses Lexi policy system:
+  - intent classification
+  - refuse UPL advice requests
+  - allow educational summarization + organization + research guidance
+- stores result in evidence_ai_analyses
+8) GET /api/cases/:caseId/evidence/:evidenceId/analyses
+- list analyses
+
+STEP C — Extraction providers (OCR / text)
+Implement extraction pipeline:
+1) For PDFs: try native text extraction first (pdf text)
+2) For images/scanned PDFs: OCR
+Use Google Cloud Vision as the OCR provider if env var exists; otherwise fallback to basic OCR.
+- Add env gating:
+  - If GOOGLE_APPLICATION_CREDENTIALS or GCV key is missing, return a clear error or fallback.
+- Keep it stable: do NOT introduce fragile dependencies without verification.
+
+STEP D — Frontend (Evidence page UX)
+On AppEvidence.tsx:
+1) Add “View” action: open file preview (PDF/image) in a modal or side panel
+2) Add “Extract Text” button per file with status indicator (queued/processing/complete)
+3) Add “Search within this file” once text exists
+4) Add “Add Note” workflow:
+- user can highlight/copy text (or paste snippet) and attach:
+  - page number
+  - timestamp
+  - tags (dropdown + add new tag)
+  - color picker (use existing category color approach)
+- notes list appears under the file as collapsible items
+- each note has actions:
+  - Add to Exhibit candidate
+  - Add to Timeline candidate
+  - Add to Trial Prep shortlist
+  - Copy note (copies ALL fields)
+
+5) AI buttons (non-UPL):
+- “Summarize for me”
+- “Pull timeline candidates”
+- “What questions should I ask about this?”
+- “What topics does this relate to?”
+Each stores to history and shows “Add to Timeline / Add to Trial Prep” actions when relevant.
+
+STEP E — Cross-module wiring (minimal but real)
+Add basic hooks:
+- “Add to Timeline” from note or AI output creates a draft timeline event
+- “Add to Exhibit” creates/links to an exhibit list entry (or flags as candidate)
+- “Add to Trial Prep” adds to shortlist table (create trial_prep_shortlist if not exists)
+
+STEP F — Tests / verification
+After implementation:
+1) Upload an image -> extract -> see extracted text
+2) Upload a PDF -> extract -> see extracted text
+3) Create a note with page number -> appears, editable, deletable
+4) Run analysis -> stores in history, shows output, no UPL language
+5) Add to Timeline -> timeline event appears
+
+Deliverables:
+- List of files changed
+- Endpoints created
+- Tables created
+- Simple “how to test” steps
+- Any remaining known gaps (explicit)
