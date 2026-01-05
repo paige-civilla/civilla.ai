@@ -628,6 +628,13 @@ p,
 }
 
 @layer utilities {
+  .deep-link-highlight {
+    outline: 2px solid hsl(var(--module-tile-border));
+    background: hsl(var(--module-tile-hover));
+    border-radius: 12px;
+    transition: background 200ms ease, outline 200ms ease;
+  }
+
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
   }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
 import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale, Brain, Sparkles, Scissors, BookOpen, RefreshCw, Eye } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -338,6 +339,31 @@ export default function AppEvidence() {
       setLocation("/app/cases");
     }
   }, [caseLoading, currentCase, caseId, setLocation]);
+
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current || evidenceLoading || rawFiles.length === 0) return;
+    const noteId = getDeepLinkParam("noteId");
+    const fileId = getDeepLinkParam("fileId");
+    if (noteId && fileId) {
+      deepLinkHandledRef.current = true;
+      setNotesFileId(fileId);
+      setTimeout(() => {
+        const success = scrollAndHighlight(`note-${noteId}`);
+        if (success) {
+          clearDeepLinkQueryParams();
+        }
+      }, 300);
+    } else if (fileId && !noteId) {
+      deepLinkHandledRef.current = true;
+      setTimeout(() => {
+        const success = scrollAndHighlight(`file-${fileId}`);
+        if (success) {
+          clearDeepLinkQueryParams();
+        }
+      }, 100);
+    }
+  }, [evidenceLoading, rawFiles]);
 
   useEffect(() => {
     if (!caseId || rawFiles.length === 0) return;
@@ -914,7 +940,7 @@ export default function AppEvidence() {
                 };
 
                 return (
-                  <Card key={file.id} className="w-full" data-testid={`card-evidence-${file.id}`}>
+                  <Card key={file.id} id={`file-${file.id}`} className="w-full" data-testid={`card-evidence-${file.id}`}>
                     <CardContent className="py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -1336,7 +1362,7 @@ export default function AppEvidence() {
             ) : (
               <div className="space-y-3">
                 {notes.map((n) => (
-                  <Card key={n.id} className={`relative ${n.isKey ? "border-amber-400 bg-amber-50/50 dark:bg-amber-900/10" : ""}`} data-testid={`card-note-${n.id}`}>
+                  <Card key={n.id} id={`note-${n.id}`} className={`relative ${n.isKey ? "border-amber-400 bg-amber-50/50 dark:bg-amber-900/10" : ""}`} data-testid={`card-note-${n.id}`}>
                     <CardContent className="py-3">
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0">

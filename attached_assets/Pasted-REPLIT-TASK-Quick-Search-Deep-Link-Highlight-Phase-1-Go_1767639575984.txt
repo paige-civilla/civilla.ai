@@ -1,0 +1,136 @@
+REPLIT TASK: Quick Search “Deep Link + Highlight” (Phase 1)
+
+Goal
+When a user clicks a Quick Search result, Civilla should:
+1) Navigate to the correct module page
+2) Auto-scroll to the exact matching item (note/event/doc/snippet/trial prep item)
+3) Briefly highlight it (2 seconds) so the user can instantly see it
+
+Scope (do these 5 types first)
+A) Evidence Notes (noteId)
+B) Timeline Events (eventId)
+C) Documents (docId)
+D) Exhibit Snippets (snippetId)
+E) Trial Prep Shortlist (tpId)
+
+High-level behavior
+- Search results already include id + module + caseId. We will add a standardized “deepLink” object on each result and a consistent href query param.
+- Each module page reads query params and performs:
+  - wait until the data is loaded
+  - find the DOM element for that item
+  - scrollIntoView({ behavior: "smooth", block: "center" })
+  - apply a temporary CSS class (ring + background) for 2 seconds
+  - then remove highlight (and optionally remove the query param from the URL to prevent re-triggering on refresh)
+
+Implementation details
+
+1) Add a shared helper (client)
+Create: client/src/lib/deepLink.ts
+
+Export:
+- parseDeepLinkFromLocation(): returns { type, id } from URL query params
+- scrollAndHighlight(elementId: string): scroll + add/remove class
+- clearDeepLinkQueryParams(setLocation?): optional (nice to avoid re-trigger on refresh)
+
+Use a single highlight CSS class:
+- Add to client/src/index.css:
+
+.deep-link-highlight {
+  outline: 2px solid hsl(var(--module-tile-border));
+  background: hsl(var(--module-tile-hover));
+  border-radius: 12px;
+  transition: background 200ms ease;
+}
+
+2) Standardize search results deep links (server + client)
+Server: server/services/search.ts
+For each result type, include:
+- deepLinkType: one of ["evidence-note","timeline-event","document","exhibit-snippet","trial-prep"]
+- deepLinkId: the record id
+- href: must include query param:
+  - evidence notes: /app/evidence/<caseId>?noteId=<id>
+  - timeline: /app/timeline/<caseId>?eventId=<id>
+  - documents: /app/documents/<caseId>?docId=<id>
+  - exhibits: /app/exhibits/<caseId>?snippetId=<id>
+  - trial prep: /app/trial-prep/<caseId>?tpId=<id>
+
+Client: client/src/components/layout/QuickSearch.tsx
+- Ensure clicking a result uses the result.href directly (already likely)
+- If case-wide (no caseId selected), keep showing case title labels (already done)
+
+3) Evidence Notes deep link + highlight
+File: client/src/pages/AppEvidence.tsx
+
+A) Ensure each note row has a stable DOM id:
+When rendering each note:
+- wrap note card root element with:
+  id={`note-${note.id}`}
+
+B) After notes load, check query param:
+- read noteId from window.location.search (or wouter location)
+- in a useEffect that runs when notes query is successful:
+  - if noteId exists:
+    - try document.getElementById(`note-${noteId}`)
+    - if found: scrollAndHighlight(...)
+    - if not found, expand the relevant evidence card if notes are nested:
+      - if your notes UI is within the EvidenceViewer modal, then open the viewer and select the note (skip for now unless required)
+- Optional: if you have an accordion/collapsed area, auto-expand it.
+
+4) Timeline Events deep link + highlight
+File: client/src/pages/AppTimeline.tsx
+- Add id to each event card root:
+  id={`event-${event.id}`}
+
+- On load, if eventId query param exists:
+  scrollAndHighlight(`event-${eventId}`)
+
+5) Documents deep link + highlight
+File: client/src/pages/AppDocuments.tsx
+- Add id to each doc card root:
+  id={`doc-${doc.id}`}
+
+- On load, if docId exists:
+  scrollAndHighlight(`doc-${docId}`)
+
+6) Exhibit Snippets deep link + highlight
+File: client/src/pages/AppExhibits.tsx
+- Ensure snippet rows have:
+  id={`snippet-${snippet.id}`}
+
+- If snippets are inside an expanded exhibit list card:
+  - On load, if snippetId exists:
+    - find which exhibit list contains the snippet (from query data)
+    - auto-expand that list (setExpandedListId)
+    - once expanded, scrollAndHighlight(`snippet-${snippetId}`)
+
+7) Trial Prep deep link + highlight
+File: client/src/pages/AppTrialPrep.tsx
+- Ensure shortlist rows have:
+  id={`tp-${item.id}`}
+
+- On load, if tpId exists:
+  - if your UI is section-filtered:
+    - determine binderSection for that item
+    - auto-select that section in the left column
+    - then scrollAndHighlight(`tp-${tpId}`)
+
+8) Prevent re-trigger loop (optional but recommended)
+After performing the highlight successfully:
+- remove the query param from URL (keep the user on the same page)
+Approach:
+- if using wouter, call setLocation with same path minus search params
+- or use window.history.replaceState(null, "", cleanUrl)
+
+9) Confirm done
+After implementation:
+- Click a Quick Search result for each type and confirm:
+  - navigation
+  - auto-scroll to the item
+  - 2s highlight
+- Confirm no crashes if element not found (fails gracefully)
+
+Deliverable summary required
+After done, report:
+- Files changed
+- Which deep links now supported
+- Whether query param cleanup is implemented

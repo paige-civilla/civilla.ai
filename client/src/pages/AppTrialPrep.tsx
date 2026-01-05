@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
 import { 
   ArrowLeft, ArrowRight, Scale, Briefcase, Pin, PinOff, Plus, Edit2, Trash2, 
   FolderOpen, History, MessageSquare, FileText, Sparkles, Star, Download,
@@ -141,6 +142,25 @@ export default function AppTrialPrep() {
       setLocation("/app/cases");
     }
   }, [caseLoading, currentCase, caseId, setLocation]);
+
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current || shortlistLoading || items.length === 0) return;
+    const tpId = getDeepLinkParam("tpId");
+    if (tpId) {
+      const targetItem = items.find(i => i.id === tpId);
+      if (targetItem && targetItem.binderSection !== selectedSection) {
+        setSelectedSection(targetItem.binderSection);
+      }
+      deepLinkHandledRef.current = true;
+      setTimeout(() => {
+        const success = scrollAndHighlight(`tp-${tpId}`);
+        if (success) {
+          clearDeepLinkQueryParams();
+        }
+      }, 150);
+    }
+  }, [shortlistLoading, items, selectedSection]);
 
   const createMutation = useMutation({
     mutationFn: async (data: {
@@ -319,6 +339,7 @@ export default function AppTrialPrep() {
     return (
       <div
         key={item.id}
+        id={`tp-${item.id}`}
         className="flex items-start gap-3 p-3 bg-muted/30 rounded-md"
         data-testid={`shortlist-item-${item.id}`}
       >

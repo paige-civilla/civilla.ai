@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
 import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -163,6 +164,21 @@ export default function AppDocuments() {
       setLocation("/app/cases");
     }
   }, [caseLoading, currentCase, caseId, setLocation]);
+
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current || docsLoading || documents.length === 0) return;
+    const docId = getDeepLinkParam("docId");
+    if (docId) {
+      deepLinkHandledRef.current = true;
+      setTimeout(() => {
+        const success = scrollAndHighlight(`doc-${docId}`);
+        if (success) {
+          clearDeepLinkQueryParams();
+        }
+      }, 100);
+    }
+  }, [docsLoading, documents]);
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; templateKey: string }) => {
@@ -864,7 +880,7 @@ export default function AppDocuments() {
               ) : (
                 <div className="w-full grid gap-4">
                   {documents.map((doc) => (
-                <Card key={doc.id} className="overflow-visible" data-testid={`card-document-${doc.id}`}>
+                <Card key={doc.id} id={`doc-${doc.id}`} className="overflow-visible" data-testid={`card-document-${doc.id}`}>
                   <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">

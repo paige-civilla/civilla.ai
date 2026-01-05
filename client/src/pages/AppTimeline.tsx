@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
 import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, Settings, LayoutList, LayoutGrid, Loader2, Scale, Filter, X } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,21 @@ export default function AppTimeline() {
       setLocation("/app/cases");
     }
   }, [caseLoading, currentCase, caseId, setLocation]);
+
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current || timelineLoading || events.length === 0) return;
+    const eventId = getDeepLinkParam("eventId");
+    if (eventId) {
+      deepLinkHandledRef.current = true;
+      setTimeout(() => {
+        const success = scrollAndHighlight(`event-${eventId}`);
+        if (success) {
+          clearDeepLinkQueryParams();
+        }
+      }, 100);
+    }
+  }, [timelineLoading, events]);
 
   const createMutation = useMutation({
     mutationFn: async (data: EventFormData) => {
@@ -624,7 +640,7 @@ export default function AppTimeline() {
                 const catColor = getCategoryColor(event.categoryId);
                 const cat = getCategoryById(event.categoryId);
                 return (
-                  <Card key={event.id} className="w-full" data-testid={`card-event-${event.id}`}>
+                  <Card key={event.id} id={`event-${event.id}`} className="w-full" data-testid={`card-event-${event.id}`}>
                     <CardContent className="pt-6">
                       {editingEventId === event.id ? null : (
                         <div className="flex flex-col md:flex-row md:items-start gap-4">

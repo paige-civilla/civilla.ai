@@ -121,6 +121,7 @@ export async function searchCaseWide(params: SearchParams): Promise<SearchResult
     db.select({
       id: evidenceNotes.id,
       caseId: evidenceNotes.caseId,
+      evidenceFileId: evidenceNotes.evidenceFileId,
       noteTitle: evidenceNotes.noteTitle,
       noteText: evidenceNotes.noteText,
     })
@@ -243,7 +244,7 @@ export async function searchCaseWide(params: SearchParams): Promise<SearchResult
       id: r.id,
       title: r.noteTitle || "Note",
       snippet: buildSnippet(r.noteText, query),
-      href: `/app/evidence/${r.caseId}?noteId=${r.id}`,
+      href: `/app/evidence/${r.caseId}?noteId=${r.id}&fileId=${r.evidenceFileId}`,
       caseTitle: caseMap.get(r.caseId),
     });
   }
@@ -303,7 +304,7 @@ export async function searchCaseWide(params: SearchParams): Promise<SearchResult
       id: r.id,
       title: r.title,
       snippet: buildSnippet(r.summary || r.title, query),
-      href: `/app/trial-prep/${r.caseId}?itemId=${r.id}`,
+      href: `/app/trial-prep/${r.caseId}?tpId=${r.id}`,
       caseTitle: caseMap.get(r.caseId),
     });
   }

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
 import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen, Download, Loader2, Settings, Calendar, MoveUp, MoveDown, File, Scale, ExternalLink, Edit } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,24 @@ export default function AppExhibits() {
 
   const currentCase = caseData?.case;
   const exhibitLists = listsData?.exhibitLists || [];
+
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current || listsLoading) return;
+    const snippetId = getDeepLinkParam("snippetId");
+    if (snippetId && exhibitLists.length > 0) {
+      deepLinkHandledRef.current = true;
+      if (!expandedListId) {
+        setExpandedListId(exhibitLists[0].id);
+      }
+      setTimeout(() => {
+        const success = scrollAndHighlight(`snippet-${snippetId}`);
+        if (success) {
+          clearDeepLinkQueryParams();
+        }
+      }, 200);
+    }
+  }, [listsLoading, exhibitLists, expandedListId]);
 
   const createListMutation = useMutation({
     mutationFn: async (data: { title: string }) => {
@@ -711,7 +730,7 @@ function ExhibitListCard({
             ) : (
               <div className="space-y-2">
                 {snippets.map((snippet) => (
-                  <div key={snippet.id} className="p-3 border rounded-md bg-muted/20" data-testid={`snippet-${snippet.id}`}>
+                  <div key={snippet.id} id={`snippet-${snippet.id}`} className="p-3 border rounded-md bg-muted/20" data-testid={`snippet-${snippet.id}`}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">{snippet.title}</p>
