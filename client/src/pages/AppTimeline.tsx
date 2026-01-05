@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, Settings, LayoutList, LayoutGrid, Loader2, Scale } from "lucide-react";
+import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, Settings, LayoutList, LayoutGrid, Loader2, Scale, Filter, X } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,7 @@ export default function AppTimeline() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
   const [editCategoryColor, setEditCategoryColor] = useState("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -348,7 +349,27 @@ export default function AppTimeline() {
 
   const isFormPending = createMutation.isPending || updateMutation.isPending;
 
-  const sortedEvents = [...events].sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  const toggleCategoryFilter = (categoryId: string) => {
+    setSelectedCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setSelectedCategoryIds(new Set());
+  };
+
+  const filteredEvents = selectedCategoryIds.size === 0
+    ? events
+    : events.filter((e) => e.categoryId && selectedCategoryIds.has(e.categoryId));
+
+  const sortedEvents = [...filteredEvents].sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
 
   return (
     <AppLayout>
@@ -420,6 +441,57 @@ export default function AppTimeline() {
 
           {caseId && (
             <LexiSuggestedQuestions moduleKey="timeline" caseId={caseId} />
+          )}
+
+          {categories.length > 0 && (
+            <div className="w-full mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-neutral-darkest">Filter by Category</span>
+                {selectedCategoryIds.size > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearFilters}
+                    className="h-7 px-2 text-xs"
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Clear ({selectedCategoryIds.size})
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => {
+                  const isSelected = selectedCategoryIds.has(cat.id);
+                  const eventCount = cat.eventCount ?? 0;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => toggleCategoryFilter(cat.id)}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        isSelected
+                          ? "ring-2 ring-offset-2 ring-primary"
+                          : "opacity-70 hover:opacity-100"
+                      }`}
+                      style={{
+                        backgroundColor: cat.color,
+                        color: "#fff",
+                      }}
+                      data-testid={`filter-category-${cat.id}`}
+                    >
+                      <span>{cat.name}</span>
+                      <span className="text-xs opacity-80">({eventCount})</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedCategoryIds.size > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Showing {sortedEvents.length} of {events.length} events
+                </p>
+              )}
+            </div>
           )}
 
           {(showAddForm || editingEventId) && (
@@ -616,74 +688,81 @@ export default function AppTimeline() {
             </div>
           ) : (
             <div className="w-full">
-              <ScrollArea className="w-full whitespace-nowrap rounded-lg border">
-                <div className="flex py-6 px-4 gap-4">
-                  {sortedEvents.map((event) => {
-                    const catColor = getCategoryColor(event.categoryId);
-                    const cat = getCategoryById(event.categoryId);
-                    return (
-                      <Card
-                        key={event.id}
-                        className="flex-shrink-0 w-64"
-                        data-testid={`card-event-horizontal-${event.id}`}
-                      >
-                        <CardContent className="pt-4 pb-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge
-                              variant="secondary"
-                              className="text-xs"
-                              style={{ backgroundColor: catColor, color: "#fff" }}
-                            >
-                              {cat?.name || event.category}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(event.eventDate)}
-                            </span>
+              <ScrollArea className="w-full whitespace-nowrap rounded-lg border bg-muted/20">
+                <div className="relative pt-8 pb-6 px-6">
+                  <div className="absolute top-[2.75rem] left-6 right-6 h-1 bg-border rounded-full" />
+                  <div className="flex gap-0">
+                    {sortedEvents.map((event, index) => {
+                      const catColor = getCategoryColor(event.categoryId);
+                      const cat = getCategoryById(event.categoryId);
+                      const isFirst = index === 0;
+                      const isLast = index === sortedEvents.length - 1;
+                      return (
+                        <div
+                          key={event.id}
+                          className="flex flex-col items-center relative"
+                          style={{ minWidth: "200px", maxWidth: "240px" }}
+                          data-testid={`card-event-horizontal-${event.id}`}
+                        >
+                          <div className="text-xs text-muted-foreground font-medium mb-2 whitespace-nowrap">
+                            {formatDate(event.eventDate)}
                           </div>
-                          <h3 className="font-semibold text-sm text-neutral-darkest line-clamp-2 mb-2">
-                            {event.title}
-                          </h3>
-                          {event.notes && (
-                            <p className="text-xs text-muted-foreground line-clamp-3">
-                              {event.notes}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1 mt-3 pt-2 border-t">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2"
-                              onClick={() => handleEdit(event)}
-                              data-testid={`button-edit-event-h-${event.id}`}
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2"
-                              onClick={() => handleDelete(event.id)}
-                              disabled={deleteMutation.isPending}
-                              data-testid={`button-delete-event-h-${event.id}`}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2"
-                              onClick={() => addToTrialPrepMutation.mutate(event)}
-                              disabled={addToTrialPrepMutation.isPending}
-                              data-testid={`button-trial-prep-event-h-${event.id}`}
-                              title="Add to Trial Prep"
-                            >
-                              <Scale className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                          <div
+                            className="w-4 h-4 rounded-full border-4 border-background z-10 mb-3 flex-shrink-0"
+                            style={{ backgroundColor: catColor }}
+                          />
+                          <Card className="w-full mx-2 hover-elevate">
+                            <CardContent className="pt-3 pb-3 px-3">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs mb-2"
+                                style={{ backgroundColor: catColor, color: "#fff" }}
+                              >
+                                {cat?.name || event.category}
+                              </Badge>
+                              <h3 className="font-semibold text-sm text-neutral-darkest line-clamp-2 mb-1">
+                                {event.title}
+                              </h3>
+                              {event.notes && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                  {event.notes}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1 pt-2 border-t">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleEdit(event)}
+                                  data-testid={`button-edit-event-h-${event.id}`}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleDelete(event.id)}
+                                  disabled={deleteMutation.isPending}
+                                  data-testid={`button-delete-event-h-${event.id}`}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => addToTrialPrepMutation.mutate(event)}
+                                  disabled={addToTrialPrepMutation.isPending}
+                                  data-testid={`button-trial-prep-event-h-${event.id}`}
+                                  title="Add to Trial Prep"
+                                >
+                                  <Scale className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
