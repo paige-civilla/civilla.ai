@@ -67,6 +67,181 @@ async function tableExists(tableName: string): Promise<boolean> {
   return result.rows[0]?.exists ?? false;
 }
 
+async function columnExists(tableName: string, columnName: string): Promise<boolean> {
+  const result = await pool.query(`
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = $1 AND column_name = $2
+  `, [tableName, columnName]);
+  return result.rows.length > 0;
+}
+
+async function addColumnIfMissing(tableName: string, columnName: string, sqlTypeAndConstraints: string): Promise<boolean> {
+  try {
+    if (await columnExists(tableName, columnName)) {
+      return false;
+    }
+    await pool.query(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${sqlTypeAndConstraints}`);
+    console.log(`[DB MIGRATION] Added column ${tableName}.${columnName}`);
+    return true;
+  } catch (err) {
+    console.log(`[DB MIGRATION] ${tableName}.${columnName} skipped:`, err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+async function addIndexIfMissing(indexName: string, createIndexSql: string): Promise<boolean> {
+  try {
+    await pool.query(createIndexSql);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function ensureCasesColumns(): Promise<void> {
+  await addColumnIfMissing("cases", "nickname", "TEXT");
+  await addColumnIfMissing("cases", "case_number", "TEXT");
+  await addColumnIfMissing("cases", "starting_point", "TEXT NOT NULL DEFAULT 'not_sure'");
+  await addColumnIfMissing("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
+}
+
+async function ensureExhibitListColumns(): Promise<void> {
+  await addColumnIfMissing("exhibit_lists", "is_used_for_filing", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("exhibit_lists", "filing_label", "TEXT");
+  await addColumnIfMissing("exhibit_lists", "cover_page_enabled", "BOOLEAN NOT NULL DEFAULT true");
+  await addColumnIfMissing("exhibit_lists", "cover_page_title", "TEXT");
+  await addColumnIfMissing("exhibit_lists", "cover_page_subtitle", "TEXT");
+  await addColumnIfMissing("exhibit_lists", "notes", "TEXT");
+  await addColumnIfMissing("exhibit_lists", "used_for_filing", "TEXT");
+  await addColumnIfMissing("exhibit_lists", "used_for_filing_date", "TIMESTAMP");
+  await addColumnIfMissing("exhibit_lists", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+}
+
+async function ensureEvidenceAiAnalysesColumns(): Promise<void> {
+  await addColumnIfMissing("evidence_ai_analyses", "status", "TEXT NOT NULL DEFAULT 'complete'");
+  await addColumnIfMissing("evidence_ai_analyses", "model", "TEXT");
+  await addColumnIfMissing("evidence_ai_analyses", "summary", "TEXT");
+  await addColumnIfMissing("evidence_ai_analyses", "findings", "JSONB");
+  await addColumnIfMissing("evidence_ai_analyses", "error", "TEXT");
+  await addColumnIfMissing("evidence_ai_analyses", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+}
+
+async function ensureTimelineCategoryColumns(): Promise<void> {
+  await addColumnIfMissing("timeline_categories", "case_id", "VARCHAR(255)");
+  await addColumnIfMissing("timeline_categories", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addIndexIfMissing("timeline_categories_case_idx", 
+    "CREATE INDEX IF NOT EXISTS timeline_categories_case_idx ON timeline_categories(case_id)");
+}
+
+async function ensureEvidenceExtractionsColumns(): Promise<void> {
+  await addColumnIfMissing("evidence_extractions", "status", "TEXT NOT NULL DEFAULT 'queued'");
+  await addColumnIfMissing("evidence_extractions", "provider", "TEXT NOT NULL DEFAULT 'internal'");
+  await addColumnIfMissing("evidence_extractions", "mime_type", "TEXT");
+  await addColumnIfMissing("evidence_extractions", "page_count", "INTEGER");
+  await addColumnIfMissing("evidence_extractions", "error", "TEXT");
+  await addColumnIfMissing("evidence_extractions", "queued_at", "TIMESTAMP");
+  await addColumnIfMissing("evidence_extractions", "started_at", "TIMESTAMP");
+  await addColumnIfMissing("evidence_extractions", "completed_at", "TIMESTAMP");
+}
+
+async function ensureEvidenceNotesColumns(): Promise<void> {
+  await addColumnIfMissing("evidence_notes", "is_resolved", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("evidence_notes", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+}
+
+async function ensureExhibitSnippetsColumns(): Promise<void> {
+  await addColumnIfMissing("exhibit_snippets", "note_id", "VARCHAR(255)");
+  await addColumnIfMissing("exhibit_snippets", "timestamp_hint", "TEXT");
+  await addColumnIfMissing("exhibit_snippets", "sort_order", "INTEGER NOT NULL DEFAULT 0");
+}
+
+async function ensureTrialPrepShortlistColumns(): Promise<void> {
+  await addColumnIfMissing("trial_prep_shortlist", "color", "TEXT");
+  await addColumnIfMissing("trial_prep_shortlist", "is_pinned", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("trial_prep_shortlist", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+}
+
+async function ensureUserProfileColumns(): Promise<void> {
+  await addColumnIfMissing("user_profiles", "auto_fill_choice_made", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "default_role", "TEXT NOT NULL DEFAULT 'self_represented'");
+  await addColumnIfMissing("user_profiles", "bar_number", "TEXT");
+  await addColumnIfMissing("user_profiles", "firm_name", "TEXT");
+  await addColumnIfMissing("user_profiles", "petitioner_name", "TEXT");
+  await addColumnIfMissing("user_profiles", "respondent_name", "TEXT");
+  await addColumnIfMissing("user_profiles", "onboarding_completed", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "onboarding_completed_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "tos_accepted_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "privacy_accepted_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "disclaimers_accepted_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "tos_version", "TEXT NOT NULL DEFAULT 'v1'");
+  await addColumnIfMissing("user_profiles", "privacy_version", "TEXT NOT NULL DEFAULT 'v1'");
+  await addColumnIfMissing("user_profiles", "disclaimers_version", "TEXT NOT NULL DEFAULT 'v1'");
+  await addColumnIfMissing("user_profiles", "calendar_task_color", "TEXT NOT NULL DEFAULT '#2E7D32'");
+  await addColumnIfMissing("user_profiles", "calendar_deadline_color", "TEXT NOT NULL DEFAULT '#C62828'");
+  await addColumnIfMissing("user_profiles", "calendar_timeline_color", "TEXT NOT NULL DEFAULT '#1565C0'");
+  await addColumnIfMissing("user_profiles", "onboarding_deferred", "JSONB NOT NULL DEFAULT '{}'");
+  await addColumnIfMissing("user_profiles", "onboarding_status", "TEXT NOT NULL DEFAULT 'incomplete'");
+  await addColumnIfMissing("user_profiles", "start_here_seen", "BOOLEAN NOT NULL DEFAULT false");
+}
+
+async function ensureEvidenceFilesColumns(): Promise<void> {
+  await addColumnIfMissing("evidence_files", "category", "TEXT");
+  await addColumnIfMissing("evidence_files", "description", "TEXT");
+  await addColumnIfMissing("evidence_files", "tags", "TEXT");
+}
+
+async function ensureTimelineEventsColumns(): Promise<void> {
+  await addColumnIfMissing("timeline_events", "category_id", "VARCHAR(255)");
+  await addIndexIfMissing("idx_timeline_events_category", 
+    "CREATE INDEX IF NOT EXISTS idx_timeline_events_category ON timeline_events(category_id)");
+}
+
+async function ensureCaseEvidenceNotesColumns(): Promise<void> {
+  await addColumnIfMissing("case_evidence_notes", "timestamp_seconds", "INTEGER");
+  await addColumnIfMissing("case_evidence_notes", "is_key", "BOOLEAN NOT NULL DEFAULT false");
+}
+
+async function ensureExhibitEvidenceColumns(): Promise<void> {
+  await addColumnIfMissing("exhibit_evidence", "exhibit_list_id", "VARCHAR(255)");
+  await addColumnIfMissing("exhibit_evidence", "evidence_file_id", "VARCHAR(255)");
+  await addColumnIfMissing("exhibit_evidence", "sort_order", "INTEGER NOT NULL DEFAULT 0");
+  await addColumnIfMissing("exhibit_evidence", "label", "TEXT");
+  await addColumnIfMissing("exhibit_evidence", "notes", "TEXT");
+  await addIndexIfMissing("idx_exhibit_evidence_list", 
+    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_list ON exhibit_evidence(exhibit_list_id)");
+  await addIndexIfMissing("idx_exhibit_evidence_file", 
+    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_file ON exhibit_evidence(evidence_file_id)");
+  await addIndexIfMissing("idx_exhibit_evidence_sort", 
+    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_sort ON exhibit_evidence(exhibit_list_id, sort_order)");
+}
+
+export async function ensureSchemaMigrations(): Promise<void> {
+  console.log("[DB MIGRATION] Running schema migrations...");
+  
+  await ensureCasesColumns();
+  await ensureExhibitListColumns();
+  await ensureEvidenceAiAnalysesColumns();
+  await ensureTimelineCategoryColumns();
+  await ensureEvidenceExtractionsColumns();
+  await ensureEvidenceNotesColumns();
+  await ensureExhibitSnippetsColumns();
+  await ensureTrialPrepShortlistColumns();
+  await ensureUserProfileColumns();
+  await ensureEvidenceFilesColumns();
+  await ensureTimelineEventsColumns();
+  await ensureCaseEvidenceNotesColumns();
+  await ensureExhibitEvidenceColumns();
+  
+  const casesStartingPoint = await columnExists("cases", "starting_point");
+  const timelineCategoriesCaseId = await columnExists("timeline_categories", "case_id");
+  const evidenceAiStatus = await columnExists("evidence_ai_analyses", "status");
+  
+  console.log(`[DB MIGRATION] Verification: cases.starting_point present: ${casesStartingPoint}`);
+  console.log(`[DB MIGRATION] Verification: timeline_categories.case_id present: ${timelineCategoriesCaseId}`);
+  console.log(`[DB MIGRATION] Verification: evidence_ai_analyses.status present: ${evidenceAiStatus}`);
+  console.log("[DB MIGRATION] Schema migrations complete");
+}
+
 async function initTable(tableName: string, createSQL: string, indexSQL: string[] = []): Promise<boolean> {
   try {
     if (await tableExists(tableName)) {
@@ -122,30 +297,6 @@ export async function initDbTables(): Promise<void> {
   `, [
     `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`
   ]);
-
-  const ensureCasesColumns = async () => {
-    const cols = [
-      { name: "nickname", type: "TEXT" },
-      { name: "case_number", type: "TEXT" },
-      { name: "starting_point", type: "TEXT NOT NULL DEFAULT 'not_sure'" },
-    ];
-    for (const col of cols) {
-      try {
-        const check = await pool.query(`
-          SELECT 1 FROM information_schema.columns
-          WHERE table_name='cases' AND column_name=$1
-        `, [col.name]);
-        if (check.rows.length === 0) {
-          await pool.query(`ALTER TABLE cases ADD COLUMN ${col.name} ${col.type}`);
-          console.log(`cases.${col.name} added`);
-        }
-      } catch (err) {
-        console.log(`cases.${col.name} migration skipped:`, err instanceof Error ? err.message : err);
-      }
-    }
-    console.log("cases.starting_point present: true");
-  };
-  await ensureCasesColumns();
 
   await initTable("user_profiles", `
     CREATE TABLE IF NOT EXISTS user_profiles (
@@ -210,40 +361,6 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_files_user_id ON evidence_files(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_created_at ON evidence_files(case_id, created_at)`
   ]);
-
-  const addColumnIfNotExists = async (table: string, column: string, colType: string) => {
-    try {
-      await pool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${colType}`);
-    } catch (err) {
-      console.log(`Column ${column} may already exist in ${table}`);
-    }
-  };
-  await addColumnIfNotExists("evidence_files", "category", "TEXT");
-  await addColumnIfNotExists("evidence_files", "description", "TEXT");
-  await addColumnIfNotExists("evidence_files", "tags", "TEXT");
-  
-  await addColumnIfNotExists("user_profiles", "auto_fill_choice_made", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfNotExists("user_profiles", "default_role", "TEXT NOT NULL DEFAULT 'self_represented'");
-  await addColumnIfNotExists("user_profiles", "bar_number", "TEXT");
-  await addColumnIfNotExists("user_profiles", "firm_name", "TEXT");
-  await addColumnIfNotExists("user_profiles", "petitioner_name", "TEXT");
-  await addColumnIfNotExists("user_profiles", "respondent_name", "TEXT");
-  await addColumnIfNotExists("user_profiles", "onboarding_completed", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfNotExists("user_profiles", "onboarding_completed_at", "TIMESTAMP");
-  await addColumnIfNotExists("user_profiles", "tos_accepted_at", "TIMESTAMP");
-  await addColumnIfNotExists("user_profiles", "privacy_accepted_at", "TIMESTAMP");
-  await addColumnIfNotExists("user_profiles", "disclaimers_accepted_at", "TIMESTAMP");
-  await addColumnIfNotExists("user_profiles", "tos_version", "TEXT NOT NULL DEFAULT 'v1'");
-  await addColumnIfNotExists("user_profiles", "privacy_version", "TEXT NOT NULL DEFAULT 'v1'");
-  await addColumnIfNotExists("user_profiles", "disclaimers_version", "TEXT NOT NULL DEFAULT 'v1'");
-  await addColumnIfNotExists("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfNotExists("cases", "case_number", "TEXT");
-  await addColumnIfNotExists("cases", "nickname", "TEXT");
-  await addColumnIfNotExists("user_profiles", "calendar_task_color", "TEXT NOT NULL DEFAULT '#2E7D32'");
-  await addColumnIfNotExists("user_profiles", "calendar_deadline_color", "TEXT NOT NULL DEFAULT '#C62828'");
-  await addColumnIfNotExists("user_profiles", "calendar_timeline_color", "TEXT NOT NULL DEFAULT '#1565C0'");
-  await addColumnIfNotExists("user_profiles", "onboarding_deferred", "JSONB NOT NULL DEFAULT '{}'");
-  await addColumnIfNotExists("user_profiles", "onboarding_status", "TEXT NOT NULL DEFAULT 'incomplete'");
 
   await initTable("documents", `
     CREATE TABLE IF NOT EXISTS documents (
@@ -648,9 +765,6 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user ON case_evidence_notes(user_id)`
   ]);
 
-  await addColumnIfNotExists("case_evidence_notes", "timestamp_seconds", "INTEGER");
-  await addColumnIfNotExists("case_evidence_notes", "is_key", "BOOLEAN NOT NULL DEFAULT false");
-
   await initTable("case_exhibit_note_links", `
     CREATE TABLE IF NOT EXISTS case_exhibit_note_links (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -669,26 +783,6 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_exhibit_note_links_unique ON case_exhibit_note_links(exhibit_list_id, evidence_note_id)`
   ]);
 
-  await addColumnIfNotExists("exhibit_lists", "description", "TEXT");
-  await addColumnIfNotExists("exhibit_lists", "is_used_for_filing", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfNotExists("exhibit_lists", "filing_label", "TEXT");
-  await addColumnIfNotExists("exhibit_lists", "cover_page_enabled", "BOOLEAN NOT NULL DEFAULT true");
-  await addColumnIfNotExists("exhibit_lists", "cover_page_title", "TEXT");
-  await addColumnIfNotExists("exhibit_lists", "cover_page_subtitle", "TEXT");
-
-  await addColumnIfNotExists("exhibit_evidence", "exhibit_list_id", "VARCHAR(255)");
-  await addColumnIfNotExists("exhibit_evidence", "evidence_file_id", "VARCHAR(255)");
-  await addColumnIfNotExists("exhibit_evidence", "sort_order", "INTEGER NOT NULL DEFAULT 0");
-  await addColumnIfNotExists("exhibit_evidence", "label", "TEXT");
-  await addColumnIfNotExists("exhibit_evidence", "notes", "TEXT");
-  try {
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_list ON exhibit_evidence(exhibit_list_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_file ON exhibit_evidence(evidence_file_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_sort ON exhibit_evidence(exhibit_list_id, sort_order)`);
-  } catch (e) {
-    console.log("Some exhibit_evidence indexes may already exist");
-  }
-
   await initTable("timeline_categories", `
     CREATE TABLE IF NOT EXISTS timeline_categories (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -701,21 +795,6 @@ export async function initDbTables(): Promise<void> {
   `, [
     `CREATE INDEX IF NOT EXISTS idx_timeline_categories_user ON timeline_categories(user_id)`
   ]);
-
-  await addColumnIfNotExists("timeline_categories", "case_id", "VARCHAR(255)");
-  await addColumnIfNotExists("timeline_categories", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
-  try {
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_categories_case ON timeline_categories(case_id)`);
-  } catch (e) {
-    console.log("timeline_categories case_id index may already exist");
-  }
-
-  await addColumnIfNotExists("timeline_events", "category_id", "VARCHAR(255)");
-  try {
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_events_category ON timeline_events(category_id)`);
-  } catch (e) {
-    console.log("timeline_events category_id index may already exist");
-  }
 
   await initTable("parenting_plans", `
     CREATE TABLE IF NOT EXISTS parenting_plans (
@@ -867,7 +946,6 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_evidence ON evidence_notes(evidence_id)`,
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user_case ON evidence_notes(user_id, case_id)`
   ]);
-  await addColumnIfNotExists("evidence_notes", "is_resolved", "BOOLEAN NOT NULL DEFAULT false");
 
   // Drop old trial_prep_shortlist if it has old schema (evidence_id column)
   try {
@@ -906,18 +984,6 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_user_case ON exhibit_snippets(user_id, case_id)`
   ]);
 
-  // C3: Add usedForFiling columns to exhibit_lists
-  await addColumnIfNotExists("exhibit_lists", "used_for_filing", "TEXT");
-  await addColumnIfNotExists("exhibit_lists", "used_for_filing_date", "TIMESTAMP");
-
-  // C3: Add structured AI analysis columns
-  await addColumnIfNotExists("evidence_ai_analyses", "status", "TEXT NOT NULL DEFAULT 'complete'");
-  await addColumnIfNotExists("evidence_ai_analyses", "model", "TEXT");
-  await addColumnIfNotExists("evidence_ai_analyses", "summary", "TEXT");
-  await addColumnIfNotExists("evidence_ai_analyses", "findings", "JSONB");
-  await addColumnIfNotExists("evidence_ai_analyses", "error", "TEXT");
-  await addColumnIfNotExists("evidence_ai_analyses", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
-
   await initTable("trial_prep_shortlist", `
     CREATE TABLE IF NOT EXISTS trial_prep_shortlist (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -942,5 +1008,7 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_trial_prep_shortlist_unique_source ON trial_prep_shortlist(user_id, case_id, source_type, source_id)`
   ]);
 
+  await ensureSchemaMigrations();
+  
   console.log("Database table initialization complete");
 }

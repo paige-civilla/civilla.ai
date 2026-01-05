@@ -1,0 +1,79 @@
+REPLIT TASK: Prevent “missing column” regressions by adding ALWAYS-RUN migrations (schema drift hardening)
+
+Problem
+We keep hitting runtime 500s when code expects new columns but Neon DB tables already exist, because initTable() returns early and old ALTER TABLE statements never run.
+
+Goal
+Implement a durable “ensure columns exist” migration pattern that runs on EVERY server startup for recently modified tables (and is easy to extend later).
+
+Scope (tables recently expanded)
+1) cases
+   - nickname
+   - case_number
+   - starting_point
+
+2) exhibit_lists
+   - used_for_filing (boolean)
+   - used_for_filing_date (date or timestamptz; match existing schema)
+   - cover_title (text) + cover_subtitle (text) + notes (text) IF those exist in schema/types already (only add if schema expects them)
+
+3) evidence_ai_analyses
+   - status
+   - model
+   - summary
+   - findings (jsonb)
+   - error
+   - updated_at
+
+4) timeline_categories
+   - case_id
+   - updated_at
+
+5) evidence_extractions / evidence_notes / exhibit_snippets / trial_prep_shortlist
+   - Only ensure columns that were added via ALTER TABLE recently (do NOT drop/recreate; only “add if missing”)
+
+Implementation Requirements
+A) Add a generic helper in server/db.ts (or server/dbMigrations.ts if cleaner):
+   - columnExists(tableName, columnName) -> boolean
+     Query information_schema.columns for current schema.
+   - addColumnIfMissing(tableName, columnName, sqlTypeAndConstraints)
+     If missing, ALTER TABLE ADD COLUMN.
+   - addIndexIfMissing(indexName, createIndexSql)
+     Use CREATE INDEX IF NOT EXISTS (Postgres supports it). If you need unique indexes, use CREATE UNIQUE INDEX IF NOT EXISTS.
+
+B) Add ensure* functions that run on every startup (regardless of whether tables exist):
+   - ensureCasesColumns()
+   - ensureExhibitListColumns()
+   - ensureEvidenceAiAnalysesColumns()
+   - ensureTimelineCategoryColumns()
+   - ensureOtherRecentColumns() (optional) for any additional tables discovered
+
+C) Where to run it
+In server/db.ts where the DB initializes, run:
+   await ensureSchemaMigrations();
+BEFORE the server starts accepting requests.
+Do NOT rely on initTable() for migrations.
+
+D) Safety
+- Only ADD columns/indexes if missing.
+- Do not DROP or ALTER types destructively.
+- Log safe, minimal output (no secrets):
+  “[DB MIGRATION] Added column cases.starting_point”
+  “[DB MIGRATION] All columns present (no-op)”
+
+E) Verification
+After implementation, add a small startup check log (safe) for the key known regressions:
+- “cases.starting_point present: true/false”
+- “timeline_categories.case_id present: true/false”
+- “evidence_ai_analyses.status present: true/false”
+
+F) Detailed report back
+After making changes, report:
+1) Files changed
+2) All ensure* functions added
+3) List of columns ensured per table
+4) Confirmation that a DB with missing columns will self-heal on startup WITHOUT manual drizzle push
+
+IMPORTANT
+- This should fix the exact error we saw: column "starting_point" does not exist.
+- Keep existing runtime table creation logic, but add this ALWAYS-RUN migration layer on top so schema drift never blocks core flows again.
