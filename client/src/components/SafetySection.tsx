@@ -44,15 +44,15 @@ const safetyItems = [
 export default function SafetySection() {
   return (
     <section
-      className="bg-sage dark:bg-neutral-darkest/60 w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
+      className="bg-[#0F3B2E] w-full flex flex-col items-center px-5 md:px-16 py-16 md:py-28"
       data-testid="section-safety"
     >
       <div className="flex flex-col gap-12 md:gap-20 items-center max-w-container w-full">
         <div className="flex flex-col gap-5 md:gap-6 items-center max-w-content-large w-full text-center">
-          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] text-neutral-darkest dark:text-cream">
+          <h2 className="font-heading font-bold text-heading-2-mobile md:text-heading-2 tracking-[0.44px] md:tracking-[0.6px] text-[#FAF8F4]">
             In Crisis?
           </h2>
-          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-neutral-darkest dark:text-cream">
+          <p className="font-sans font-normal text-sm md:text-body-medium leading-[1.6] text-[#FAF8F4]">
             If you are in immediate danger, <strong>ALWAYS</strong> call <strong>911</strong> (or your local emergency number), as <span className="italic font-medium">civilla.ai</span> is not an emergency service. We also have Quick Exit, our built-in safety feature, always located at the top right corner of every page. When pressed, it instantly redirects to a neutral website and prevents the back button from returning to <span className="italic font-medium">civilla</span>.
           </p>
         </div>
@@ -65,21 +65,21 @@ export default function SafetySection() {
               data-testid={`card-safety-${item.id}`}
             >
               <div className="w-12 h-12 flex items-center justify-center">
-                <item.icon className="w-12 h-12 text-neutral-darkest dark:text-cream" strokeWidth={1.5} />
+                <item.icon className="w-12 h-12 text-[#FAF8F4]" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col gap-6 items-center w-full">
                 <div className="flex flex-col gap-4 items-center w-full">
-                  <h3 className="font-heading font-bold text-heading-4-mobile md:text-heading-4 tracking-[0.3px] md:tracking-[0.4px] text-neutral-darkest dark:text-cream">
+                  <h3 className="font-heading font-bold text-heading-4-mobile md:text-heading-4 tracking-[0.3px] md:tracking-[0.4px] text-[#FAF8F4]">
                     {item.titleStyled ? <><span className="italic font-medium">civilla</span> Support</> : item.title}
                   </h3>
-                  <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest dark:text-cream">
+                  <p className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-[#FAF8F4]">
                     {item.description}
                   </p>
                 </div>
                 {item.isInternal ? (
                   <Link
                     href={item.href}
-                    className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest dark:text-cream underline underline-offset-2"
+                    className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-[#FAF8F4] underline underline-offset-2 hover:text-[#CFD7D5]"
                     data-testid={`link-safety-${item.id}`}
                   >
                     {item.link}
@@ -87,7 +87,7 @@ export default function SafetySection() {
                 ) : (
                   <a
                     href={item.href}
-                    className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-neutral-darkest dark:text-cream underline underline-offset-2"
+                    className="font-sans font-normal text-sm md:text-body-regular leading-[1.6] text-[#FAF8F4] underline underline-offset-2 hover:text-[#CFD7D5]"
                     target={item.href.startsWith("http") ? "_blank" : undefined}
                     rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
                     data-testid={`link-safety-${item.id}`}
@@ -100,7 +100,7 @@ export default function SafetySection() {
           ))}
         </div>
 
-        <p className="font-sans font-normal italic text-sm text-neutral-darkest/70 dark:text-cream/70 text-center w-full">
+        <p className="font-sans font-normal italic text-sm text-[#FAF8F4]/70 text-center w-full">
           <span className="italic font-medium">civilla</span> provides educational, research, and organizational support — not legal advice or representation.
         </p>
       </div>

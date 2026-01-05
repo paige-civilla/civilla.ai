@@ -1,0 +1,116 @@
+REPLIT — ADD “OPEN/VIEW” EVIDENCE + PAGE-BASED NOTES (NO FILE EDITING)
+
+GOAL
+On AppEvidence, each evidence file should have:
+- An “Open” button to preview the file (PDF/image) in a modal viewer
+- A “Notes & Highlights” panel where user can add entries like:
+  - Page # (required for PDF notes; optional for images/other)
+  - Label (optional, e.g., “Threat”, “Medical”, “Admission”)
+  - Note text (required)
+- Notes saved per evidence file (CRUD)
+- Show a list of notes under the file card, sortable newest-first
+
+A) DATABASE + SCHEMA
+1) In shared/schema.ts add a new table:
+
+case_evidence_notes:
+- id (uuid)
+- userId (fk users.id)
+- caseId (fk cases.id)
+- evidenceFileId (fk evidence_files.id)
+- pageNumber INTEGER NULL
+- label TEXT NULL (max 80)
+- note TEXT NOT NULL (max 5000)
+- createdAt TIMESTAMP default now()
+
+Add zod schemas:
+- insertEvidenceNoteSchema (pageNumber optional, label optional, note required)
+- updateEvidenceNoteSchema (same fields optional)
+
+Also export types: EvidenceNote, InsertEvidenceNote, UpdateEvidenceNote
+
+2) In server/db.ts add initTable for case_evidence_notes + indexes:
+- idx_evidence_notes_case (case_id)
+- idx_evidence_notes_file (evidence_file_id)
+- idx_evidence_notes_user (user_id)
+
+B) STORAGE
+In server/storage.ts:
+1) Extend IStorage with:
+- listEvidenceNotes(userId, caseId, evidenceFileId)
+- createEvidenceNote(userId, caseId, evidenceFileId, data)
+- updateEvidenceNote(userId, noteId, data)
+- deleteEvidenceNote(userId, noteId)
+
+2) Implement in DatabaseStorage using drizzle:
+- All queries MUST filter by userId
+- createEvidenceNote must include caseId + evidenceFileId + userId
+- update/delete must ensure note belongs to userId
+
+C) API ROUTES
+In server/routes.ts add requireAuth routes:
+
+1) GET /api/cases/:caseId/evidence/:fileId/notes
+Returns notes for that file, newest first.
+
+2) POST /api/cases/:caseId/evidence/:fileId/notes
+Body: { pageNumber?, label?, note }
+Validate with insertEvidenceNoteSchema
+
+3) PATCH /api/evidence-notes/:noteId
+Body: updateEvidenceNoteSchema
+
+4) DELETE /api/evidence-notes/:noteId
+
+D) FRONTEND — APP EVIDENCE UI
+In client/src/pages/AppEvidence.tsx:
+
+1) Add “Open” button on each evidence card:
+- For PDFs and images:
+  - Open a modal with an iframe/img preview
+- For other file types:
+  - Keep existing Download button only (or Open triggers download)
+
+To preview:
+- If your backend already has a signed URL or download endpoint, reuse it.
+- If you already render a file URL for download, use that same URL in iframe/img.
+
+2) Add a “Notes” section in each evidence card:
+- Button: “Add Note”
+- Modal fields:
+  - If mimeType is application/pdf -> Page # input (number, optional but recommended)
+  - Label input (optional)
+  - Note textarea (required)
+- Save note with POST route
+- Render notes list under the card:
+  - Show: “p. X” if pageNumber exists + label badge + note text + created date
+  - Actions: Edit, Delete
+
+Use React Query:
+- useQuery(['evidenceNotes', caseId, fileId], GET notes)
+- useMutation POST note -> invalidate that query
+- useMutation PATCH -> invalidate
+- useMutation DELETE -> invalidate
+
+E) UX DETAILS
+1) In the preview modal:
+- Title: original file name
+- If PDF: show helper text “Add a note with the page number you want to reference.”
+2) Notes are ORGANIZATION ONLY — add a small line:
+“This doesn’t change the original file. It helps you track what matters.”
+
+F) ACCEPTANCE TESTS
+1) Upload a PDF evidence
+2) Click Open -> preview shows in modal
+3) Add note with page # and label
+4) Note appears under file card
+5) Edit note updates
+6) Delete removes
+7) Confirm notes are isolated per user (userId filter)
+
+FINAL RESPONSE REQUIREMENTS
+In your Replit summary, include:
+- Files changed
+- New routes added
+- Screenshot of evidence card showing Open + Notes list
+- Screenshot of preview modal
