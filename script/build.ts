@@ -32,6 +32,22 @@ const allowlist = [
   "zod-validation-error",
 ];
 
+// Force these to always be external - native modules and pure ESM packages
+// that don't bundle correctly into CJS format
+const forceExternal = [
+  "canvas",
+  "sharp",
+  "@google-cloud/vision",
+  "pdfjs-dist",
+  "pdf-parse",
+  "p-limit",
+  "p-queue",
+  "p-retry",
+  "archiver",
+  "pdfkit",
+  "docx",
+];
+
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
 
@@ -44,7 +60,13 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+  // External = deps not in allowlist + forced externals (native/ESM modules)
+  const externals = [
+    ...new Set([
+      ...allDeps.filter((dep) => !allowlist.includes(dep)),
+      ...forceExternal,
+    ]),
+  ];
 
   await esbuild({
     entryPoints: ["server/index.ts"],

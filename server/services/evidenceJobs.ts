@@ -4,13 +4,43 @@ import { getSignedDownloadUrl } from "../r2";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import pLimit from "p-limit";
 import type { EvidenceExtraction } from "@shared/schema";
 
 const GLOBAL_CONCURRENCY = 2;
 const STALE_THRESHOLD_MINUTES = 15;
 
-const globalLimit = pLimit(GLOBAL_CONCURRENCY);
+function createConcurrencyLimiter(concurrency: number) {
+  let activeCount = 0;
+  const queue: Array<() => void> = [];
+
+  return function limit<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const run = async () => {
+        activeCount++;
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        } finally {
+          activeCount--;
+          if (queue.length > 0) {
+            const next = queue.shift();
+            if (next) next();
+          }
+        }
+      };
+
+      if (activeCount < concurrency) {
+        run();
+      } else {
+        queue.push(run);
+      }
+    });
+  };
+}
+
+const globalLimit = createConcurrencyLimiter(GLOBAL_CONCURRENCY);
 
 const activeJobs = new Map<string, Promise<void>>();
 
@@ -170,7 +200,7 @@ export async function requeueStaleExtractions(): Promise<number> {
           evidenceId: extraction.evidenceId,
           storageKey: file.storageKey,
           mimeType: file.mimeType,
-          originalFilename: file.originalFilename,
+          originalFilename: file.originalName,
         });
       }
     }
