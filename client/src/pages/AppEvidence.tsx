@@ -1300,7 +1300,7 @@ export default function AppEvidence() {
                 <div>
                   <h3 className="font-heading font-bold text-lg text-neutral-darkest">Extraction Failed</h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-2">
-                    {ocrJob.error?.includes("not configured") 
+                    {ocrJob.error?.includes("not configured") || ocrJob.error?.includes("API_KEY")
                       ? "OCR is not configured yet. Contact support."
                       : ocrJob.error || "An error occurred during text extraction. Please try again."}
                   </p>
@@ -1549,7 +1549,7 @@ export default function AppEvidence() {
                   })()}
                 </div>
                 {(() => {
-                  const file = files.find(f => f.id === extractionViewFileId);
+                  const file = rawFiles.find((f: EvidenceFile) => f.id === extractionViewFileId);
                   if (file && file.downloadUrl) {
                     return (
                       <a

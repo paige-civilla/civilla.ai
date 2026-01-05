@@ -1,0 +1,146 @@
+REPLIT TASK: Switch Civilla Evidence OCR from Google service-account JSON auth to Vision REST API using an API key (OPTION A).
+
+IMPORTANT SECURITY NOTE (DO THIS FIRST)
+1) Paige accidentally pasted Google API keys in chat. Treat those as compromised.
+2) Immediately revoke/rotate those keys in Google Cloud Console:
+   - Google Cloud Console → APIs & Services → Credentials → API keys → (delete or regenerate)
+3) Create a NEW restricted key for Civilla OCR only (steps below). Do NOT reuse the pasted keys.
+
+GOAL
+- Keep the existing Evidence Extraction Pipeline flow exactly the same (PDF native text first; OCR fallback; images OCR)
+- Replace ONLY the Google Vision client-library auth with a REST call:
+  POST https://vision.googleapis.com/v1/images:annotate?key=API_KEY
+
+SECRETS / ENV VARS (Replit → Secrets)
+A) Add secret:
+   GOOGLE_CLOUD_VISION_API_KEY = <new restricted key>
+B) Remove/ignore these if present (no longer needed for Vision auth):
+   GOOGLE_CLOUD_PROJECT_ID
+   GOOGLE_CLOUD_VISION_CLIENT_EMAIL
+   GOOGLE_CLOUD_VISION_PRIVATE_KEY
+
+GOOGLE CLOUD CONSOLE: Create a restricted Vision API key
+1) Go to Google Cloud Console (not Workspace Admin):
+   APIs & Services → Credentials
+2) Click “Create credentials” → “API key”
+3) Click the key to edit restrictions:
+   - Application restrictions:
+     Choose “None” for now (because Replit egress IP isn’t stable),
+     OR “IP addresses” only if you have a fixed outbound IP.
+   - API restrictions:
+     Select “Restrict key”
+     Choose:
+       - Cloud Vision API
+4) Save
+5) Ensure Cloud Vision API is enabled:
+   APIs & Services → Library → Cloud Vision API → Enable
+
+CODE CHANGES (SERVER)
+Update: server/services/evidenceExtraction.ts
+- Remove usage of @google-cloud/vision ImageAnnotatorClient
+- Implement a small REST helper that takes an image buffer and returns extracted text
+- Keep the rest of the extraction pipeline identical: PDF native extraction first, OCR fallback via Vision
+
+IMPLEMENTATION DETAILS
+
+1) Add this helper in server/services/evidenceExtraction.ts (near top-level helpers):
+
+   async function visionOcrImageBuffer(imageBuffer: Buffer): Promise<{ text: string; raw?: any }> {
+     const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_API_KEY || "";
+     if (!apiKey) {
+       throw new Error("missing GOOGLE_CLOUD_VISION_API_KEY");
+     }
+
+     // Vision expects base64 content
+     const content = imageBuffer.toString("base64");
+
+     const body = {
+       requests: [
+         {
+           image: { content },
+           features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+         },
+       ],
+     };
+
+     const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(apiKey)}`, {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(body),
+     });
+
+     if (!res.ok) {
+       const errText = await res.text().catch(() => "");
+       throw new Error(`vision_ocr_failed: ${res.status} ${res.statusText} ${errText}`.slice(0, 2000));
+     }
+
+     const json = await res.json();
+     const first = json?.responses?.[0];
+     const text =
+       first?.fullTextAnnotation?.text ||
+       (first?.textAnnotations?.[0]?.description ?? "") ||
+       "";
+
+     return { text, raw: first };
+   }
+
+2) Replace existing OCR calls:
+Wherever evidenceExtraction.ts currently does something like:
+   client.documentTextDetection(...)
+or
+   client.textDetection(...)
+Replace with:
+   const { text, raw } = await visionOcrImageBuffer(normalizedImageBuffer);
+
+- For IMAGES: you already normalize using sharp. Keep that. Just pass the final buffer to visionOcrImageBuffer().
+- For PDF OCR fallback: wherever your code produces per-page image buffers (or uses Vision page OCR),
+  keep your current PDF->image path and just swap the OCR call to visionOcrImageBuffer() for each page buffer.
+
+3) Metadata updates
+In the extraction record metadata, add:
+- provider: "google-vision-rest"
+- apiKeyAuth: true
+Do NOT store the key itself.
+
+4) Error handling
+If key missing:
+- Set extraction status to "failed"
+- extraction.error = "missing GOOGLE_CLOUD_VISION_API_KEY"
+- Return 503 from /extraction/run with a clear message (no secrets)
+
+5) Remove server-side service-account key parsing (if any)
+If evidenceExtraction.ts or any Vision service file parses:
+  GOOGLE_CLOUD_VISION_PRIVATE_KEY / CLIENT_EMAIL
+Delete that logic. It will always fail under the org policy anyway.
+
+CODE CHANGES (DEPENDENCIES)
+- Keep dependencies the same if possible.
+- You already use fetch in Node 18+ (Replit). If TypeScript complains, ensure tsconfig lib includes DOM OR add:
+  import fetch from "node-fetch";
+Only if needed. Prefer native fetch.
+
+VERIFY / TEST PLAN
+1) Confirm server boots without any Vision JSON env vars.
+2) Upload an IMAGE evidence file:
+   - Status should go queued → processing → complete
+   - “View Extracted Text” should show extracted text
+   - metadata.usedOcr should be true
+3) Upload a PDF with selectable text:
+   - Native extraction should complete without OCR
+   - metadata.usedNativeText true; usedOcr false
+4) Upload a scanned PDF (image-based):
+   - Native extraction should be empty
+   - OCR fallback runs via REST
+   - metadata.usedOcr true; provider google-vision-rest
+5) Temporarily remove GOOGLE_CLOUD_VISION_API_KEY:
+   - Extraction should fail gracefully with clear error
+
+DELIVERABLE
+- Update server/services/evidenceExtraction.ts to use Vision REST API with API key auth
+- Remove service-account JSON dependency for Vision
+- Keep the existing Evidence Extraction Pipeline behavior and UI unchanged
+
+When done, reply with:
+- Files changed list
+- Confirmation that no service-account env vars are required
+- A screenshot or logs showing a successful OCR extraction with provider google-vision-rest

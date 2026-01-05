@@ -1,4 +1,3 @@
-import { ImageAnnotatorClient } from "@google-cloud/vision";
 import * as fs from "fs";
 import pLimit from "p-limit";
 import sharp from "sharp";
@@ -6,67 +5,88 @@ import sharp from "sharp";
 const OCR_MAX_PAGES = parseInt(process.env.OCR_MAX_PAGES || "25", 10);
 const OCR_CONCURRENCY = 3;
 
-let visionClient: ImageAnnotatorClient | null = null;
-
-function getVisionClient(): ImageAnnotatorClient | null {
-  if (visionClient) return visionClient;
-
-  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-  const clientEmail = process.env.GOOGLE_CLOUD_VISION_CLIENT_EMAIL;
-  let privateKey = process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY;
-
-  if (!projectId || !clientEmail || !privateKey) {
-    console.log("Google Cloud Vision credentials not configured");
-    return null;
-  }
-
-  if (privateKey.includes("\\n")) {
-    privateKey = privateKey.replace(/\\n/g, "\n");
-  }
-
-  try {
-    visionClient = new ImageAnnotatorClient({
-      credentials: {
-        client_email: clientEmail,
-        private_key: privateKey,
-      },
-      projectId,
-    });
-    return visionClient;
-  } catch (error) {
-    console.error("Failed to initialize Vision client:", error);
-    return null;
-  }
-}
-
 export function isGcvConfigured(): boolean {
-  return !!(
-    process.env.GOOGLE_CLOUD_PROJECT_ID &&
-    process.env.GOOGLE_CLOUD_VISION_CLIENT_EMAIL &&
-    process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY
-  );
+  return !!(process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_API_KEY);
 }
 
 export function logGcvStatus(): void {
   const configured = isGcvConfigured();
-  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || "not-set";
-  console.log(`Vision OCR configured: ${configured} (project=${projectId})`);
+  console.log(`Vision OCR configured: ${configured} (auth=api-key)`);
 }
 
 export async function checkVisionHealth(): Promise<{ ok: boolean; error?: string }> {
   if (!isGcvConfigured()) {
-    return { ok: false, error: "Google Cloud Vision credentials not configured" };
+    return { ok: false, error: "Google Cloud Vision API key not configured" };
+  }
+  return { ok: true };
+}
+
+interface VisionOcrResult {
+  text: string;
+  confidence: number | null;
+  raw?: unknown;
+}
+
+async function visionOcrImageBuffer(imageBuffer: Buffer): Promise<VisionOcrResult> {
+  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_API_KEY || "";
+  if (!apiKey) {
+    throw new Error("missing GOOGLE_CLOUD_VISION_API_KEY");
   }
 
-  try {
-    const client = getVisionClient();
-    if (!client) {
-      return { ok: false, error: "Failed to initialize Vision client" };
+  const content = imageBuffer.toString("base64");
+
+  const body = {
+    requests: [
+      {
+        image: { content },
+        features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+      },
+    ],
+  };
+
+  const res = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     }
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Unknown error" };
+  );
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`vision_ocr_failed: ${res.status} ${res.statusText} ${errText}`.slice(0, 2000));
   }
+
+  const json = await res.json();
+  const first = json?.responses?.[0];
+
+  if (first?.error) {
+    throw new Error(`vision_api_error: ${first.error.message || JSON.stringify(first.error)}`.slice(0, 2000));
+  }
+
+  const fullTextAnnotation = first?.fullTextAnnotation;
+  const text =
+    fullTextAnnotation?.text ||
+    (first?.textAnnotations?.[0]?.description ?? "") ||
+    "";
+
+  let avgConfidence: number | null = null;
+  if (fullTextAnnotation?.pages) {
+    let totalConfidence = 0;
+    let confidenceCount = 0;
+    for (const page of fullTextAnnotation.pages) {
+      if (page.confidence !== undefined && page.confidence !== null) {
+        totalConfidence += page.confidence;
+        confidenceCount++;
+      }
+    }
+    if (confidenceCount > 0) {
+      avgConfidence = Math.round((totalConfidence / confidenceCount) * 100);
+    }
+  }
+
+  return { text, confidence: avgConfidence, raw: first };
 }
 
 interface ExtractionResult {
@@ -81,6 +101,8 @@ interface ExtractionResult {
     fileType: "pdf" | "image" | "unsupported";
     reason?: string;
     confidence?: number;
+    provider?: string;
+    apiKeyAuth?: boolean;
   };
 }
 
@@ -101,41 +123,6 @@ const supportedImageTypes = [
   "image/heic",
   "image/gif",
 ];
-
-async function ocrWithGcv(imageBuffer: Buffer): Promise<{ text: string; confidence: number | null }> {
-  const client = getVisionClient();
-  if (!client) {
-    throw new Error("Google Cloud Vision not configured");
-  }
-
-  const [result] = await client.documentTextDetection(imageBuffer);
-  const fullTextAnnotation = result.fullTextAnnotation;
-
-  if (!fullTextAnnotation) {
-    return { text: "", confidence: null };
-  }
-
-  let totalConfidence = 0;
-  let confidenceCount = 0;
-
-  if (fullTextAnnotation.pages) {
-    for (const page of fullTextAnnotation.pages) {
-      if (page.confidence !== undefined && page.confidence !== null) {
-        totalConfidence += page.confidence;
-        confidenceCount++;
-      }
-    }
-  }
-
-  const avgConfidence = confidenceCount > 0
-    ? Math.round((totalConfidence / confidenceCount) * 100)
-    : null;
-
-  return {
-    text: fullTextAnnotation.text || "",
-    confidence: avgConfidence,
-  };
-}
 
 async function extractNativePdfText(pdfBuffer: Buffer): Promise<{ text: string; numPages: number }> {
   try {
@@ -191,7 +178,7 @@ async function extractPdfWithOcr(pdfBuffer: Buffer, totalPages: number): Promise
     limit(async () => {
       try {
         const imageBuffer = await renderPdfPageToImage(pdfBuffer, pageNum);
-        const { text } = await ocrWithGcv(imageBuffer);
+        const { text } = await visionOcrImageBuffer(imageBuffer);
         pageTexts[pageNum - 1] = `----- Page ${pageNum} -----\n${text}`;
       } catch (error) {
         console.error(`OCR failed for page ${pageNum}:`, error);
@@ -252,7 +239,7 @@ async function extractFromPdf(filePath: string): Promise<ExtractionResult> {
         totalPages: nativeResult.numPages,
         usedNativeText: true,
         usedOcr: false,
-        reason: "OCR skipped: Google Vision credentials not configured",
+        reason: "OCR skipped: Vision API key not configured",
       },
     };
   }
@@ -270,6 +257,8 @@ async function extractFromPdf(filePath: string): Promise<ExtractionResult> {
       usedOcr: true,
       capped: ocrResult.capped,
       pagesSkipped: ocrResult.pagesSkipped,
+      provider: "google-vision-rest",
+      apiKeyAuth: true,
     },
   };
 }
@@ -280,7 +269,7 @@ async function extractFromImage(filePath: string): Promise<ExtractionResult> {
       text: "",
       meta: {
         fileType: "image",
-        reason: "OCR skipped: Google Vision credentials not configured",
+        reason: "OCR skipped: Vision API key not configured",
       },
     };
   }
@@ -291,7 +280,7 @@ async function extractFromImage(filePath: string): Promise<ExtractionResult> {
     .png()
     .toBuffer();
 
-  const { text, confidence } = await ocrWithGcv(normalized);
+  const { text, confidence } = await visionOcrImageBuffer(normalized);
 
   return {
     text,
@@ -299,6 +288,8 @@ async function extractFromImage(filePath: string): Promise<ExtractionResult> {
       fileType: "image",
       usedOcr: true,
       confidence: confidence ?? undefined,
+      provider: "google-vision-rest",
+      apiKeyAuth: true,
     },
   };
 }
