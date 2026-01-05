@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen } from "lucide-react";
+import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen, Download, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -268,6 +268,36 @@ function ExhibitListCard({
   deleteListMutation,
 }: ExhibitListCardProps) {
   const { toast } = useToast();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportZip = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExporting(true);
+    try {
+      const response = await fetch(`/api/exhibit-lists/${list.id}/export`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Export failed" }));
+        throw new Error(err.error || "Export failed");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${list.title.replace(/[^a-zA-Z0-9]/g, "_")}_exhibits.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({ title: "Export complete", description: "Exhibit list ZIP downloaded." });
+    } catch (error) {
+      toast({ title: "Export failed", description: error instanceof Error ? error.message : "Failed to export", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const { data: exhibitsData, isLoading: exhibitsLoading } = useQuery<{ exhibits: Exhibit[] }>({
     queryKey: ["/api/exhibit-lists", list.id, "exhibits"],
@@ -377,16 +407,28 @@ function ExhibitListCard({
           <div className="flex items-center gap-2 flex-1 flex-wrap">
             {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             <CardTitle className="text-lg">{list.title}</CardTitle>
-            <Badge variant="secondary" size="sm">{expanded ? exhibits.length : "..."} exhibits</Badge>
+            <Badge variant="secondary" className="text-xs">{expanded ? exhibits.length : "..."} exhibits</Badge>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => { e.stopPropagation(); setDeleteListConfirmId(list.id); }}
-            data-testid={`button-delete-list-${list.id}`}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExportZip}
+              disabled={exporting}
+              title="Export as ZIP"
+              data-testid={`button-export-list-${list.id}`}
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => { e.stopPropagation(); setDeleteListConfirmId(list.id); }}
+              data-testid={`button-delete-list-${list.id}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -624,7 +666,7 @@ function ExhibitRow({
           {linkedEvidence.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {linkedEvidence.map((ev) => (
-                <Badge key={ev.id} variant="secondary" size="sm" className="text-xs">
+                <Badge key={ev.id} variant="secondary" className="text-xs">
                   <Paperclip className="w-3 h-3 mr-1" />
                   {ev.originalName.length > 20 ? ev.originalName.slice(0, 20) + "..." : ev.originalName}
                 </Badge>

@@ -175,7 +175,7 @@ export default function AppEvidence() {
   });
 
   const createNoteMutation = useMutation({
-    mutationFn: async (data: { pageNumber?: number | null; label?: string | null; note: string }) => {
+    mutationFn: async (data: { pageNumber?: number | null; label?: string | null; note: string; isKey?: boolean }) => {
       return apiRequest("POST", `/api/cases/${caseId}/evidence/${notesFileId}/notes`, data);
     },
     onSuccess: () => {
@@ -189,7 +189,7 @@ export default function AppEvidence() {
   });
 
   const updateNoteMutation = useMutation({
-    mutationFn: async ({ noteId, data }: { noteId: string; data: { pageNumber?: number | null; label?: string | null; note?: string } }) => {
+    mutationFn: async ({ noteId, data }: { noteId: string; data: { pageNumber?: number | null; label?: string | null; note?: string; isKey?: boolean } }) => {
       return apiRequest("PATCH", `/api/evidence-notes/${noteId}`, data);
     },
     onSuccess: () => {

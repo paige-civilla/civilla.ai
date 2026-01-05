@@ -28,6 +28,7 @@ import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } fr
 import { prependDisclaimerIfNeeded } from "./lexi/format";
 import { extractSourcesFromContent } from "./lexi/sources";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
+import archiver from "archiver";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -3067,6 +3068,82 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete exhibit list error:", error);
       res.status(500).json({ error: "Failed to delete exhibit list" });
+    }
+  });
+
+  app.get("/api/exhibit-lists/:listId/export", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { listId } = req.params;
+
+      const list = await storage.getExhibitList(userId, listId);
+      if (!list) {
+        return res.status(404).json({ error: "Exhibit list not found" });
+      }
+
+      const exhibits = await storage.listExhibits(userId, listId);
+      if (exhibits.length === 0) {
+        return res.status(400).json({ error: "No exhibits to export" });
+      }
+
+      const archive = archiver("zip", { zlib: { level: 9 } });
+      const buffers: Buffer[] = [];
+
+      archive.on("data", (chunk: Buffer) => buffers.push(chunk));
+      archive.on("error", (err: Error) => {
+        console.error("Archive error:", err);
+        throw err;
+      });
+
+      const finishPromise = new Promise<void>((resolve, reject) => {
+        archive.on("end", resolve);
+        archive.on("error", reject);
+      });
+
+      let indexContent = `# ${list.title}\n\nExhibit List Export\nGenerated: ${new Date().toISOString()}\n\n`;
+      indexContent += `## Exhibits\n\n`;
+
+      for (const exhibit of exhibits) {
+        const folderName = `${exhibit.label}_${exhibit.title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30)}`;
+        indexContent += `### ${exhibit.label}: ${exhibit.title}\n`;
+        if (exhibit.description) {
+          indexContent += `${exhibit.description}\n`;
+        }
+        indexContent += `\n`;
+
+        const linkedEvidence = await storage.listExhibitEvidence(userId, exhibit.id);
+        for (const ev of linkedEvidence) {
+          try {
+            if (ev.r2Key && isR2Configured()) {
+              const downloadUrl = await getSignedDownloadUrl(ev.r2Key);
+              const response = await fetch(downloadUrl);
+              if (response.ok) {
+                const buffer = Buffer.from(await response.arrayBuffer());
+                archive.append(buffer, { name: `${folderName}/${ev.originalName}` });
+                indexContent += `- ${ev.originalName}\n`;
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to fetch evidence file ${ev.id}:`, err);
+          }
+        }
+        indexContent += `\n`;
+      }
+
+      archive.append(indexContent, { name: "index.md" });
+      archive.finalize();
+
+      await finishPromise;
+      const zipBuffer = Buffer.concat(buffers);
+
+      const fileName = `${list.title.replace(/[^a-zA-Z0-9]/g, "_")}_exhibits.zip`;
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+      res.setHeader("Content-Length", zipBuffer.length);
+      res.send(zipBuffer);
+    } catch (error) {
+      console.error("Export exhibit list error:", error);
+      res.status(500).json({ error: "Failed to export exhibit list" });
     }
   });
 
