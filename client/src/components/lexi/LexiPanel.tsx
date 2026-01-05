@@ -321,10 +321,10 @@ export default function LexiPanel() {
           }}
         >
           <div
-            className="flex items-center gap-2 rotate-[-90deg]"
+            className="flex items-center gap-1.5 rotate-[-90deg]"
             style={{ color: "#FAF8F4" }}
           >
-            <span className="text-lg">›</span>
+            <ChevronLeft className="w-4 h-4" />
             <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
           </div>
         </div>
@@ -373,8 +373,8 @@ export default function LexiPanel() {
                 "hover:bg-[#263233] transition-colors",
               ].join(" ")}
             >
-              <div className="flex items-center gap-2 rotate-[-90deg]">
-                <span className="text-lg">‹</span>
+              <div className="flex items-center gap-1.5 rotate-[-90deg]">
+                <ChevronRight className="w-4 h-4" />
                 <span className="font-sans font-semibold text-sm tracking-wide">Lexi</span>
               </div>
             </button>
