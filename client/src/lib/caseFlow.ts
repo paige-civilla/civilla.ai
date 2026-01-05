@@ -1,4 +1,5 @@
 export type ModuleKey =
+  | "start-here"
   | "document-library"
   | "evidence"
   | "timeline"
@@ -16,11 +17,12 @@ export type ModuleKey =
   | "parenting-plan";
 
 export const CASE_FLOW: ModuleKey[] = [
-  "document-library",
+  "start-here",
   "evidence",
   "timeline",
   "communications",
   "pattern-analysis",
+  "document-library",
   "disclosures",
   "documents",
   "parenting-plan",
@@ -34,12 +36,13 @@ export const CASE_FLOW: ModuleKey[] = [
 ];
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
+  "start-here": "Start Here",
   "document-library": "Document Library",
   "evidence": "Evidence",
   "timeline": "Timeline",
   "communications": "Message & Call Log",
   "pattern-analysis": "Pattern Analysis",
-  "disclosures": "Disclosures",
+  "disclosures": "Disclosures & Discovery",
   "documents": "Document Creator",
   "parenting-plan": "Parenting Plan",
   "exhibits": "Exhibits",
@@ -52,6 +55,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
 };
 
 const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
+  "start-here": "Learn how family court typically works and what common filings mean.",
   "document-library": "Browse educational templates and forms to help you understand court procedures.",
   "evidence": "Organize and categorize your evidence files for easy reference and court preparation.",
   "timeline": "Build a chronological record of important events to help tell your story clearly.",
@@ -70,6 +74,7 @@ const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
 };
 
 const MODULE_ROUTES: Record<ModuleKey, string> = {
+  "start-here": "start-here",
   "document-library": "library",
   "evidence": "evidence",
   "timeline": "timeline",
@@ -97,6 +102,9 @@ export function moduleDescription(key: ModuleKey): string {
 
 export function modulePath(key: ModuleKey, caseId?: string): string {
   const route = MODULE_ROUTES[key];
+  if (key === "start-here") {
+    return `/app/${route}`;
+  }
   if (caseId) {
     return `/app/${route}/${caseId}`;
   }
@@ -139,6 +147,9 @@ export function getPrevModule(
 
 export function getVisibleModules(opts: { hasChildren: boolean }): ModuleKey[] {
   return CASE_FLOW.filter((key) => {
+    if (key === "start-here") {
+      return false;
+    }
     if (!opts.hasChildren && (key === "children" || key === "child-support" || key === "parenting-plan")) {
       return false;
     }

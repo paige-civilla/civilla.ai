@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar, CheckSquare, Contact, Users, Calculator, Scale, Heart } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar, CheckSquare, Contact, Users, Calculator, Scale, Heart, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
@@ -129,6 +129,7 @@ export default function AppNavbar() {
   const menuLinks = (() => {
     const caseId = selectedCaseId;
     const MODULE_ICONS: Record<ModuleKey, typeof BookOpen> = {
+      "start-here": HelpCircle,
       "document-library": BookOpen,
       "evidence": FolderOpen,
       "timeline": History,

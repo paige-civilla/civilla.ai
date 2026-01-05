@@ -1,4 +1,19 @@
 export const lexiSuggestedPrompts: Record<string, string[]> = {
+  "start-here": [
+    "What happens after you're served papers in my state?",
+    "What is a petition vs a response?",
+    "What is a motion and what does it usually contain?",
+    "What is a motion to compel?",
+    "What is a motion to amend (and when is it used)?",
+    "What is a counter-petition/counterclaim?",
+    "What is a motion for sanctions?",
+    "What are disclosures vs discovery in my state and what are they called?",
+    "Are disclosures/discovery filed with the court or exchanged?",
+    "What is an affidavit vs a declaration?",
+    "What is a proposed order?",
+    "What is proof of service?",
+    "What is a motion in limine (generally)?"
+  ],
   timeline: [
     "What belongs on a court timeline?",
     "How should I phrase events so they stay factual?",
@@ -33,7 +48,7 @@ export const lexiSuggestedPrompts: Record<string, string[]> = {
 export type LexiModuleKey = keyof typeof lexiSuggestedPrompts;
 
 export function getDefaultModeForModule(moduleKey: string): "help" | "chat" | "research" {
-  if (moduleKey === "disclosures_discovery" || moduleKey === "deadlines") {
+  if (moduleKey === "start-here" || moduleKey === "disclosures_discovery" || moduleKey === "deadlines") {
     return "research";
   }
   return "help";

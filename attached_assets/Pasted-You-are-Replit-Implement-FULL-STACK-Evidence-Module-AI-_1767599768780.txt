@@ -1,0 +1,207 @@
+You are Replit. Implement FULL-STACK Evidence Module AI Integration (Extraction + OCR + Analysis + Actions + UI + Storage + Cross-Module Sync). Be extremely detailed: list every file changed, what you added, and why. Do not skip steps. Ensure TypeScript builds and app runs.
+
+GOALS (Evidence module must be fully stacked):
+A) Evidence preview (open file in-app if possible; otherwise open in new tab)
+B) Text extraction pipeline:
+   - PDF text extraction (native text layer)
+   - OCR for scanned PDFs + images (primary: Google Cloud Vision; fallback: local OCR if Vision not configured)
+   - Store extracted text + metadata (pages, confidence, method, timestamps)
+C) AI analysis pipeline:
+   - UPL-safe: educational + organizational + research (ONLY if user asks state-specific naming/rules)
+   - Analyze extracted text + file metadata
+   - Output structured JSON: summary, key facts, people/entities, dates, possible timeline items, possible deadlines mentioned, possible follow-up tasks, potential relevance tags (non-legal-advice), quotes with page refs when available
+   - Store analysis results versioned + timestamped
+D) Notes/Highlights:
+   - Users can add multiple notes per evidence item with optional: page number, quote text, “why it matters” (neutral), tags, and “use in exhibit” toggle
+   - Notes list collapsible under each evidence item
+E) Cross-module Actions (one click):
+   - From AI analysis OR notes, user can create:
+     - Timeline event (title/date/notes/source=evidence)
+     - Deadline (title/dueDate/notes/source=evidence)
+     - Case To-Do task (title/dueDate optional/priority)
+     - Add evidence to an Exhibit list (existing exhibit list selector)
+   - These actions must write into the existing modules via existing endpoints/storage, so everything stays in sync.
+F) UX requirements:
+   - In Evidence page, each evidence card shows:
+     - Preview/Open button
+     - Extract Text button (or status: extracted / extracting / failed)
+     - Analyze button (or status: analyzed / analyzing / failed)
+     - “Notes” section with Add Note
+     - “Insights” section (AI results) with action buttons (Add to Timeline / Add Deadline / Add To-Do / Add to Exhibit)
+   - Must be mobile-friendly (44px touch targets, responsive layout)
+   - Keep colors consistent with app theme (module cards bg #E4ECED; border/icon #628286; primary button #314143; highlight #A2BEC2).
+G) Logging & safety:
+   - Add server-side logging for extraction/analyze errors (no PII in logs)
+   - Add simple rate-limiting per user for analyze/extract endpoints (lightweight, in-memory ok)
+   - AI prompt must enforce: no predictions, no strategy, no “you should file X”, no outcome likelihood.
+   - Add one persistent non-spammy banner on Evidence page: “Lexi helps summarize and organize; not legal advice.”
+
+IMPLEMENTATION DETAILS
+
+1) DATABASE / SCHEMA
+Add these tables to shared/schema.ts and runtime auto-create in server/db.ts (following existing style):
+
+- evidence_extractions
+  id (uuid)
+  userId, caseId (uuid)
+  evidenceId (uuid) references evidence files table
+  status: "pending"|"processing"|"complete"|"failed"
+  method: "pdf-text"|"gcv-ocr"|"fallback-ocr"
+  extractedText (text, nullable)
+  pageMap (jsonb nullable)  // e.g., [{page:1,text:"..."}, ...] if available
+  confidence (numeric nullable)
+  error (text nullable)
+  createdAt, updatedAt
+
+- evidence_ai_analyses
+  id (uuid)
+  userId, caseId, evidenceId
+  status: "pending"|"processing"|"complete"|"failed"
+  model (text)
+  inputHash (text) // hash of extractedText to know if stale
+  resultJson (jsonb nullable) // structured analysis output
+  summaryText (text nullable) // quick render
+  error (text nullable)
+  createdAt, updatedAt
+
+- evidence_notes
+  id (uuid)
+  userId, caseId, evidenceId
+  title (text)
+  note (text)
+  pageNumber (int nullable)
+  quote (text nullable)
+  tags (text[] nullable) OR jsonb
+  useInExhibit (boolean default false)
+  createdAt, updatedAt
+
+Add proper indexes by (userId, caseId, evidenceId).
+
+2) SERVER: EXTRACTION SERVICE
+Create server/evidenceExtraction.ts:
+- extractTextFromEvidence({ evidenceUrl, mimeType }): returns { method, extractedText, pageMap?, confidence? }
+- PDF: attempt PDF text extraction first (use pdf-parse or pdfjs-dist)
+- If pdf text is empty/very low, run OCR:
+   - Primary: Google Cloud Vision if GOOGLE_CLOUD_VISION_API_KEY (or GOOGLE_APPLICATION_CREDENTIALS) present
+     - Use @google-cloud/vision
+     - For PDFs: use async batch annotate if needed OR convert pages to images; keep it simple:
+       - If PDF OCR is complex, document limitation and do image-based OCR for now for common cases.
+   - Fallback: tesseract.js for images only (acceptable fallback)
+- Store extraction in evidence_extractions table with status transitions and errors.
+
+3) SERVER: AI ANALYSIS SERVICE
+Create server/evidenceAnalysis.ts:
+- analyzeEvidenceText({ extractedText, fileName, createdAt, userState?, caseType? }): returns structured JSON:
+  {
+    summary,
+    key_points: [],
+    entities: { people:[], organizations:[], places:[] },
+    dates: [{ date, context, confidence }],
+    suggested_timeline_events: [{ date, title, notes, sourceQuote?, pageNumber? }],
+    suggested_deadlines: [{ dueDate, title, notes, confidence }],
+    suggested_tasks: [{ title, notes, priority }],
+    tags: [],
+    notable_quotes: [{ quote, pageNumber?, why_relevant_neutral }]
+  }
+- Prompt rules:
+  - MUST be educational/organizational, neutral tone.
+  - MUST NOT recommend legal strategy, filing choices, likelihood, or “you should…”
+  - If extraction text seems incomplete, say so.
+- Store analysis in evidence_ai_analyses with inputHash; if extractedText hash unchanged, reuse cached analysis unless user forces refresh.
+
+4) SERVER: ROUTES
+In server/routes.ts add authenticated routes:
+
+Extraction:
+- POST /api/evidence/:evidenceId/extract
+  body: { force?: boolean }
+  returns extraction status + data when complete
+- GET /api/evidence/:evidenceId/extract
+  returns latest extraction
+
+Analysis:
+- POST /api/evidence/:evidenceId/analyze
+  body: { force?: boolean }
+  returns analysis status + result when complete
+- GET /api/evidence/:evidenceId/analyze
+  returns latest analysis
+
+Notes CRUD:
+- GET /api/evidence/:evidenceId/notes
+- POST /api/evidence/:evidenceId/notes
+- PATCH /api/evidence-notes/:noteId
+- DELETE /api/evidence-notes/:noteId
+
+Cross-module action endpoints (or call existing storage directly if already present):
+- POST /api/evidence/:evidenceId/actions/timeline
+- POST /api/evidence/:evidenceId/actions/deadline
+- POST /api/evidence/:evidenceId/actions/task
+- POST /api/evidence/:evidenceId/actions/exhibit
+Each should validate ownership (userId + caseId) and write into existing tables.
+
+5) STORAGE LAYER
+Add methods to server/storage.ts for:
+- getLatestEvidenceExtraction, upsertEvidenceExtractionStatus
+- getLatestEvidenceAnalysis, upsertEvidenceAnalysisStatus
+- listEvidenceNotes, createEvidenceNote, updateEvidenceNote, deleteEvidenceNote
+All must enforce userId and case ownership.
+
+6) FRONTEND: Evidence Page UI
+Update client/src/pages/AppEvidence.tsx:
+
+For each evidence file card:
+- Add “Open” / “Preview” action:
+   - If file is image/pdf: show modal preview (simple <iframe> for pdf, <img> for image) OR open new tab if iframe blocked.
+- Add Extract section:
+   - Button: “Extract Text” -> calls POST extract
+   - Show status badge: Extracted / Extracting / Failed
+   - Collapsible panel “View extracted text” (read-only, searchable)
+- Add Analyze section:
+   - Button: “Analyze with Lexi” -> calls POST analyze
+   - Show status badge: Analyzed / Analyzing / Failed
+   - Render summary + expandable structured results (nice cards/lists)
+   - Add action buttons next to suggested items:
+       - “Add to Timeline”
+       - “Add Deadline”
+       - “Add to Case To-Do”
+       - “Add to Exhibit”
+- Add Notes section:
+   - “Add Note” opens dialog with title, note, page number, quote, tags (simple comma input), useInExhibit toggle
+   - Notes list under evidence card (collapsible)
+   - Each note has actions: Edit, Delete, Add to Timeline/Deadline/To-Do/Exhibit
+- Add top-of-page ModuleIntro + LexiSuggestedQuestions (already used elsewhere) with Evidence-specific prompts.
+
+7) INTEGRATION WITH LEXI PANEL (optional but recommended)
+When user clicks “Analyze with Lexi” or “Ask Lexi about this evidence”:
+- Dispatch a lexi:ask event with moduleKey="evidence" and mode="organization" and include a short context note like:
+  “I’m looking at Evidence File: {filename}. Help me summarize and extract key dates/people.”
+But DO NOT send full extracted text through the event; analysis route handles that server-side.
+
+8) UX + SAFETY COPY
+Add a small banner on Evidence page:
+“Lexi can summarize and help you organize. civilla is not a law firm and does not provide legal advice.”
+
+9) TESTING / ACCEPTANCE
+Add basic tests or at least manual checklist in replit.md:
+- Upload PDF (text) -> extract completes -> analyze produces summary
+- Upload scanned image -> OCR works if GCV configured; fallback shows helpful error if not
+- Notes CRUD works
+- Add-to actions create real records in Timeline/Deadlines/To-Do and appear there immediately
+- Mobile: buttons not cut off, dialogs usable, panels scroll correctly
+
+10) CONFIG
+Add secrets/env expectations:
+- OPENAI_API_KEY already exists
+- For OCR: support one of:
+  - GOOGLE_APPLICATION_CREDENTIALS (preferred) OR
+  - GOOGLE_CLOUD_VISION_API_KEY (if using REST)
+Document whichever you implement, and gracefully degrade if missing.
+
+DELIVERABLE
+When done, output:
+- Files changed list
+- New endpoints list
+- DB tables created
+- Screenshots (if you can)
+- Any known limitations
+- Next recommended module to integrate after Evidence

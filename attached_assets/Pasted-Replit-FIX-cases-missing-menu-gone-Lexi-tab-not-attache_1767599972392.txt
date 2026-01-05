@@ -1,0 +1,104 @@
+Replit: FIX “cases missing + menu gone + Lexi tab not attached” regression. Be extremely detailed: list every file changed and exactly what you changed.
+
+PROBLEM SYMPTOMS (must reproduce/fix):
+1) App shows “Create your first case” even though user previously had cases.
+2) App menu dropdown only shows Dashboard and Cases (all other modules missing).
+3) Lexi vertical tab (“Lexi <”) is floating in the middle of the Lexi panel and not attached to panel edge.
+4) Lexi panel positioning ignores navbar height.
+5) User is logged in but Lexi UI sometimes says “open a case to chat” (must NOT require caseId).
+
+ROOT CAUSE CHECKS (do these first and report results):
+A) Verify what /api/cases returns for current user (Network + server log). If it returns [], then either:
+   - DB was cleared (expected if we ran a wipe), OR
+   - DATABASE_URL changed, OR
+   - user is a different account than before (do NOT ask user; instead log user id/email and DB host at startup).
+B) Add a server startup log: DB host + Lexi provider + environment name.
+C) Ensure CaseRedirect/AppLayout primary case logic does NOT incorrectly treat “loading” as “no cases”.
+
+REQUIRED FIXES
+
+1) CASE LOADING + PRIMARY CASE SELECTION (stop “Create first case” unless truly empty)
+- In AppLayout (or the component that decides case presence), implement:
+  - A loading state while /api/cases is fetching.
+  - If loading: do NOT show “Create your first case”.
+  - If loaded and cases.length > 0:
+      - auto-select the most recent case as primary
+      - store primaryCaseId in localStorage (key: civilla.primaryCaseId)
+      - if stored id is missing, fallback to newest
+  - If loaded and cases.length === 0: THEN show “Create your first case”.
+- Ensure that when a new case is created, it becomes primary immediately and the dashboard updates without refresh.
+
+FILES TO CHECK/EDIT:
+- client/src/components/layout/AppLayout.tsx (or wherever onboarding/case gating is done)
+- client/src/pages/AppCases.tsx (case creation; ensure invalidation + primary selection)
+- client/src/components/CaseRedirect.tsx (ensure it can resolve routes even if primary not set)
+- Any “usePrimaryCase” hook/context (fix if it returns null during fetch)
+
+2) MENU DROPDOWN MUST NOT “DISAPPEAR” CASE MODULES
+- AppNavbar dropdown should always show the full module list in the correct flow order.
+- If there is no case yet, show modules as disabled with a tooltip text:
+  “Create a case to use this module.”
+- Do NOT hide modules entirely.
+- Ensure the menu ordering matches the dashboard flow order.
+
+FILES TO CHECK/EDIT:
+- client/src/components/layout/AppNavbar.tsx
+- client/src/lib/caseFlow.ts
+- client/src/lib/modules.ts
+
+3) FIX MENU TRANSPARENCY / SEE-THROUGH OVERLAY
+- The dropdown background must be fully solid (no opacity), and it must sit above Lexi and page content.
+- Add proper z-index layering:
+  - dropdown: z-[60]
+  - Lexi panel: z-[50]
+  - navbar: z-[70]
+- Ensure dropdown background uses app surface color (#E4ECED) and NOT translucent.
+
+FILES:
+- AppNavbar.tsx
+- any dropdown/menu component CSS/classes
+
+4) FIX LEXI PANEL LAYOUT (attached tab + navbar offset + usable size)
+- Lexi panel must be positioned under navbar:
+  top = navbarHeight (use a CSS var or a fixed known height from AppNavbar; if navbar is 64px, use top-16).
+- Lexi panel should be “centered 3/4 width” style on large screens:
+  - fixed right-4
+  - width: min(520px, calc(100vw - 3rem)) for mobile
+  - on desktop: keep right side but add padding so it doesn’t flush edge: right-6 and max-w-[520px]
+- The vertical tab must be attached to the Lexi panel edge:
+  - Put the tab inside the Lexi panel wrapper container
+  - Wrapper must be position: relative
+  - Tab must be position: absolute; left: -44px (closed/open)
+  - vertically centered: top: 50%; transform: translateY(-50%)
+  - Tab text should say “Lexi” plus chevron (not </>)
+    - If open: “Lexi ‹”
+    - If closed: “Lexi ›”
+- Remove the “open a case to chat” gate:
+  - Lexi must be usable when logged in even if no case exists.
+  - If no caseId, Lexi should create/attach to a “general” thread for the user.
+  - Update backend routes if they currently require caseId for thread creation; allow null caseId and store as user-scoped thread.
+
+FILES:
+- client/src/components/lexi/LexiPanel.tsx (or wherever it lives)
+- server/routes.ts (lexi thread/message routes)
+- shared/schema.ts (if thread currently requires caseId, make caseId nullable)
+- server/storage.ts (update thread queries to allow caseId null for “general”)
+
+5) MAKE “START A CONVERSATION” WORK
+- Ensure “Start a conversation” actually creates a thread and switches to it.
+- If the server returns errors, show a toast with the actual error.
+- Add defensive handling when threads list is empty:
+  - Clicking Start should POST /api/lexi/threads (caseId optional)
+  - Then immediately fetch messages and focus the input.
+
+DELIVERABLES
+- Print a “Fix Summary” with:
+  - DB host and whether /api/cases returned cases for the logged in user
+  - which files changed
+  - before/after behavior confirmed for the 5 symptoms above
+- Add a short manual test checklist.
+
+IMPORTANT
+Do NOT delete any user data.
+Do NOT wipe database.
+Focus only on fixing the regression + making Lexi not require a case.
