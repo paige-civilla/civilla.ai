@@ -4646,5 +4646,239 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
+      res.json({ extraction });
+    } catch (error) {
+      console.error("Get evidence extraction error:", error);
+      res.status(500).json({ error: "Failed to get extraction" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidenceFile) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+      
+      const { insertEvidenceExtractionSchema } = await import("@shared/schema");
+      const parsed = insertEvidenceExtractionSchema.safeParse({ 
+        evidenceId, 
+        provider: req.body.provider || "internal",
+        mimeType: evidenceFile.mimeType 
+      });
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const extraction = await storage.createEvidenceExtraction(userId, caseId, parsed.data);
+      res.status(201).json({ extraction });
+    } catch (error) {
+      console.error("Create evidence extraction error:", error);
+      res.status(500).json({ error: "Failed to create extraction" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const notes = await storage.listEvidenceNotesFull(userId, caseId, evidenceId);
+      res.json({ notes });
+    } catch (error) {
+      console.error("List evidence notes error:", error);
+      res.status(500).json({ error: "Failed to list notes" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertEvidenceNoteFullSchema } = await import("@shared/schema");
+      const parsed = insertEvidenceNoteFullSchema.safeParse({ ...req.body, evidenceId });
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const note = await storage.createEvidenceNoteFull(userId, caseId, parsed.data);
+      res.status(201).json({ note });
+    } catch (error) {
+      console.error("Create evidence note error:", error);
+      res.status(500).json({ error: "Failed to create note" });
+    }
+  });
+
+  app.patch("/api/notes-full/:noteId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { noteId } = req.params;
+      
+      const { updateEvidenceNoteFullSchema } = await import("@shared/schema");
+      const parsed = updateEvidenceNoteFullSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const note = await storage.updateEvidenceNoteFull(userId, noteId, parsed.data);
+      if (!note) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+      
+      res.json({ note });
+    } catch (error) {
+      console.error("Update evidence note error:", error);
+      res.status(500).json({ error: "Failed to update note" });
+    }
+  });
+
+  app.delete("/api/notes-full/:noteId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { noteId } = req.params;
+      
+      const deleted = await storage.deleteEvidenceNoteFull(userId, noteId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete evidence note error:", error);
+      res.status(500).json({ error: "Failed to delete note" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
+      res.json({ analyses });
+    } catch (error) {
+      console.error("List AI analyses error:", error);
+      res.status(500).json({ error: "Failed to list analyses" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertEvidenceAiAnalysisSchema } = await import("@shared/schema");
+      const parsed = insertEvidenceAiAnalysisSchema.safeParse({ ...req.body, evidenceId });
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const analysis = await storage.createEvidenceAiAnalysis(userId, caseId, parsed.data);
+      res.status(201).json({ analysis });
+    } catch (error) {
+      console.error("Create AI analysis error:", error);
+      res.status(500).json({ error: "Failed to create analysis" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/trial-prep-shortlist", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const items = await storage.listTrialPrepShortlist(userId, caseId);
+      res.json({ items });
+    } catch (error) {
+      console.error("List trial prep shortlist error:", error);
+      res.status(500).json({ error: "Failed to list shortlist" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/trial-prep-shortlist", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertTrialPrepShortlistSchema } = await import("@shared/schema");
+      const parsed = insertTrialPrepShortlistSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const item = await storage.createTrialPrepShortlistItem(userId, caseId, parsed.data);
+      res.status(201).json({ item });
+    } catch (error) {
+      console.error("Create trial prep shortlist item error:", error);
+      res.status(500).json({ error: "Failed to create shortlist item" });
+    }
+  });
+
+  app.delete("/api/trial-prep-shortlist/:itemId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { itemId } = req.params;
+      
+      const deleted = await storage.deleteTrialPrepShortlistItem(userId, itemId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete trial prep shortlist item error:", error);
+      res.status(500).json({ error: "Failed to delete shortlist item" });
+    }
+  });
+
   return httpServer;
 }

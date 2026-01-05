@@ -105,6 +105,10 @@ import {
   evidenceProcessingJobs,
   evidenceOcrPages,
   evidenceAnchors,
+  evidenceExtractions,
+  evidenceNotes,
+  evidenceAiAnalyses,
+  trialPrepShortlist,
   type ParentingPlan,
   type InsertParentingPlan,
   type UpdateParentingPlan,
@@ -118,6 +122,16 @@ import {
   type EvidenceAnchor,
   type InsertEvidenceAnchor,
   type UpdateEvidenceAnchor,
+  type EvidenceExtraction,
+  type InsertEvidenceExtraction,
+  type UpdateEvidenceExtraction,
+  type EvidenceNoteFull,
+  type InsertEvidenceNoteFull,
+  type UpdateEvidenceNoteFull,
+  type EvidenceAiAnalysis,
+  type InsertEvidenceAiAnalysis,
+  type TrialPrepShortlist,
+  type InsertTrialPrepShortlist,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -305,6 +319,22 @@ export interface IStorage {
   deleteEvidenceAnchor(userId: string, anchorId: string): Promise<boolean>;
   listEvidenceAnchors(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceAnchor[]>;
   getEvidenceAnchor(userId: string, anchorId: string): Promise<EvidenceAnchor | undefined>;
+
+  getEvidenceExtraction(userId: string, caseId: string, evidenceId: string): Promise<EvidenceExtraction | undefined>;
+  createEvidenceExtraction(userId: string, caseId: string, payload: InsertEvidenceExtraction): Promise<EvidenceExtraction>;
+  updateEvidenceExtraction(userId: string, extractionId: string, payload: UpdateEvidenceExtraction): Promise<EvidenceExtraction | undefined>;
+
+  listEvidenceNotesFull(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceNoteFull[]>;
+  createEvidenceNoteFull(userId: string, caseId: string, payload: InsertEvidenceNoteFull): Promise<EvidenceNoteFull>;
+  updateEvidenceNoteFull(userId: string, noteId: string, payload: UpdateEvidenceNoteFull): Promise<EvidenceNoteFull | undefined>;
+  deleteEvidenceNoteFull(userId: string, noteId: string): Promise<boolean>;
+
+  listEvidenceAiAnalyses(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceAiAnalysis[]>;
+  createEvidenceAiAnalysis(userId: string, caseId: string, payload: InsertEvidenceAiAnalysis): Promise<EvidenceAiAnalysis>;
+
+  listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]>;
+  createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist>;
+  deleteTrialPrepShortlistItem(userId: string, itemId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2181,6 +2211,145 @@ export class DatabaseStorage implements IStorage {
     const [row] = await db.select().from(evidenceAnchors)
       .where(and(eq(evidenceAnchors.id, anchorId), eq(evidenceAnchors.userId, userId)));
     return row;
+  }
+
+  async getEvidenceExtraction(userId: string, caseId: string, evidenceId: string): Promise<EvidenceExtraction | undefined> {
+    const [row] = await db.select().from(evidenceExtractions)
+      .where(and(
+        eq(evidenceExtractions.userId, userId),
+        eq(evidenceExtractions.caseId, caseId),
+        eq(evidenceExtractions.evidenceId, evidenceId)
+      ));
+    return row;
+  }
+
+  async createEvidenceExtraction(userId: string, caseId: string, payload: InsertEvidenceExtraction): Promise<EvidenceExtraction> {
+    const [created] = await db.insert(evidenceExtractions)
+      .values({
+        userId,
+        caseId,
+        evidenceId: payload.evidenceId,
+        provider: payload.provider || "internal",
+        mimeType: payload.mimeType,
+        status: "queued",
+      })
+      .returning();
+    return created;
+  }
+
+  async updateEvidenceExtraction(userId: string, extractionId: string, payload: UpdateEvidenceExtraction): Promise<EvidenceExtraction | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (payload.status !== undefined) updateData.status = payload.status;
+    if (payload.pageCount !== undefined) updateData.pageCount = payload.pageCount;
+    if (payload.extractedText !== undefined) updateData.extractedText = payload.extractedText;
+    if (payload.metadata !== undefined) updateData.metadata = payload.metadata;
+    if (payload.error !== undefined) updateData.error = payload.error;
+    const [updated] = await db.update(evidenceExtractions)
+      .set(updateData)
+      .where(and(eq(evidenceExtractions.id, extractionId), eq(evidenceExtractions.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async listEvidenceNotesFull(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceNoteFull[]> {
+    const conditions = [eq(evidenceNotes.userId, userId), eq(evidenceNotes.caseId, caseId)];
+    if (evidenceId) conditions.push(eq(evidenceNotes.evidenceId, evidenceId));
+    return db.select().from(evidenceNotes)
+      .where(and(...conditions))
+      .orderBy(desc(evidenceNotes.createdAt));
+  }
+
+  async createEvidenceNoteFull(userId: string, caseId: string, payload: InsertEvidenceNoteFull): Promise<EvidenceNoteFull> {
+    const [created] = await db.insert(evidenceNotes)
+      .values({
+        userId,
+        caseId,
+        evidenceId: payload.evidenceId,
+        noteTitle: payload.noteTitle,
+        noteText: payload.noteText,
+        anchorType: payload.anchorType || "page",
+        pageNumber: payload.pageNumber,
+        timestamp: payload.timestamp,
+        selectionText: payload.selectionText,
+        tags: payload.tags,
+        color: payload.color,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateEvidenceNoteFull(userId: string, noteId: string, payload: UpdateEvidenceNoteFull): Promise<EvidenceNoteFull | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (payload.noteTitle !== undefined) updateData.noteTitle = payload.noteTitle;
+    if (payload.noteText !== undefined) updateData.noteText = payload.noteText;
+    if (payload.anchorType !== undefined) updateData.anchorType = payload.anchorType;
+    if (payload.pageNumber !== undefined) updateData.pageNumber = payload.pageNumber;
+    if (payload.timestamp !== undefined) updateData.timestamp = payload.timestamp;
+    if (payload.selectionText !== undefined) updateData.selectionText = payload.selectionText;
+    if (payload.tags !== undefined) updateData.tags = payload.tags;
+    if (payload.color !== undefined) updateData.color = payload.color;
+    const [updated] = await db.update(evidenceNotes)
+      .set(updateData)
+      .where(and(eq(evidenceNotes.id, noteId), eq(evidenceNotes.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteEvidenceNoteFull(userId: string, noteId: string): Promise<boolean> {
+    const result = await db.delete(evidenceNotes)
+      .where(and(eq(evidenceNotes.id, noteId), eq(evidenceNotes.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async listEvidenceAiAnalyses(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceAiAnalysis[]> {
+    const conditions = [eq(evidenceAiAnalyses.userId, userId), eq(evidenceAiAnalyses.caseId, caseId)];
+    if (evidenceId) conditions.push(eq(evidenceAiAnalyses.evidenceId, evidenceId));
+    return db.select().from(evidenceAiAnalyses)
+      .where(and(...conditions))
+      .orderBy(desc(evidenceAiAnalyses.createdAt));
+  }
+
+  async createEvidenceAiAnalysis(userId: string, caseId: string, payload: InsertEvidenceAiAnalysis): Promise<EvidenceAiAnalysis> {
+    const [created] = await db.insert(evidenceAiAnalyses)
+      .values({
+        userId,
+        caseId,
+        evidenceId: payload.evidenceId,
+        analysisType: payload.analysisType,
+        content: payload.content,
+        metadata: payload.metadata,
+      })
+      .returning();
+    return created;
+  }
+
+  async listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]> {
+    return db.select().from(trialPrepShortlist)
+      .where(and(eq(trialPrepShortlist.userId, userId), eq(trialPrepShortlist.caseId, caseId)))
+      .orderBy(asc(trialPrepShortlist.sortOrder));
+  }
+
+  async createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist> {
+    const [created] = await db.insert(trialPrepShortlist)
+      .values({
+        userId,
+        caseId,
+        evidenceId: payload.evidenceId,
+        noteId: payload.noteId,
+        analysisId: payload.analysisId,
+        itemType: payload.itemType,
+        title: payload.title,
+        excerpt: payload.excerpt,
+        sortOrder: payload.sortOrder ?? 0,
+      })
+      .returning();
+    return created;
+  }
+
+  async deleteTrialPrepShortlistItem(userId: string, itemId: string): Promise<boolean> {
+    const result = await db.delete(trialPrepShortlist)
+      .where(and(eq(trialPrepShortlist.id, itemId), eq(trialPrepShortlist.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
