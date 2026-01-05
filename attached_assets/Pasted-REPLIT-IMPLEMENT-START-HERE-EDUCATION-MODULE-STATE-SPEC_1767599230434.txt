@@ -1,0 +1,235 @@
+REPLIT — IMPLEMENT “START HERE” EDUCATION MODULE + STATE-SPECIFIC MOTION RESEARCH BUTTON (LEXI)
+
+GOAL
+1) Add a new authenticated app module called “Start Here” (education hub) that users see after onboarding and can always access from the app navbar.
+2) Include additional content sections for:
+   - Motion to Amend (what it is)
+   - Counter-Petition / Counterclaim (what it is)
+   - Motion for Sanctions (what it is)
+3) Add a prominent clickable button inside Start Here:
+   - “Ask Lexi: List motions in my state”
+   - This MUST trigger Lexi in RESEARCH mode and ask for a state-specific list of family court motions with sources.
+4) The Start Here module must be UPL-safe: informational, educational, process-based only.
+
+IMPORTANT: Use existing Lexi event pattern already in the app:
+- Dispatch CustomEvent "lexi:ask" with { question, mode, moduleKey }
+- mode MUST be "research"
+- moduleKey MUST be "start-here"
+
+--------------------------------------------------------------------
+A) ADD ROUTE + PAGE
+--------------------------------------------------------------------
+
+1) Create a new page:
+   client/src/pages/AppStartHere.tsx
+
+Use AppLayout like other app pages. Include:
+- Header: “Start Here”
+- Subheader: “Your AI research + organization assistant”
+- A short disclaimer banner (one time at top of page, calm tone):
+  “civilla provides education, research, and organization tools. We do not provide legal advice or represent you.”
+
+- A State selector (optional but recommended) that defaults to:
+  a) current case state if a caseId exists in querystring, otherwise
+  b) the user’s profile state (if stored), otherwise
+  c) blank with “Select your state”
+
+Since this module is global (no case required), implement it WITHOUT a caseId route. It should still allow state-based Lexi research.
+
+- A large primary action button:
+  “Ask Lexi: List motions in my state”
+  When clicked:
+    - If no state selected: show inline error “Select your state first”
+    - Else dispatch:
+      window.dispatchEvent(new CustomEvent("lexi:ask", { detail: {
+        question: `Research and list the common family court motion types in ${state}. Include what each motion is for, and cite official sources (state court rules, judiciary self-help pages, judiciary forms, state statutes where relevant). Do not give strategy or recommendations. End with a Sources section.`,
+        mode: "research",
+        moduleKey: "start-here"
+      }}))
+
+- Also include a row of smaller “quick research” chips (like LexiSuggestedQuestions) using the existing LexiSuggestedQuestions component.
+  Add a new prompt list in:
+    client/src/lib/lexiSuggestedPrompts.ts
+  Add a new key: "start-here" with prompts like:
+    - “What happens after you’re served papers in my state?”
+    - “What is a petition vs a response?”
+    - “What is a motion and what does it usually contain?”
+    - “What is a motion to compel?”
+    - “What is a motion to amend (and when is it used)?”
+    - “What is a counter-petition/counterclaim?”
+    - “What is a motion for sanctions?”
+    - “What are disclosures vs discovery in my state and what are they called?”
+    - “Are disclosures/discovery filed with the court or exchanged?”
+    - “What is an affidavit vs a declaration?”
+    - “What is a proposed order?”
+    - “What is proof of service?”
+    - “What is a motion in limine (generally)?”
+  Make sure the moduleKey used is exactly "start-here".
+
+- Content sections (accordion or stacked cards). Each section should be 1–2 screens max with bullets:
+  SECTION LIST (create these headings in the page):
+   1) Your first steps (served vs starting a case)
+   2) Key document types (petition, response, motion, declaration/affidavit, proposed order, proof of service)
+   3) Motions (what a motion is, why they exist, procedural vs temporary vs evidentiary)
+   4) Motion to Amend (definition + neutral example like “amending a filing to correct or update information”)
+   5) Counter-Petition / Counterclaim (definition, filed by the responding party to request their own relief)
+   6) Motion for Sanctions (definition, court may impose penalties for certain misconduct; vary by state/rules)
+   7) Disclosures vs Discovery (difference + “often exchanged, not filed” + naming varies)
+   8) Evidence basics (relevance, credibility, admissibility in plain language)
+   9) Deadlines (why deadlines matter; encourage using Deadlines + asking Lexi to research deadlines)
+  Keep language neutral and educational (no “you should file X”).
+
+2) Add routes in:
+   client/src/App.tsx
+
+Add:
+  import AppStartHere from "@/pages/AppStartHere";
+
+Add route:
+  <Route path="/app/start-here" component={AppStartHere} />
+
+OPTIONAL (recommended): If you have CaseRedirect patterns, do NOT require caseId for this page.
+
+--------------------------------------------------------------------
+B) ADD MODULE DEFINITIONS + MENU ORDER
+--------------------------------------------------------------------
+
+3) Add module entry in:
+   client/src/lib/modules.ts
+
+Add:
+{
+  key: "start-here",
+  label: "Start Here",
+  description: "Learn how family court typically works and what common filings mean.",
+  href: () => `/app/start-here`,
+  icon: HelpCircle,
+  group: "core"
+}
+
+Note: href signature may expect (caseId). For global modules, allow ignoring caseId:
+  href: () => "/app/start-here"
+
+If the modules typing enforces (caseId) => string, then use:
+  href: (_caseId) => "/app/start-here"
+
+4) Update flow order so menu matches dashboard flow:
+   client/src/lib/caseFlow.ts
+
+Insert "start-here" as the FIRST item in the flow.
+
+Example suggested flow (based on your spec):
+  Start Here
+  Evidence
+  Timeline
+  Communications (rename UI label to “Messages & Call Log” or similar)
+  Pattern Analysis
+  Document Library
+  Disclosures & Discovery
+  Document Creator (rename Documents module label; do NOT change routes)
+  Exhibits
+  Parenting Plan (if present)
+  Children (gated)
+  Deadlines
+  Case To-Do
+  Contacts
+  Child Support Estimator (last; gated)
+
+Only change DISPLAY LABELS here if you already use MODULE_LABELS.
+Do NOT break existing routes; keep keys stable.
+
+--------------------------------------------------------------------
+C) SHOW ON MENU + DASHBOARD
+--------------------------------------------------------------------
+
+5) Add “Start Here” to the AppNavbar menu in the correct order:
+   client/src/components/layout/AppNavbar.tsx
+
+- Ensure it appears FIRST in the menu list.
+- Ensure hover highlight color uses your lighter highlight token (already using #A2BEC2). If there is a class that makes it too dark, switch to a lighter hover background for menu items (e.g., bg-[#A2BEC2]/50) and set hover text to #243032 or white depending on contrast.
+
+6) Add a “Start Here” tile to the Dashboard module grid:
+   client/src/pages/AppDashboard.tsx
+
+- Add it at the top of the module tile list.
+- It should route to /app/start-here
+- Use your standard module tile styling (bg #E4ECED, border #628286, icon stroke #628286)
+
+--------------------------------------------------------------------
+D) POST-ONBOARDING REDIRECT (SHOW START HERE BEFORE DASHBOARD)
+--------------------------------------------------------------------
+
+7) After onboarding completion, route users to Start Here ONCE, then to Dashboard after they dismiss/continue.
+
+Implementation approach:
+- Add a boolean in user_profiles like:
+  startHereSeen BOOLEAN NOT NULL DEFAULT false
+If adding DB column is too heavy, store it in localStorage as a first pass:
+  localStorage.setItem("startHereSeen", "true")
+
+Preferred (DB):
+- Update schema:
+  shared/schema.ts -> userProfiles table: add startHereSeen boolean default false
+- Ensure db init creates/patches column in server/db.ts (if you do runtime creation)
+- Add storage + route:
+  GET /api/user/profile
+  PATCH /api/user/profile with { startHereSeen: true }
+
+Then:
+- In the onboarding completion handler:
+  if startHereSeen is false -> navigate to /app/start-here
+  else -> /app/dashboard
+
+In AppStartHere page:
+- Add a primary button:
+  “Continue to Dashboard”
+  Clicking it sets startHereSeen true (via PATCH or localStorage) then navigates to /app/dashboard
+
+--------------------------------------------------------------------
+E) LEXI INTEGRATION REQUIREMENTS
+--------------------------------------------------------------------
+
+8) Ensure Lexi can be used while logged in WITHOUT requiring a caseId.
+If current Lexi backend requires caseId/thread per case:
+- Add a “general” thread type:
+  - If no caseId, create/use a thread with caseId = null (or a special caseId like "global")
+  - Store moduleKey = "start-here"
+- Update Lexi routes to accept caseId optional:
+  POST /api/lexi/threads  body: { caseId?: string | null, title?: string }
+  POST /api/lexi/chat     body: { threadId, message, mode, moduleKey }
+
+If you already have Lexi threads/messages tables, allow caseId nullable.
+
+9) For the “List motions in my state” prompt, enforce RESEARCH behavior:
+- Lexi must:
+  - Prefer primary sources (state judiciary, court rules, legislature)
+  - Provide citations
+  - Avoid recommending actions or strategies
+  - End with “Sources” list
+
+--------------------------------------------------------------------
+F) QA CHECKLIST
+--------------------------------------------------------------------
+
+10) Verify:
+- /app/start-here renders on desktop + mobile
+- “Ask Lexi: List motions in my state”:
+  - blocked until state selected
+  - dispatches lexi:ask event
+  - Lexi opens (if closed) and receives the question
+  - Lexi responds (no case required)
+- Start Here appears FIRST on:
+  - Dashboard
+  - Navbar menu
+- After onboarding completion:
+  - user lands on Start Here once
+  - “Continue to Dashboard” sends them to dashboard
+  - future logins go to dashboard (not back to Start Here)
+
+When finished, provide a detailed Replit summary:
+- files edited
+- routes added
+- any DB changes
+- how to test quickly
+
+END.

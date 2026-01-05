@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2 } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +14,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote } from "@shared/schema";
+import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote, EvidenceProcessingJob, EvidenceOcrPage, EvidenceAnchor } from "@shared/schema";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
@@ -74,6 +77,10 @@ export default function AppEvidence() {
   const [notesFileId, setNotesFileId] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteForm, setNoteForm] = useState<{ pageNumber: string; label: string; note: string; isKey: boolean }>({ pageNumber: "", label: "", note: "", isKey: false });
+  const [textExtractFileId, setTextExtractFileId] = useState<string | null>(null);
+  const [processingJobs, setProcessingJobs] = useState<Record<string, { status: string; progress: number }>>({});
+  const [anchorForm, setAnchorForm] = useState<{ text: string; notes: string; tags: string }>({ text: "", notes: "", tags: "" });
+  const [editingAnchorId, setEditingAnchorId] = useState<string | null>(null);
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -100,6 +107,32 @@ export default function AppEvidence() {
     enabled: !!notesFileId && !!caseId,
   });
 
+  const { data: ocrJobData, refetch: refetchOcrJob } = useQuery<{ job: EvidenceProcessingJob | null }>({
+    queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "process"],
+    enabled: !!textExtractFileId && !!caseId,
+    refetchInterval: (query) => {
+      const job = query.state.data?.job;
+      if (job && (job.status === "queued" || job.status === "processing")) {
+        return 2000;
+      }
+      return false;
+    },
+  });
+
+  const { data: ocrPagesData, isLoading: ocrPagesLoading } = useQuery<{ pages: EvidenceOcrPage[] }>({
+    queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "ocr-pages"],
+    enabled: !!textExtractFileId && !!caseId && ocrJobData?.job?.status === "done",
+  });
+
+  const { data: anchorsData, isLoading: anchorsLoading } = useQuery<{ anchors: EvidenceAnchor[] }>({
+    queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "anchors"],
+    enabled: !!textExtractFileId && !!caseId,
+  });
+
+  const ocrJob = ocrJobData?.job;
+  const ocrPages = ocrPagesData?.pages || [];
+  const anchors = anchorsData?.anchors || [];
+
   const exhibitLists = exhibitListsData?.exhibitLists || [];
   const exhibits = exhibitsData?.exhibits || [];
   const notes = notesData?.notes || [];
@@ -108,6 +141,7 @@ export default function AppEvidence() {
   const rawFiles = evidenceData?.files || [];
   const r2Configured = evidenceData?.r2Configured ?? false;
   const notesFile = rawFiles.find(f => f.id === notesFileId);
+  const textExtractFile = rawFiles.find(f => f.id === textExtractFileId);
 
   const filteredFiles = rawFiles
     .filter((f) => filterCategory === "all" || f.category === filterCategory)
@@ -215,9 +249,115 @@ export default function AppEvidence() {
     },
   });
 
+  const startProcessingMutation = useMutation({
+    mutationFn: async (evidenceId: string) => {
+      const res = await apiRequest("POST", `/api/cases/${caseId}/evidence/${evidenceId}/process`, {});
+      return res.json() as Promise<{ ok: boolean; jobId: string; status: string }>;
+    },
+    onSuccess: (data, evidenceId) => {
+      setProcessingJobs((prev) => ({ ...prev, [evidenceId]: { status: data.status, progress: 0 } }));
+      refetchOcrJob();
+      toast({ title: "Processing started", description: "Text extraction has begun." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to start text extraction", variant: "destructive" });
+    },
+  });
+
+  const createAnchorMutation = useMutation({
+    mutationFn: async (data: { evidenceId: string; excerpt: string; pageNumber?: number | null; note?: string | null; tags?: string[] }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/evidence/${data.evidenceId}/anchors`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "anchors"] });
+      toast({ title: "Anchor saved", description: "Text excerpt confirmed for pattern analysis." });
+      resetAnchorForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to save anchor", variant: "destructive" });
+    },
+  });
+
+  const updateAnchorMutation = useMutation({
+    mutationFn: async ({ anchorId, data }: { anchorId: string; data: { excerpt?: string; note?: string | null; tags?: string[] } }) => {
+      return apiRequest("PATCH", `/api/anchors/${anchorId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "anchors"] });
+      toast({ title: "Anchor updated", description: "Text excerpt updated successfully." });
+      resetAnchorForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to update anchor", variant: "destructive" });
+    },
+  });
+
+  const deleteAnchorMutation = useMutation({
+    mutationFn: async (anchorId: string) => {
+      return apiRequest("DELETE", `/api/anchors/${anchorId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "anchors"] });
+      toast({ title: "Anchor deleted", description: "Text excerpt removed." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to delete anchor", variant: "destructive" });
+    },
+  });
+
   const resetNoteForm = () => {
     setEditingNoteId(null);
     setNoteForm({ pageNumber: "", label: "", note: "", isKey: false });
+  };
+
+  const resetAnchorForm = () => {
+    setEditingAnchorId(null);
+    setAnchorForm({ text: "", notes: "", tags: "" });
+  };
+
+  const closeTextExtractSheet = () => {
+    setTextExtractFileId(null);
+    resetAnchorForm();
+  };
+
+  const handleStartProcessing = (evidenceId: string) => {
+    setTextExtractFileId(evidenceId);
+    startProcessingMutation.mutate(evidenceId);
+  };
+
+  const handleSaveAnchor = () => {
+    if (!textExtractFileId || !anchorForm.text.trim()) return;
+    const tagsArray = anchorForm.tags.trim() 
+      ? anchorForm.tags.split(",").map((t) => t.trim()).filter((t) => t.length > 0) 
+      : [];
+    
+    if (editingAnchorId) {
+      updateAnchorMutation.mutate({
+        anchorId: editingAnchorId,
+        data: {
+          excerpt: anchorForm.text.trim(),
+          note: anchorForm.notes.trim() || null,
+          tags: tagsArray,
+        },
+      });
+    } else {
+      createAnchorMutation.mutate({
+        evidenceId: textExtractFileId,
+        excerpt: anchorForm.text.trim(),
+        note: anchorForm.notes.trim() || null,
+        tags: tagsArray,
+      });
+    }
+  };
+
+  const startEditAnchor = (anchor: EvidenceAnchor) => {
+    setEditingAnchorId(anchor.id);
+    const tagsArr = Array.isArray(anchor.tags) ? anchor.tags as string[] : [];
+    setAnchorForm({
+      text: anchor.excerpt,
+      notes: anchor.note || "",
+      tags: tagsArr.join(", "),
+    });
   };
 
   const closeNotesModal = () => {
@@ -624,6 +764,15 @@ export default function AppEvidence() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                onClick={() => setTextExtractFileId(file.id)}
+                                data-testid={`button-extract-text-${file.id}`}
+                                title="Extract text for pattern analysis"
+                              >
+                                <FileSearch className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => setDeleteConfirmId(file.id)}
                                 data-testid={`button-delete-${file.id}`}
                               >
@@ -941,6 +1090,291 @@ export default function AppEvidence() {
           </div>
           <SheetFooter>
             <Button variant="outline" onClick={closeNotesModal} data-testid="button-close-notes-drawer">
+              Close
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!textExtractFileId} onOpenChange={(open) => !open && closeTextExtractSheet()}>
+        <SheetContent className="w-full sm:max-w-2xl flex flex-col">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <FileSearch className="w-5 h-5" />
+              Text Extraction: {textExtractFile?.originalName || "File"}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+            {!ocrJob ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <FileSearch className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-neutral-darkest">Extract Text from Document</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-2">
+                    Extract text from this file to enable pattern analysis. This uses optical character recognition (OCR) to read text from images and PDFs.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => textExtractFileId && handleStartProcessing(textExtractFileId)}
+                  disabled={startProcessingMutation.isPending}
+                  data-testid="button-start-extraction"
+                >
+                  {startProcessingMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <FileSearch className="w-4 h-4 mr-2" />
+                      Start Text Extraction
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : ocrJob.status === "queued" || ocrJob.status === "processing" ? (
+              <div className="text-center py-8 space-y-4">
+                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-neutral-darkest">
+                    {ocrJob.status === "queued" ? "Queued for Processing" : "Extracting Text..."}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This may take a minute depending on file size.
+                  </p>
+                </div>
+                {ocrJob.progress > 0 && (
+                  <div className="max-w-xs mx-auto">
+                    <Progress value={ocrJob.progress} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">{ocrJob.progress}% complete</p>
+                  </div>
+                )}
+              </div>
+            ) : ocrJob.status === "error" ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                  <AlertTriangle className="w-8 h-8 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-neutral-darkest">Extraction Failed</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-2">
+                    {ocrJob.error || "An error occurred during text extraction. Please try again."}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => textExtractFileId && handleStartProcessing(textExtractFileId)}
+                  disabled={startProcessingMutation.isPending}
+                  data-testid="button-retry-extraction"
+                >
+                  Retry Extraction
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-heading font-bold text-lg text-neutral-darkest">Extracted Text</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {ocrPages.length} page{ocrPages.length !== 1 ? "s" : ""} processed
+                    </p>
+                  </div>
+                  <Badge variant={ocrPages.some(p => p.needsReview) ? "outline" : "secondary"}>
+                    {ocrPages.filter(p => p.needsReview).length > 0 
+                      ? `${ocrPages.filter(p => p.needsReview).length} need review`
+                      : "All reviewed"
+                    }
+                  </Badge>
+                </div>
+
+                {ocrPagesLoading ? (
+                  <div className="py-8 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  </div>
+                ) : ocrPages.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    No text was extracted from this document.
+                  </div>
+                ) : (
+                  <ScrollArea className="h-64 rounded-md border p-3">
+                    <div className="space-y-4">
+                      {ocrPages.map((page) => (
+                        <div 
+                          key={page.id} 
+                          className={`p-3 rounded-md ${page.needsReview ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800" : "bg-muted/50"}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {page.pageNumber != null && (
+                                <Badge variant="outline" className="text-xs">Page {page.pageNumber}</Badge>
+                              )}
+                              {page.needsReview && (
+                                <Badge variant="outline" className="text-xs border-amber-400 text-amber-600">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  Needs Review
+                                </Badge>
+                              )}
+                            </div>
+                            {page.confidencePrimary != null && (
+                              <span className="text-xs text-muted-foreground">
+                                {page.confidencePrimary}% confidence
+                              </span>
+                            )}
+                          </div>
+                          <p 
+                            className="text-sm whitespace-pre-wrap cursor-pointer hover:bg-primary/5 rounded p-1 -m-1"
+                            onClick={() => setAnchorForm(prev => ({ ...prev, text: prev.text ? prev.text + "\n\n" + page.textPrimary : page.textPrimary }))}
+                            title="Click to add this text to anchor"
+                            data-testid={`text-ocr-page-${page.id}`}
+                          >
+                            {page.textPrimary.substring(0, 500)}
+                            {page.textPrimary.length > 500 && "..."}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+
+                <div className="border-t pt-4 space-y-4">
+                  <h4 className="font-heading font-bold text-base text-neutral-darkest flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    Confirmed Text Anchors ({anchors.length})
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Select or paste text excerpts you want to use for pattern analysis. These confirmed excerpts will be used by Lexi to identify patterns.
+                  </p>
+
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <div>
+                      <Label htmlFor="anchor-text" className="text-xs text-muted-foreground">Text Excerpt</Label>
+                      <Textarea
+                        id="anchor-text"
+                        placeholder="Click on extracted text above or paste text here..."
+                        value={anchorForm.text}
+                        onChange={(e) => setAnchorForm(prev => ({ ...prev, text: e.target.value }))}
+                        rows={3}
+                        className="mt-1"
+                        data-testid="textarea-anchor-text"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="anchor-notes" className="text-xs text-muted-foreground">Notes (optional)</Label>
+                        <Input
+                          id="anchor-notes"
+                          placeholder="Why is this significant?"
+                          value={anchorForm.notes}
+                          onChange={(e) => setAnchorForm(prev => ({ ...prev, notes: e.target.value }))}
+                          className="mt-1"
+                          data-testid="input-anchor-notes"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="anchor-tags" className="text-xs text-muted-foreground">Tags (comma-separated)</Label>
+                        <Input
+                          id="anchor-tags"
+                          placeholder="e.g., contradiction, timeline"
+                          value={anchorForm.tags}
+                          onChange={(e) => setAnchorForm(prev => ({ ...prev, tags: e.target.value }))}
+                          className="mt-1"
+                          data-testid="input-anchor-tags"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      {editingAnchorId && (
+                        <Button variant="outline" size="sm" onClick={resetAnchorForm} data-testid="button-cancel-anchor">
+                          Cancel
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={handleSaveAnchor}
+                        disabled={!anchorForm.text.trim() || createAnchorMutation.isPending || updateAnchorMutation.isPending}
+                        data-testid="button-save-anchor"
+                      >
+                        {createAnchorMutation.isPending || updateAnchorMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : editingAnchorId ? (
+                          <>
+                            <Save className="w-4 h-4 mr-1" />
+                            Update Anchor
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Save Anchor
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {anchorsLoading ? (
+                    <div className="py-4 text-center">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                    </div>
+                  ) : anchors.length === 0 ? (
+                    <div className="py-4 text-center text-sm text-muted-foreground">
+                      No anchors confirmed yet. Add text excerpts above.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {anchors.map((anchor) => (
+                        <Card key={anchor.id} data-testid={`card-anchor-${anchor.id}`}>
+                          <CardContent className="py-3">
+                            <div className="flex items-start gap-3">
+                              <Check className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm whitespace-pre-wrap line-clamp-3" data-testid={`text-anchor-excerpt-${anchor.id}`}>
+                                  {anchor.excerpt}
+                                </p>
+                                {anchor.note && (
+                                  <p className="text-xs text-muted-foreground mt-1">{anchor.note}</p>
+                                )}
+                                {Array.isArray(anchor.tags) && (anchor.tags as string[]).length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {(anchor.tags as string[]).map((tag: string, i: number) => (
+                                      <Badge key={i} variant="secondary" className="text-xs">
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => startEditAnchor(anchor)}
+                                  data-testid={`button-edit-anchor-${anchor.id}`}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => deleteAnchorMutation.mutate(anchor.id)}
+                                  disabled={deleteAnchorMutation.isPending}
+                                  data-testid={`button-delete-anchor-${anchor.id}`}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <SheetFooter>
+            <Button variant="outline" onClick={closeTextExtractSheet} data-testid="button-close-extraction-drawer">
               Close
             </Button>
           </SheetFooter>
