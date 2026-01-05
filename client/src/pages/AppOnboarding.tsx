@@ -68,6 +68,7 @@ interface OnboardingData {
     caseNumber: string;
     caseType: string;
     hasChildren: boolean;
+    startingPoint: "served_papers" | "starting_case" | "modifying_enforcing" | "not_sure";
   };
   children: Child[];
   agreements: {
@@ -106,6 +107,7 @@ const initialData: OnboardingData = {
     caseNumber: "",
     caseType: "family",
     hasChildren: false,
+    startingPoint: "not_sure",
   },
   children: [],
   agreements: {
