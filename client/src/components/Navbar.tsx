@@ -265,8 +265,7 @@ export default function Navbar() {
 
             <button 
               onClick={handleQuickExit}
-              className="ml-2 p-1.5 rounded-md text-white shadow-sm transition-all hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[#16a34a]"
-              style={{ backgroundImage: 'var(--quick-exit-bg)' }}
+              className="ml-2 p-1.5 rounded-md bg-gradient-to-r from-[#1F5A3A] to-[#4E9A5B] hover:from-[#1B5134] hover:to-[#438C53] text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1"
               aria-label="Quick exit"
               data-testid="button-quick-exit"
             >

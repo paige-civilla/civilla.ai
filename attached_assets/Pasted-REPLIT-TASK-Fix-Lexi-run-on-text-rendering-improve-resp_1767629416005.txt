@@ -1,0 +1,91 @@
+REPLIT TASK: Fix Lexi “run-on text” rendering + improve response formatting + adjust colors (Quick Exit + module tiles)
+
+GOALS
+1) Lexi responses must display with real paragraph breaks and bullets (no run-on wrapping).
+2) Lexi must be instructed to format answers as readable sections (bullets, steps, short paragraphs).
+3) Quick Exit button must use a muted green gradient that matches the civilla logo (not neon).
+4) Module tile background should be “half as blue” as current (#C3D5D7 → lighter).
+
+A) FIX LEXI MESSAGE RENDERING (preserve newlines)
+In: client/src/components/lexi/LexiPanel.tsx (or wherever the assistant message bubble is rendered)
+
+- Ensure the assistant message content preserves line breaks:
+  - Add `whitespace-pre-wrap` to the message container that displays assistant content.
+  - If you are using a <p> tag that collapses whitespace, switch to a <div>.
+
+Example:
+<div className="whitespace-pre-wrap leading-relaxed">
+  {message.content}
+</div>
+
+If you are already using ReactMarkdown, ensure it respects breaks:
+- Use remark-gfm and set `components` so paragraphs/lists render correctly.
+- If needed, also set `className="prose whitespace-pre-wrap"` or add `breaks: true`.
+
+B) FORCE LEXI OUTPUT STYLE (server prompt)
+In: server/routes.ts (Lexi chat handler where system prompt / messages are assembled)
+
+Add/replace a SYSTEM formatting instruction so Lexi always returns readable structure:
+- Short paragraphs (max 2–3 sentences)
+- Use headings + bullets when helpful
+- Never use inline “Details: - item - item - item” on one line
+- Prefer:
+  - “Quick answer”
+  - “Key points”
+  - “Steps”
+  - “What to gather”
+  - “Questions to ask your court / attorney”
+- Always include blank lines between sections.
+
+Add something like:
+
+SYSTEM STYLE RULES (append to Lexi system prompt):
+"Formatting rules:
+- Use Markdown.
+- Use blank lines between paragraphs/sections.
+- Use bullet lists for lists (no hyphen run-ons).
+- Keep paragraphs under 3 lines.
+- If you write 'Quick answer', put it on its own line, then a blank line.
+- Never output 'Details: - ... - ...' on a single line."
+
+C) QUICK EXIT BUTTON GRADIENT (match logo, not neon)
+Find the Quick Exit button styling (likely AppNavbar / layout component).
+
+- Replace the current bright gradient with a muted “logo-like” gradient.
+Use:
+  start: #1F5A3A
+  end:   #4E9A5B
+And a subtle hover:
+  hover start: #1B5134
+  hover end:   #438C53
+
+Implement as Tailwind:
+bg-gradient-to-r from-[#1F5A3A] to-[#4E9A5B]
+hover:from-[#1B5134] hover:to-[#438C53]
+
+Make text white and keep the same rounded/outline styles.
+
+D) MODULE TILE BACKGROUND “HALF AS BLUE”
+We previously normalized module tiles to CSS tokens in client/src/index.css.
+
+Update:
+--module-tile
+
+From:
+--module-tile: 186 20% 80%   (≈ #C3D5D7)
+
+To a lighter “half-blue” value:
+Use the midpoint between #C3D5D7 and the lighter neutral #E4ECED:
+Midpoint = #D4E0E2
+
+So set:
+--module-tile: 186 22% 86%;   (approx)  OR directly compute to match #D4E0E2 in HSL
+
+Keep border/icon tokens as-is unless contrast is lost.
+
+E) REPORT BACK
+After changes:
+1) List files changed
+2) Confirm Lexi outputs show real paragraph breaks + bullets in UI
+3) Confirm Quick Exit looks like logo (muted gradient)
+4) Confirm module tile background is lighter and consistent across dashboard + Start Here + module pages
