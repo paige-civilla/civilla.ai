@@ -1,0 +1,67 @@
+Replit: Add the Trial Prep “Shortlist” data model now (so we don’t guess later). Use the same patterns as existing case-scoped tables (userId + caseId ownership). Then wire minimal CRUD endpoints so Evidence/Notes/AI can add items to it.
+
+TABLE: trial_prep_shortlist
+Purpose:
+A lightweight “trial binder” shortlist that can pull the best 1–3 items per section later, without needing the full Trial Prep module yet.
+
+Columns:
+- id (serial/uuid consistent with schema.ts patterns)
+- userId (text, not null, indexed)
+- caseId (int, not null, indexed)
+- sourceType (text enum): "evidence" | "evidence_note" | "timeline_event" | "communication" | "document" | "exhibit_item"
+- sourceId (int, not null)  // points to the source record id
+- title (text, not null)    // user-facing label shown in the shortlist
+- summary (text, nullable)  // short context snippet
+- binderSection (text, not null, default "General")
+  Allowed values (use as a string union in TS, but store as text):
+  "Overview"
+  "Key Facts"
+  "Key Evidence"
+  "Timeline Highlights"
+  "Communications"
+  "Discovery & Disclosures"
+  "Witnesses"
+  "Financial"
+  "Parenting"
+  "Safety"
+  "Other"
+- importance (int, not null, default 3) // 1=highest, 5=lowest
+- tags (json array of strings, not null, default '[]')
+- color (text, nullable) // optional color chip for the card
+- isPinned (boolean, not null, default false)
+- createdAt (timestamp, not null, default now)
+- updatedAt (timestamp, not null, default now)
+
+Constraints:
+- Index on (userId, caseId)
+- Index on (caseId, binderSection)
+- Optional uniqueness to prevent duplicates:
+  UNIQUE(userId, caseId, sourceType, sourceId)
+
+SCHEMA FILES:
+- shared/schema.ts: add drizzle table + zod insert/update schemas
+- server/db.ts: ensure runtime table creation handles this table
+
+STORAGE:
+Add storage methods:
+- listTrialPrepShortlist(userId, caseId)
+- addTrialPrepShortlistItem(userId, caseId, payload)
+- updateTrialPrepShortlistItem(userId, itemId, payload)
+- deleteTrialPrepShortlistItem(userId, itemId)
+
+ROUTES (requireAuth, verify case ownership):
+- GET /api/cases/:caseId/trial-prep/shortlist
+- POST /api/cases/:caseId/trial-prep/shortlist
+- PATCH /api/trial-prep/shortlist/:itemId
+- DELETE /api/trial-prep/shortlist/:itemId
+
+MINIMAL FRONTEND (optional for now, but if quick):
+- No new page required yet.
+- Only ensure Evidence/Notes can POST to shortlist and show a toast.
+
+Acceptance checks:
+1) POST adds an item, GET returns it
+2) PATCH edits title/section/importance/pinned
+3) DELETE removes it
+4) UNIQUE constraint prevents duplicates for same sourceType/sourceId in same case
+Be detailed: list files changed, routes added, and exact payload shapes returned by API.
