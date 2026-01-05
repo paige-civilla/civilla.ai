@@ -22,14 +22,16 @@ export default function AppCases() {
     setLocation(`/app/dashboard/${caseId}`);
   };
 
-  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+  const { data: authData, isLoading: authLoading } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
     queryKey: ["/api/auth/me"],
   });
 
-  const { data: casesData, isLoading: casesLoading } = useQuery<{ cases: Case[] }>({
+  const { data: casesData, isLoading: casesQueryLoading } = useQuery<{ cases: Case[] }>({
     queryKey: ["/api/cases"],
     enabled: !!authData?.user,
   });
+
+  const casesLoading = authLoading || casesQueryLoading || (!authData?.user && !authLoading);
 
   const createCaseMutation = useMutation({
     mutationFn: async (data: { title: string; state?: string; county?: string; caseType?: string; hasChildren?: boolean }) => {
