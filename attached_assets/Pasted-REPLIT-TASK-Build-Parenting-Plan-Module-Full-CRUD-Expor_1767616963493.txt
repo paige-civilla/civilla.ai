@@ -1,0 +1,108 @@
+REPLIT TASK: Build Parenting Plan Module (Full CRUD + Export + Lexi Suggested Questions + Research)
+
+Goal
+Add a complete Parenting Plan module to the authenticated app that lets users build, save, and export a parenting plan draft template per case, with Lexi support (educational + organizational + research) without UPL.
+
+A) DATA MODEL (DB + schema + migrations)
+1) Add table: parenting_plans
+Columns:
+- id (uuid pk)
+- user_id (uuid, required)
+- case_id (uuid, required, indexed)
+- title (text, default "Parenting Plan Draft")
+- status (text enum: "draft" | "final") default "draft"
+- sections (jsonb, required)  // the entire plan content structured by sections
+- created_at (timestamp)
+- updated_at (timestamp)
+
+2) Add table: parenting_plan_sections (optional, only if needed for querying)
+If you keep everything in one jsonb, skip this table. Prefer jsonb for fast iteration.
+
+3) Add migrations using the new migration framework so existing DBs get the new tables/columns.
+
+B) BACKEND ROUTES (requireAuth + ownership)
+Add endpoints:
+- GET  /api/cases/:caseId/parenting-plans              -> list plans for case
+- POST /api/cases/:caseId/parenting-plans              -> create new plan
+- GET  /api/parenting-plans/:planId                    -> read single plan
+- PATCH /api/parenting-plans/:planId                   -> update title/status/sections
+- DELETE /api/parenting-plans/:planId                  -> delete plan
+
+Ownership validation MUST confirm:
+- authenticated user owns caseId
+- parenting plan belongs to that user and case
+
+C) FRONTEND PAGE + NAV + FLOW
+1) Add module tile + navbar entry in the correct dashboard flow order:
+Evidence → Timeline → Children (if enabled) → Communications Log (rename if needed) → Pattern Analysis → Disclosures & Discovery → Document Library / Document Creator → Exhibits → Parenting Plan → Deadlines → Case To-Do → Contacts → Trial Prep → Child Support (last, gated)
+
+2) Add route:
+- /app/parenting-plan/:caseId
+and CaseRedirect support
+
+3) Page UI (AppParentingPlan.tsx)
+Layout:
+- Left: section list (clickable)
+- Right: section editor
+- Top: page header with ModuleIntro + LexiSuggestedQuestions
+- Buttons: “Save Draft”, “Export Draft (DOCX)”, “Create New Plan”, “Delete Plan”
+- Autosave is optional, but manual Save must work reliably.
+
+Sections to include (must be editable + reorderable optional):
+- Overview / Goals
+- Legal & Physical Custody (labels only; do not advise)
+- Decision-Making (medical/education/religion/extracurricular)
+- Parenting Time Schedule (weekday/weekend/holidays/summer)
+- Exchanges (locations, transportation)
+- Communication Between Parents
+- Communication With Children
+- Travel / Out-of-state notice
+- Right of First Refusal
+- Childcare / School Logistics
+- Health Insurance & Medical Expenses (structure only)
+- Extracurriculars
+- Safety / Emergency Protocols
+- Dispute Resolution (mediation/arbitration labels; no strategy)
+- Signatures / Notes
+
+Each section editor:
+- title + rich text (or textarea) body
+- optional “bullets” mode
+- optional tags
+
+D) EXPORT
+1) Add endpoint:
+POST /api/parenting-plans/:planId/export-docx
+Return a DOCX download.
+Use your existing DOCX generation pattern:
+- clear “Educational Draft Template” disclaimer at top
+- include case caption data if available (case number, parties) BUT do not auto-fill anything the user hasn’t consented to.
+
+E) LEXI INTEGRATION (NO UPL)
+1) On the Parenting Plan page:
+- Show LexiSuggestedQuestions relevant to parenting plans.
+- Add a button: “Research my state’s parenting plan expectations”
+This should:
+- call Lexi in RESEARCH mode
+- require citations
+- output sections:
+  - What it’s commonly called in the state (if any)
+  - Where to verify (official judiciary / statutes / court rules)
+  - Common required topics (facts only)
+  - Links/sources list
+- cache results using case_rule_terms (moduleKey="parenting-plan", termKey="parenting_plan_<state>")
+
+2) Lexi must not:
+- recommend a specific schedule
+- predict outcomes
+- provide strategy like “file X to win”
+- give likelihood of success
+
+F) DETAILED REPORT BACK
+After implementing, reply with:
+- Files changed
+- New tables and columns
+- All endpoints added
+- Confirmation that module tile + navbar match the flow order
+- Confirmation export works (DOCX) and includes disclaimer
+- Confirmation Lexi research caches per case+state with citations

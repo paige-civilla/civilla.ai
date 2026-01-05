@@ -43,6 +43,12 @@ export const lexiSuggestedPrompts: Record<string, string[]> = {
     "What should I log after a call or email?",
     "How do I track follow-ups so nothing gets missed?"
   ],
+  "parenting-plan": [
+    "What does my state require in a parenting plan?",
+    "What topics are usually included in parenting plans?",
+    "How do courts typically structure holiday schedules?",
+    "What is the difference between legal and physical custody?"
+  ],
 };
 
 export type LexiModuleKey = keyof typeof lexiSuggestedPrompts;

@@ -180,7 +180,7 @@ export default function AppParentingPlan() {
       return apiRequest("PUT", `/api/parenting-plan/${data.plan.id}/sections/${sectionKey}`, { data: sectionDataVal });
     },
     onSuccess: (_, variables) => {
-      setSavedSections((prev) => new Set([...prev, variables.sectionKey]));
+      setSavedSections((prev) => new Set(Array.from(prev).concat(variables.sectionKey)));
       queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "parenting-plan"] });
       setTimeout(() => {
         setSavedSections((prev) => {
@@ -252,12 +252,8 @@ export default function AppParentingPlan() {
         />
 
         <LexiSuggestedQuestions
+          moduleKey="parenting-plan"
           caseId={caseId}
-          questions={[
-            "What does my state require in a parenting plan?",
-            "What topics are usually included in parenting plans?",
-            "How do courts typically structure holiday schedules?",
-          ]}
         />
 
         <div className="mt-6">
