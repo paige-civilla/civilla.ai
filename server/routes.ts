@@ -1650,7 +1650,7 @@ This is educational and research information only. It is NOT legal advice. Child
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
-      const { state, inputs } = req.body;
+      const { state, inputs, refresh } = req.body;
 
       if (!state || typeof state !== "string") {
         return res.status(400).json({ error: "State is required" });
@@ -1659,6 +1659,30 @@ This is educational and research information only. It is NOT legal advice. Child
       const caseRecord = await storage.getCase(caseId, userId);
       if (!caseRecord) {
         return res.status(404).json({ error: "Case not found" });
+      }
+
+      // Build a stable cache key from inputs
+      const moduleKey = "child-support";
+      const inputsForKey = {
+        parentAIncome: inputs?.parentAIncome ?? null,
+        parentBIncome: inputs?.parentBIncome ?? null,
+        children: inputs?.children ?? null,
+        overnights: inputs?.overnights ?? null,
+        childcare: inputs?.childcare ?? null,
+        healthInsurance: inputs?.healthInsurance ?? null,
+      };
+      const inputHash = Buffer.from(JSON.stringify(inputsForKey)).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
+      const termKey = `child_support_estimate_${state}_${inputHash}`;
+
+      // Check for cached estimate (unless refresh=true)
+      if (!refresh) {
+        const cachedTerms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
+        const cached = cachedTerms.find(t => t.termKey === termKey);
+        if (cached && cached.summary) {
+          // Parse didCompute from the content (check if it contains "Educational Estimate" header)
+          const didCompute = cached.summary.includes("## Educational Estimate");
+          return res.json({ ok: true, content: cached.summary, didCompute, cached: true });
+        }
       }
 
       // Check if OpenAI is configured
@@ -1815,7 +1839,17 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       formattedContent += `### Important Disclaimer\n${parsed.disclaimer || "This is an educational estimate only. It is NOT court-accurate. Always verify with your state's official calculator and consult a family law attorney."}\n`;
 
-      res.json({ ok: true, content: formattedContent, didCompute });
+      // Cache the estimate result
+      await storage.upsertCaseRuleTerm(userId, caseId, {
+        moduleKey,
+        jurisdictionState: state,
+        termKey,
+        officialLabel: `Child Support Estimate - ${state}`,
+        summary: formattedContent,
+        sourcesJson: [],
+      });
+
+      res.json({ ok: true, content: formattedContent, didCompute, cached: false });
     } catch (error) {
       console.error("Child support estimate error:", error);
       res.status(500).json({ error: "Failed to generate child support estimate" });
