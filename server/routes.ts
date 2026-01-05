@@ -1672,6 +1672,292 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/parenting-plan/:planId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { planId } = req.params;
+
+      const deleted = await storage.deleteParentingPlan(userId, planId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Parenting plan not found" });
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Delete parenting plan error:", error);
+      res.status(500).json({ error: "Failed to delete parenting plan" });
+    }
+  });
+
+  app.post("/api/parenting-plan/:planId/export-docx", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { planId } = req.params;
+
+      const plan = await storage.getParentingPlan(userId, planId);
+      if (!plan) {
+        return res.status(404).json({ error: "Parenting plan not found" });
+      }
+
+      const sections = await storage.listParentingPlanSections(userId, planId);
+      const caseRecord = await storage.getCase(plan.caseId, userId);
+
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import("docx");
+
+      const FONT = "Times New Roman";
+      const FONT_SIZE = 24;
+
+      const docChildren: (typeof Paragraph.prototype)[] = [];
+
+      docChildren.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+        children: [new TextRun({
+          text: "EDUCATIONAL DRAFT TEMPLATE",
+          bold: true,
+          font: FONT,
+          size: FONT_SIZE,
+        })],
+      }));
+
+      docChildren.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 },
+        children: [new TextRun({
+          text: "This is a draft template for organizational purposes only. It does NOT constitute legal advice or a court-ready document. Consult with a licensed attorney before filing any court documents.",
+          italics: true,
+          font: FONT,
+          size: 20,
+        })],
+      }));
+
+      docChildren.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 },
+        children: [new TextRun({
+          text: "PARENTING PLAN DRAFT",
+          bold: true,
+          font: FONT,
+          size: 32,
+        })],
+      }));
+
+      if (caseRecord) {
+        if (caseRecord.caseNumber) {
+          docChildren.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+            children: [new TextRun({
+              text: `Case No.: ${caseRecord.caseNumber}`,
+              font: FONT,
+              size: FONT_SIZE,
+            })],
+          }));
+        }
+      }
+
+      docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
+
+      const sectionTitles: Record<string, string> = {
+        "decision-making": "Decision-Making",
+        "parenting-time": "Parenting Time",
+        "holidays": "Holidays & Special Days",
+        "medical": "Medical & Healthcare",
+        "education": "Education",
+        "communication": "Communication",
+        "extracurriculars": "Extracurricular Activities",
+        "travel": "Travel",
+        "childcare": "Childcare",
+        "safety": "Safety & Special Concerns",
+        "financial": "Financial Responsibilities",
+        "modification": "Modification & Dispute Resolution",
+      };
+
+      for (const section of sections) {
+        const title = sectionTitles[section.sectionKey] || section.sectionKey;
+        const data = section.data as Record<string, unknown>;
+
+        docChildren.push(new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 400, after: 200 },
+          children: [new TextRun({
+            text: title,
+            bold: true,
+            font: FONT,
+            size: 28,
+          })],
+        }));
+
+        for (const [key, value] of Object.entries(data)) {
+          if (value && typeof value === "string" && value.trim()) {
+            const label = key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+            docChildren.push(new Paragraph({
+              spacing: { after: 100 },
+              children: [
+                new TextRun({ text: `${label}: `, bold: true, font: FONT, size: FONT_SIZE }),
+                new TextRun({ text: value, font: FONT, size: FONT_SIZE }),
+              ],
+            }));
+          } else if (typeof value === "boolean" && value) {
+            const label = key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+            docChildren.push(new Paragraph({
+              spacing: { after: 100 },
+              children: [new TextRun({ text: `${label}: Yes`, font: FONT, size: FONT_SIZE })],
+            }));
+          }
+        }
+      }
+
+      docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
+      docChildren.push(new Paragraph({
+        children: [new TextRun({
+          text: "Generated by Civilla.ai - Educational Draft Template",
+          italics: true,
+          font: FONT,
+          size: 18,
+        })],
+      }));
+
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: docChildren,
+        }],
+      });
+
+      const buffer = await Packer.toBuffer(doc);
+      const filename = `parenting-plan-draft-${new Date().toISOString().split('T')[0]}.docx`;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Export parenting plan DOCX error:", error);
+      res.status(500).json({ error: "Failed to export parenting plan" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/parenting-plan/research", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const state = req.query.state as string;
+
+      if (!state) {
+        return res.status(400).json({ error: "State is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const termKey = `parenting_plan_${state.toLowerCase().replace(/\s+/g, '_')}`;
+      const terms = await storage.getCaseRuleTerms(userId, caseId, "parenting-plan");
+      const cached = terms.find(t => t.termKey === termKey);
+
+      if (cached) {
+        return res.json({ ok: true, content: cached.summary, cached: true, lastCheckedAt: cached.lastCheckedAt });
+      }
+
+      res.json({ ok: true, content: null, cached: false });
+    } catch (error) {
+      console.error("Get parenting plan research error:", error);
+      res.status(500).json({ error: "Failed to get parenting plan research" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/parenting-plan/research", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { state, refresh } = req.body;
+
+      if (!state || typeof state !== "string") {
+        return res.status(400).json({ error: "State is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const termKey = `parenting_plan_${state.toLowerCase().replace(/\s+/g, '_')}`;
+      const moduleKey = "parenting-plan";
+
+      if (!refresh) {
+        const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
+        const cached = terms.find(t => t.termKey === termKey);
+        if (cached && cached.summary) {
+          return res.json({ ok: true, content: cached.summary, cached: true });
+        }
+      }
+
+      const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+      if (!lexiApiKeyConfigured) {
+        return res.status(503).json({ error: "AI integration not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
+
+Your task: Research and provide general educational information about parenting plans in ${state}.
+
+STRICT RULES:
+1. Be EDUCATIONAL + ORGANIZATIONAL + RESEARCH focused only.
+2. Do NOT provide legal advice, strategy, or likelihood of outcomes.
+3. Do NOT recommend specific schedules or custody arrangements.
+4. Do NOT invent citations or URLs. If you cannot confidently name an official source URL, say "I couldn't verify the official page" and provide step-by-step instructions to find it on official sites.
+5. Focus on what the state calls its parenting plan requirements, what topics are commonly required, and where to find official resources.
+
+You MUST format your response EXACTLY like this:
+
+## Parenting Plans in ${state}
+
+### What It's Commonly Called
+[What the state calls its parenting plan, custody agreement, residential schedule, or similar document]
+
+### Official Sources to Verify
+[List known official sources like state judiciary website, family court forms, or statute references. If you can't verify a specific URL, say so and provide instructions on how to find it]
+
+### Commonly Required Topics
+[List typical required or recommended sections: legal custody, physical custody, parenting time schedule, holidays, decision-making, transportation, communication, etc.]
+
+### How to Find Official Forms
+[Step-by-step instructions to find official parenting plan forms on state judiciary or court websites]
+
+### Important Disclaimer
+This is educational and research information only. It is NOT legal advice. Parenting plan requirements vary significantly by jurisdiction and individual circumstances. For court-accurate documents, consult with a family law attorney. civilla does not provide legal advice or representation.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Please research and provide educational information about parenting plan requirements in ${state}.` }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      });
+
+      const content = completion.choices[0]?.message?.content || "Unable to generate research content.";
+
+      await storage.upsertCaseRuleTerm(userId, caseId, {
+        moduleKey,
+        jurisdictionState: state,
+        termKey,
+        officialLabel: `Parenting Plan Requirements - ${state}`,
+        summary: content,
+        sourcesJson: [],
+      });
+
+      res.json({ ok: true, content, cached: false });
+    } catch (error) {
+      console.error("Parenting plan research error:", error);
+      res.status(500).json({ error: "Failed to research parenting plan requirements" });
+    }
+  });
+
 // Child Support Research endpoints
   app.get("/api/cases/:caseId/child-support/research", requireAuth, async (req, res) => {
     try {

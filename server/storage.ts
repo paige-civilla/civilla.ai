@@ -306,6 +306,8 @@ export interface IStorage {
   createParentingPlan(userId: string, caseId: string, data?: InsertParentingPlan): Promise<ParentingPlan>;
   updateParentingPlan(userId: string, planId: string, data: UpdateParentingPlan): Promise<ParentingPlan | undefined>;
   getOrCreateParentingPlan(userId: string, caseId: string): Promise<ParentingPlan>;
+  deleteParentingPlan(userId: string, planId: string): Promise<boolean>;
+  getParentingPlan(userId: string, planId: string): Promise<ParentingPlan | undefined>;
 
   listParentingPlanSections(userId: string, planId: string): Promise<ParentingPlanSection[]>;
   getParentingPlanSection(userId: string, planId: string, sectionKey: string): Promise<ParentingPlanSection | undefined>;
@@ -2077,6 +2079,20 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getParentingPlanByCase(userId, caseId);
     if (existing) return existing;
     return this.createParentingPlan(userId, caseId);
+  }
+
+  async deleteParentingPlan(userId: string, planId: string): Promise<boolean> {
+    await db.delete(parentingPlanSections)
+      .where(and(eq(parentingPlanSections.parentingPlanId, planId), eq(parentingPlanSections.userId, userId)));
+    const result = await db.delete(parentingPlans)
+      .where(and(eq(parentingPlans.id, planId), eq(parentingPlans.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getParentingPlan(userId: string, planId: string): Promise<ParentingPlan | undefined> {
+    const [row] = await db.select().from(parentingPlans)
+      .where(and(eq(parentingPlans.id, planId), eq(parentingPlans.userId, userId)));
+    return row;
   }
 
   async listParentingPlanSections(userId: string, planId: string): Promise<ParentingPlanSection[]> {

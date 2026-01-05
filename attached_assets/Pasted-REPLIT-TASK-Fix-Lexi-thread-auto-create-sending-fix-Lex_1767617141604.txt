@@ -1,0 +1,229 @@
+REPLIT TASK: Fix Lexi thread auto-create + sending, fix Lexi toggle tab (arrow + correct attachment), and fix menu label overlap (Child Support name too long)
+
+Context
+- Lexi should work for any logged-in user (no caseId required).
+- Clicking “Start a conversation” must always create a thread and immediately allow sending.
+- Suggested question chips must also auto-create a thread if none exists.
+- The Lexi toggle tab must be attached to the Lexi panel edge (not floating), and show an arrow BEFORE “Lexi” with correct direction open/closed.
+- App navbar menu item text must not overlap; “Child Support (Worksheet Helper)” is too long and is colliding with “Trial Prep”.
+
+──────────────────────────────────────────────────────────────────────────────
+PART 1 — BACKEND: Make Lexi threads/messages work without a caseId
+──────────────────────────────────────────────────────────────────────────────
+
+1) Add global (non-case-scoped) Lexi thread endpoints
+In server/routes.ts (near existing Lexi routes), add:
+
+- GET  /api/lexi/threads
+- POST /api/lexi/threads
+- GET  /api/lexi/threads/:threadId/messages
+- POST /api/lexi/threads/:threadId/messages
+
+Rules:
+- requireAuth on all
+- caseId is OPTIONAL (nullable) on the thread record
+- userId must always match authenticated user
+- The message POST should not require caseId to exist
+
+Implementation outline:
+- storage.listLexiThreads(userId) returns all threads for user, most recent first
+- storage.createLexiThread({ userId, caseId: null, title: "Conversation" }) returns created thread
+- storage.listLexiMessages(threadId, userId) ensures thread belongs to user
+- storage.createLexiMessage({ userId, threadId, role, content, mode, moduleKey }) etc.
+
+IMPORTANT:
+- Do NOT break existing case-scoped routes; keep them if used elsewhere.
+- If you already have case-scoped routes like /api/cases/:caseId/lexi/threads, leave them, but make the UI use the global routes when caseId is missing.
+
+2) Ensure Lexi chat completion route works for global threads
+If your “send message” route is currently case-scoped, add a global equivalent:
+
+POST /api/lexi/chat
+Body: { threadId, message, mode, moduleKey, caseId?: string | null }
+
+Behavior:
+- Validate threadId belongs to user
+- caseId can be null
+- Run Lexi policy pipeline (intent classification + refusal templates) exactly as now
+- Store user message + assistant response in lexi_messages
+
+Return:
+{ ok: true, assistantMessage, threadId }
+
+──────────────────────────────────────────────────────────────────────────────
+PART 2 — FRONTEND: Fix “Start a conversation” + sending reliability
+──────────────────────────────────────────────────────────────────────────────
+
+File: client/src/components/lexi/LexiPanel.tsx
+
+Goal: Any of these actions must guarantee a thread exists:
+- Clicking “Start a conversation”
+- Clicking a suggested question chip
+- Sending a typed message (Enter or Send button)
+
+Do this:
+
+1) Add a single helper that guarantees a thread:
+async function ensureThread(): Promise<string> {
+  if (selectedThreadId) return selectedThreadId;
+
+  // create thread via POST /api/lexi/threads
+  const res = await apiRequest("POST", "/api/lexi/threads", { title: "Conversation" });
+  const data = await res.json();
+
+  // set state: selectedThreadId + refresh thread list query
+  setSelectedThreadId(data.thread.id);
+  queryClient.invalidateQueries({ queryKey: ["/api/lexi/threads"] });
+
+  return data.thread.id;
+}
+
+2) Update Start Conversation button:
+onClick => {
+  const tid = await ensureThread();
+  // optional: focus input
+}
+
+3) Update suggested question chip handler:
+onChipClick(question) => {
+  const tid = await ensureThread();
+  await sendMessage({ threadId: tid, message: question, mode, moduleKey });
+}
+
+4) Update “Send” behavior:
+- When user hits Enter or presses Send:
+  - await ensureThread()
+  - sendMessage using the returned threadId
+  - never show “Open a case to chat…” to logged-in users
+
+5) Fix the empty-state copy:
+Replace “Open a case to chat…” with:
+“Ask a question to start. You can talk generally, or about a case when you have one open.”
+
+6) Make sure “All conversations (0)” updates:
+Threads query must hit GET /api/lexi/threads and refresh after creating first thread.
+
+──────────────────────────────────────────────────────────────────────────────
+PART 3 — Lexi toggle tab: Arrow before Lexi + attached to panel edge
+──────────────────────────────────────────────────────────────────────────────
+
+Problem seen in screenshots:
+- The tab is floating in the middle, not attached to the panel edge.
+- Closed state shows only a chevron (no Lexi label).
+- Arrow should be “before Lexi” and flip direction with open/closed.
+
+Fix approach:
+- Render TWO different tabs:
+  A) When panel is CLOSED: a fixed tab on the right edge of viewport.
+  B) When panel is OPEN: an absolute tab attached to the LEFT EDGE of the panel container.
+
+In LexiPanel.tsx:
+1) Wrap the OPEN panel in a relative container:
+<div className="fixed right-0 ...">
+  <div className="relative h-full w-full">
+    ...panel content...
+    { /* Attached open-tab */ }
+  </div>
+</div>
+
+2) Open-state attached tab (absolute):
+Place inside the relative container:
+
+<button
+  className="
+    absolute left-[-44px] top-1/2 -translate-y-1/2
+    h-32 w-11 rounded-l-xl
+    bg-[#314143] text-cream
+    border border-[hsl(var(--module-tile-border))]
+    flex items-center justify-center
+    shadow
+  "
+  aria-label="Close Lexi"
+  onClick={closePanel}
+>
+  <div className="rotate-[-90deg] flex items-center gap-2">
+    <span className="text-lg">‹</span>
+    <span className="font-semibold tracking-wide">Lexi</span>
+  </div>
+</button>
+
+3) Closed-state fixed tab:
+Render outside the panel, only when closed:
+
+<button
+  className="
+    fixed right-0 top-1/2 -translate-y-1/2
+    h-32 w-11 rounded-l-xl
+    bg-[#314143] text-cream
+    border border-[hsl(var(--module-tile-border))]
+    flex items-center justify-center
+    shadow
+  "
+  aria-label="Open Lexi"
+  onClick={openPanel}
+>
+  <div className="rotate-[-90deg] flex items-center gap-2">
+    <span className="text-lg">›</span>
+    <span className="font-semibold tracking-wide">Lexi</span>
+  </div>
+</button>
+
+This guarantees the tab always stays physically attached:
+- Closed tab is on the screen edge.
+- Open tab is anchored to the panel container edge via absolute positioning.
+
+4) Update Lexi header subtitle:
+Change to:
+Top line: “Lexi”
+Second line: “Your AI assistant”
+(Use the same font sizing you already use, just replace the text.)
+
+5) Disclaimer bar color:
+Replace the yellow/amber banner with your theme accent:
+bg-[hsl(var(--accent))] (or bg-[hsl(var(--module-tile-icon))]/20 if you want it softer)
+
+──────────────────────────────────────────────────────────────────────────────
+PART 4 — Fix menu overlap: shorten label + enforce truncation
+──────────────────────────────────────────────────────────────────────────────
+
+Problem: “Child Support (Worksheet Helper)” overlaps “Trial Prep”.
+
+1) Shorten label in module definitions:
+File: client/src/lib/modules.ts (and anywhere else labels are defined)
+Change:
+label: "Child Support (Worksheet Helper)"
+to:
+label: "Child Support"
+
+Keep the longer explanation in description instead:
+description: "Find your state's worksheet and official calculator links."
+
+2) Force nav item text to truncate instead of wrapping/overlapping
+File: client/src/components/layout/AppNavbar.tsx
+
+For the menu item label container, ensure:
+className includes:
+"min-w-0 flex-1 truncate whitespace-nowrap overflow-hidden text-ellipsis"
+
+If the menu uses a grid layout for links, ensure each grid cell has min-w-0.
+
+3) If the menu is 2-column and text is still tight on small widths:
+- On small screens, switch to 1 column:
+grid-cols-1 sm:grid-cols-2
+This prevents collisions on narrow widths.
+
+──────────────────────────────────────────────────────────────────────────────
+REPORT BACK (REQUIRED)
+After changes, reply with:
+- Files changed
+- Confirm Lexi works while logged-in with NO open case:
+  - Start conversation creates thread
+  - Sending a message works
+  - Suggested chips auto-create thread + send
+- Confirm Lexi tab:
+  - Shows “› Lexi” when closed
+  - Shows “‹ Lexi” when open
+  - Always attached to panel edge
+- Confirm menu:
+  - “Child Support” no longer overlaps “Trial Prep”
+  - Text truncates safely on smaller widths
