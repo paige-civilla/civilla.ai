@@ -305,8 +305,10 @@ export const caseEvidenceNotes = pgTable("case_evidence_notes", {
   caseId: varchar("case_id").notNull().references(() => cases.id),
   evidenceFileId: varchar("evidence_file_id").notNull().references(() => evidenceFiles.id),
   pageNumber: integer("page_number"),
+  timestampSeconds: integer("timestamp_seconds"),
   label: text("label"),
   note: text("note").notNull(),
+  isKey: boolean("is_key").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   caseIdx: index("evidence_notes_case_idx").on(table.caseId),
@@ -316,14 +318,18 @@ export const caseEvidenceNotes = pgTable("case_evidence_notes", {
 
 export const insertEvidenceNoteSchema = z.object({
   pageNumber: z.number().int().positive().optional().nullable(),
+  timestampSeconds: z.number().int().min(0).optional().nullable(),
   label: z.string().max(80).optional().nullable(),
   note: z.string().min(1, "Note is required").max(5000),
+  isKey: z.boolean().optional().default(false),
 });
 
 export const updateEvidenceNoteSchema = z.object({
   pageNumber: z.number().int().positive().optional().nullable(),
+  timestampSeconds: z.number().int().min(0).optional().nullable(),
   label: z.string().max(80).optional().nullable(),
   note: z.string().min(1).max(5000).optional(),
+  isKey: z.boolean().optional(),
 });
 
 export type InsertEvidenceNote = z.infer<typeof insertEvidenceNoteSchema>;

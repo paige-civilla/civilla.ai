@@ -1,0 +1,63 @@
+Replit — please make this small UI polish change (app-only, not marketing pages):
+
+GOAL
+1) The module tile background color is a little too blue. Make it about “half as blue” (lighter/closer to the cream background), while staying in the same blue/gray family.
+2) Make the module tile outline a bit darker so each tile is more distinct.
+
+CURRENT COLORS (from our scheme)
+- App background: #FAF8F4
+- Current module tile bg: #E4ECED (too blue now per Paige)
+- Current module border: #628286
+
+WHAT TO CHANGE
+A) Create dedicated CSS tokens for module tiles (so we don’t hardcode colors across pages)
+In client/src/index.css (inside the APP theme scope, whatever we’re using now: .theme-app or .app-shell), add:
+
+--module-tile: <NEW_LIGHTER_COLOR>
+--module-tile-border: <NEW_DARKER_BORDER_COLOR>
+--module-tile-hover: <a subtle hover tint>
+--module-tile-icon: same as border
+
+Pick exact values like this (safe defaults):
+- --module-tile: #EFF3F4   (lighter than #E4ECED, closer to #FAF8F4 but still cool)
+- --module-tile-border: #4F6A6E (darker than #628286 for clearer separation)
+- --module-tile-hover: #E3ECEE (slightly deeper than tile bg, not dark)
+- --module-tile-icon: var(--module-tile-border)
+
+B) Update ALL module tiles to use these tokens
+Wherever module tiles are rendered (Dashboard module grid, Case Workspace tiles, any shared “ModuleTile” component if it exists):
+- Replace bg-[#E4ECED] (or any module bg class) with: background-color: var(--module-tile)
+- Replace border-[#628286] with: border-color: var(--module-tile-border)
+- Replace icon stroke/text color with: color: var(--module-tile-icon)
+- Hover state should use var(--module-tile-hover) for background + keep text readable
+
+If tiles are built via Tailwind classes, prefer:
+- bg-[hsl(var(--module-tile))] style only if we stored HSL; otherwise use inline style or a small CSS class like:
+  .module-tile { background: var(--module-tile); border-color: var(--module-tile-border); }
+  .module-tile:hover { background: var(--module-tile-hover); }
+
+C) Dark mode (app) must also look correct
+In the app dark mode token section, set module tiles to a darker surface with a visible border, for example:
+- --module-tile: #1F2A2C
+- --module-tile-border: #6F8C90  (still visible)
+- --module-tile-hover: #243235
+- --module-tile-icon: #AFC3C6
+Make sure text stays high contrast.
+
+FILES TO TOUCH (likely)
+- client/src/index.css (add tokens for app + dark mode)
+- client/src/pages/AppDashboard.tsx (module tile styles/classes)
+- client/src/pages/AppCase.tsx (case workspace tiles)
+- Any shared tile component if present (preferred single-source fix)
+
+ACCEPTANCE CHECK
+- On Dashboard, module tiles look less blue (more subtle), closer to the cream background.
+- Tile borders are visibly stronger/darker and tiles are easier to distinguish.
+- Icons match the border color.
+- Hover is gentle and does not make text unreadable.
+- Dark mode module tiles also change (not just background) and remain readable.
+
+After implementing, reply with:
+1) The exact final hex values you used for module tile bg/border/hover in BOTH light + dark mode.
+2) The list of files changed.
+3) A quick note confirming marketing pages were not affected.
