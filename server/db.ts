@@ -623,5 +623,67 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user ON case_evidence_notes(user_id)`
   ]);
 
+  await addColumnIfNotExists("case_evidence_notes", "timestamp_seconds", "INTEGER");
+  await addColumnIfNotExists("case_evidence_notes", "is_key", "BOOLEAN NOT NULL DEFAULT false");
+
+  await initTable("case_exhibit_note_links", `
+    CREATE TABLE IF NOT EXISTS case_exhibit_note_links (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      exhibit_list_id VARCHAR(255) NOT NULL,
+      evidence_note_id VARCHAR(255) NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      label TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_note ON case_exhibit_note_links(evidence_note_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_list ON case_exhibit_note_links(exhibit_list_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_case ON case_exhibit_note_links(case_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_exhibit_note_links_unique ON case_exhibit_note_links(exhibit_list_id, evidence_note_id)`
+  ]);
+
+  await addColumnIfNotExists("exhibit_lists", "description", "TEXT");
+  await addColumnIfNotExists("exhibit_lists", "is_used_for_filing", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfNotExists("exhibit_lists", "filing_label", "TEXT");
+  await addColumnIfNotExists("exhibit_lists", "cover_page_enabled", "BOOLEAN NOT NULL DEFAULT true");
+  await addColumnIfNotExists("exhibit_lists", "cover_page_title", "TEXT");
+  await addColumnIfNotExists("exhibit_lists", "cover_page_subtitle", "TEXT");
+
+  await addColumnIfNotExists("exhibit_evidence", "exhibit_list_id", "VARCHAR(255)");
+  await addColumnIfNotExists("exhibit_evidence", "evidence_file_id", "VARCHAR(255)");
+  await addColumnIfNotExists("exhibit_evidence", "sort_order", "INTEGER NOT NULL DEFAULT 0");
+  await addColumnIfNotExists("exhibit_evidence", "label", "TEXT");
+  await addColumnIfNotExists("exhibit_evidence", "notes", "TEXT");
+  try {
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_list ON exhibit_evidence(exhibit_list_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_file ON exhibit_evidence(evidence_file_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_sort ON exhibit_evidence(exhibit_list_id, sort_order)`);
+  } catch (e) {
+    console.log("Some exhibit_evidence indexes may already exist");
+  }
+
+  await initTable("timeline_categories", `
+    CREATE TABLE IF NOT EXISTS timeline_categories (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL DEFAULT '#628286',
+      is_system BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_timeline_categories_user ON timeline_categories(user_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_timeline_categories_unique_user_name ON timeline_categories(user_id, name)`
+  ]);
+
+  await addColumnIfNotExists("timeline_events", "category_id", "VARCHAR(255)");
+  try {
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_timeline_events_category ON timeline_events(category_id)`);
+  } catch (e) {
+    console.log("timeline_events category_id index may already exist");
+  }
+
   console.log("Database table initialization complete");
 }
