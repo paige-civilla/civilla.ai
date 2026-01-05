@@ -1,0 +1,149 @@
+REPLIT TASK: Fix Lexi reliability + header/arrow UX + remove case requirement + shorten Child Support menu label
+
+Goal
+1) Lexi must work for ANY logged-in user (no caseId required).
+2) “Start conversation” MUST always create a thread and messages MUST send.
+3) Lexi header must show: chevron + “Lexi” + subtitle “Your AI assistant”, with correct chevron direction for open/closed.
+4) Suggested question chips must appear and must auto-send (and auto-create a thread if none exists).
+5) Fix the main menu label so “Child Support Worksheet Helper” does not overlap Trial Prep (shorten label + prevent wrap/overlap).
+
+Acceptance Tests
+A) Logged in, no case selected / no cases at all:
+- Open Lexi panel
+- Click “Start conversation”
+- A thread is created (200 response) and input becomes enabled
+- Send message; assistant responds
+
+B) Suggested questions:
+- With no thread, click any suggested question chip
+- It creates a thread and sends the message (no extra clicks)
+- A user message appears + assistant response appears
+
+C) Header UI:
+- When panel is closed: a right-edge tab shows “▸ Lexi” (or “▸ Lexi” style) and is clickable
+- When panel is open: header shows “▾ Lexi” (or “▾ Lexi”) and subtitle “Your AI assistant”
+- Chevron direction flips correctly on toggle
+- Tab/label is visually attached to the panel edge (no floating in middle)
+
+D) Menu label:
+- AppNavbar menu shows “Child Support” (or “Child Support Helper”) and does not overlap other items
+- Long labels do not wrap into other items; they truncate gracefully with ellipsis
+
+Implementation (do all)
+
+PART 1: Backend – make Lexi threads/messages NOT case-scoped
+
+1) server/routes.ts
+- Ensure these endpoints exist and are requireAuth protected:
+  POST /api/lexi/threads
+  GET  /api/lexi/threads
+  GET  /api/lexi/threads/:threadId/messages
+  POST /api/lexi/threads/:threadId/messages
+
+- For POST /api/lexi/threads:
+  - Accept body: { title?: string, caseId?: string | null }
+  - caseId must be OPTIONAL and nullable
+  - Create a “general” thread if caseId missing:
+    - store caseId as NULL
+    - store moduleKey as NULL unless provided
+  - If DB insert fails, return JSON with a code:
+    { error: "Failed to create thread", code: "CREATE_THREAD_FAILED" }
+
+- For POST /api/lexi/threads/:threadId/messages:
+  - Do NOT require caseId
+  - Only require: user owns threadId
+  - If thread caseId is null, still allow chat.
+
+2) server/storage.ts
+- Confirm Lexi thread/message storage supports NULL caseId threads:
+  - createLexiThread(userId, { caseId?: string | null, title?: string })
+  - listLexiThreads(userId) should return both case threads and general threads
+  - ownership enforcement must remain strict (userId filter)
+
+3) server/db.ts
+- You already added ensureLexiThreadsColumns(). Add/confirm:
+  - lexi_threads.case_id column is nullable
+  - no constraint that requires case_id
+  - migration is idempotent
+
+PART 2: Frontend – thread auto-create + sending never blocked
+
+1) client/src/components/lexi/LexiPanel.tsx
+- Remove any logic that blocks Lexi when there is no caseId.
+  - NO “Open a case to start chat” gating.
+  - Lexi should run as long as user is authenticated.
+
+- Make Start Conversation always create a thread:
+  - If no activeThreadId:
+    - call POST /api/lexi/threads with { title: "General", caseId: null }
+    - set activeThreadId from response
+    - then allow sending
+
+- Make sending robust:
+  - sendMessage(text):
+    - if (!activeThreadId) await createThread()
+    - then POST message to /api/lexi/threads/:threadId/messages
+  - Show a clear inline error if thread creation fails:
+    “Could not start Lexi chat. Please try again.”
+
+- Suggested question chips:
+  - Must render even when no thread exists
+  - On click:
+    - await ensureThread()
+    - send message immediately
+  - If user types anything (input length > 0), the suggested chips area collapses/hides.
+
+2) Fix the header and toggle label:
+- Replace the current </> tab with a Lexi-labeled toggle:
+  - Closed state tab: “▸ Lexi”
+  - Open state header left: “▾ Lexi”
+- Subtitle under Lexi:
+  - “Your AI assistant”
+- Keep the close “X” on the right.
+
+3) Fix positioning so the tab is attached to the panel edge:
+- The “closed tab” should be position: fixed; right: 0; vertically centered
+- The open panel should be position: fixed; right margin consistent with navbar height:
+  - top should be (navbarHeight + spacing), not 0
+- Use a single shared PANEL_WIDTH constant for:
+  - panel width
+  - tab left offset math (if any)
+  - avoid mismatched clamp() values
+
+4) Replace the yellow disclaimer bar color:
+- Change yellow/amber bar to theme green or theme accent blue:
+  - use bg-[hsl(var(--accent))] or a consistent brand token
+  - ensure text contrast is readable
+
+PART 3: Menu label for Child Support (stop overlap)
+
+1) client/src/lib/modules.ts (or wherever module labels live)
+- Change:
+  label: "Child Support Worksheet Helper"
+  to:
+  label: "Child Support"
+  (or "Child Support Helper" if you prefer)
+
+2) client/src/components/layout/AppNavbar.tsx
+- Ensure menu item text does not overlap:
+  - Add:
+    className="truncate"
+    and/or
+    "max-w-[...]" to the label container
+  - Ensure each menu item is flex with:
+    icon fixed width + text flex-1 truncate
+  - On hover highlight, keep text readable (white if highlight is dark)
+
+PART 4: Report back with verification
+After changes, respond with:
+- Files changed
+- Confirm Lexi works without caseId
+- Confirm Start Conversation creates a thread + messages send
+- Confirm chevron + Lexi label works open/closed and is attached to the edge
+- Confirm Child Support label no longer overlaps Trial Prep
+- Include any remaining logs/errors if something still fails
+
+Important Notes
+- Do NOT remove requireAuth from Lexi endpoints.
+- Do NOT log secrets.
+- Keep per-user ownership enforcement on all Lexi reads/writes.
