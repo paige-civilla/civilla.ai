@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen, Download, Loader2, Settings, Calendar } from "lucide-react";
+import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen, Download, Loader2, Settings, Calendar, MoveUp, MoveDown, File, Scale, ExternalLink, Edit } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, ExhibitList, Exhibit, EvidenceFile } from "@shared/schema";
+import type { Case, ExhibitList, Exhibit, EvidenceFile, ExhibitEvidence, ExhibitSnippet } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 
 function formatDate(date: string | Date): string {
@@ -340,8 +340,21 @@ function ExhibitListCard({
     enabled: !!attachModalExhibitId,
   });
 
+  const { data: itemsData, isLoading: itemsLoading } = useQuery<{ evidenceLinks: ExhibitEvidence[]; snippets: ExhibitSnippet[] }>({
+    queryKey: ["/api/exhibit-lists", list.id, "items"],
+    enabled: expanded,
+  });
+
+  const { data: allEvidenceFiles } = useQuery<{ files: EvidenceFile[] }>({
+    queryKey: ["/api/cases", caseId, "evidence"],
+    enabled: expanded,
+  });
+
   const exhibits = exhibitsData?.exhibits || [];
   const allEvidence = evidenceData?.files || [];
+  const linkedEvidence = itemsData?.evidenceLinks || [];
+  const snippets = itemsData?.snippets || [];
+  const evidenceFilesMap = new Map((allEvidenceFiles?.files || []).map(f => [f.id, f]));
 
   const createExhibitMutation = useMutation({
     mutationFn: async (data: { title: string; description?: string }) => {
@@ -398,6 +411,84 @@ function ExhibitListCard({
       toast({ title: "Error", description: error.message || "Failed to attach evidence", variant: "destructive" });
     },
   });
+
+  const addEvidenceToListMutation = useMutation({
+    mutationFn: async (evidenceFileId: string) => {
+      return apiRequest("POST", `/api/exhibit-lists/${list.id}/evidence`, { evidenceFileId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exhibit-lists", list.id, "items"] });
+      toast({ title: "Evidence added", description: "Evidence linked to exhibit list." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to add evidence", variant: "destructive" });
+    },
+  });
+
+  const removeEvidenceFromListMutation = useMutation({
+    mutationFn: async (evidenceFileId: string) => {
+      return apiRequest("DELETE", `/api/exhibit-lists/${list.id}/evidence/${evidenceFileId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exhibit-lists", list.id, "items"] });
+      toast({ title: "Evidence removed", description: "Evidence unlinked from exhibit list." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to remove evidence", variant: "destructive" });
+    },
+  });
+
+  const reorderEvidenceMutation = useMutation({
+    mutationFn: async (evidenceOrder: { id: string; sortOrder: number }[]) => {
+      return apiRequest("POST", `/api/exhibit-lists/${list.id}/reorder`, { evidenceOrder });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exhibit-lists", list.id, "items"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to reorder", variant: "destructive" });
+    },
+  });
+
+  const deleteSnippetMutation = useMutation({
+    mutationFn: async (snippetId: string) => {
+      return apiRequest("DELETE", `/api/exhibit-snippets/${snippetId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exhibit-lists", list.id, "items"] });
+      toast({ title: "Snippet deleted" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to delete snippet", variant: "destructive" });
+    },
+  });
+
+  const addToTrialPrepMutation = useMutation({
+    mutationFn: async (data: { sourceType: string; sourceId: string; title: string; summary?: string }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep/shortlist`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep", "shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error) => {
+      if (error.message?.includes("already exists")) {
+        toast({ title: "Already in Trial Prep", description: "This item is already in your shortlist." });
+      } else {
+        toast({ title: "Error", description: error.message || "Failed to add to trial prep", variant: "destructive" });
+      }
+    },
+  });
+
+  const handleMoveEvidence = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= linkedEvidence.length) return;
+    const newOrder = [...linkedEvidence];
+    [newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]];
+    reorderEvidenceMutation.mutate(newOrder.map((item, i) => ({ id: item.id, sortOrder: i + 1 })));
+  };
+
+  const [showAddEvidenceToList, setShowAddEvidenceToList] = useState(false);
 
   const handleCreateExhibit = () => {
     if (!newExhibitTitle.trim()) return;
@@ -549,18 +640,154 @@ function ExhibitListCard({
             </div>
           )}
 
+          {/* Linked Evidence Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <File className="w-4 h-4" />
+                Linked Evidence ({linkedEvidence.length})
+              </h4>
+              <Button variant="outline" size="sm" onClick={() => setShowAddEvidenceToList(true)} data-testid={`button-add-evidence-to-list-${list.id}`}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Evidence
+              </Button>
+            </div>
+            
+            {itemsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading items...</p>
+            ) : linkedEvidence.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No evidence files linked yet. Click "Add Evidence" to link files.</p>
+            ) : (
+              <div className="space-y-2">
+                {linkedEvidence.map((link, idx) => {
+                  const fileId = link.evidenceFileId || "";
+                  const file = fileId ? evidenceFilesMap.get(fileId) : undefined;
+                  return (
+                    <div key={link.id} className="flex items-center gap-2 p-2 border rounded-md bg-muted/20" data-testid={`evidence-link-${link.id}`}>
+                      <div className="flex flex-col gap-1">
+                        <Button size="icon" variant="ghost" className="h-5 w-5" disabled={idx === 0} onClick={() => handleMoveEvidence(idx, "up")} data-testid={`button-move-up-${link.id}`}>
+                          <MoveUp className="w-3 h-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-5 w-5" disabled={idx === linkedEvidence.length - 1} onClick={() => handleMoveEvidence(idx, "down")} data-testid={`button-move-down-${link.id}`}>
+                          <MoveDown className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{idx + 1}</Badge>
+                      <File className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file?.originalName || "Unknown file"}</p>
+                        <p className="text-xs text-muted-foreground">{file ? formatDate(file.createdAt) : ""} {link.label ? `- ${link.label}` : ""}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {file && (
+                          <Button size="icon" variant="ghost" asChild data-testid={`button-download-evidence-${link.id}`}>
+                            <a href={`/api/evidence/${file.id}/download`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        )}
+                        {fileId && (
+                          <Button size="icon" variant="ghost" onClick={() => removeEvidenceFromListMutation.mutate(fileId)} data-testid={`button-remove-evidence-${link.id}`}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Snippets Section */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Snippets ({snippets.length})
+            </h4>
+            
+            {snippets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No snippets in this list. Create snippets from Evidence AI analyses.</p>
+            ) : (
+              <div className="space-y-2">
+                {snippets.map((snippet) => (
+                  <div key={snippet.id} className="p-3 border rounded-md bg-muted/20" data-testid={`snippet-${snippet.id}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{snippet.title}</p>
+                        {snippet.pageNumber && <Badge variant="secondary" className="text-xs mt-1">Page {snippet.pageNumber}</Badge>}
+                        {snippet.snippetText && (
+                          <p className="text-xs text-muted-foreground mt-2 line-clamp-3">{snippet.snippetText}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => addToTrialPrepMutation.mutate({
+                            sourceType: "exhibit_snippet",
+                            sourceId: snippet.id,
+                            title: snippet.title,
+                            summary: snippet.snippetText || undefined,
+                          })}
+                          disabled={addToTrialPrepMutation.isPending}
+                          title="Add to Trial Prep"
+                          data-testid={`button-snippet-trial-prep-${snippet.id}`}
+                        >
+                          <Scale className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => deleteSnippetMutation.mutate(snippet.id)} data-testid={`button-delete-snippet-${snippet.id}`}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Add Evidence to List Modal */}
+          <Dialog open={showAddEvidenceToList} onOpenChange={setShowAddEvidenceToList}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add Evidence to Exhibit List</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-80">
+                <div className="space-y-2">
+                  {(allEvidenceFiles?.files || []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No evidence files available.</p>
+                  ) : (
+                    (allEvidenceFiles?.files || []).filter(ev => !linkedEvidence.some(l => l.evidenceFileId === ev.id)).map((ev) => (
+                      <div key={ev.id} className="flex items-center justify-between gap-3 p-2 rounded-md hover-elevate">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{ev.originalName}</p>
+                          <p className="text-xs text-muted-foreground">{ev.category} - {formatDate(ev.createdAt)}</p>
+                        </div>
+                        <Button size="sm" onClick={() => { addEvidenceToListMutation.mutate(ev.id); }} disabled={addEvidenceToListMutation.isPending} data-testid={`button-add-evidence-${ev.id}`}>
+                          Add
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddEvidenceToList(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <hr className="my-4" />
+
+          {/* Legacy Exhibits Section (if needed) */}
           {exhibitsLoading ? (
             <p className="text-sm text-muted-foreground">Loading exhibits...</p>
           ) : (
             <>
               {exhibits.length === 0 && !showAddExhibit ? (
-                <div className="text-center py-8">
-                  <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground text-sm mb-3">No exhibits in this list yet.</p>
-                  <Button variant="outline" size="sm" onClick={() => setShowAddExhibit(true)} data-testid={`button-add-first-exhibit-${list.id}`}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Exhibit
-                  </Button>
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground text-sm">No individual exhibits created.</p>
                 </div>
               ) : (
                 <div className="space-y-3">

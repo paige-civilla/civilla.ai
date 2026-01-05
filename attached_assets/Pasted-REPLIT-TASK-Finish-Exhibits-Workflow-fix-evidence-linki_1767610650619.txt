@@ -1,0 +1,68 @@
+REPLIT TASK: Finish Exhibits Workflow (fix evidence linking, ordering, and Export Packet ZIP)
+
+Context
+We added Exhibits settings (cover page fields + usedForFiling + filingDate). But the workflow is still missing:
+- Exhibit lists must actually contain linked evidence + snippets in a real ordered “packet”
+- Evidence “Add to Exhibit” must reliably create the link row
+- User must be able to export the exhibit list as ONE download (ZIP v1)
+
+GOALS (do ALL)
+
+A) FIX “ADD EVIDENCE TO EXHIBIT” RELIABILITY
+1) Verify Evidence → “Add to Exhibit” creates a real row linking evidence to exhibit list.
+   - If your schema uses exhibit_evidence join table, ensure the mutation inserts there.
+   - Ensure evidenceId belongs to caseId and userId.
+2) In AppExhibits, the Exhibit List detail view must display:
+   - Linked evidence files (filename, createdAt, download/open button)
+   - Snippets (title, pageNumber, text preview)
+   - Cover Page (from exhibit list fields OR a dedicated cover entry)
+
+B) ADD ORDERING (PERSISTED)
+We need a stable packet order: Cover Page → Evidence items → Snippets (or mixed if user reorders).
+
+Implement simplest v1:
+1) Add sortOrder columns:
+   - exhibit_evidence.sortOrder (default incremental)
+   - exhibit_snippets.sortOrder (default incremental)
+   (If exhibit_evidence is missing or is not a table, create it or add sortOrder to the correct structure.)
+2) In backend list endpoint(s), return ordered items using sortOrder ASC, createdAt ASC as fallback.
+3) In frontend (AppExhibits list detail), add Up/Down buttons on each item:
+   - “Move up” and “Move down”
+   - Call PATCH endpoints to swap sortOrder with neighbor item
+4) Cover page always stays at top (not reorderable in v1).
+
+C) EXPORT PACKET (ZIP V1)
+Add endpoint:
+GET /api/cases/:caseId/exhibit-lists/:listId/export  (requireAuth)
+
+Export output:
+- A ZIP file containing:
+  1) 00_Cover_Page.txt (generated from cover page title/subtitle/notes + usedForFiling fields)
+  2) 01_Snippets.txt (all snippets in order, include page numbers if set)
+  3) /Evidence/ folder with all linked evidence files in order (download each from storage and include original file names)
+  4) Optional: manifest.json with ordered list + IDs (for debugging)
+
+Implementation notes:
+- Use archiver (node) or a similar library.
+- Stream ZIP to response.
+- Must validate: user owns caseId; exhibit list belongs to caseId; linked evidence belongs to caseId.
+
+Frontend:
+1) Add “Export Packet” button on each Exhibit List card (or inside the expanded view).
+2) When clicked:
+   - Show loading state
+   - Download ZIP file: exhibit_packet_<caseNicknameOrId>_<listTitle>.zip
+
+D) CONFIRM SNIPPETS SHOW IN EXHIBIT LIST
+In AppExhibits, inside each exhibit list detail:
+- Show snippets with title + page number + snippet text preview
+- Add edit/delete controls (existing CRUD)
+- Add “Add to Trial Prep” button for snippets (if not already)
+
+E) REPORT BACK DETAILED SUMMARY
+After implementing, respond with:
+- Files changed
+- New/updated endpoints
+- How ordering works
+- Exact ZIP contents
+- Confirmation that Evidence → Add to Exhibit now results in evidence appearing inside the exhibit list view

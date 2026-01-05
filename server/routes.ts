@@ -1355,8 +1355,9 @@ export async function registerRoutes(
 
       const evidenceLinks = await storage.listExhibitListEvidence(userId, listId);
       const noteLinks = await storage.listExhibitNoteLinks(userId, listId);
+      const snippets = await storage.listExhibitSnippets(userId, exhibitList.caseId, listId);
 
-      res.json({ evidenceLinks, noteLinks });
+      res.json({ evidenceLinks, noteLinks, snippets });
     } catch (error) {
       console.error("List exhibit list items error:", error);
       res.status(500).json({ error: "Failed to list exhibit list items" });
@@ -3530,9 +3531,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(404).json({ error: "Exhibit list not found" });
       }
 
-      const exhibits = await storage.listExhibits(userId, listId);
-      if (exhibits.length === 0) {
-        return res.status(400).json({ error: "No exhibits to export" });
+      const evidenceLinks = await storage.listExhibitListEvidence(userId, listId);
+      const snippets = await storage.listExhibitSnippets(userId, list.caseId, listId);
+      
+      if (evidenceLinks.length === 0 && snippets.length === 0) {
+        return res.status(400).json({ error: "No items to export. Add evidence or snippets first." });
       }
 
       const archive = archiver("zip", { zlib: { level: 9 } });
@@ -3549,43 +3552,90 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         archive.on("error", reject);
       });
 
-      let indexContent = `# ${list.title}\n\nExhibit List Export\nGenerated: ${new Date().toISOString()}\n\n`;
-      indexContent += `## Exhibits\n\n`;
-
-      for (const exhibit of exhibits) {
-        const folderName = `${exhibit.label}_${exhibit.title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30)}`;
-        indexContent += `### ${exhibit.label}: ${exhibit.title}\n`;
-        if (exhibit.description) {
-          indexContent += `${exhibit.description}\n`;
+      let coverPageContent = "";
+      coverPageContent += `================================================================================\n`;
+      coverPageContent += `${list.coverPageTitle || list.title}\n`;
+      coverPageContent += `================================================================================\n\n`;
+      if (list.coverPageSubtitle) {
+        coverPageContent += `${list.coverPageSubtitle}\n\n`;
+      }
+      if (list.isUsedForFiling) {
+        coverPageContent += `USED FOR COURT FILING\n`;
+        if (list.usedForFilingDate) {
+          coverPageContent += `Filing Date: ${new Date(list.usedForFilingDate).toLocaleDateString()}\n`;
         }
-        indexContent += `\n`;
+        coverPageContent += `\n`;
+      }
+      if (list.notes) {
+        coverPageContent += `Notes:\n${list.notes}\n\n`;
+      }
+      coverPageContent += `Generated: ${new Date().toLocaleString()}\n`;
+      coverPageContent += `================================================================================\n`;
+      archive.append(coverPageContent, { name: "00_Cover_Page.txt" });
 
-        const linkedEvidence = await storage.listExhibitEvidence(userId, exhibit.id);
-        for (const ev of linkedEvidence) {
-          try {
-            if (ev.r2Key && isR2Configured()) {
-              const downloadUrl = await getSignedDownloadUrl(ev.r2Key);
-              const response = await fetch(downloadUrl);
-              if (response.ok) {
-                const buffer = Buffer.from(await response.arrayBuffer());
-                archive.append(buffer, { name: `${folderName}/${ev.originalName}` });
-                indexContent += `- ${ev.originalName}\n`;
-              }
-            }
-          } catch (err) {
-            console.error(`Failed to fetch evidence file ${ev.id}:`, err);
+      let snippetsContent = "";
+      if (snippets.length > 0) {
+        snippetsContent += `================================================================================\n`;
+        snippetsContent += `SNIPPETS\n`;
+        snippetsContent += `================================================================================\n\n`;
+        for (let i = 0; i < snippets.length; i++) {
+          const snip = snippets[i];
+          snippetsContent += `--- Snippet ${i + 1}: ${snip.title} ---\n`;
+          if (snip.pageNumber) {
+            snippetsContent += `Page: ${snip.pageNumber}\n`;
           }
+          if (snip.snippetText) {
+            snippetsContent += `\n${snip.snippetText}\n`;
+          }
+          snippetsContent += `\n`;
         }
-        indexContent += `\n`;
+        archive.append(snippetsContent, { name: "01_Snippets.txt" });
       }
 
-      archive.append(indexContent, { name: "index.md" });
+      const manifest: { title: string; generatedAt: string; items: unknown[] } = {
+        title: list.title,
+        generatedAt: new Date().toISOString(),
+        items: [],
+      };
+
+      for (let i = 0; i < evidenceLinks.length; i++) {
+        const link = evidenceLinks[i];
+        const evidenceFile = await storage.getEvidenceFile(link.evidenceFileId, userId);
+        if (!evidenceFile) continue;
+
+        const paddedIndex = String(i + 1).padStart(2, "0");
+        const safeFileName = evidenceFile.originalName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const archivePath = `Evidence/${paddedIndex}_${safeFileName}`;
+        
+        manifest.items.push({
+          index: i + 1,
+          evidenceId: evidenceFile.id,
+          fileName: evidenceFile.originalName,
+          archivePath,
+          label: link.label || null,
+        });
+
+        try {
+          if (evidenceFile.storageKey && isR2Configured()) {
+            const downloadUrl = await getSignedDownloadUrl(evidenceFile.storageKey);
+            const response = await fetch(downloadUrl);
+            if (response.ok) {
+              const buffer = Buffer.from(await response.arrayBuffer());
+              archive.append(buffer, { name: archivePath });
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to fetch evidence file ${evidenceFile.id}:`, err);
+        }
+      }
+
+      archive.append(JSON.stringify(manifest, null, 2), { name: "manifest.json" });
       archive.finalize();
 
       await finishPromise;
       const zipBuffer = Buffer.concat(buffers);
 
-      const fileName = `${list.title.replace(/[^a-zA-Z0-9]/g, "_")}_exhibits.zip`;
+      const fileName = `exhibit_packet_${list.title.replace(/[^a-zA-Z0-9]/g, "_")}.zip`;
       res.setHeader("Content-Type", "application/zip");
       res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
       res.setHeader("Content-Length", zipBuffer.length);
