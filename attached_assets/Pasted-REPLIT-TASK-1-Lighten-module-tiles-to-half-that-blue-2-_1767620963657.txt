@@ -1,0 +1,97 @@
+REPLIT TASK: (1) Lighten module tiles to “half that blue” + (2) Fix Lexi tab label not rendering
+
+A) MODULE TILE COLOR: make it “half that blue”
+Right now module tiles are using --module-tile = #C3D5D7.
+Make the tile background a lighter midpoint between #C3D5D7 and #E4ECED.
+
+Midpoint color:
+#C3D5D7 (195,213,215)
+#E4ECED (228,236,237)
+Midpoint ≈ (212,224,226) = #D4E0E2
+
+1) Update tokens in: client/src/index.css
+Find the module tile tokens and set:
+
+--module-tile: 190 27% 86%;        /* renders ~ #D4E0E2 */
+--module-tile-hover: 190 27% 82%;  /* slightly darker hover */
+--module-tile-border: 187 17% 37%; /* keep your existing border color */
+--module-tile-icon: 187 17% 37%;   /* keep icons consistent */
+
+If your tokens are currently in HSL form, just replace the values. If you see hardcoded hex, change those to use the tokens.
+
+2) Verify no remaining hardcoded tile backgrounds:
+rg -n "bg-\\[#C3D5D7\\]|bg-\\[#E4ECED\\]" client/src
+(should be 0 for module tiles)
+
+B) LEXI TAB LABEL NOT SHOWING (the vertical “Lexi” text is invisible)
+From the screenshot, the tab is there but the label is not rendering/visible. Fix by:
+- rendering the label as a real element (not relying on CSS pseudo)
+- forcing visible color
+- preventing it from being clipped by overflow
+- keeping arrow + label aligned whether open or closed
+
+File: client/src/components/lexi/LexiPanel.tsx
+
+1) Find the “collapsed/open tab” button (the vertical pill on the left edge of the Lexi panel).
+Replace the inner content with this structure (keep your onClick + aria-label logic):
+
+<button
+  type="button"
+  onClick={toggleOpen}
+  className="
+    fixed z-[60]
+    rounded-2xl shadow-lg
+    bg-[#314143] text-cream
+    border border-[hsl(var(--module-tile-border))]
+    hover:opacity-95
+    focus:outline-none focus:ring-2 focus:ring-[hsl(var(--module-tile-border))]
+    flex items-center justify-center
+  "
+  style={{
+    top: `calc(var(--app-navbar-height, 64px) + 140px)`,
+    width: 56,
+    height: 160,
+    right: isOpen ? `calc(clamp(320px, 72vw, 520px) - 28px)` : 0,  // keep your existing positioning logic if different
+  }}
+>
+  <div
+    className="flex items-center gap-2"
+    style={{
+      transform: "rotate(-90deg)",
+      whiteSpace: "nowrap",
+      pointerEvents: "none",
+    }}
+  >
+    <span className="text-white text-lg leading-none">
+      {isOpen ? "›" : "‹"}
+    </span>
+    <span className="text-white font-semibold tracking-wide">
+      Lexi
+    </span>
+  </div>
+</button>
+
+Key points:
+- text is explicitly text-white (so it can’t disappear)
+- rotate the inner row, not the whole button (prevents clipping issues)
+- whiteSpace nowrap prevents wrap/collapse
+- pointerEvents none so clicks always register on the button
+
+2) Ensure NO parent container is clipping it:
+Search in LexiPanel for any wrapper around the tab that has overflow-hidden.
+If found, remove overflow-hidden or move the tab outside that wrapper so it’s not clipped.
+
+C) QUICK VERIFY
+1) Refresh app, go to a page with module tiles:
+- tiles should now be lighter (#D4E0E2-ish)
+- hover slightly darker
+2) Open/close Lexi:
+- tab always shows arrow + “Lexi”
+- text visible in both states
+3) Confirm the tab stays attached to the panel edge (no floating gap)
+
+D) REPORT BACK
+After implementing, report:
+- exact token values you ended up using for --module-tile and --module-tile-hover
+- what the final tab markup is in LexiPanel
+- whether any overflow-hidden was removed/changed

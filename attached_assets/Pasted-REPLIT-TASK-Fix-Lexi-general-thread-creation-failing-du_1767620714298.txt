@@ -1,0 +1,76 @@
+REPLIT TASK: Fix Lexi general thread creation failing due to cases FK (__general__ not present)
+
+Problem
+POST /api/lexi/threads fails with FK error:
+lexi_threads.case_id references cases.id, but code inserts case_id="__general__" which is not a real case id.
+
+Solution (correct design)
+Use NULL case_id for general Lexi threads.
+Keep FK constraint for real case threads. FK allows NULL.
+
+Do ALL steps below.
+
+A) DATABASE MIGRATION (must run on every startup via ensureSchemaMigrations)
+In server/db.ts:
+1) Add a new ensureLexiThreadsCaseIdNullable() migration that:
+   - checks if lexi_threads.case_id is NOT NULL
+   - runs:
+     ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL;
+
+2) Also ensure any default value on case_id is removed if set:
+   ALTER TABLE lexi_threads ALTER COLUMN case_id DROP DEFAULT;
+
+3) Register ensureLexiThreadsCaseIdNullable() inside ensureSchemaMigrations()
+4) Add a verification log:
+   [DB MIGRATION] Verification: lexi_threads.case_id nullable: true/false
+
+B) SCHEMA CHANGE (Drizzle)
+In shared/schema.ts:
+1) Update lexiThreads definition so caseId is nullable:
+   caseId: text("case_id").nullable()
+   (keep references if currently used; references are fine with nullable)
+
+2) Ensure insert/select types still compile.
+
+C) STORAGE + ROUTES (stop using "__general__")
+Search repo for "__general__" or LEXI_GENERAL_CASE_ID usage.
+
+1) Replace the concept with:
+   const GENERAL_CASE_ID: null = null;
+
+2) In createLexiThread (storage + route):
+   - If request is for a general thread (no caseId provided), insert case_id = null.
+
+3) In list threads:
+   - if caseId is provided: filter by caseId
+   - if caseId is not provided: return only threads where case_id IS NULL
+   (or allow returning both, but default should be general-only when no caseId)
+
+4) In fetch messages / create message:
+   - do NOT require a caseId for general thread
+   - validate user owns the thread by userId on lexi_threads row
+
+D) FRONTEND (LexiPanel should work without a case)
+In client/src/components/lexi/LexiPanel.tsx:
+1) When user is logged in but no case is selected:
+   - Start conversation should call POST /api/lexi/threads with NO caseId (or caseId: null)
+2) When sending a message:
+   - ensure it uses activeThreadId regardless of case selection
+3) Any query keys that currently include caseId should be updated so general chat uses:
+   /api/lexi/threads (no case)
+   /api/lexi/threads/:threadId/messages
+
+E) CONFIRMATION TESTS
+After applying, confirm:
+
+1) POST /api/lexi/threads works when user has NO case selected
+   - no 500
+   - thread row has case_id = NULL
+2) Messages send successfully in general chat
+3) Case-specific threads still work (case_id is a real case id and FK remains valid)
+4) Search repo count for "__general__" is 0 matches.
+
+Report back:
+- Files changed
+- Whether lexi_threads.case_id is nullable now
+- Whether POST /api/lexi/threads succeeds without a case

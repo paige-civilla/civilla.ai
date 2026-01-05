@@ -222,6 +222,25 @@ async function ensureLexiThreadsColumns(): Promise<void> {
   await addColumnIfMissing("lexi_threads", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
 }
 
+async function ensureLexiThreadsCaseIdNullable(): Promise<void> {
+  try {
+    const result = await pool.query(`
+      SELECT is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'lexi_threads' AND column_name = 'case_id'
+    `);
+    
+    if (result.rows.length > 0 && result.rows[0].is_nullable === 'NO') {
+      console.log("[DB MIGRATION] Making lexi_threads.case_id nullable...");
+      await pool.query(`ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL`);
+      await pool.query(`ALTER TABLE lexi_threads ALTER COLUMN case_id DROP DEFAULT`);
+      console.log("[DB MIGRATION] lexi_threads.case_id is now nullable");
+    }
+  } catch (error) {
+    console.log("[DB MIGRATION] ensureLexiThreadsCaseIdNullable skipped or already done:", error instanceof Error ? error.message : "Unknown error");
+  }
+}
+
 async function ensureLexiMessagesColumns(): Promise<void> {
   await addColumnIfMissing("lexi_messages", "role", "TEXT NOT NULL DEFAULT 'user'");
   await addColumnIfMissing("lexi_messages", "content", "TEXT NOT NULL DEFAULT ''");
@@ -266,6 +285,7 @@ export async function ensureSchemaMigrations(): Promise<void> {
   await ensureCaseEvidenceNotesColumns();
   await ensureExhibitEvidenceColumns();
   await ensureLexiThreadsColumns();
+  await ensureLexiThreadsCaseIdNullable();
   await ensureLexiMessagesColumns();
   await ensureCaseRuleTermsColumns();
   
@@ -279,7 +299,14 @@ export async function ensureSchemaMigrations(): Promise<void> {
   console.log(`[DB MIGRATION] Verification: cases.starting_point present: ${casesStartingPoint}`);
   console.log(`[DB MIGRATION] Verification: timeline_categories.case_id present: ${timelineCategoriesCaseId}`);
   console.log(`[DB MIGRATION] Verification: evidence_ai_analyses.status present: ${evidenceAiStatus}`);
+  const lexiThreadsCaseIdNullableResult = await pool.query(`
+    SELECT is_nullable FROM information_schema.columns 
+    WHERE table_name = 'lexi_threads' AND column_name = 'case_id'
+  `);
+  const lexiThreadsCaseIdNullable = lexiThreadsCaseIdNullableResult.rows.length > 0 && lexiThreadsCaseIdNullableResult.rows[0].is_nullable === 'YES';
+  
   console.log(`[DB MIGRATION] Verification: lexi_threads.disclaimer_shown present: ${lexiThreadsDisclaimerShown}`);
+  console.log(`[DB MIGRATION] Verification: lexi_threads.case_id nullable: ${lexiThreadsCaseIdNullable}`);
   console.log(`[DB MIGRATION] Verification: evidence_extractions.status present: ${evidenceExtractionsStatus}`);
   console.log(`[DB MIGRATION] Verification: case_rule_terms.module_key present: ${caseRuleTermsModuleKey}`);
   console.log("[DB MIGRATION] Schema migrations complete");

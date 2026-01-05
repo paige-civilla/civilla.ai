@@ -1048,8 +1048,6 @@ export const lexiChatRequestSchema = z.object({
   moduleKey: z.string().optional(),
 });
 
-export const LEXI_GENERAL_CASE_ID = "__general__";
-
 export const caseRuleTerms = pgTable("case_rule_terms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),

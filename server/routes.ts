@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool, checkAiTableColumns } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, LEXI_GENERAL_CASE_ID, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -4335,7 +4335,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.get("/api/lexi/threads", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const threads = await storage.listLexiThreads(userId, LEXI_GENERAL_CASE_ID);
+      const threads = await storage.listLexiThreads(userId, null);
       res.json({ threads });
     } catch (error) {
       console.error("List general lexi threads error:", error);
@@ -4350,7 +4350,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       if (!parsed.success) {
         return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
       }
-      const thread = await storage.createLexiThread(userId, LEXI_GENERAL_CASE_ID, parsed.data.title);
+      const thread = await storage.createLexiThread(userId, null, parsed.data.title);
       res.status(201).json({ thread });
     } catch (error) {
       console.error("Create general lexi thread error:", error);
@@ -4464,10 +4464,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       const { threadId, message, stateOverride } = parsed.data;
-      const effectiveCaseId = parsed.data.caseId || LEXI_GENERAL_CASE_ID;
+      const effectiveCaseId = parsed.data.caseId || null;
 
       let caseRecord = null;
-      if (effectiveCaseId !== LEXI_GENERAL_CASE_ID) {
+      if (effectiveCaseId) {
         caseRecord = await storage.getCase(effectiveCaseId, userId);
         if (!caseRecord) {
           return res.status(404).json({ error: "Case not found" });

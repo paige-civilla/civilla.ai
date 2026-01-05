@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, inArray, lt, sql } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, lt, sql, isNull } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -235,8 +235,8 @@ export interface IStorage {
   detachEvidence(userId: string, exhibitId: string, evidenceId: string): Promise<boolean>;
   getExhibitsForEvidence(userId: string, evidenceId: string): Promise<Exhibit[]>;
 
-  listLexiThreads(userId: string, caseId: string): Promise<LexiThread[]>;
-  createLexiThread(userId: string, caseId: string, title: string): Promise<LexiThread>;
+  listLexiThreads(userId: string, caseId: string | null): Promise<LexiThread[]>;
+  createLexiThread(userId: string, caseId: string | null, title: string): Promise<LexiThread>;
   renameLexiThread(userId: string, threadId: string, title: string): Promise<LexiThread | undefined>;
   deleteLexiThread(userId: string, threadId: string): Promise<boolean>;
   getLexiThread(userId: string, threadId: string): Promise<LexiThread | undefined>;
@@ -1309,13 +1309,16 @@ export class DatabaseStorage implements IStorage {
     return rows;
   }
 
-  async listLexiThreads(userId: string, caseId: string): Promise<LexiThread[]> {
+  async listLexiThreads(userId: string, caseId: string | null): Promise<LexiThread[]> {
+    const caseCondition = caseId === null 
+      ? isNull(lexiThreads.caseId)
+      : eq(lexiThreads.caseId, caseId);
     return db.select().from(lexiThreads)
-      .where(and(eq(lexiThreads.userId, userId), eq(lexiThreads.caseId, caseId)))
+      .where(and(eq(lexiThreads.userId, userId), caseCondition))
       .orderBy(desc(lexiThreads.updatedAt));
   }
 
-  async createLexiThread(userId: string, caseId: string, title: string): Promise<LexiThread> {
+  async createLexiThread(userId: string, caseId: string | null, title: string): Promise<LexiThread> {
     const [row] = await db.insert(lexiThreads)
       .values({ userId, caseId, title })
       .returning();

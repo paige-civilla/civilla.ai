@@ -1,0 +1,99 @@
+REPLIT TASK: Repo-wide AI “general case” / placeholder caseId audit + fix (prevent FK breakages)
+
+Goal
+Find ANY place in the codebase where we create or query “general/non-case” AI data using a fake case id (ex: "__general__", "general", "global", "default"), which can break due to FK constraints to cases(id). Standardize on:
+- case_id = NULL for general/non-case records
+- keep FK integrity for real case threads/records
+
+Do ALL steps below and report back with a detailed summary.
+
+A) FIND ALL PLACEHOLDER / FAKE CASE IDS
+Run ripgrep across the repo for likely placeholders:
+
+1) rg -n "__general__|LEXI_GENERAL|GENERAL_CASE|general case|global case|default case|caseId: \"__|case_id\"\\)=\\(__|case_id.*__" .
+2) rg -n "caseId:\\s*\"|caseId:\\s*'|case_id\\s*=\\s*'|case_id\\s*=\\s*\"" server client shared .
+
+Also search for places where caseId is optional but we force a string:
+3) rg -n "caseId\\s*\\|\\|\\s*\"|caseId\\s*\\?\\?\\s*\"|caseId\\s*=\\s*caseId\\s*\\|\\|" server client
+
+Deliverable: list every match (file + line) and classify as:
+- “general chat / general AI” use
+- “research caching”
+- “analysis logging”
+- “other”
+
+B) DATABASE SCHEMA AUDIT (FK + NOT NULL CHECK)
+Inspect all AI-related tables (and any table used by Lexi / AI features) for:
+- case_id column
+- whether it is NOT NULL
+- whether it has a foreign key to cases(id)
+
+Target tables (at minimum):
+- lexi_threads
+- lexi_messages
+- case_rule_terms
+- evidence_ai_analyses
+- evidence_extractions
+- trial_prep_shortlist
+- exhibit_snippets (and any AI fields)
+- parenting_plan items (if any AI links)
+
+In server/db.ts, add a helper that can verify column nullability + FK existence for a column:
+- function isColumnNullable(table: string, column: string): Promise<boolean>
+- function hasForeignKey(table: string, column: string): Promise<boolean> (optional but helpful)
+
+C) STANDARDIZE DESIGN RULE
+Adopt this rule across the app:
+1) If a record can be “general/non-case” → case_id must be nullable and general records use NULL.
+2) If a record is always tied to a case → keep NOT NULL + FK to cases.
+
+Apply this rule to ALL matches found in step A.
+
+D) MIGRATIONS (IDEMPOTENT, RUN ON EVERY STARTUP)
+For every table where we identified “general/non-case” usage BUT case_id is NOT NULL, add an ensure* migration in server/db.ts that:
+- drops NOT NULL on case_id
+- drops any default value on case_id (if any)
+Example:
+ALTER TABLE <table> ALTER COLUMN case_id DROP NOT NULL;
+ALTER TABLE <table> ALTER COLUMN case_id DROP DEFAULT;
+
+Register the ensure* migration inside ensureSchemaMigrations() and add verification logs:
+[DB MIGRATION] Verification: <table>.case_id nullable: true/false
+
+E) SERVER-SIDE LOGIC UPDATES
+For each affected module:
+1) Remove any placeholder constant like "__general__"
+2) For “general” behavior, pass caseId as null/undefined and insert case_id = NULL
+3) For listing:
+   - case-specific endpoints filter case_id = :caseId
+   - general endpoints filter case_id IS NULL
+4) Validate ownership using userId on the row, not via case ownership when case_id is NULL:
+   - For general threads/messages: ensure thread.userId === current userId
+
+F) FRONTEND UPDATES
+Make sure any feature that can be used without a case (Lexi general chat, global research, etc.) does NOT require selecting a case.
+- Ensure queries/mutations do not include caseId in queryKey for general scope
+- Ensure payload sends caseId: null or omits caseId entirely
+- Ensure UI still works when selectedCaseId is missing
+
+G) ADD /api/ai/health EXTENSIONS (PREVENT REGRESSIONS)
+Expand the existing GET /api/ai/health endpoint to include checks:
+- lexi_threads.case_id nullable
+- any other AI table case_id nullable if general usage exists
+Return a checks object; no secrets.
+
+H) CONFIRMATION TESTS (RUN + REPORT)
+1) Logged-in user with NO cases:
+   - Start Lexi conversation
+   - Send message successfully
+2) Logged-in user with a case selected:
+   - Create case-specific Lexi thread and message
+3) Confirm no FK violations in logs
+
+I) REPORT BACK (DETAILED)
+Report:
+- Files changed
+- Every placeholder match found + how it was fixed
+- Which tables had case_id made nullable
+- Remaining rg matches for "__general__" (should be 0)
+- Updated /api/ai/health output includes the new checks
