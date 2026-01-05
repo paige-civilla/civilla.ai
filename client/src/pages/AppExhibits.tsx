@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen, Download, Loader2 } from "lucide-react";
+import { Plus, FileText, Trash2, ChevronDown, ChevronUp, GripVertical, Check, X, Paperclip, FolderOpen, Download, Loader2, Settings, Calendar } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -269,6 +269,37 @@ function ExhibitListCard({
 }: ExhibitListCardProps) {
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
+  const [showListSettings, setShowListSettings] = useState(false);
+  const [listSettings, setListSettings] = useState({
+    coverPageTitle: list.coverPageTitle || "",
+    coverPageSubtitle: list.coverPageSubtitle || "",
+    isUsedForFiling: list.isUsedForFiling || false,
+    usedForFilingDate: list.usedForFilingDate ? new Date(list.usedForFilingDate).toISOString().split("T")[0] : "",
+    notes: list.notes || "",
+  });
+
+  const updateListMutation = useMutation({
+    mutationFn: async (data: { coverPageTitle?: string | null; coverPageSubtitle?: string | null; isUsedForFiling?: boolean; usedForFilingDate?: Date | null; notes?: string | null }) => {
+      return apiRequest("PATCH", `/api/exhibit-lists/${list.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "exhibit-lists"] });
+      toast({ title: "List settings saved" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSaveListSettings = () => {
+    updateListMutation.mutate({
+      coverPageTitle: listSettings.coverPageTitle || null,
+      coverPageSubtitle: listSettings.coverPageSubtitle || null,
+      isUsedForFiling: listSettings.isUsedForFiling,
+      usedForFilingDate: listSettings.usedForFilingDate ? new Date(listSettings.usedForFilingDate) : null,
+      notes: listSettings.notes || null,
+    });
+  };
 
   const handleExportZip = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -413,6 +444,15 @@ function ExhibitListCard({
             <Button
               variant="ghost"
               size="icon"
+              onClick={(e) => { e.stopPropagation(); setShowListSettings(!showListSettings); }}
+              title="List settings"
+              data-testid={`button-settings-list-${list.id}`}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleExportZip}
               disabled={exporting}
               title="Export as ZIP"
@@ -434,6 +474,81 @@ function ExhibitListCard({
 
       {expanded && (
         <CardContent className="space-y-4">
+          {showListSettings && (
+            <div className="border rounded-md p-4 space-y-4 bg-muted/30 mb-4" data-testid={`panel-list-settings-${list.id}`}>
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                List Settings & Cover Page
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`cover-title-${list.id}`}>Cover Page Title</Label>
+                  <Input
+                    id={`cover-title-${list.id}`}
+                    placeholder="e.g., Petitioner's Exhibit List"
+                    value={listSettings.coverPageTitle}
+                    onChange={(e) => setListSettings({ ...listSettings, coverPageTitle: e.target.value })}
+                    data-testid={`input-cover-title-${list.id}`}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`cover-subtitle-${list.id}`}>Cover Page Subtitle</Label>
+                  <Input
+                    id={`cover-subtitle-${list.id}`}
+                    placeholder="e.g., Case No. 2024-FC-12345"
+                    value={listSettings.coverPageSubtitle}
+                    onChange={(e) => setListSettings({ ...listSettings, coverPageSubtitle: e.target.value })}
+                    data-testid={`input-cover-subtitle-${list.id}`}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`filing-checkbox-${list.id}`}
+                    checked={listSettings.isUsedForFiling}
+                    onChange={(e) => setListSettings({ ...listSettings, isUsedForFiling: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                    data-testid={`checkbox-filing-${list.id}`}
+                  />
+                  <Label htmlFor={`filing-checkbox-${list.id}`} className="text-sm">Used for court filing</Label>
+                </div>
+                {listSettings.isUsedForFiling && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="date"
+                      value={listSettings.usedForFilingDate}
+                      onChange={(e) => setListSettings({ ...listSettings, usedForFilingDate: e.target.value })}
+                      className="w-auto"
+                      data-testid={`input-filing-date-${list.id}`}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`notes-${list.id}`}>Notes</Label>
+                <Textarea
+                  id={`notes-${list.id}`}
+                  placeholder="Internal notes about this exhibit list..."
+                  value={listSettings.notes}
+                  onChange={(e) => setListSettings({ ...listSettings, notes: e.target.value })}
+                  rows={2}
+                  data-testid={`input-notes-${list.id}`}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleSaveListSettings} disabled={updateListMutation.isPending} data-testid={`button-save-settings-${list.id}`}>
+                  {updateListMutation.isPending ? "Saving..." : "Save Settings"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowListSettings(false)} data-testid={`button-close-settings-${list.id}`}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+
           {exhibitsLoading ? (
             <p className="text-sm text-muted-foreground">Loading exhibits...</p>
           ) : (

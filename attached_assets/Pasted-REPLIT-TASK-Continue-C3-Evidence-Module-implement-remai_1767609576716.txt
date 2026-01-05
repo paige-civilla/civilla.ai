@@ -1,0 +1,173 @@
+REPLIT TASK: Continue C3 Evidence Module – implement remaining sections E, F, G (Trial Prep + Exhibits export + Pattern Analysis integration)
+
+Context
+You already implemented:
+- Evidence extraction pipeline (C1/C2)
+- Evidence Notes endpoints + UI (in progress)
+- Exhibit Snippets table + CRUD
+- AI Analyses UI + NEW endpoint: POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run
+- Run AI Analysis button + improved AI Analysis sheet
+
+Now implement the remaining cross-module integrations so Evidence “actually drives” Exhibits, Trial Prep, and Pattern Analysis.
+
+========================
+E) TRIAL PREP INTEGRATION (from Evidence)
+========================
+
+Goal: From Evidence, user can add “best examples” into Trial Prep shortlist with ONE click, and manage them later.
+
+1) Add “Add to Trial Prep” actions from three sources:
+   a) Evidence Note → Add to Trial Prep
+   b) Exhibit Snippet → Add to Trial Prep
+   c) AI Finding / AI Analysis → Add to Trial Prep
+
+2) Where to add buttons:
+   - In the Evidence file expanded view:
+     - Notes section: each note row gets “Add to Trial Prep”
+     - AI Analysis sheet: each analysis row gets “Add to Trial Prep” and (if findings are structured) per-finding “Add to Trial Prep”
+     - Snippet dialog success screen OR snippet list row: “Add to Trial Prep”
+
+3) Data model usage:
+   Use the existing trial_prep_shortlist table (already updated to full spec).
+   Create items with:
+   - sourceType: "evidence_note" | "exhibit_snippet" | "evidence_ai_analysis" (or "analysis_finding" if you split)
+   - sourceId: id of note/snippet/analysis
+   - title: concise label (e.g., “Evidence Note: [title]”)
+   - summary: short excerpt (note text / snippet text / analysis summary)
+   - binderSection: default based on sourceType (user can edit later)
+   - importance: default 3
+   - tags: include ["evidence"] plus type-specific tags
+   - color: optional default (#628286 or similar)
+   - isPinned: false by default
+
+4) UX requirement:
+   - Show toast on add success: “Added to Trial Prep”
+   - If duplicate prevented by unique index, show: “Already in Trial Prep”
+
+5) Confirm Trial Prep page can:
+   - Filter by binderSection
+   - Sort by importance / pinned
+   - Show source links (click opens Evidence file + focuses note/snippet/analysis)
+   If focusing isn’t possible yet, at least navigate to the correct evidence file page and scroll to the top.
+
+========================
+F) EXHIBITS UPGRADE (make it match the real-world workflow)
+========================
+
+Goal: Exhibits aren’t just a list—they are a binder/history that can be exported as one packet.
+
+Implement all of the following:
+
+F1) Exhibit List metadata
+- exhibit_lists already has usedForFiling + usedForFilingDate
+- Add in UI (AppExhibits):
+  - toggle “Used for filing”
+  - date picker “Filing date” (enabled only if usedForFiling)
+
+F2) Exhibit contents ordering + “cover page” concept
+- Add an Exhibit List “Cover Page” editor:
+  - Title
+  - Optional filing caption text
+  - Optional notes
+  - This can be stored either:
+    (preferred) as a special exhibit_snippet with a flag isCoverPage=true
+    OR add new exhibit_list_cover_pages table.
+  Choose the simplest approach consistent with your schema.
+
+F3) Evidence linking fix (critical)
+User reports: “Exhibits won’t add evidence; it just adds an exhibit thing.”
+- Verify: when user clicks “Add to Exhibit” from Evidence, it must create an exhibit_evidence link row (or exhibit record if your design requires) so the exhibit list actually contains evidence items.
+- Ensure the Exhibit List view shows:
+  - Cover page (if exists)
+  - Then each linked evidence file (filename, upload date, notes)
+  - Then each exhibit_snippet (title, page number, snippet text)
+- Allow reordering:
+  - simple Up/Down buttons per item OR drag-and-drop (optional)
+  - Persist order using a new “sortOrder” field on exhibit_snippets and exhibit_evidence OR a join table “exhibit_list_items” with polymorphic type.
+  Prefer quickest: add sortOrder fields.
+
+F4) Export / Download as one
+Implement an “Export Exhibit Packet” button per exhibit list.
+
+Option A (fastest / acceptable v1):
+- Generate a ZIP file that includes:
+  - cover_page.txt or cover_page.pdf (if you generate PDF)
+  - snippets.txt (or PDF)
+  - all linked evidence files as-is
+- Provide a single download.
+
+Option B (better v2):
+- Generate a single PDF packet:
+  - Cover page as first page
+  - Append snippet pages (render snippet text into PDF)
+  - Append evidence PDFs (merge)
+  - For images, embed into PDF pages
+This may be heavier; Option A is fine if Option B is too big right now.
+
+Backend:
+- Add endpoint: GET /api/cases/:caseId/exhibit-lists/:listId/export
+- Must enforce ownership validation.
+- Stream the zip/pdf to client.
+
+Frontend:
+- Button in AppExhibits: “Export Packet”
+- Shows loading state and downloads file.
+
+========================
+G) PATTERN ANALYSIS INTEGRATION (Evidence-driven)
+========================
+
+Goal: Pattern Analysis must incorporate evidence and AI outputs, not just tasks/deadlines/calendar.
+
+G1) Add evidence-driven sections/cards to Pattern Analysis page:
+- Evidence Processing Status:
+  - total evidence files
+  - extracted complete / processing / failed
+  - AI analyses complete / processing / failed
+- “Key Themes” (from AI analyses)
+- “Timeline of Allegations / Events” (from extracted text + user timeline events)
+- “Risk Flags / High Conflict Indicators” (must be phrased neutrally; avoid advising)
+  Examples:
+  - missed follow-ups
+  - repeated communication escalations (if communications module supports it)
+  - repeated schedule conflicts (calendar)
+  - repeated “unilateral decision” labels ONLY if supported by logged data
+
+G2) Data sourcing
+- Query evidence_ai_analyses for the case.
+- Aggregate:
+  - counts by status
+  - most common tags/themes (if you have tags)
+  - key dates/names (if present in findings JSON)
+- If findings are unstructured text, still show a “Highlights” list by taking top N bullet points.
+
+G3) “Create Trial Prep Shortlist” shortcuts
+- From Pattern Analysis, allow “Add to Trial Prep” on any highlight item (routes to Trial Prep creation endpoint).
+
+========================
+SECURITY / QUALITY REQUIREMENTS (must do)
+========================
+
+1) Ownership validation:
+- Every new route must:
+  - requireAuth
+  - verify user owns caseId
+  - verify listId/evidenceId belongs to caseId
+2) No UPL:
+- Pattern Analysis language must be descriptive/organizational.
+- No “you should file”, no predictions, no strategy.
+
+========================
+REPORT BACK (required)
+========================
+
+After implementing, respond with:
+
+- Files changed (full list)
+- New endpoints added
+- What “Export” outputs (ZIP or PDF)
+- How ordering works in exhibit lists
+- Exact places where “Add to Trial Prep” appears (notes/snippets/analysis/pattern analysis)
+- Screens tested (at least: Evidence, Exhibits, Trial Prep, Pattern Analysis)
+
+Also: If anything from this task is too large for one pass, implement Option A export (ZIP) and leave Option B as a TODO with notes.

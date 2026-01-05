@@ -1599,6 +1599,9 @@ export const binderSectionValues = [
 export const shortlistSourceTypeValues = [
   "evidence",
   "evidence_note",
+  "exhibit_snippet",
+  "evidence_ai_analysis",
+  "analysis_finding",
   "timeline_event",
   "communication",
   "document",

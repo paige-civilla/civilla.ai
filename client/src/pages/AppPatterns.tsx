@@ -1,11 +1,15 @@
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag, FolderOpen, Brain, Sparkles, Check, Loader2, AlertTriangle, Scale } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication, EvidenceAnchor, EvidenceFile } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Case, Task, Deadline, CaseCalendarItem, CalendarCategory, CaseCommunication, EvidenceAnchor, EvidenceFile, EvidenceAiAnalysis } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 
 type PatternDataResponse = {
@@ -17,6 +21,18 @@ type PatternDataResponse = {
 
 type PatternAnalysisResponse = {
   anchors: (EvidenceAnchor & { evidenceFile: EvidenceFile | null })[];
+};
+
+type EvidenceStatsResponse = {
+  total: number;
+  extracted: number;
+  processing: number;
+  failed: number;
+  pending: number;
+};
+
+type AiAnalysesAllResponse = {
+  analyses: EvidenceAiAnalysis[];
 };
 
 export default function AppPatterns() {
@@ -69,11 +85,99 @@ export default function AppPatterns() {
     enabled: !!caseId,
   });
 
+  const { data: evidenceData } = useQuery<{ files: EvidenceFile[] }>({
+    queryKey: ["/api/cases", caseId, "evidence"],
+    enabled: !!caseId,
+  });
+
+  const { data: aiAnalysesAllData } = useQuery<AiAnalysesAllResponse>({
+    queryKey: ["/api/cases", caseId, "ai-analyses"],
+    enabled: !!caseId,
+  });
+
+  const { toast } = useToast();
+
+  const addToTrialPrepMutation = useMutation({
+    mutationFn: async (data: { sourceType: string; sourceId: string; title: string; summary?: string }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        ...data,
+        binderSection: "Key Evidence",
+        importance: 3,
+        tags: ["pattern-analysis"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
+    },
+  });
+
   const currentCase = caseData?.case;
   const deadlines = deadlinesData?.deadlines || [];
   const tasks = tasksData?.tasks || [];
   const calendarItems = calendarItemsData?.items || [];
   const categories = categoriesData?.categories || [];
+  const evidenceFiles = evidenceData?.files || [];
+  const allAiAnalyses = aiAnalysesAllData?.analyses || [];
+
+  const evidenceStats = {
+    total: evidenceFiles.length,
+    extracted: evidenceFiles.filter(f => f.extractionStatus === "complete").length,
+    processing: evidenceFiles.filter(f => f.extractionStatus === "processing" || f.extractionStatus === "queued").length,
+    failed: evidenceFiles.filter(f => f.extractionStatus === "failed").length,
+    pending: evidenceFiles.filter(f => !f.extractionStatus || f.extractionStatus === "pending").length,
+  };
+
+  const aiAnalysisStats = {
+    total: allAiAnalyses.length,
+    complete: allAiAnalyses.filter(a => a.status === "complete").length,
+    processing: allAiAnalyses.filter(a => a.status === "processing").length,
+    failed: allAiAnalyses.filter(a => a.status === "failed").length,
+  };
+
+  const keyThemes = allAiAnalyses
+    .filter(a => a.status === "complete" && a.findings && typeof a.findings === "object")
+    .flatMap(a => {
+      const findings = a.findings as Record<string, unknown>;
+      const themes: string[] = [];
+      if (Array.isArray(findings.keyFacts)) {
+        themes.push(...(findings.keyFacts as string[]).slice(0, 3));
+      }
+      if (Array.isArray(findings.potentialIssues)) {
+        themes.push(...(findings.potentialIssues as string[]).slice(0, 2));
+      }
+      return themes;
+    })
+    .slice(0, 8);
+
+  const keyDates = allAiAnalyses
+    .filter(a => a.status === "complete" && a.findings && typeof a.findings === "object")
+    .flatMap(a => {
+      const findings = a.findings as Record<string, unknown>;
+      if (Array.isArray(findings.dates)) {
+        return (findings.dates as string[]).slice(0, 5);
+      }
+      return [];
+    })
+    .slice(0, 10);
+
+  const keyNames = allAiAnalyses
+    .filter(a => a.status === "complete" && a.findings && typeof a.findings === "object")
+    .flatMap(a => {
+      const findings = a.findings as Record<string, unknown>;
+      if (Array.isArray(findings.names)) {
+        return (findings.names as string[]).slice(0, 5);
+      }
+      return [];
+    })
+    .slice(0, 10);
   const communications = communicationsData?.communications || [];
   const evidenceAnchors = patternAnalysisData?.anchors || [];
 
@@ -252,6 +356,181 @@ export default function AppPatterns() {
               "Pattern analysis is for your own organization and understanding."
             ]}
           />
+
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <Card className="border border-[#A2BEC2]" data-testid="card-evidence-status">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FolderOpen className="w-4 h-4 text-primary" />
+                  Evidence Processing
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {evidenceStats.total === 0 ? (
+                  <p className="text-sm text-muted-foreground">No evidence files uploaded yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Total Files</span>
+                      <span className="font-medium">{evidenceStats.total}</span>
+                    </div>
+                    <Progress 
+                      value={(evidenceStats.extracted / evidenceStats.total) * 100} 
+                      className="h-2" 
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        <Check className="w-3 h-3 mr-1" />
+                        {evidenceStats.extracted} extracted
+                      </Badge>
+                      {evidenceStats.processing > 0 && (
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          {evidenceStats.processing} processing
+                        </Badge>
+                      )}
+                      {evidenceStats.failed > 0 && (
+                        <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          {evidenceStats.failed} failed
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border border-[#A2BEC2]" data-testid="card-ai-status">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Brain className="w-4 h-4 text-primary" />
+                  AI Analyses
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {aiAnalysisStats.total === 0 ? (
+                  <p className="text-sm text-muted-foreground">No AI analyses run yet. Run from Evidence section.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Total Analyses</span>
+                      <span className="font-medium">{aiAnalysisStats.total}</span>
+                    </div>
+                    <Progress 
+                      value={(aiAnalysisStats.complete / aiAnalysisStats.total) * 100} 
+                      className="h-2" 
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        <Check className="w-3 h-3 mr-1" />
+                        {aiAnalysisStats.complete} complete
+                      </Badge>
+                      {aiAnalysisStats.processing > 0 && (
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          {aiAnalysisStats.processing} processing
+                        </Badge>
+                      )}
+                      {aiAnalysisStats.failed > 0 && (
+                        <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          {aiAnalysisStats.failed} failed
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border border-[#A2BEC2]" data-testid="card-key-themes">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  Key Themes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {keyThemes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No themes identified yet. Run AI analyses on evidence.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {keyThemes.map((theme, i) => (
+                      <div 
+                        key={i}
+                        className="flex items-start gap-2 p-2 bg-muted/50 rounded-md"
+                        data-testid={`theme-item-${i}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground line-clamp-2">{theme}</p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 flex-shrink-0"
+                          onClick={() => addToTrialPrepMutation.mutate({
+                            sourceType: "manual",
+                            sourceId: `theme-${i}-${Date.now()}`,
+                            title: `Theme: ${theme.slice(0, 50)}`,
+                            summary: theme,
+                          })}
+                          disabled={addToTrialPrepMutation.isPending}
+                          title="Add to Trial Prep"
+                          data-testid={`button-theme-trial-prep-${i}`}
+                        >
+                          <Scale className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {(keyDates.length > 0 || keyNames.length > 0) && (
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {keyDates.length > 0 && (
+                <Card className="border border-[#A2BEC2]" data-testid="card-key-dates">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      Key Dates (from AI)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {keyDates.map((date, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {date}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {keyNames.length > 0 && (
+                <Card className="border border-[#A2BEC2]" data-testid="card-key-names">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Tag className="w-4 h-4 text-primary" />
+                      Key Names (from AI)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {keyNames.map((name, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
 
           <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border border-[#A2BEC2]">

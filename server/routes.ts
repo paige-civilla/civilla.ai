@@ -4935,6 +4935,24 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/cases/:caseId/ai-analyses", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
+      res.json({ analyses });
+    } catch (error) {
+      console.error("List all AI analyses error:", error);
+      res.status(500).json({ error: "Failed to list analyses" });
+    }
+  });
+
   app.patch("/api/evidence-ai-analyses/:analysisId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

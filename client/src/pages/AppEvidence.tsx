@@ -218,6 +218,56 @@ export default function AppEvidence() {
     },
   });
 
+  const addNoteToTrialPrepMutation = useMutation({
+    mutationFn: async (note: EvidenceNote) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "evidence_note",
+        sourceId: note.id,
+        title: `Note: ${note.label || (note.note.slice(0, 50) + (note.note.length > 50 ? "..." : ""))}`,
+        summary: note.note.slice(0, 300),
+        binderSection: note.isKey ? "Key Facts" : "General",
+        importance: note.isKey ? 4 : 3,
+        tags: ["evidence", "note"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
+    },
+  });
+
+  const addAnalysisToTrialPrepMutation = useMutation({
+    mutationFn: async (analysis: EvidenceAiAnalysis) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "evidence_ai_analysis",
+        sourceId: analysis.id,
+        title: `AI Analysis: ${analysis.analysisType || "summary"}`,
+        summary: analysis.summary?.slice(0, 300) || null,
+        binderSection: "Key Evidence",
+        importance: 3,
+        tags: ["evidence", "ai-analysis"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
+    },
+  });
+
   const createSnippetMutation = useMutation({
     mutationFn: async (data: { exhibitListId: string; evidenceId: string; title: string; snippetText: string; pageNumber?: number | null }) => {
       return apiRequest("POST", `/api/cases/${caseId}/exhibit-snippets`, data);
@@ -1314,6 +1364,16 @@ export default function AppEvidence() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            onClick={() => addNoteToTrialPrepMutation.mutate(n)}
+                            disabled={addNoteToTrialPrepMutation.isPending}
+                            title="Add to Trial Prep"
+                            data-testid={`button-note-trial-prep-${n.id}`}
+                          >
+                            <Scale className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             onClick={() => startEditNote(n)}
                             data-testid={`button-edit-note-${n.id}`}
                           >
@@ -1803,10 +1863,24 @@ export default function AppEvidence() {
                                   ))}
                                 </div>
                               )}
-                              <p className="text-xs text-muted-foreground mt-3">
-                                {formatDate(analysis.createdAt)}
-                                {analysis.model && ` via ${analysis.model}`}
-                              </p>
+                              <div className="flex items-center justify-between mt-3">
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDate(analysis.createdAt)}
+                                  {analysis.model && ` via ${analysis.model}`}
+                                </p>
+                                {analysis.status === "complete" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => addAnalysisToTrialPrepMutation.mutate(analysis)}
+                                    disabled={addAnalysisToTrialPrepMutation.isPending}
+                                    data-testid={`button-analysis-trial-prep-${analysis.id}`}
+                                  >
+                                    <Scale className="w-3 h-3 mr-1" />
+                                    Add to Trial Prep
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </CardContent>
