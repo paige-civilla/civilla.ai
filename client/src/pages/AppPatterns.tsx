@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag, FolderOpen, Brain, Sparkles, Check, Loader2, AlertTriangle, Scale, Users } from "lucide-react";
+import { ArrowLeft, TrendingUp, Briefcase, AlertCircle, Clock, CheckSquare, Calendar, Activity, MessageSquare, FileText, Tag, FolderOpen, Brain, Sparkles, Check, Loader2, AlertTriangle, Scale, Users, Download } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -295,6 +295,17 @@ export default function AppPatterns() {
                 Spot trends across evidence, communications, and timeline events.
               </p>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                window.open(`/api/cases/${caseId}/pattern-analysis/export`, "_blank");
+              }}
+              disabled={patternLoading}
+              data-testid="button-export-patterns"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Summary
+            </Button>
           </div>
 
           <ModuleIntro

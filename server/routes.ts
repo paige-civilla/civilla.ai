@@ -5363,8 +5363,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         const noteItem: ExampleItem = {
           sourceType: "evidence_note",
           sourceId: note.id,
-          title: note.title || "Note",
-          excerpt: (note.content || "").slice(0, 200),
+          title: note.noteTitle || "Note",
+          excerpt: (note.noteText || "").slice(0, 200),
           evidenceId: note.evidenceId,
           fileName: evidenceFile?.originalName,
           pageNumber: note.pageNumber ?? undefined,
@@ -5386,13 +5386,13 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           sourceType: "timeline_event",
           sourceId: event.id,
           title: event.title,
-          excerpt: (event.description || "").slice(0, 200),
-          occurredAt: event.occurredAt?.toISOString(),
+          excerpt: (event.notes || "").slice(0, 200),
+          occurredAt: event.eventDate?.toISOString(),
           importance: pinnedSourceIds.has(event.id) ? 10 : 4,
         };
 
-        if (event.occurredAt) {
-          const dateKey = event.occurredAt.toISOString().split("T")[0];
+        if (event.eventDate) {
+          const dateKey = event.eventDate.toISOString().split("T")[0];
           if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
           keyDatesMap[dateKey].push(eventItem);
         }
@@ -5409,27 +5409,28 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       for (const comm of communications) {
+        const resolved = comm.status === "resolved";
         const commItem: ExampleItem = {
           sourceType: "communication",
           sourceId: comm.id,
-          title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactName || "Unknown"}`,
-          excerpt: (comm.summary || comm.notes || "").slice(0, 200),
+          title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactId || "Unknown"}`,
+          excerpt: (comm.summary || "").slice(0, 200),
           occurredAt: comm.occurredAt?.toISOString(),
-          importance: pinnedSourceIds.has(comm.id) ? 10 : (comm.isResolved ? 2 : 5),
+          importance: pinnedSourceIds.has(comm.id) ? 10 : (resolved ? 2 : 5),
         };
 
-        if (comm.followUpDueDate && !comm.isResolved) {
-          const dueDate = new Date(comm.followUpDueDate);
+        if (comm.followUpAt && !resolved) {
+          const dueDate = new Date(comm.followUpAt);
           if (dueDate < new Date()) {
             conflictsAndGaps.push({
               ...commItem,
-              title: `Overdue follow-up: ${comm.contactName || "Unknown"}`,
+              title: `Overdue follow-up: ${comm.contactId || "Unknown"}`,
             });
           }
         }
 
-        if (comm.commType) {
-          const typeLabel = comm.commType.charAt(0).toUpperCase() + comm.commType.slice(1) + " communications";
+        if (comm.channel) {
+          const typeLabel = comm.channel.charAt(0).toUpperCase() + comm.channel.slice(1) + " communications";
           if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
           patternCounts[typeLabel].push(commItem);
         }
@@ -5489,6 +5490,301 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (error) {
       console.error("Get pattern analysis error:", error);
       res.status(500).json({ error: "Failed to get pattern analysis" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/pattern-analysis/export", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const [
+        evidenceFiles,
+        aiAnalyses,
+        notesFull,
+        timelineEvents,
+        communications,
+        exhibitSnippets,
+        trialPrepItems,
+      ] = await Promise.all([
+        storage.listEvidenceFiles(caseId, userId),
+        storage.listEvidenceAiAnalyses(userId, caseId),
+        storage.listEvidenceNotesFull(userId, caseId),
+        storage.listTimelineEvents(caseId, userId),
+        storage.listCommunications(userId, caseId),
+        storage.listExhibitSnippets(userId, caseId),
+        storage.listTrialPrepShortlist(userId, caseId),
+      ]);
+
+      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
+      const pinnedSourceIds = new Set(trialPrepItems.filter(t => t.isPinned).map(t => t.sourceId));
+
+      type ExampleItem = {
+        sourceType: string;
+        sourceId: string;
+        title: string;
+        excerpt: string;
+        occurredAt?: string;
+        evidenceId?: string;
+        fileName?: string;
+        pageNumber?: number;
+        tags?: string[];
+        importance?: number;
+      };
+
+      const themeKeywords = [
+        "missed exchanges", "medical obstruction", "unilateral decisions",
+        "hostile language", "withheld communication", "deadline pressure",
+        "inconsistency", "gatekeeping", "schedule changes", "conflict",
+        "coparenting", "custody", "visitation", "support", "agreement"
+      ];
+
+      const themeCounts: Record<string, ExampleItem[]> = {};
+      const patternCounts: Record<string, ExampleItem[]> = {};
+      const keyDatesMap: Record<string, ExampleItem[]> = {};
+      const conflictsAndGaps: ExampleItem[] = [];
+
+      for (const analysis of aiAnalyses) {
+        if (analysis.status !== "complete") continue;
+        const findings = analysis.findings as Record<string, unknown> | null;
+        const summary = analysis.summary || "";
+        const evidenceFile = evidenceMap.get(analysis.evidenceId);
+        
+        const baseItem: ExampleItem = {
+          sourceType: "evidence_analysis",
+          sourceId: analysis.id,
+          title: evidenceFile?.originalName || "AI Analysis",
+          excerpt: summary.slice(0, 200),
+          evidenceId: analysis.evidenceId,
+          fileName: evidenceFile?.originalName,
+          importance: pinnedSourceIds.has(analysis.id) ? 10 : 5,
+        };
+
+        for (const keyword of themeKeywords) {
+          if (summary.toLowerCase().includes(keyword.toLowerCase())) {
+            const label = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+            if (!themeCounts[label]) themeCounts[label] = [];
+            themeCounts[label].push(baseItem);
+          }
+        }
+
+        if (findings && typeof findings === "object") {
+          const findingsThemes = (findings as { themes?: string[] }).themes;
+          if (Array.isArray(findingsThemes)) {
+            for (const theme of findingsThemes) {
+              const label = String(theme).charAt(0).toUpperCase() + String(theme).slice(1);
+              if (!themeCounts[label]) themeCounts[label] = [];
+              themeCounts[label].push(baseItem);
+            }
+          }
+        }
+      }
+
+      for (const note of notesFull) {
+        const evidenceFile = evidenceMap.get(note.evidenceId);
+        const noteItem: ExampleItem = {
+          sourceType: "evidence_note",
+          sourceId: note.id,
+          title: note.noteTitle || "Note",
+          excerpt: (note.noteText || "").slice(0, 200),
+          evidenceId: note.evidenceId,
+          fileName: evidenceFile?.originalName,
+          pageNumber: note.pageNumber ?? undefined,
+          tags: Array.isArray(note.tags) ? note.tags as string[] : [],
+          importance: pinnedSourceIds.has(note.id) ? 10 : (note.isResolved ? 2 : 5),
+        };
+
+        if (note.tags && Array.isArray(note.tags)) {
+          for (const tag of note.tags as string[]) {
+            const label = String(tag).charAt(0).toUpperCase() + String(tag).slice(1);
+            if (!themeCounts[label]) themeCounts[label] = [];
+            themeCounts[label].push(noteItem);
+          }
+        }
+      }
+
+      for (const event of timelineEvents) {
+        const eventItem: ExampleItem = {
+          sourceType: "timeline_event",
+          sourceId: event.id,
+          title: event.title,
+          excerpt: (event.notes || "").slice(0, 200),
+          occurredAt: event.eventDate?.toISOString(),
+          importance: pinnedSourceIds.has(event.id) ? 10 : 4,
+        };
+
+        if (event.eventDate) {
+          const dateKey = event.eventDate.toISOString().split("T")[0];
+          if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
+          keyDatesMap[dateKey].push(eventItem);
+        }
+
+        const category = event.title.toLowerCase();
+        if (category.includes("hearing") || category.includes("court") || category.includes("filing")) {
+          if (!patternCounts["Court Events"]) patternCounts["Court Events"] = [];
+          patternCounts["Court Events"].push(eventItem);
+        }
+        if (category.includes("exchange") || category.includes("pickup") || category.includes("dropoff")) {
+          if (!patternCounts["Custody Exchanges"]) patternCounts["Custody Exchanges"] = [];
+          patternCounts["Custody Exchanges"].push(eventItem);
+        }
+      }
+
+      for (const comm of communications) {
+        const resolved = comm.status === "resolved";
+        const commItem: ExampleItem = {
+          sourceType: "communication",
+          sourceId: comm.id,
+          title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactId || "Unknown"}`,
+          excerpt: (comm.summary || "").slice(0, 200),
+          occurredAt: comm.occurredAt?.toISOString(),
+          importance: pinnedSourceIds.has(comm.id) ? 10 : (resolved ? 2 : 5),
+        };
+
+        if (comm.followUpAt && !resolved) {
+          const dueDate = new Date(comm.followUpAt);
+          if (dueDate < new Date()) {
+            conflictsAndGaps.push({
+              ...commItem,
+              title: `Overdue follow-up: ${comm.contactId || "Unknown"}`,
+            });
+          }
+        }
+
+        if (comm.channel) {
+          const typeLabel = comm.channel.charAt(0).toUpperCase() + comm.channel.slice(1) + " communications";
+          if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
+          patternCounts[typeLabel].push(commItem);
+        }
+      }
+
+      for (const snippet of exhibitSnippets) {
+        const snippetItem: ExampleItem = {
+          sourceType: "exhibit_snippet",
+          sourceId: snippet.id,
+          title: snippet.title,
+          excerpt: (snippet.snippetText || "").slice(0, 200),
+          pageNumber: snippet.pageNumber ?? undefined,
+          importance: pinnedSourceIds.has(snippet.id) ? 10 : 4,
+        };
+
+        if (!patternCounts["Exhibit Highlights"]) patternCounts["Exhibit Highlights"] = [];
+        patternCounts["Exhibit Highlights"].push(snippetItem);
+      }
+
+      const sortByImportance = (items: ExampleItem[]) =>
+        [...items].sort((a, b) => (b.importance || 0) - (a.importance || 0));
+
+      const themes = Object.entries(themeCounts)
+        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      const patterns = Object.entries(patternCounts)
+        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      const keyDates = Object.entries(keyDatesMap)
+        .map(([date, sources]) => ({ date, label: `${sources.length} event(s)`, sources: sortByImportance(sources).slice(0, 3) }))
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 10);
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+      
+      let markdown = `# Pattern Analysis Summary\n\n`;
+      markdown += `**Case:** ${caseRecord.title}\n`;
+      markdown += `**Generated:** ${dateStr}\n\n`;
+      markdown += `---\n\n`;
+      markdown += `> **Disclaimer:** This is an organizational summary and may be incomplete or incorrect. Verify against your documents. This is not legal advice.\n\n`;
+      markdown += `---\n\n`;
+
+      markdown += `## Coverage & Status\n\n`;
+      markdown += `- **Evidence Files:** ${evidenceFiles.length}\n`;
+      markdown += `- **AI Analyses Complete:** ${aiAnalyses.filter(a => a.status === "complete").length}\n`;
+      markdown += `- **Notes:** ${notesFull.length}\n`;
+      markdown += `- **Timeline Events:** ${timelineEvents.length}\n`;
+      markdown += `- **Communications:** ${communications.length}\n\n`;
+
+      if (themes.length > 0) {
+        markdown += `## Themes Detected\n\n`;
+        for (const theme of themes) {
+          markdown += `### ${theme.label} (${theme.count} occurrence${theme.count !== 1 ? "s" : ""})\n\n`;
+          for (const ex of theme.examples) {
+            markdown += `- **${ex.title}**${ex.fileName ? ` (${ex.fileName})` : ""}\n`;
+            markdown += `  ${ex.excerpt}\n\n`;
+          }
+        }
+      }
+
+      if (patterns.length > 0) {
+        markdown += `## Patterns Found\n\n`;
+        for (const pattern of patterns) {
+          markdown += `### ${pattern.label} (${pattern.count} item${pattern.count !== 1 ? "s" : ""})\n\n`;
+          for (const ex of pattern.examples) {
+            markdown += `- **${ex.title}**${ex.fileName ? ` (${ex.fileName})` : ""}\n`;
+            markdown += `  ${ex.excerpt}\n\n`;
+          }
+        }
+      }
+
+      if (keyDates.length > 0) {
+        markdown += `## Key Dates\n\n`;
+        for (const entry of keyDates) {
+          const formattedDate = new Date(entry.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+          markdown += `### ${formattedDate} - ${entry.label}\n\n`;
+          for (const src of entry.sources) {
+            markdown += `- **${src.title}**: ${src.excerpt}\n\n`;
+          }
+        }
+      }
+
+      if (conflictsAndGaps.length > 0) {
+        markdown += `## Conflicts & Gaps\n\n`;
+        for (const item of sortByImportance(conflictsAndGaps).slice(0, 10)) {
+          markdown += `- **${item.title}**: ${item.excerpt}\n\n`;
+        }
+      }
+
+      markdown += `---\n\n`;
+      markdown += `## Sources Appendix\n\n`;
+      markdown += `| Type | ID | Title |\n`;
+      markdown += `|------|-----|-------|\n`;
+      
+      const allExamples = [
+        ...themes.flatMap(t => t.examples),
+        ...patterns.flatMap(p => p.examples),
+        ...keyDates.flatMap(d => d.sources),
+        ...conflictsAndGaps,
+      ];
+      const seenIds = new Set<string>();
+      for (const ex of allExamples) {
+        if (seenIds.has(ex.sourceId)) continue;
+        seenIds.add(ex.sourceId);
+        markdown += `| ${ex.sourceType} | ${ex.sourceId.slice(0, 8)}... | ${ex.title.replace(/\|/g, "\\|")} |\n`;
+      }
+
+      const archiver = require("archiver");
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="PatternAnalysis_${caseRecord.title.replace(/[^a-zA-Z0-9]/g, "_")}.zip"`);
+
+      const archive = archiver("zip", { zlib: { level: 9 } });
+      archive.on("error", (err: Error) => {
+        console.error("Archive error:", err);
+        res.status(500).json({ error: "Failed to create export" });
+      });
+      archive.pipe(res);
+      archive.append(markdown, { name: "PatternAnalysisSummary.md" });
+      await archive.finalize();
+    } catch (error) {
+      console.error("Export pattern analysis error:", error);
+      res.status(500).json({ error: "Failed to export pattern analysis" });
     }
   });
 
