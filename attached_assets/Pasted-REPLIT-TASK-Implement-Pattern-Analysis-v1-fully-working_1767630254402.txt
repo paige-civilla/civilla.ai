@@ -1,0 +1,143 @@
+REPLIT TASK: Implement Pattern Analysis v1 (fully working, evidence-driven, export-ready)
+
+Goal
+Make the Pattern Analysis module actually compute and display patterns based on the user’s real case data across modules (Evidence extraction + notes + AI analyses + timeline + communications + exhibits/snippets + trial prep shortlist). Must stay UPL-safe: educational + organizational + research framing, no “you should file X”, no likelihood of success, no legal strategy.
+
+Scope (v1)
+1) Backend aggregation endpoint(s) that return a unified “pattern analysis feed” for a case.
+2) Frontend Pattern Analysis page that renders:
+   - Processing Status + coverage
+   - Themes
+   - Behavior/interaction patterns (neutral labels)
+   - Key dates + conflicts/gaps
+   - Key names/entities
+   - Top 3 examples per section (with source links)
+   - One-click “Add to Trial Prep” on every example item
+3) Optional export (ZIP) of a printable summary file (markdown or txt is fine for v1).
+
+Data Sources (must use existing tables/routes)
+Evidence:
+- evidence_extractions (status, extractedText metadata)
+- evidence_notes (anchored notes; include tags/color/isResolved)
+- evidence_ai_analyses (status/summary/findings JSON)
+
+Other modules:
+- timeline_events (including category_id)
+- case_communications (follow-ups, resolved, due dates)
+- exhibit_snippets + exhibit_evidence (for “what’s already staged for exhibits”)
+- trial_prep_shortlist (for pinned/top items; prevent duplicates)
+
+Backend: Add endpoint(s)
+A) GET /api/cases/:caseId/pattern-analysis (requireAuth)
+Return shape (example):
+{
+  ok: true,
+  status: {
+    evidenceTotal: number,
+    extractedComplete: number,
+    extractedProcessing: number,
+    extractedFailed: number,
+    analysesComplete: number,
+    analysesProcessing: number,
+    analysesFailed: number,
+    notesTotal: number
+  },
+  themes: Array<{ label: string, count: number, examples: ExampleItem[] }>,
+  patterns: Array<{ label: string, count: number, examples: ExampleItem[] }>,
+  keyDates: Array<{ date: string, label: string, sources: ExampleItem[] }>,
+  conflictsAndGaps: Array<{ label: string, examples: ExampleItem[] }>,
+  keyNames: Array<{ name: string, count: number, examples: ExampleItem[] }>,
+  topExamples: {
+    themes: ExampleItem[],
+    patterns: ExampleItem[],
+    dates: ExampleItem[]
+  }
+}
+
+ExampleItem (normalized “evidence pointer”):
+{
+  sourceType: "evidence_note" | "evidence_analysis" | "timeline_event" | "communication" | "exhibit_snippet",
+  sourceId: string,
+  title: string,
+  excerpt: string,
+  occurredAt?: string,      // or dueDate/eventDate
+  evidenceId?: string,      // for evidence-linked sources
+  fileName?: string,
+  pageNumber?: number,
+  tags?: string[],
+  importance?: number
+}
+
+B) (Optional but recommended) GET /api/cases/:caseId/pattern-analysis/export (requireAuth)
+Return a ZIP containing:
+- PatternAnalysisSummary.txt (or .md) with sections + Top 3 examples
+- Include “Sources” appendix listing each ExampleItem with ids
+
+Aggregation rules (v1 heuristics, no new AI required)
+Pattern Analysis should work even if AI analyses are missing:
+- If evidence_ai_analyses exist: use findings JSON to extract:
+  - themes (e.g., “missed exchanges”, “medical obstruction”, “unilateral decisions”, “hostile language”, “withheld communication”, “deadline pressure”, “inconsistency”, “gatekeeping”, “schedule changes”)
+  - key names and dates if provided
+- If AI analyses missing: derive lightweight patterns from:
+  - evidence_notes tags + anchor types + keywords in note text
+  - communications follow-up overdue + unresolved counts
+  - timeline categories frequency
+
+Conflicts/Gaps (simple but useful)
+- Detect timeline gaps > 30 days with no events (if many notes/communications exist)
+- Detect overdue follow-ups (communications follow-upDueDate in past and not resolved)
+- Detect evidence extraction failures and list impacted files
+
+Top 3 examples logic
+For each section, select top 3 by:
+1) trial_prep_shortlist isPinned true first
+2) then importance (if present)
+3) then newest createdAt/occurredAt
+
+Frontend: client/src/pages/AppPatternAnalysis.tsx
+Implement layout:
+- Header + ModuleIntro
+- Card: “Coverage & Processing” with progress bars and counts
+- Card: “Themes” (chips + count + expand to show examples)
+- Card: “Patterns” (same)
+- Card: “Conflicts & Gaps”
+- Card: “Key Dates”
+- Card: “Key Names”
+Each example row must have:
+- excerpt (2 lines)
+- “Open Source” button:
+  - evidence_note -> opens EvidenceViewer for evidenceId (or navigates to evidence and expands note)
+  - evidence_analysis -> opens AI Analysis sheet for evidenceId
+  - communication -> navigates to Communications with highlight
+  - timeline_event -> navigates to Timeline with highlight
+  - exhibit_snippet -> navigates to Exhibits list
+- “Add to Trial Prep” button:
+  POST /api/cases/:caseId/trial-prep-shortlist with:
+  { sourceType, sourceId, title, summary, binderSection, importance, tags, color }
+Use binderSection defaults:
+- themes/patterns -> "Key Themes"
+- dates -> "Key Dates"
+- conflicts/gaps -> "Issues to Address"
+- names -> "Key People"
+
+Performance
+- Use one query to /api/cases/:caseId/pattern-analysis
+- Cache in React Query (staleTime 60s)
+- Show loading skeleton, and “No data yet” empty state with guidance:
+  “Upload evidence or add timeline/communications to see patterns.”
+
+UPL-safe copy requirements
+- Use neutral language: “Organizational summary,” “Common themes,” “Items that may be relevant”
+- Add disclaimer at top of page:
+  “This is an organizational summary and may be incomplete or incorrect. Verify against your documents. Not legal advice.”
+
+Also update menu label collisions
+- Ensure nav/menu labels truncate and do not overlap:
+  Change menu label “Child Support Worksheet Helper” to “Child Support”
+  Keep full title inside the module page header instead.
+
+Report back
+After implementation, provide:
+- Files changed
+- New endpoints
+- A quick test checklist (what to click to confirm it works)

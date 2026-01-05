@@ -49,7 +49,7 @@ const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "trial-prep": "Trial Prep",
   "parenting-plan": "Parenting Plan",
   "children": "Children",
-  "child-support": "Child Support Worksheet Helper",
+  "child-support": "Child Support",
   "pattern-analysis": "Pattern Analysis",
 };
 
@@ -5249,6 +5249,246 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (error) {
       console.error("Get pattern analysis input error:", error);
       res.status(500).json({ error: "Failed to get pattern analysis input" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/pattern-analysis", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const [
+        evidenceFiles,
+        aiAnalyses,
+        notesFull,
+        timelineEvents,
+        communications,
+        exhibitSnippets,
+        trialPrepItems,
+      ] = await Promise.all([
+        storage.listEvidenceFiles(caseId, userId),
+        storage.listEvidenceAiAnalyses(userId, caseId),
+        storage.listEvidenceNotesFull(userId, caseId),
+        storage.listTimelineEvents(caseId, userId),
+        storage.listCommunications(userId, caseId),
+        storage.listExhibitSnippets(userId, caseId),
+        storage.listTrialPrepShortlist(userId, caseId),
+      ]);
+
+      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
+      const pinnedSourceIds = new Set(trialPrepItems.filter(t => t.isPinned).map(t => t.sourceId));
+
+      const status = {
+        evidenceTotal: evidenceFiles.length,
+        extractedComplete: aiAnalyses.filter(a => a.status === "complete").length,
+        extractedProcessing: aiAnalyses.filter(a => a.status === "processing").length,
+        extractedFailed: aiAnalyses.filter(a => a.status === "failed").length,
+        analysesComplete: aiAnalyses.filter(a => a.status === "complete").length,
+        analysesProcessing: aiAnalyses.filter(a => a.status === "processing").length,
+        analysesFailed: aiAnalyses.filter(a => a.status === "failed").length,
+        notesTotal: notesFull.length,
+        timelineTotal: timelineEvents.length,
+        communicationsTotal: communications.length,
+      };
+
+      type ExampleItem = {
+        sourceType: string;
+        sourceId: string;
+        title: string;
+        excerpt: string;
+        occurredAt?: string;
+        evidenceId?: string;
+        fileName?: string;
+        pageNumber?: number;
+        tags?: string[];
+        importance?: number;
+      };
+
+      const themeKeywords = [
+        "missed exchanges", "medical obstruction", "unilateral decisions",
+        "hostile language", "withheld communication", "deadline pressure",
+        "inconsistency", "gatekeeping", "schedule changes", "conflict",
+        "coparenting", "custody", "visitation", "support", "agreement"
+      ];
+
+      const themeCounts: Record<string, ExampleItem[]> = {};
+      const patternCounts: Record<string, ExampleItem[]> = {};
+      const keyDatesMap: Record<string, ExampleItem[]> = {};
+      const keyNamesMap: Record<string, ExampleItem[]> = {};
+      const conflictsAndGaps: ExampleItem[] = [];
+
+      for (const analysis of aiAnalyses) {
+        if (analysis.status !== "complete") continue;
+        const findings = analysis.findings as Record<string, unknown> | null;
+        const summary = analysis.summary || "";
+        const evidenceFile = evidenceMap.get(analysis.evidenceId);
+        
+        const baseItem: ExampleItem = {
+          sourceType: "evidence_analysis",
+          sourceId: analysis.id,
+          title: evidenceFile?.originalName || "AI Analysis",
+          excerpt: summary.slice(0, 200),
+          evidenceId: analysis.evidenceId,
+          fileName: evidenceFile?.originalName,
+          importance: pinnedSourceIds.has(analysis.id) ? 10 : 5,
+        };
+
+        for (const keyword of themeKeywords) {
+          if (summary.toLowerCase().includes(keyword.toLowerCase())) {
+            const label = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+            if (!themeCounts[label]) themeCounts[label] = [];
+            themeCounts[label].push(baseItem);
+          }
+        }
+
+        if (findings && typeof findings === "object") {
+          const findingsThemes = (findings as { themes?: string[] }).themes;
+          if (Array.isArray(findingsThemes)) {
+            for (const theme of findingsThemes) {
+              const label = String(theme).charAt(0).toUpperCase() + String(theme).slice(1);
+              if (!themeCounts[label]) themeCounts[label] = [];
+              themeCounts[label].push(baseItem);
+            }
+          }
+        }
+      }
+
+      for (const note of notesFull) {
+        const evidenceFile = evidenceMap.get(note.evidenceId);
+        const noteItem: ExampleItem = {
+          sourceType: "evidence_note",
+          sourceId: note.id,
+          title: note.title || "Note",
+          excerpt: (note.content || "").slice(0, 200),
+          evidenceId: note.evidenceId,
+          fileName: evidenceFile?.originalName,
+          pageNumber: note.pageNumber ?? undefined,
+          tags: Array.isArray(note.tags) ? note.tags as string[] : [],
+          importance: pinnedSourceIds.has(note.id) ? 10 : (note.isResolved ? 2 : 5),
+        };
+
+        if (note.tags && Array.isArray(note.tags)) {
+          for (const tag of note.tags as string[]) {
+            const label = String(tag).charAt(0).toUpperCase() + String(tag).slice(1);
+            if (!themeCounts[label]) themeCounts[label] = [];
+            themeCounts[label].push(noteItem);
+          }
+        }
+      }
+
+      for (const event of timelineEvents) {
+        const eventItem: ExampleItem = {
+          sourceType: "timeline_event",
+          sourceId: event.id,
+          title: event.title,
+          excerpt: (event.description || "").slice(0, 200),
+          occurredAt: event.occurredAt?.toISOString(),
+          importance: pinnedSourceIds.has(event.id) ? 10 : 4,
+        };
+
+        if (event.occurredAt) {
+          const dateKey = event.occurredAt.toISOString().split("T")[0];
+          if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
+          keyDatesMap[dateKey].push(eventItem);
+        }
+
+        const category = event.title.toLowerCase();
+        if (category.includes("hearing") || category.includes("court") || category.includes("filing")) {
+          if (!patternCounts["Court Events"]) patternCounts["Court Events"] = [];
+          patternCounts["Court Events"].push(eventItem);
+        }
+        if (category.includes("exchange") || category.includes("pickup") || category.includes("dropoff")) {
+          if (!patternCounts["Custody Exchanges"]) patternCounts["Custody Exchanges"] = [];
+          patternCounts["Custody Exchanges"].push(eventItem);
+        }
+      }
+
+      for (const comm of communications) {
+        const commItem: ExampleItem = {
+          sourceType: "communication",
+          sourceId: comm.id,
+          title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactName || "Unknown"}`,
+          excerpt: (comm.summary || comm.notes || "").slice(0, 200),
+          occurredAt: comm.occurredAt?.toISOString(),
+          importance: pinnedSourceIds.has(comm.id) ? 10 : (comm.isResolved ? 2 : 5),
+        };
+
+        if (comm.followUpDueDate && !comm.isResolved) {
+          const dueDate = new Date(comm.followUpDueDate);
+          if (dueDate < new Date()) {
+            conflictsAndGaps.push({
+              ...commItem,
+              title: `Overdue follow-up: ${comm.contactName || "Unknown"}`,
+            });
+          }
+        }
+
+        if (comm.commType) {
+          const typeLabel = comm.commType.charAt(0).toUpperCase() + comm.commType.slice(1) + " communications";
+          if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
+          patternCounts[typeLabel].push(commItem);
+        }
+      }
+
+      for (const snippet of exhibitSnippets) {
+        const snippetItem: ExampleItem = {
+          sourceType: "exhibit_snippet",
+          sourceId: snippet.id,
+          title: snippet.title,
+          excerpt: (snippet.snippetText || "").slice(0, 200),
+          pageNumber: snippet.pageNumber ?? undefined,
+          importance: pinnedSourceIds.has(snippet.id) ? 10 : 4,
+        };
+
+        if (!patternCounts["Exhibit Highlights"]) patternCounts["Exhibit Highlights"] = [];
+        patternCounts["Exhibit Highlights"].push(snippetItem);
+      }
+
+      const sortByImportance = (items: ExampleItem[]) =>
+        [...items].sort((a, b) => (b.importance || 0) - (a.importance || 0));
+
+      const themes = Object.entries(themeCounts)
+        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      const patterns = Object.entries(patternCounts)
+        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      const keyDates = Object.entries(keyDatesMap)
+        .map(([date, sources]) => ({ date, label: `${sources.length} event(s)`, sources: sortByImportance(sources).slice(0, 3) }))
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 10);
+
+      const keyNames = Object.entries(keyNamesMap)
+        .map(([name, examples]) => ({ name, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      res.json({
+        ok: true,
+        status,
+        themes,
+        patterns,
+        keyDates,
+        conflictsAndGaps: sortByImportance(conflictsAndGaps).slice(0, 10),
+        keyNames,
+        topExamples: {
+          themes: themes.flatMap(t => t.examples).slice(0, 3),
+          patterns: patterns.flatMap(p => p.examples).slice(0, 3),
+          dates: keyDates.flatMap(d => d.sources).slice(0, 3),
+        },
+      });
+    } catch (error) {
+      console.error("Get pattern analysis error:", error);
+      res.status(500).json({ error: "Failed to get pattern analysis" });
     }
   });
 
