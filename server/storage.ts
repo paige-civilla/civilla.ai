@@ -22,6 +22,8 @@ import {
   lexiThreads,
   lexiMessages,
   caseRuleTerms,
+  trialBinderSections,
+  trialBinderItems,
   type User,
   type InsertUser,
   type Case,
@@ -71,6 +73,10 @@ import {
   type LexiMessageRole,
   type CaseRuleTerm,
   type UpsertCaseRuleTerm,
+  type TrialBinderSection,
+  type TrialBinderItem,
+  type UpsertTrialBinderItem,
+  type UpdateTrialBinderItem,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -179,6 +185,14 @@ export interface IStorage {
 
   getCaseRuleTerms(userId: string, caseId: string, moduleKey?: string): Promise<CaseRuleTerm[]>;
   upsertCaseRuleTerm(userId: string, caseId: string, input: UpsertCaseRuleTerm): Promise<CaseRuleTerm>;
+
+  listTrialBinderSections(userId: string, caseId: string): Promise<TrialBinderSection[]>;
+  seedDefaultTrialBinderSectionsIfMissing(userId: string, caseId: string): Promise<TrialBinderSection[]>;
+  listTrialBinderItems(userId: string, caseId: string): Promise<TrialBinderItem[]>;
+  getTrialBinderItem(userId: string, itemId: string): Promise<TrialBinderItem | undefined>;
+  upsertTrialBinderItem(userId: string, caseId: string, input: UpsertTrialBinderItem): Promise<TrialBinderItem>;
+  updateTrialBinderItem(userId: string, itemId: string, input: UpdateTrialBinderItem): Promise<TrialBinderItem | undefined>;
+  deleteTrialBinderItem(userId: string, itemId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1247,6 +1261,106 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return created;
+  }
+
+  async listTrialBinderSections(userId: string, caseId: string): Promise<TrialBinderSection[]> {
+    return db.select().from(trialBinderSections)
+      .where(and(eq(trialBinderSections.userId, userId), eq(trialBinderSections.caseId, caseId)))
+      .orderBy(asc(trialBinderSections.sortOrder));
+  }
+
+  async seedDefaultTrialBinderSectionsIfMissing(userId: string, caseId: string): Promise<TrialBinderSection[]> {
+    const existing = await this.listTrialBinderSections(userId, caseId);
+    if (existing.length > 0) {
+      return existing;
+    }
+
+    const defaultSections = [
+      { key: "evidence", title: "Evidence", sortOrder: 0 },
+      { key: "timeline", title: "Timeline", sortOrder: 1 },
+      { key: "communications", title: "Message and Call Log", sortOrder: 2 },
+      { key: "deadlines", title: "Deadlines", sortOrder: 3 },
+      { key: "tasks", title: "Case To-Do", sortOrder: 4 },
+      { key: "documents", title: "Document Creator", sortOrder: 5 },
+      { key: "disclosures", title: "Disclosures & Discovery", sortOrder: 6 },
+      { key: "contacts", title: "Contacts", sortOrder: 7 },
+      { key: "children", title: "Children", sortOrder: 8 },
+      { key: "child-support", title: "Child Support Estimator", sortOrder: 9 },
+      { key: "patterns", title: "Pattern Analysis", sortOrder: 10 },
+    ];
+
+    const rows = await db.insert(trialBinderSections)
+      .values(defaultSections.map(s => ({ userId, caseId, ...s })))
+      .returning();
+
+    return rows;
+  }
+
+  async listTrialBinderItems(userId: string, caseId: string): Promise<TrialBinderItem[]> {
+    return db.select().from(trialBinderItems)
+      .where(and(eq(trialBinderItems.userId, userId), eq(trialBinderItems.caseId, caseId)))
+      .orderBy(asc(trialBinderItems.sectionKey), asc(trialBinderItems.pinnedRank));
+  }
+
+  async getTrialBinderItem(userId: string, itemId: string): Promise<TrialBinderItem | undefined> {
+    const [row] = await db.select().from(trialBinderItems)
+      .where(and(eq(trialBinderItems.id, itemId), eq(trialBinderItems.userId, userId)));
+    return row;
+  }
+
+  async upsertTrialBinderItem(userId: string, caseId: string, input: UpsertTrialBinderItem): Promise<TrialBinderItem> {
+    const [existing] = await db.select().from(trialBinderItems)
+      .where(and(
+        eq(trialBinderItems.userId, userId),
+        eq(trialBinderItems.caseId, caseId),
+        eq(trialBinderItems.sectionKey, input.sectionKey),
+        eq(trialBinderItems.sourceType, input.sourceType),
+        eq(trialBinderItems.sourceId, input.sourceId)
+      ));
+
+    if (existing) {
+      const [updated] = await db.update(trialBinderItems)
+        .set({
+          pinnedRank: input.pinnedRank ?? null,
+          note: input.note ?? existing.note,
+          updatedAt: new Date(),
+        })
+        .where(eq(trialBinderItems.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db.insert(trialBinderItems)
+      .values({
+        userId,
+        caseId,
+        sectionKey: input.sectionKey,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        pinnedRank: input.pinnedRank ?? null,
+        note: input.note ?? null,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateTrialBinderItem(userId: string, itemId: string, input: UpdateTrialBinderItem): Promise<TrialBinderItem | undefined> {
+    const [updated] = await db.update(trialBinderItems)
+      .set({
+        pinnedRank: input.pinnedRank !== undefined ? input.pinnedRank : undefined,
+        note: input.note !== undefined ? input.note : undefined,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(trialBinderItems.id, itemId), eq(trialBinderItems.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteTrialBinderItem(userId: string, itemId: string): Promise<boolean> {
+    const res = await db.delete(trialBinderItems)
+      .where(and(eq(trialBinderItems.id, itemId), eq(trialBinderItems.userId, userId)))
+      .returning();
+    return res.length > 0;
   }
 }
 
