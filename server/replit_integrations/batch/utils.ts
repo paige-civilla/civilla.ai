@@ -1,5 +1,4 @@
-import pLimit from "p-limit";
-import pRetry from "p-retry";
+import { createLimiter, retry, AbortError } from "../../utils/concurrency";
 
 /**
  * Batch Processing Utilities
@@ -90,12 +89,12 @@ export async function batchProcess<T, R>(
     onProgress,
   } = options;
 
-  const limit = pLimit(concurrency);
+  const limit = createLimiter(concurrency);
   let completed = 0;
 
   const promises = items.map((item, index) =>
     limit(() =>
-      pRetry(
+      retry(
         async () => {
           try {
             const result = await processor(item, index);
@@ -104,10 +103,9 @@ export async function batchProcess<T, R>(
             return result;
           } catch (error: unknown) {
             if (isRateLimitError(error)) {
-              throw error; // Rethrow to trigger p-retry
+              throw error;
             }
-            // For non-rate-limit errors, abort immediately
-            throw new pRetry.AbortError(
+            throw new AbortError(
               error instanceof Error ? error : new Error(String(error))
             );
           }
@@ -147,7 +145,7 @@ export async function batchProcessWithSSE<T, R>(
     sendEvent({ type: "processing", index, item });
 
     try {
-      const result = await pRetry(
+      const result = await retry(
         () => processor(item, index),
         {
           retries,
@@ -156,7 +154,7 @@ export async function batchProcessWithSSE<T, R>(
           factor: 2,
           onFailedAttempt: (error) => {
             if (!isRateLimitError(error)) {
-              throw new pRetry.AbortError(
+              throw new AbortError(
                 error instanceof Error ? error : new Error(String(error))
               );
             }
@@ -167,7 +165,7 @@ export async function batchProcessWithSSE<T, R>(
       sendEvent({ type: "progress", index, result });
     } catch (error) {
       errors++;
-      results.push(undefined as R); // Placeholder for failed items
+      results.push(undefined as R);
       sendEvent({
         type: "progress",
         index,
@@ -179,4 +177,3 @@ export async function batchProcessWithSSE<T, R>(
   sendEvent({ type: "complete", processed: items.length, errors });
   return results;
 }
-

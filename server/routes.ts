@@ -31,7 +31,7 @@ import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
 import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
-import pLimit from "p-limit";
+import { createLimiter } from "./utils/concurrency";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -5043,7 +5043,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  const analysisLimiter = pLimit(2);
+  const analysisLimiter = createLimiter(2);
   app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run", requireAuth, async (req, res) => {
     const userId = req.session.userId as string;
     const { caseId, evidenceId } = req.params;
