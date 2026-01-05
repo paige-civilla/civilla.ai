@@ -46,6 +46,7 @@ const forceExternal = [
   "archiver",
   "pdfkit",
   "docx",
+  "stripe-replit-sync",
 ];
 
 async function buildAll() {

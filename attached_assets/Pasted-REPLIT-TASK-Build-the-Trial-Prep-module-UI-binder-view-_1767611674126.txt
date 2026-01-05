@@ -1,0 +1,108 @@
+REPLIT TASK: Build the Trial Prep module UI (binder view) with “Top 3” per section + export (ZIP). Also wire “Back/Continue” navigation.
+
+Context:
+- Backend already exists for trial_prep_shortlist with full CRUD:
+  GET /api/cases/:caseId/trial-prep-shortlist
+  POST /api/cases/:caseId/trial-prep-shortlist
+  PATCH /api/trial-prep-shortlist/:itemId
+  DELETE /api/trial-prep-shortlist/:itemId
+- Items include: sourceType, sourceId, title, summary, binderSection, importance, tags (jsonb), color, isPinned
+- Evidence module already has “Add to Trial Prep” buttons on notes/AI analyses/snippets/themes
+
+Goal:
+Create an actual Trial Prep module page that lets the user build a printable “trial binder” structure. It must show the “Top 3 best examples” per binder section (based on importance + pinned), and allow export.
+
+A) ROUTES + MODULE NAV
+1) Create page: client/src/pages/AppTrialPrep.tsx
+2) Add routes (consistent with others):
+   - /app/trial-prep/:caseId -> AppTrialPrep
+   - /app/trial-prep -> <CaseRedirect targetPath="trial-prep" />
+3) Ensure module tile and navbar menu include Trial Prep (if not already).
+4) Ensure dashboard module order + navbar order match the current caseFlow ordering.
+
+B) UI REQUIREMENTS (BINDER VIEW)
+Layout:
+- Page header:
+  Title: “Trial Prep”
+  Subtitle: “Build your binder: your strongest examples, organized by section.”
+- Use existing theme tokens:
+  background uses app background
+  cards use module tile tokens
+  borders use module tile border tokens
+
+Main layout:
+Left column: “Binder Sections” list (clickable)
+Right column: Section details + Top 3 + full list
+
+Binder Sections:
+Use the binderSection enum values from schema (binderSectionValues). Render as human labels.
+Example sections (use your actual enum list): Overview, Key Facts, Timeline Highlights, Communication Examples, Evidence Highlights, Requests, Witnesses, Exhibits, Orders/Filings, Other.
+If enum differs, use existing binderSectionValues.
+
+Per section display (right side):
+1) “Top 3 for this section” card:
+   - Automatically select the top 3 items:
+     - Pinned first
+     - Then highest importance
+     - Then newest
+   - Show each item in a compact “front page” style:
+     Title
+     1–2 sentence summary (or fallback to title if missing)
+     Source badge (sourceType)
+     Tags
+     Color dot if color exists
+     Buttons:
+       - “Edit”
+       - “Unpin/Pin”
+       - “Remove”
+2) “All items in this section” list:
+   - Same item cards but fuller (include summary, tags, sourceType)
+   - Drag/drop reorder is optional; if not implemented, include “Move up/down” buttons and persist by updating importance or add a sortOrder field only if absolutely necessary (prefer no schema change now).
+3) “Add item manually” button:
+   - Opens a modal to create a shortlist item that is not tied to a source:
+     sourceType = "manual"
+     sourceId = null/empty
+     Required: title
+     Optional: summary, tags, color, importance, pinned, binderSection (preselected)
+   - This must POST to /api/cases/:caseId/trial-prep-shortlist
+
+Editing:
+- Edit modal for any item:
+  title, summary, binderSection, importance (1-5), tags (comma separated), color picker (use simple input type="color" OR reuse your existing color palette), pin toggle.
+- Persist via PATCH /api/trial-prep-shortlist/:itemId
+
+C) EXPORT
+Add an “Export Binder (ZIP)” button at top right.
+Implement a backend endpoint:
+- GET /api/cases/:caseId/trial-prep/export (auth required)
+Returns a ZIP with:
+- 00_README.txt (short explanation: educational/organizational, verify originals)
+- One folder per binderSection (ordered)
+  Each folder contains:
+   - 00_TOP3.txt (formatted: Title + Summary + SourceType + Tags)
+   - 01_ALL_ITEMS.txt (same format for all items)
+- If an item sourceType points to evidence/snippet/etc, do NOT attempt to embed the original files yet unless it’s already trivial. For now, include a “Source reference” line:
+  sourceType + sourceId
+We can enhance export to include files after we validate the format.
+
+D) “BACK TO DASHBOARD” + “CONTINUE TO NEXT MODULE”
+On this Trial Prep page:
+- Remove the left “Back to Dashboard” placement pattern.
+- Place navigation buttons on the right side under the primary action area:
+  - Secondary: “Back to Dashboard”
+  - Primary: “Continue to <Next Module>”
+Use the existing caseFlow helper to compute next module after trial-prep (skip gated ones).
+If trial-prep is last, “Continue” should be disabled and say “You’re at the end”.
+
+E) DETAILED REPORT
+After implementing, respond with:
+- Files changed
+- New endpoint(s)
+- Exact logic used to compute Top 3
+- Screenshot notes: where Top 3 appears and how export is accessed
+- Confirm no UPL language (no “you should file”, no outcome predictions)
+
+IMPORTANT:
+- Trial Prep is organizational only. Copy must be neutral:
+  “Examples to consider,” “Strongest examples you selected,” “Verify against originals,” etc.
+- Must work on mobile (320px): stack columns, sections become a dropdown, buttons become full-width, touch targets 44px.
