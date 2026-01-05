@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Briefcase, Plus, Clock, CheckSquare, Calendar } from "lucide-react";
+import { Plus, Clock, CheckSquare, Calendar } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -308,16 +308,6 @@ export default function AppDashboard() {
                 </p>
               )}
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-[hsl(var(--module-tile))] border-[hsl(var(--module-tile-border))] text-[#1E2020] dark:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--module-tile-hover))] hover:border-[#314143] focus-visible:ring-[hsl(var(--module-tile-border))] w-full sm:w-auto text-xs"
-              onClick={() => setLocation("/app/cases")}
-              data-testid="button-view-all-cases"
-            >
-              <Briefcase className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 text-[hsl(var(--module-tile-icon))]" />
-              View all cases
-            </Button>
           </div>
 
           <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-8">
