@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
 import { getVisibleModules, modulePath, moduleLabel, type ModuleKey } from "@/lib/caseFlow";
+import QuickSearch from "./QuickSearch";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -237,6 +238,11 @@ export default function AppNavbar() {
                 />
               </Link>
             </div>
+            {authData?.user && (
+              <div className="flex-1 flex justify-center max-w-xs">
+                <QuickSearch caseId={selectedCaseId} />
+              </div>
+            )}
             <div 
               className="flex items-center justify-center gap-1 sm:gap-2 relative flex-shrink-0"
               onMouseEnter={scheduleOpen}
