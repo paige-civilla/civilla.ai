@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X, Star, Loader2, FileSearch, Check, AlertTriangle, Tag, Scale, Brain, Sparkles, Scissors, BookOpen } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote, EvidenceProcessingJob, EvidenceOcrPage, EvidenceAnchor } from "@shared/schema";
+import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote, EvidenceProcessingJob, EvidenceOcrPage, EvidenceAnchor, EvidenceAiAnalysis, ExhibitSnippet } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -107,6 +107,9 @@ export default function AppEvidence() {
   const [editingAnchorId, setEditingAnchorId] = useState<string | null>(null);
   const [extractionViewFileId, setExtractionViewFileId] = useState<string | null>(null);
   const [extractionStatuses, setExtractionStatuses] = useState<Record<string, ExtractionData>>({});
+  const [aiAnalysisFileId, setAiAnalysisFileId] = useState<string | null>(null);
+  const [snippetModalFileId, setSnippetModalFileId] = useState<string | null>(null);
+  const [snippetForm, setSnippetForm] = useState<{ title: string; snippetText: string; pageNumber: string; exhibitListId: string }>({ title: "", snippetText: "", pageNumber: "", exhibitListId: "" });
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -153,6 +156,16 @@ export default function AppEvidence() {
   const { data: anchorsData, isLoading: anchorsLoading } = useQuery<{ anchors: EvidenceAnchor[] }>({
     queryKey: ["/api/cases", caseId, "evidence", textExtractFileId, "anchors"],
     enabled: !!textExtractFileId && !!caseId,
+  });
+
+  const { data: aiAnalysesData, isLoading: aiAnalysesLoading } = useQuery<{ analyses: EvidenceAiAnalysis[] }>({
+    queryKey: ["/api/cases", caseId, "evidence", aiAnalysisFileId, "ai-analyses"],
+    enabled: !!aiAnalysisFileId && !!caseId,
+  });
+
+  const { data: snippetExhibitListsData } = useQuery<{ exhibitLists: ExhibitList[] }>({
+    queryKey: ["/api/cases", caseId, "exhibit-lists"],
+    enabled: !!snippetModalFileId && !!caseId,
   });
 
   const { data: extractionData, refetch: refetchExtraction } = useQuery<ExtractionData>({
@@ -205,9 +218,46 @@ export default function AppEvidence() {
     },
   });
 
+  const createSnippetMutation = useMutation({
+    mutationFn: async (data: { exhibitListId: string; evidenceId: string; title: string; snippetText: string; pageNumber?: number | null }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/exhibit-snippets`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "exhibit-snippets"] });
+      toast({ title: "Snippet created", description: "Exhibit snippet saved successfully." });
+      closeSnippetModal();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to create snippet", variant: "destructive" });
+    },
+  });
+
+  const runAiAnalysisMutation = useMutation({
+    mutationFn: async (evidenceId: string) => {
+      const file = rawFiles.find(f => f.id === evidenceId);
+      const extraction = extractionStatuses[evidenceId];
+      const text = extraction?.extractedTextFull || extraction?.extractedTextPreview || "";
+      return apiRequest("POST", `/api/cases/${caseId}/evidence/${evidenceId}/ai-analyses`, {
+        analysisType: "summary",
+        content: text || "No extracted text available",
+        status: "complete",
+        summary: "AI analysis pending - text extraction required first",
+      });
+    },
+    onSuccess: (_, evidenceId) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", evidenceId, "ai-analyses"] });
+      toast({ title: "Analysis saved" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to run analysis", variant: "destructive" });
+    },
+  });
+
   const ocrJob = ocrJobData?.job;
   const ocrPages = ocrPagesData?.pages || [];
   const anchors = anchorsData?.anchors || [];
+  const aiAnalyses = aiAnalysesData?.analyses || [];
+  const snippetExhibitLists = snippetExhibitListsData?.exhibitLists || [];
 
   const exhibitLists = exhibitListsData?.exhibitLists || [];
   const exhibits = exhibitsData?.exhibits || [];
@@ -509,6 +559,34 @@ export default function AppEvidence() {
     setSelectedExhibitListId("");
     setSelectedExhibitId("");
     setNewExhibitTitle("");
+  };
+
+  const closeSnippetModal = () => {
+    setSnippetModalFileId(null);
+    setSnippetForm({ title: "", snippetText: "", pageNumber: "", exhibitListId: "" });
+  };
+
+  const openSnippetModal = (file: EvidenceFile) => {
+    const extraction = extractionStatuses[file.id];
+    setSnippetModalFileId(file.id);
+    setSnippetForm({
+      title: file.originalName,
+      snippetText: extraction?.extractedTextPreview?.slice(0, 500) || "",
+      pageNumber: "",
+      exhibitListId: "",
+    });
+  };
+
+  const handleSaveSnippet = () => {
+    if (!snippetModalFileId || !snippetForm.exhibitListId || !snippetForm.title.trim() || !snippetForm.snippetText.trim()) return;
+    const pageNum = snippetForm.pageNumber.trim() ? parseInt(snippetForm.pageNumber, 10) : null;
+    createSnippetMutation.mutate({
+      exhibitListId: snippetForm.exhibitListId,
+      evidenceId: snippetModalFileId,
+      title: snippetForm.title.trim(),
+      snippetText: snippetForm.snippetText.trim(),
+      pageNumber: pageNum,
+    });
   };
 
   const handleAddToExhibit = () => {
@@ -917,6 +995,26 @@ export default function AppEvidence() {
                                 title="Add to Trial Prep"
                               >
                                 <Scale className="w-4 h-4" />
+                              </Button>
+                              {extractionStatuses[file.id]?.status === "complete" && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => openSnippetModal(file)}
+                                  data-testid={`button-create-snippet-${file.id}`}
+                                  title="Create exhibit snippet"
+                                >
+                                  <Scissors className="w-4 h-4" />
+                                </Button>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => { setAiAnalysisFileId(file.id); }}
+                                data-testid={`button-ai-analysis-${file.id}`}
+                                title="View AI Analysis"
+                              >
+                                <Brain className="w-4 h-4" />
                               </Button>
                             </>
                           )}
@@ -1575,6 +1673,189 @@ export default function AppEvidence() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setExtractionViewFileId(null)} data-testid="button-close-extraction-modal">
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Sheet open={!!aiAnalysisFileId} onOpenChange={(open) => !open && setAiAnalysisFileId(null)}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Brain className="w-5 h-5" />
+              AI Analysis
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+            {aiAnalysisFileId && (
+              <>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    AI analysis helps identify key information in your evidence. Extraction must be completed first.
+                  </p>
+                  {extractionStatuses[aiAnalysisFileId]?.status !== "complete" && (
+                    <div className="flex items-center gap-2 text-amber-600 text-sm">
+                      <AlertTriangle className="w-4 h-4" />
+                      Text extraction not complete. Run extraction first.
+                    </div>
+                  )}
+                </div>
+
+                {aiAnalysesLoading ? (
+                  <div className="py-8 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  </div>
+                ) : aiAnalyses.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    <Sparkles className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+                    No AI analyses yet for this file.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {aiAnalyses.map((analysis) => (
+                      <Card key={analysis.id} data-testid={`card-ai-analysis-${analysis.id}`}>
+                        <CardContent className="py-3">
+                          <div className="flex items-start gap-3">
+                            <Brain className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline" className="text-xs capitalize">
+                                  {analysis.analysisType}
+                                </Badge>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${
+                                    analysis.status === "complete" ? "bg-green-100 text-green-800" :
+                                    analysis.status === "processing" ? "bg-blue-100 text-blue-800" :
+                                    analysis.status === "failed" ? "bg-red-100 text-red-800" : ""
+                                  }`}
+                                >
+                                  {analysis.status}
+                                </Badge>
+                              </div>
+                              {analysis.summary && (
+                                <p className="text-sm font-medium text-foreground mb-2" data-testid={`text-analysis-summary-${analysis.id}`}>
+                                  {analysis.summary}
+                                </p>
+                              )}
+                              {analysis.findings && typeof analysis.findings === "object" && (
+                                <div className="text-xs text-muted-foreground space-y-1">
+                                  {Object.entries(analysis.findings as Record<string, unknown>).map(([key, value]) => (
+                                    <div key={key}>
+                                      <span className="font-medium capitalize">{key.replace(/_/g, " ")}:</span>{" "}
+                                      {typeof value === "string" ? value : JSON.stringify(value)}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {formatDate(analysis.createdAt)}
+                                {analysis.model && ` via ${analysis.model}`}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setAiAnalysisFileId(null)} data-testid="button-close-ai-analysis">
+              Close
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={!!snippetModalFileId} onOpenChange={(open) => !open && closeSnippetModal()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scissors className="w-5 h-5" />
+              Create Exhibit Snippet
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="snippet-exhibit-list">Exhibit List</Label>
+              <Select 
+                value={snippetForm.exhibitListId} 
+                onValueChange={(v) => setSnippetForm(prev => ({ ...prev, exhibitListId: v }))}
+              >
+                <SelectTrigger id="snippet-exhibit-list" data-testid="select-snippet-exhibit-list">
+                  <SelectValue placeholder="Select an exhibit list" />
+                </SelectTrigger>
+                <SelectContent>
+                  {snippetExhibitLists.map((list) => (
+                    <SelectItem key={list.id} value={list.id}>{list.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {snippetExhibitLists.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No exhibit lists found. Create one in the Exhibits section first.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="snippet-title">Title</Label>
+              <Input
+                id="snippet-title"
+                value={snippetForm.title}
+                onChange={(e) => setSnippetForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter snippet title"
+                maxLength={200}
+                data-testid="input-snippet-title"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="snippet-page">Page Number (optional)</Label>
+              <Input
+                id="snippet-page"
+                value={snippetForm.pageNumber}
+                onChange={(e) => setSnippetForm(prev => ({ ...prev, pageNumber: e.target.value.replace(/\D/g, "") }))}
+                placeholder="e.g., 5"
+                maxLength={10}
+                data-testid="input-snippet-page"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="snippet-text">Snippet Text</Label>
+              <Textarea
+                id="snippet-text"
+                value={snippetForm.snippetText}
+                onChange={(e) => setSnippetForm(prev => ({ ...prev, snippetText: e.target.value }))}
+                placeholder="Enter or paste the text excerpt..."
+                rows={6}
+                maxLength={10000}
+                data-testid="textarea-snippet-text"
+              />
+              <p className="text-xs text-muted-foreground">
+                Copy key text from the extracted content to create a snippet for your exhibits.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeSnippetModal}>Cancel</Button>
+            <Button
+              onClick={handleSaveSnippet}
+              disabled={!snippetForm.exhibitListId || !snippetForm.title.trim() || !snippetForm.snippetText.trim() || createSnippetMutation.isPending}
+              data-testid="button-save-snippet"
+            >
+              {createSnippetMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Create Snippet
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
