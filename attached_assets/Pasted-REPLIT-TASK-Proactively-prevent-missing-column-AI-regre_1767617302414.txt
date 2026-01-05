@@ -1,0 +1,125 @@
+REPLIT TASK: Proactively prevent “missing column” AI regressions (Lexi + Evidence + Research + Trial Prep)
+
+Problem
+We hit a production-blocking error:
+- column "disclaimer_shown" does not exist on lexi_threads
+
+This same failure mode can happen anywhere we rely on AI features if:
+- code expects a column that does not exist in the DB yet
+- our initTable() logic only runs on new tables and skips ALTERs on existing tables
+
+Goal
+Add/extend startup migrations so ALL AI-related tables/columns are verified and created (idempotently) on EVERY startup.
+
+Do ALL of the following:
+
+A) server/db.ts: Add ensure functions for AI tables (idempotent)
+
+1) Ensure Lexi tables
+Add:
+- ensureLexiThreadsColumns()
+- ensureLexiMessagesColumns()
+
+At minimum, ensure these exist if referenced anywhere in code:
+lexi_threads:
+- disclaimer_shown BOOLEAN NOT NULL DEFAULT false
+- updated_at TIMESTAMPTZ (if code updates it)
+- mode TEXT (if used)
+- module_key TEXT (if used)
+lexi_messages:
+- created_at TIMESTAMPTZ (if relied on ordering)
+- role TEXT (user/assistant)
+- content TEXT
+- intent TEXT (if stored)
+- refused BOOLEAN (if stored)
+- metadata JSONB (if stored)
+Only include columns that are referenced in INSERT/UPDATE/SELECT in the codebase.
+
+2) Ensure Research Cache table
+Add ensureCaseRuleTermsColumns() for case_rule_terms:
+- module_key TEXT NOT NULL
+- term_key TEXT NOT NULL
+- content TEXT NOT NULL
+- last_checked_at TIMESTAMPTZ
+- metadata JSONB
+Also ensure unique index exists for (user_id, case_id, module_key, term_key) if you use that constraint.
+
+3) Ensure Evidence extraction + analysis tables
+Add:
+- ensureEvidenceExtractionsColumns()
+- ensureEvidenceAiAnalysesColumns()
+Ensure evidence_extractions has:
+- status TEXT NOT NULL DEFAULT 'queued'
+- extracted_text TEXT
+- metadata JSONB
+- error TEXT
+- updated_at TIMESTAMPTZ
+Ensure evidence_ai_analyses has:
+- status TEXT NOT NULL DEFAULT 'processing' (or whatever your code expects)
+- model TEXT
+- summary TEXT
+- findings JSONB
+- error TEXT
+- updated_at TIMESTAMPTZ
+
+4) Ensure any other AI-connected tables
+Add ensureTrialPrepShortlistColumns() verification (even if already migrated) for:
+- source_type TEXT
+- source_id TEXT
+- binder_section TEXT
+- importance INT
+- tags JSONB
+- color TEXT
+- is_pinned BOOLEAN
+- summary TEXT
+- updated_at TIMESTAMPTZ
+
+B) Register ALL ensure* functions in ensureSchemaMigrations()
+
+In ensureSchemaMigrations(), add (in this order is fine):
+- await ensureLexiThreadsColumns();
+- await ensureLexiMessagesColumns();
+- await ensureCaseRuleTermsColumns();
+- await ensureEvidenceExtractionsColumns();
+- await ensureEvidenceAiAnalysesColumns();
+- await ensureTrialPrepShortlistColumns();
+
+These must run at the end of initDbTables() on every startup.
+
+C) Add a “migration verification” log (safe)
+After ensureSchemaMigrations(), print only boolean checks, no secrets:
+Examples:
+[DB MIGRATION] Verification: lexi_threads.disclaimer_shown present: true
+[DB MIGRATION] Verification: evidence_ai_analyses.status present: true
+[DB MIGRATION] Verification: evidence_extractions.status present: true
+[DB MIGRATION] Verification: case_rule_terms.module_key present: true
+[DB MIGRATION] Schema migrations complete
+
+D) Add a single internal auth-required health endpoint that validates AI tables exist
+In server/routes.ts add:
+GET /api/ai/health (requireAuth)
+It should run lightweight columnExists checks for the AI-critical columns and return:
+{
+  ok: true,
+  checks: {
+    "lexi_threads.disclaimer_shown": true,
+    "evidence_ai_analyses.status": true,
+    "evidence_extractions.status": true,
+    "case_rule_terms.module_key": true
+  }
+}
+If any are missing, ok:false and list which.
+
+No secrets and no API calls. This endpoint is purely DB sanity.
+
+E) Confirm in response
+After implementing, report:
+- Files changed
+- Remaining matches for missing known columns (should be 0 failures at runtime)
+- Confirm /api/ai/health returns ok:true
+- Confirm Lexi can create a thread and send a message
+- Confirm Evidence extraction + AI analysis endpoints still function
+
+Important
+Do NOT drop tables. Do NOT require manual migrations. Everything must be additive and safe.
+Only add columns/indexes if missing.
