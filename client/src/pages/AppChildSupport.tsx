@@ -202,7 +202,7 @@ export default function AppChildSupport() {
       <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
         <div className="flex flex-col items-start max-w-container w-full">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
-            <div className="w-12 h-12 rounded-lg bg-[#A2BEC2] flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-lg bg-[hsl(var(--module-tile-icon))] flex items-center justify-center flex-shrink-0">
               <BookOpen className="w-6 h-6 text-[#314143]" />
             </div>
             <div className="min-w-0 flex-1">
@@ -303,7 +303,7 @@ export default function AppChildSupport() {
           </div>
 
           {activeResult && (
-            <div className="w-full bg-[#EFF3F4] rounded-lg border border-[#4F6A6E] p-5 sm:p-6">
+            <div className="w-full bg-[hsl(var(--module-tile))] rounded-lg border border-[hsl(var(--module-tile-border))] p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="font-heading font-bold text-lg text-[#1E2020] flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-[#314143]" />

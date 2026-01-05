@@ -253,7 +253,7 @@ export default function AppCase() {
   return (
     <AppLayout>
       <div className="px-4 sm:px-5 md:px-8 py-6 sm:py-8">
-        <div className="rounded-2xl bg-[#C3D5D7] border border-[#1E2020] p-4 sm:p-6 md:p-8 mb-6 sm:mb-10">
+        <div className="rounded-2xl bg-[hsl(var(--module-tile))] border border-[hsl(var(--module-tile-border))] p-4 sm:p-6 md:p-8 mb-6 sm:mb-10">
           <div className="flex items-start gap-3 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
               <span className="text-base sm:text-lg font-semibold"> </span>
@@ -279,8 +279,8 @@ export default function AppCase() {
             const Tile = (
               <Card
                 className={[
-                  "h-full rounded-2xl bg-[#C3D5D7] border border-[#1E2020]",
-                  comingSoon ? "opacity-70" : "cursor-pointer hover:bg-[#B3C5C7] transition-colors",
+                  "h-full rounded-2xl bg-[hsl(var(--module-tile))] border border-[hsl(var(--module-tile-border))]",
+                  comingSoon ? "opacity-70" : "cursor-pointer hover:bg-[hsl(var(--module-tile-hover))] transition-colors",
                 ].join(" ")}
               >
                 <CardContent className="p-6">

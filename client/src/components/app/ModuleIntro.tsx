@@ -14,7 +14,7 @@ export default function ModuleIntro({ title, paragraphs, bullets, caution }: Mod
       data-testid="module-intro"
     >
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#A2BEC2]/20 flex items-center justify-center">
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[hsl(var(--module-tile-icon))]/20 flex items-center justify-center">
           <Info className="w-4 h-4 text-[#314143]" />
         </div>
         <div className="flex-1 min-w-0">

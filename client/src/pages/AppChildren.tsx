@@ -219,7 +219,7 @@ export default function AppChildren() {
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#A2BEC2] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[hsl(var(--module-tile-icon))] flex items-center justify-center">
                 <Baby className="w-5 h-5 text-[#314143]" />
               </div>
               <div>

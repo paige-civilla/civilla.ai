@@ -117,7 +117,7 @@ export default function AppCases() {
               <p className="font-sans text-neutral-darkest/60">Loading cases...</p>
             </div>
           ) : noCases ? (
-            <div className="w-full bg-[#C3D5D7] rounded-lg p-8 md:p-12 mb-6">
+            <div className="w-full bg-[hsl(var(--module-tile))] rounded-lg p-8 md:p-12 mb-6">
               {showForm ? (
                 <div className="max-w-lg mx-auto">
                   <h2 className="font-heading font-bold text-xl text-neutral-darkest mb-6 text-center">
