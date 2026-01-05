@@ -714,5 +714,66 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plan_sections_key ON parenting_plan_sections(parenting_plan_id, section_key)`
   ]);
 
+  await initTable("evidence_processing_jobs", `
+    CREATE TABLE IF NOT EXISTS evidence_processing_jobs (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued',
+      progress INTEGER NOT NULL DEFAULT 0,
+      error TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_processing_jobs_evidence ON evidence_processing_jobs(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_processing_jobs_user_case ON evidence_processing_jobs(user_id, case_id)`
+  ]);
+
+  await initTable("evidence_ocr_pages", `
+    CREATE TABLE IF NOT EXISTS evidence_ocr_pages (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      page_number INTEGER,
+      provider_primary TEXT NOT NULL,
+      provider_secondary TEXT,
+      text_primary TEXT NOT NULL,
+      text_secondary TEXT,
+      confidence_primary INTEGER,
+      confidence_secondary INTEGER,
+      diff_score INTEGER,
+      needs_review BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_evidence ON evidence_ocr_pages(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_user_case ON evidence_ocr_pages(user_id, case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_page ON evidence_ocr_pages(evidence_id, page_number)`
+  ]);
+
+  await initTable("evidence_anchors", `
+    CREATE TABLE IF NOT EXISTS evidence_anchors (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      page_number INTEGER,
+      start_char INTEGER,
+      end_char INTEGER,
+      excerpt TEXT NOT NULL,
+      note TEXT,
+      tags JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_evidence ON evidence_anchors(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_user_case ON evidence_anchors(user_id, case_id)`
+  ]);
+
   console.log("Database table initialization complete");
 }

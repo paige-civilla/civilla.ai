@@ -102,12 +102,22 @@ import {
   type UpdateTimelineCategory,
   parentingPlans,
   parentingPlanSections,
+  evidenceProcessingJobs,
+  evidenceOcrPages,
+  evidenceAnchors,
   type ParentingPlan,
   type InsertParentingPlan,
   type UpdateParentingPlan,
   type ParentingPlanSection,
   type InsertParentingPlanSection,
   type UpdateParentingPlanSection,
+  type EvidenceProcessingJob,
+  type UpdateEvidenceProcessingJob,
+  type EvidenceOcrPage,
+  type UpsertEvidenceOcrPage,
+  type EvidenceAnchor,
+  type InsertEvidenceAnchor,
+  type UpdateEvidenceAnchor,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -279,6 +289,22 @@ export interface IStorage {
   listParentingPlanSections(userId: string, planId: string): Promise<ParentingPlanSection[]>;
   getParentingPlanSection(userId: string, planId: string, sectionKey: string): Promise<ParentingPlanSection | undefined>;
   upsertParentingPlanSection(userId: string, planId: string, sectionKey: string, data: Record<string, unknown>): Promise<ParentingPlanSection>;
+
+  createEvidenceProcessingJob(userId: string, caseId: string, evidenceId: string): Promise<EvidenceProcessingJob>;
+  updateEvidenceProcessingJob(userId: string, jobId: string, patch: UpdateEvidenceProcessingJob): Promise<EvidenceProcessingJob | undefined>;
+  getEvidenceProcessingJob(userId: string, jobId: string): Promise<EvidenceProcessingJob | undefined>;
+  getEvidenceProcessingJobsForCase(userId: string, caseId: string): Promise<EvidenceProcessingJob[]>;
+  getEvidenceProcessingJobByEvidence(userId: string, evidenceId: string): Promise<EvidenceProcessingJob | undefined>;
+
+  upsertEvidenceOcrPage(userId: string, caseId: string, evidenceId: string, pageNumber: number | null, payload: UpsertEvidenceOcrPage): Promise<EvidenceOcrPage>;
+  listEvidenceOcrPages(userId: string, caseId: string, evidenceId: string): Promise<EvidenceOcrPage[]>;
+  markOcrPageReviewed(userId: string, ocrPageId: string, needsReview?: boolean): Promise<EvidenceOcrPage | undefined>;
+
+  createEvidenceAnchor(userId: string, caseId: string, payload: InsertEvidenceAnchor): Promise<EvidenceAnchor>;
+  updateEvidenceAnchor(userId: string, anchorId: string, payload: UpdateEvidenceAnchor): Promise<EvidenceAnchor | undefined>;
+  deleteEvidenceAnchor(userId: string, anchorId: string): Promise<boolean>;
+  listEvidenceAnchors(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceAnchor[]>;
+  getEvidenceAnchor(userId: string, anchorId: string): Promise<EvidenceAnchor | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2007,6 +2033,154 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return created;
+  }
+
+  async createEvidenceProcessingJob(userId: string, caseId: string, evidenceId: string): Promise<EvidenceProcessingJob> {
+    const [created] = await db.insert(evidenceProcessingJobs)
+      .values({ userId, caseId, evidenceId, status: "queued", progress: 0 })
+      .returning();
+    return created;
+  }
+
+  async updateEvidenceProcessingJob(userId: string, jobId: string, patch: UpdateEvidenceProcessingJob): Promise<EvidenceProcessingJob | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (patch.status !== undefined) updateData.status = patch.status;
+    if (patch.progress !== undefined) updateData.progress = patch.progress;
+    if (patch.error !== undefined) updateData.error = patch.error;
+    const [updated] = await db.update(evidenceProcessingJobs)
+      .set(updateData)
+      .where(and(eq(evidenceProcessingJobs.id, jobId), eq(evidenceProcessingJobs.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async getEvidenceProcessingJob(userId: string, jobId: string): Promise<EvidenceProcessingJob | undefined> {
+    const [row] = await db.select().from(evidenceProcessingJobs)
+      .where(and(eq(evidenceProcessingJobs.id, jobId), eq(evidenceProcessingJobs.userId, userId)));
+    return row;
+  }
+
+  async getEvidenceProcessingJobsForCase(userId: string, caseId: string): Promise<EvidenceProcessingJob[]> {
+    return db.select().from(evidenceProcessingJobs)
+      .where(and(eq(evidenceProcessingJobs.userId, userId), eq(evidenceProcessingJobs.caseId, caseId)))
+      .orderBy(desc(evidenceProcessingJobs.createdAt));
+  }
+
+  async getEvidenceProcessingJobByEvidence(userId: string, evidenceId: string): Promise<EvidenceProcessingJob | undefined> {
+    const [row] = await db.select().from(evidenceProcessingJobs)
+      .where(and(eq(evidenceProcessingJobs.userId, userId), eq(evidenceProcessingJobs.evidenceId, evidenceId)))
+      .orderBy(desc(evidenceProcessingJobs.createdAt));
+    return row;
+  }
+
+  async upsertEvidenceOcrPage(userId: string, caseId: string, evidenceId: string, pageNumber: number | null, payload: UpsertEvidenceOcrPage): Promise<EvidenceOcrPage> {
+    const existing = await db.select().from(evidenceOcrPages)
+      .where(and(
+        eq(evidenceOcrPages.userId, userId),
+        eq(evidenceOcrPages.evidenceId, evidenceId),
+        pageNumber !== null ? eq(evidenceOcrPages.pageNumber, pageNumber) : eq(evidenceOcrPages.pageNumber, null as unknown as number)
+      ))
+      .limit(1);
+    if (existing.length > 0) {
+      const [updated] = await db.update(evidenceOcrPages)
+        .set({
+          providerPrimary: payload.providerPrimary,
+          providerSecondary: payload.providerSecondary,
+          textPrimary: payload.textPrimary,
+          textSecondary: payload.textSecondary,
+          confidencePrimary: payload.confidencePrimary,
+          confidenceSecondary: payload.confidenceSecondary,
+          diffScore: payload.diffScore,
+          needsReview: payload.needsReview ?? true,
+          updatedAt: new Date(),
+        })
+        .where(eq(evidenceOcrPages.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(evidenceOcrPages)
+      .values({
+        userId,
+        caseId,
+        evidenceId,
+        pageNumber,
+        providerPrimary: payload.providerPrimary,
+        providerSecondary: payload.providerSecondary,
+        textPrimary: payload.textPrimary,
+        textSecondary: payload.textSecondary,
+        confidencePrimary: payload.confidencePrimary,
+        confidenceSecondary: payload.confidenceSecondary,
+        diffScore: payload.diffScore,
+        needsReview: payload.needsReview ?? true,
+      })
+      .returning();
+    return created;
+  }
+
+  async listEvidenceOcrPages(userId: string, caseId: string, evidenceId: string): Promise<EvidenceOcrPage[]> {
+    return db.select().from(evidenceOcrPages)
+      .where(and(eq(evidenceOcrPages.userId, userId), eq(evidenceOcrPages.caseId, caseId), eq(evidenceOcrPages.evidenceId, evidenceId)))
+      .orderBy(asc(evidenceOcrPages.pageNumber));
+  }
+
+  async markOcrPageReviewed(userId: string, ocrPageId: string, needsReview: boolean = false): Promise<EvidenceOcrPage | undefined> {
+    const [updated] = await db.update(evidenceOcrPages)
+      .set({ needsReview, updatedAt: new Date() })
+      .where(and(eq(evidenceOcrPages.id, ocrPageId), eq(evidenceOcrPages.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async createEvidenceAnchor(userId: string, caseId: string, payload: InsertEvidenceAnchor): Promise<EvidenceAnchor> {
+    const [created] = await db.insert(evidenceAnchors)
+      .values({
+        userId,
+        caseId,
+        evidenceId: payload.evidenceId,
+        pageNumber: payload.pageNumber,
+        startChar: payload.startChar,
+        endChar: payload.endChar,
+        excerpt: payload.excerpt,
+        note: payload.note,
+        tags: payload.tags,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateEvidenceAnchor(userId: string, anchorId: string, payload: UpdateEvidenceAnchor): Promise<EvidenceAnchor | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (payload.pageNumber !== undefined) updateData.pageNumber = payload.pageNumber;
+    if (payload.startChar !== undefined) updateData.startChar = payload.startChar;
+    if (payload.endChar !== undefined) updateData.endChar = payload.endChar;
+    if (payload.excerpt !== undefined) updateData.excerpt = payload.excerpt;
+    if (payload.note !== undefined) updateData.note = payload.note;
+    if (payload.tags !== undefined) updateData.tags = payload.tags;
+    const [updated] = await db.update(evidenceAnchors)
+      .set(updateData)
+      .where(and(eq(evidenceAnchors.id, anchorId), eq(evidenceAnchors.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteEvidenceAnchor(userId: string, anchorId: string): Promise<boolean> {
+    const result = await db.delete(evidenceAnchors)
+      .where(and(eq(evidenceAnchors.id, anchorId), eq(evidenceAnchors.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async listEvidenceAnchors(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceAnchor[]> {
+    const conditions = [eq(evidenceAnchors.userId, userId), eq(evidenceAnchors.caseId, caseId)];
+    if (evidenceId) conditions.push(eq(evidenceAnchors.evidenceId, evidenceId));
+    return db.select().from(evidenceAnchors)
+      .where(and(...conditions))
+      .orderBy(desc(evidenceAnchors.createdAt));
+  }
+
+  async getEvidenceAnchor(userId: string, anchorId: string): Promise<EvidenceAnchor | undefined> {
+    const [row] = await db.select().from(evidenceAnchors)
+      .where(and(eq(evidenceAnchors.id, anchorId), eq(evidenceAnchors.userId, userId)));
+    return row;
   }
 }
 
