@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, Settings, LayoutList, LayoutGrid, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Briefcase, Plus, Pencil, Trash2, Settings, LayoutList, LayoutGrid, Loader2, Scale } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,6 +163,31 @@ export default function AppTimeline() {
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message || "Failed to delete event", variant: "destructive" });
+    },
+  });
+
+  const addToTrialPrepMutation = useMutation({
+    mutationFn: async (event: TimelineEvent) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "timeline_event",
+        sourceId: event.id,
+        title: event.title,
+        summary: event.notes || null,
+        binderSection: "Timeline Highlights",
+        importance: 3,
+        tags: ["timeline"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
     },
   });
 
@@ -570,6 +595,16 @@ export default function AppTimeline() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => addToTrialPrepMutation.mutate(event)}
+                              disabled={addToTrialPrepMutation.isPending}
+                              data-testid={`button-trial-prep-event-${event.id}`}
+                              title="Add to Trial Prep"
+                            >
+                              <Scale className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -631,6 +666,17 @@ export default function AppTimeline() {
                               data-testid={`button-delete-event-h-${event.id}`}
                             >
                               <Trash2 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => addToTrialPrepMutation.mutate(event)}
+                              disabled={addToTrialPrepMutation.isPending}
+                              data-testid={`button-trial-prep-event-h-${event.id}`}
+                              title="Add to Trial Prep"
+                            >
+                              <Scale className="w-3 h-3" />
                             </Button>
                           </div>
                         </CardContent>

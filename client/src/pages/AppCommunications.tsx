@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Briefcase, Plus, Pencil, Trash2, MessageSquare, User, Phone, Mail, Building, CheckCircle, Clock, Calendar, Send, ArrowUpRight, Pin, PinOff, AlertCircle } from "lucide-react";
+import { ArrowLeft, Briefcase, Plus, Pencil, Trash2, MessageSquare, User, Phone, Mail, Building, CheckCircle, Clock, Calendar, Send, ArrowUpRight, Pin, PinOff, AlertCircle, Scale } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isPast } from "date-fns";
@@ -172,6 +172,32 @@ export default function AppCommunications() {
     },
     onError: (error: Error) => {
       toast({ title: "Failed to delete communication", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const addToTrialPrepMutation = useMutation({
+    mutationFn: async (comm: CaseCommunication) => {
+      const contact = contacts.find(c => c.id === comm.contactId);
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "communication",
+        sourceId: comm.id,
+        title: `${channelLabels[comm.channel] || comm.channel}: ${comm.subject || contact?.name || "Communication"}`,
+        summary: comm.summary || null,
+        binderSection: "Communications",
+        importance: 3,
+        tags: ["communication"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
     },
   });
 
@@ -477,6 +503,16 @@ export default function AppCommunications() {
                                 data-testid={`button-delete-communication-${comm.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => addToTrialPrepMutation.mutate(comm)}
+                                disabled={addToTrialPrepMutation.isPending}
+                                data-testid={`button-trial-prep-communication-${comm.id}`}
+                                title="Add to Trial Prep"
+                              >
+                                <Scale className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>

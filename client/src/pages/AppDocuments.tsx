@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown } from "lucide-react";
+import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -236,6 +236,31 @@ export default function AppDocuments() {
     },
     onError: () => {
       toast({ title: "Failed to delete document", variant: "destructive" });
+    },
+  });
+
+  const addToTrialPrepMutation = useMutation({
+    mutationFn: async (doc: Document) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "document",
+        sourceId: doc.id,
+        title: doc.title,
+        summary: null,
+        binderSection: "Discovery & Disclosures",
+        importance: 3,
+        tags: ["document"],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 409) {
+        toast({ title: "Already in Trial Prep", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to add", description: error.message, variant: "destructive" });
+      }
     },
   });
 
@@ -895,6 +920,16 @@ export default function AppDocuments() {
                         data-testid={`button-delete-document-${doc.id}`}
                       >
                         <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => addToTrialPrepMutation.mutate(doc)}
+                        disabled={addToTrialPrepMutation.isPending}
+                        title="Add to Trial Prep"
+                        data-testid={`button-trial-prep-document-${doc.id}`}
+                      >
+                        <Scale className="w-4 h-4" />
                       </Button>
                     </div>
                   </CardHeader>
