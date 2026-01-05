@@ -1,0 +1,111 @@
+REPLIT TASK: Evidence “Preview + Anchored Notes” (PDF/image viewer), with note list under each evidence file + cross-module actions.
+
+Goal
+Users must be able to open an uploaded evidence file inside the app, select/anchor something specific (page/quote/timestamp), write a note, and then reuse that note as:
+- Exhibit Snippet
+- Trial Prep shortlist item
+- (Later) Pattern Analysis source
+
+We already have:
+- evidence_extractions (text)
+- evidence_notes (notes-full endpoints)
+- exhibit_snippets + exhibits ZIP export
+- trial_prep_shortlist + Trial Prep UI
+Now we need the missing workflow: OPEN the file, annotate precisely, and manage notes per file.
+
+A) Add “Open & Annotate” viewer for Evidence
+1) In client/src/pages/AppEvidence.tsx:
+   - Add a primary action on each evidence card: “Open & Annotate”
+   - This opens a full-screen (or large modal/sheet) EvidenceViewer.
+   - Viewer must account for AppNavbar height (no overlap); use a top offset/padding equal to navbar height.
+
+2) EvidenceViewer behavior:
+   - Left: document viewer
+   - Right: notes panel for this evidenceId
+   - Mobile: viewer stacked; notes collapsible panel
+
+3) File support:
+   - PDFs: use a client-side PDF renderer (react-pdf is preferred if already installed; otherwise use an <iframe> fallback using the existing evidence file URL).
+   - Images: render <img> with zoom controls.
+   - Always include “Open Original” link/button in viewer header.
+
+B) Anchors (page/selection/timestamp)
+We must support anchors without needing heavy OCR coordinates yet.
+
+Anchors to support:
+1) PDF page anchor:
+   - When PDF viewer is open, show current page number.
+   - “Add Note” captures anchorType="page" and anchorValue={ page: <currentPage> }
+2) Text selection anchor (when extracted text exists):
+   - Provide a “Select from Extracted Text” tab in the viewer:
+     - Shows extracted text in a scrollable panel.
+     - User can highlight text (simple selection) and click “Use selection”.
+     - Create note with:
+       anchorType="text"
+       selectionText = selected text (truncate to 500–1000 chars)
+       anchorValue = { startIndex?, endIndex? } if feasible; otherwise omit indices and store selectionText only.
+3) Timestamp anchor (for audio/video notes, future-proof):
+   - If evidence file type indicates audio/video OR user chooses:
+     anchorType="timestamp"
+     anchorValue={ timestamp: "00:03:12" }
+(If we don’t have audio/video uploads yet, keep UI but disabled/hidden unless file is audio/video.)
+
+C) Notes UI (per evidence file) – must feel “dopamine / checklist”
+In EvidenceViewer right panel:
+1) List notes for this evidenceId (query notes-full endpoint filtered by evidenceId)
+2) Each note card shows:
+   - noteTitle (or “Note”)
+   - anchor summary (Page X / “Selected text” / Timestamp)
+   - note body
+   - tags chips + color dot (if supported)
+   - createdAt
+3) Actions per note:
+   - Edit
+   - Delete
+   - “Add as Exhibit Snippet” (opens snippet modal prefilled with noteTitle + selectionText or note body)
+   - “Add to Trial Prep” (POST trial_prep_shortlist with binderSection suggestion, summary from note)
+4) Completion toggle:
+   - Add isResolved boolean to evidence_notes if not present (if already present, use it).
+   - Checkbox marks note resolved; visually collapses/greys it out.
+   - This is purely organizational, not legal advice.
+
+D) Backend changes (only if needed)
+1) If evidence_notes table does NOT have:
+   - evidenceId (it should)
+   - noteTitle, anchorType, anchorValue (jsonb), selectionText, tags, color, isResolved
+Then update schema + db.ts runtime creation accordingly.
+2) Ensure routes support:
+   - list notes by caseId and optional evidenceId filter:
+     GET /api/cases/:caseId/evidence/notes-full?evidenceId=...
+   - PATCH note supports anchor fields + isResolved
+3) Confirm ownership checks:
+   - user owns caseId
+   - evidence belongs to case
+   - note belongs to evidence/case/user
+
+E) UX details
+1) In Evidence card (outside viewer):
+   - Show “Notes: N” count
+   - Show a small “Resolved/Total” indicator
+2) In viewer:
+   - “Add Note” button always visible
+   - If extraction is still processing, show a small banner:
+     “Text extraction may still be processing. Page anchors still work.”
+3) On mobile:
+   - Buttons must be min-h-[44px]
+   - Notes panel collapses to a “Notes” drawer
+
+F) Report back
+After implementing, return:
+- Files changed
+- Any schema changes
+- What viewer approach was used (react-pdf vs iframe fallback)
+- How anchors are stored
+- How “Add as Exhibit Snippet” and “Add to Trial Prep” map fields
+- Confirm it works without OCR coordinates
+
+DO NOT:
+- Provide legal recommendations
+- Predict outcomes
+- Use “you should file X”
+This is organizational + educational only.
