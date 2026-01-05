@@ -349,15 +349,9 @@ export default function LexiPanel() {
         />
       )}
 
+      {open && (
       <div
-        className={[
-          "fixed z-50",
-          "w-full h-full sm:w-[clamp(320px,72vw,520px)] sm:h-auto",
-          "sm:right-6",
-          "right-0 top-0",
-          "transition-transform duration-200 ease-out",
-          open ? "translate-x-0" : "translate-x-full pointer-events-none",
-        ].join(" ")}
+        className="fixed z-50 w-full h-full sm:w-[clamp(320px,72vw,520px)] sm:h-auto sm:right-6 right-0 top-0"
         style={{
           top: "calc(var(--civilla-nav-h, 64px) + 12px)",
           bottom: "12px",
@@ -694,6 +688,7 @@ export default function LexiPanel() {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }
