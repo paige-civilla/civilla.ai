@@ -14,8 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, Users, CheckCircle } from "lucide-react";
+import { Loader2, Save, Users, CheckCircle, FileDown, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import type { ParentingPlan, ParentingPlanSection } from "@shared/schema";
 
 const SECTION_DEFINITIONS = [
@@ -154,10 +157,13 @@ const SECTION_DEFINITIONS = [
 export default function AppParentingPlan() {
   const params = useParams() as { caseId?: string };
   const caseId = params.caseId || "";
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const [sectionData, setSectionData] = useState<Record<string, Record<string, unknown>>>({});
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [savedSections, setSavedSections] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery<{ plan: ParentingPlan; sections: ParentingPlanSection[] }>({
     queryKey: ["/api/cases", caseId, "parenting-plan"],
@@ -214,6 +220,53 @@ export default function AppParentingPlan() {
     handleSaveSection(sectionKey);
   }, [handleSaveSection]);
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!data?.plan?.id) return;
+      return apiRequest("DELETE", `/api/parenting-plan/${data.plan.id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Parenting plan deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "parenting-plan"] });
+      navigate(`/app/cases/${caseId}/overview`);
+    },
+    onError: () => {
+      toast({ title: "Failed to delete parenting plan", variant: "destructive" });
+    },
+  });
+
+  const handleExport = async () => {
+    if (!data?.plan?.id) return;
+    setIsExporting(true);
+    try {
+      const response = await fetch(`/api/parenting-plan/${data.plan.id}/export-docx`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Export failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `parenting-plan-draft-${new Date().toISOString().split("T")[0]}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast({ title: "Parenting plan exported" });
+    } catch {
+      toast({ title: "Failed to export parenting plan", variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (confirm("Are you sure you want to delete this parenting plan? This action cannot be undone.")) {
+      deleteMutation.mutate();
+    }
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -258,13 +311,46 @@ export default function AppParentingPlan() {
 
         <div className="mt-6">
           {data?.plan && (
-            <div className="flex items-center gap-2 mb-4">
-              <Badge variant="secondary" className="text-xs">
-                {data.plan.status === "draft" ? "Draft" : "Reviewed"}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Last updated: {new Date(data.plan.lastUpdatedAt).toLocaleDateString()}
-              </span>
+            <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="text-xs">
+                  {data.plan.status === "draft" ? "Draft" : "Reviewed"}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Last updated: {new Date(data.plan.lastUpdatedAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  data-testid="button-export-parenting-plan"
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileDown className="w-4 h-4" />
+                  )}
+                  <span className="ml-1.5">Export DOCX</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  className="text-destructive hover:text-destructive"
+                  data-testid="button-delete-parenting-plan"
+                >
+                  {deleteMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  <span className="ml-1.5">Delete</span>
+                </Button>
+              </div>
             </div>
           )}
 
