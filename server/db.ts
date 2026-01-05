@@ -442,7 +442,7 @@ export async function initDbTables(): Promise<void> {
     CREATE TABLE IF NOT EXISTS lexi_threads (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
-      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      case_id VARCHAR(255),
       title TEXT NOT NULL,
       disclaimer_shown BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -453,11 +453,16 @@ export async function initDbTables(): Promise<void> {
     `ALTER TABLE lexi_threads ADD COLUMN IF NOT EXISTS disclaimer_shown BOOLEAN NOT NULL DEFAULT false`
   ]);
 
+  try {
+    await pool.query(`ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL`);
+  } catch (e) {
+  }
+
   await initTable("lexi_messages", `
     CREATE TABLE IF NOT EXISTS lexi_messages (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
-      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      case_id VARCHAR(255),
       thread_id VARCHAR(255) NOT NULL REFERENCES lexi_threads(id) ON DELETE CASCADE,
       role TEXT NOT NULL,
       content TEXT NOT NULL,
@@ -470,6 +475,11 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)`,
     `ALTER TABLE lexi_messages ADD COLUMN IF NOT EXISTS metadata JSONB`
   ]);
+
+  try {
+    await pool.query(`ALTER TABLE lexi_messages ALTER COLUMN case_id DROP NOT NULL`);
+  } catch (e) {
+  }
 
   await initTable("case_rule_terms", `
     CREATE TABLE IF NOT EXISTS case_rule_terms (

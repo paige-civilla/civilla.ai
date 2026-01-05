@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar, CheckSquare, Contact, Users, Calculator, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
-import { getOrderedModules, type StartingPoint } from "@/lib/modules";
+import { getVisibleModules, modulePath, moduleLabel, type ModuleKey } from "@/lib/caseFlow";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -128,17 +128,38 @@ export default function AppNavbar() {
 
   const menuLinks = (() => {
     const caseId = selectedCaseId;
+    const MODULE_ICONS: Record<ModuleKey, typeof BookOpen> = {
+      "document-library": BookOpen,
+      "evidence": FolderOpen,
+      "timeline": History,
+      "communications": MessageSquare,
+      "pattern-analysis": BarChart3,
+      "disclosures": FileSearch,
+      "documents": FileEdit,
+      "exhibits": FileStack,
+      "deadlines": Calendar,
+      "case-to-do": CheckSquare,
+      "contacts": Contact,
+      "children": Users,
+      "child-support": Calculator,
+      "trial-prep": Scale,
+    };
+
     const links: { label: string; href: string; icon: any }[] = [
       { label: "Dashboard", href: caseId ? `/app/dashboard/${caseId}` : "/app", icon: LayoutDashboard },
       ...getStaticMenuLinks(),
     ];
+
     if (caseId && selectedCase) {
-      const orderedModules = getOrderedModules({
-        startingPoint: (selectedCase.startingPoint || "not_sure") as StartingPoint,
+      const visibleModules = getVisibleModules({
         hasChildren: selectedCase.hasChildren || false,
       });
-      orderedModules.forEach((mod) => {
-        links.push({ label: mod.label, href: mod.href(caseId), icon: mod.icon });
+      visibleModules.forEach((moduleKey) => {
+        links.push({
+          label: moduleLabel(moduleKey),
+          href: modulePath(moduleKey, caseId),
+          icon: MODULE_ICONS[moduleKey],
+        });
       });
       links.push({ label: "Case Settings", href: `/app/case-settings/${caseId}`, icon: Settings });
     }

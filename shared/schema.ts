@@ -819,7 +819,7 @@ export type LexiMessageRole = typeof lexiMessageRoles[number];
 export const lexiThreads = pgTable("lexi_threads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  caseId: varchar("case_id").notNull().references(() => cases.id),
+  caseId: varchar("case_id"),
   title: text("title").notNull(),
   disclaimerShown: boolean("disclaimer_shown").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -843,7 +843,7 @@ export type LexiThread = typeof lexiThreads.$inferSelect;
 export const lexiMessages = pgTable("lexi_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  caseId: varchar("case_id").notNull().references(() => cases.id),
+  caseId: varchar("case_id"),
   threadId: varchar("thread_id").notNull().references(() => lexiThreads.id),
   role: text("role").notNull(),
   content: text("content").notNull(),

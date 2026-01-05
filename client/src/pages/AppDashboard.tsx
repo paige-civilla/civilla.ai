@@ -20,7 +20,8 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CalendarCategory } from "@shared/schema";
-import { getOrderedModules, type StartingPoint } from "@/lib/modules";
+import { CASE_FLOW, getVisibleModules, modulePath, moduleLabel, moduleDescription, type ModuleKey } from "@/lib/caseFlow";
+import { BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar as CalendarIcon, CheckSquare as CheckSquareIcon, Contact, Users, Calculator, Scale } from "lucide-react";
 
 type UpcomingEvent = {
   kind: "deadline" | "todo" | "calendar" | "communication";
@@ -394,27 +395,43 @@ export default function AppDashboard() {
             <div className="flex-1 min-w-0">
               <div className="w-full">
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                  {getOrderedModules({
-                    startingPoint: ((primaryCase as any).startingPoint || "not_sure") as StartingPoint,
-                    hasChildren: primaryCase.hasChildren || false
-                  }).map((module) => (
-                    <Link
-                      key={module.key}
-                      href={module.href(primaryCase.id)}
-                      className="relative bg-[#E4ECED] border border-[#628286] rounded-lg p-4 sm:p-5 hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] cursor-pointer block transition-colors min-h-[44px]"
-                      data-testid={`module-card-${module.key}`}
-                    >
-                      <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-2 sm:mb-3">
-                        <module.icon className="w-5 h-5 text-[#628286]" />
-                      </div>
-                      <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1 break-words">
-                        {module.label}
-                      </h3>
-                      <p className="font-sans text-sm text-[#1E2020]/70 break-words">
-                        {module.description}
-                      </p>
-                    </Link>
-                  ))}
+                  {getVisibleModules({ hasChildren: primaryCase.hasChildren || false }).map((moduleKey) => {
+                    const MODULE_ICONS: Record<ModuleKey, typeof BookOpen> = {
+                      "document-library": BookOpen,
+                      "evidence": FolderOpen,
+                      "timeline": History,
+                      "communications": MessageSquare,
+                      "pattern-analysis": BarChart3,
+                      "disclosures": FileSearch,
+                      "documents": FileEdit,
+                      "exhibits": FileStack,
+                      "deadlines": CalendarIcon,
+                      "case-to-do": CheckSquareIcon,
+                      "contacts": Contact,
+                      "children": Users,
+                      "child-support": Calculator,
+                      "trial-prep": Scale,
+                    };
+                    const Icon = MODULE_ICONS[moduleKey];
+                    return (
+                      <Link
+                        key={moduleKey}
+                        href={modulePath(moduleKey, primaryCase.id)}
+                        className="relative bg-[#E4ECED] border border-[#628286] rounded-lg p-4 sm:p-5 hover:bg-[rgba(162,190,194,0.22)] hover:border-[#314143] cursor-pointer block transition-colors min-h-[44px]"
+                        data-testid={`module-card-${moduleKey}`}
+                      >
+                        <div className="w-10 h-10 rounded-md bg-[#F2F2F2] flex items-center justify-center mb-2 sm:mb-3">
+                          <Icon className="w-5 h-5 text-[#628286]" />
+                        </div>
+                        <h3 className="font-heading font-bold text-base text-[#1E2020] mb-1 break-words">
+                          {moduleLabel(moduleKey)}
+                        </h3>
+                        <p className="font-sans text-sm text-[#1E2020]/70 break-words">
+                          {moduleDescription(moduleKey)}
+                        </p>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
