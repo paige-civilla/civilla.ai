@@ -27,6 +27,7 @@ import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer"
 import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
 import { prependDisclaimerIfNeeded } from "./lexi/format";
 import { extractSourcesFromContent } from "./lexi/sources";
+import { generateExhibitPacketZip } from "./exhibitPacketExport";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -3486,6 +3487,28 @@ export async function registerRoutes(
     } catch (error) {
       console.error("List generated exhibit packets error:", error);
       res.status(500).json({ error: "Failed to list generated packets" });
+    }
+  });
+
+  app.post("/api/exhibit-packets/:packetId/generate", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { packetId } = req.params;
+      const packet = await storage.getExhibitPacket(userId, packetId);
+      if (!packet) {
+        return res.status(404).json({ error: "Packet not found" });
+      }
+      const result = await generateExhibitPacketZip(userId, packetId);
+      if (!result) {
+        return res.status(500).json({ error: "Failed to generate packet" });
+      }
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
+      res.setHeader("Content-Length", result.zipBuffer.length);
+      res.send(result.zipBuffer);
+    } catch (error) {
+      console.error("Generate exhibit packet error:", error);
+      res.status(500).json({ error: "Failed to generate packet" });
     }
   });
 
