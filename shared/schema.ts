@@ -1266,3 +1266,118 @@ export const updateParentingPlanSectionSchema = z.object({
 export type InsertParentingPlanSection = z.infer<typeof insertParentingPlanSectionSchema>;
 export type UpdateParentingPlanSection = z.infer<typeof updateParentingPlanSectionSchema>;
 export type ParentingPlanSection = typeof parentingPlanSections.$inferSelect;
+
+// OCR + Pattern Analysis Tables
+
+export const evidenceProcessingJobStatuses = ["queued", "processing", "done", "error"] as const;
+export type EvidenceProcessingJobStatus = typeof evidenceProcessingJobStatuses[number];
+
+export const evidenceProcessingJobs = pgTable("evidence_processing_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  status: text("status").notNull().default("queued"),
+  progress: integer("progress").notNull().default(0),
+  error: text("error"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  evidenceIdx: index("evidence_processing_jobs_evidence_idx").on(table.evidenceId),
+  userCaseIdx: index("evidence_processing_jobs_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertEvidenceProcessingJobSchema = z.object({
+  evidenceId: z.string().min(1, "Evidence ID is required"),
+});
+
+export const updateEvidenceProcessingJobSchema = z.object({
+  status: z.enum(evidenceProcessingJobStatuses).optional(),
+  progress: z.number().int().min(0).max(100).optional(),
+  error: z.string().optional().nullable(),
+});
+
+export type InsertEvidenceProcessingJob = z.infer<typeof insertEvidenceProcessingJobSchema>;
+export type UpdateEvidenceProcessingJob = z.infer<typeof updateEvidenceProcessingJobSchema>;
+export type EvidenceProcessingJob = typeof evidenceProcessingJobs.$inferSelect;
+
+export const ocrProviders = ["gcv", "pdf_text", "tesseract"] as const;
+export type OcrProvider = typeof ocrProviders[number];
+
+export const evidenceOcrPages = pgTable("evidence_ocr_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  pageNumber: integer("page_number"),
+  providerPrimary: text("provider_primary").notNull(),
+  providerSecondary: text("provider_secondary"),
+  textPrimary: text("text_primary").notNull(),
+  textSecondary: text("text_secondary"),
+  confidencePrimary: integer("confidence_primary"),
+  confidenceSecondary: integer("confidence_secondary"),
+  diffScore: integer("diff_score"),
+  needsReview: boolean("needs_review").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  evidenceIdx: index("evidence_ocr_pages_evidence_idx").on(table.evidenceId),
+  userCaseIdx: index("evidence_ocr_pages_user_case_idx").on(table.userId, table.caseId),
+  pageIdx: index("evidence_ocr_pages_page_idx").on(table.evidenceId, table.pageNumber),
+}));
+
+export const upsertEvidenceOcrPageSchema = z.object({
+  pageNumber: z.number().int().min(0).optional().nullable(),
+  providerPrimary: z.enum(ocrProviders),
+  providerSecondary: z.enum(ocrProviders).optional().nullable(),
+  textPrimary: z.string(),
+  textSecondary: z.string().optional().nullable(),
+  confidencePrimary: z.number().int().min(0).max(100).optional().nullable(),
+  confidenceSecondary: z.number().int().min(0).max(100).optional().nullable(),
+  diffScore: z.number().int().min(0).max(100).optional().nullable(),
+  needsReview: z.boolean().optional().default(true),
+});
+
+export type UpsertEvidenceOcrPage = z.infer<typeof upsertEvidenceOcrPageSchema>;
+export type EvidenceOcrPage = typeof evidenceOcrPages.$inferSelect;
+
+export const evidenceAnchors = pgTable("evidence_anchors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  pageNumber: integer("page_number"),
+  startChar: integer("start_char"),
+  endChar: integer("end_char"),
+  excerpt: text("excerpt").notNull(),
+  note: text("note"),
+  tags: jsonb("tags"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  evidenceIdx: index("evidence_anchors_evidence_idx").on(table.evidenceId),
+  userCaseIdx: index("evidence_anchors_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertEvidenceAnchorSchema = z.object({
+  evidenceId: z.string().min(1, "Evidence ID is required"),
+  pageNumber: z.number().int().min(0).optional().nullable(),
+  startChar: z.number().int().min(0).optional().nullable(),
+  endChar: z.number().int().min(0).optional().nullable(),
+  excerpt: z.string().min(1, "Excerpt is required").max(5000),
+  note: z.string().max(5000).optional().nullable(),
+  tags: z.array(z.string()).optional().nullable(),
+});
+
+export const updateEvidenceAnchorSchema = z.object({
+  pageNumber: z.number().int().min(0).optional().nullable(),
+  startChar: z.number().int().min(0).optional().nullable(),
+  endChar: z.number().int().min(0).optional().nullable(),
+  excerpt: z.string().min(1).max(5000).optional(),
+  note: z.string().max(5000).optional().nullable(),
+  tags: z.array(z.string()).optional().nullable(),
+});
+
+export type InsertEvidenceAnchor = z.infer<typeof insertEvidenceAnchorSchema>;
+export type UpdateEvidenceAnchor = z.infer<typeof updateEvidenceAnchorSchema>;
+export type EvidenceAnchor = typeof evidenceAnchors.$inferSelect;
