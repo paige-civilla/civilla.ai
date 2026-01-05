@@ -971,3 +971,123 @@ export const updateTrialBinderItemSchema = z.object({
 export type UpsertTrialBinderItem = z.infer<typeof upsertTrialBinderItemSchema>;
 export type UpdateTrialBinderItem = z.infer<typeof updateTrialBinderItemSchema>;
 export type TrialBinderItem = typeof trialBinderItems.$inferSelect;
+
+export const exhibitPacketStatuses = ["draft", "generated"] as const;
+export type ExhibitPacketStatus = typeof exhibitPacketStatuses[number];
+
+export const exhibitPackets = pgTable("exhibit_packets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  filingType: text("filing_type"),
+  filingDate: timestamp("filing_date"),
+  coverPageText: text("cover_page_text"),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseIdx: index("exhibit_packets_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertExhibitPacketSchema = createInsertSchema(exhibitPackets)
+  .pick({
+    title: true,
+    filingType: true,
+    filingDate: true,
+    coverPageText: true,
+    status: true,
+  })
+  .extend({
+    title: z.string().min(1, "Title is required").max(200),
+    filingType: z.string().max(100).optional().nullable(),
+    filingDate: z.coerce.date().optional().nullable(),
+    coverPageText: z.string().max(5000).optional().nullable(),
+    status: z.enum(exhibitPacketStatuses).optional().default("draft"),
+  });
+
+export const updateExhibitPacketSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  filingType: z.string().max(100).optional().nullable(),
+  filingDate: z.coerce.date().optional().nullable(),
+  coverPageText: z.string().max(5000).optional().nullable(),
+  status: z.enum(exhibitPacketStatuses).optional(),
+});
+
+export type InsertExhibitPacket = z.infer<typeof insertExhibitPacketSchema>;
+export type UpdateExhibitPacket = z.infer<typeof updateExhibitPacketSchema>;
+export type ExhibitPacket = typeof exhibitPackets.$inferSelect;
+
+export const exhibitPacketItems = pgTable("exhibit_packet_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  packetId: varchar("packet_id").notNull().references(() => exhibitPackets.id),
+  exhibitLabel: text("exhibit_label").notNull(),
+  exhibitTitle: text("exhibit_title").notNull(),
+  exhibitNotes: text("exhibit_notes"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  packetIdx: index("exhibit_packet_items_packet_idx").on(table.packetId),
+  userCaseIdx: index("exhibit_packet_items_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertExhibitPacketItemSchema = z.object({
+  exhibitLabel: z.string().min(1, "Label is required").max(20),
+  exhibitTitle: z.string().min(1, "Title is required").max(200),
+  exhibitNotes: z.string().max(2000).optional().nullable(),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
+
+export const updateExhibitPacketItemSchema = z.object({
+  exhibitLabel: z.string().min(1).max(20).optional(),
+  exhibitTitle: z.string().min(1).max(200).optional(),
+  exhibitNotes: z.string().max(2000).optional().nullable(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export type InsertExhibitPacketItem = z.infer<typeof insertExhibitPacketItemSchema>;
+export type UpdateExhibitPacketItem = z.infer<typeof updateExhibitPacketItemSchema>;
+export type ExhibitPacketItem = typeof exhibitPacketItems.$inferSelect;
+
+export const exhibitPacketEvidence = pgTable("exhibit_packet_evidence", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  packetItemId: varchar("packet_item_id").notNull().references(() => exhibitPacketItems.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  packetItemIdx: index("exhibit_packet_evidence_packet_item_idx").on(table.packetItemId),
+  evidenceIdx: index("exhibit_packet_evidence_evidence_idx").on(table.evidenceId),
+  userCaseIdx: index("exhibit_packet_evidence_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const insertExhibitPacketEvidenceSchema = z.object({
+  evidenceId: z.string().min(1, "Evidence ID is required"),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
+
+export type InsertExhibitPacketEvidence = z.infer<typeof insertExhibitPacketEvidenceSchema>;
+export type ExhibitPacketEvidence = typeof exhibitPacketEvidence.$inferSelect;
+
+export const generatedExhibitPackets = pgTable("generated_exhibit_packets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  packetId: varchar("packet_id").notNull().references(() => exhibitPackets.id),
+  title: text("title").notNull(),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+  fileKey: text("file_key").notNull(),
+  fileName: text("file_name").notNull(),
+  metaJson: jsonb("meta_json").notNull().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  packetIdx: index("generated_exhibit_packets_packet_idx").on(table.packetId),
+  userCaseIdx: index("generated_exhibit_packets_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export type GeneratedExhibitPacket = typeof generatedExhibitPackets.$inferSelect;

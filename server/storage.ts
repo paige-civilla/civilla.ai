@@ -24,6 +24,10 @@ import {
   caseRuleTerms,
   trialBinderSections,
   trialBinderItems,
+  exhibitPackets,
+  exhibitPacketItems,
+  exhibitPacketEvidence,
+  generatedExhibitPackets,
   type User,
   type InsertUser,
   type Case,
@@ -77,6 +81,14 @@ import {
   type TrialBinderItem,
   type UpsertTrialBinderItem,
   type UpdateTrialBinderItem,
+  type ExhibitPacket,
+  type InsertExhibitPacket,
+  type UpdateExhibitPacket,
+  type ExhibitPacketItem,
+  type InsertExhibitPacketItem,
+  type UpdateExhibitPacketItem,
+  type ExhibitPacketEvidence,
+  type GeneratedExhibitPacket,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -193,6 +205,28 @@ export interface IStorage {
   upsertTrialBinderItem(userId: string, caseId: string, input: UpsertTrialBinderItem): Promise<TrialBinderItem>;
   updateTrialBinderItem(userId: string, itemId: string, input: UpdateTrialBinderItem): Promise<TrialBinderItem | undefined>;
   deleteTrialBinderItem(userId: string, itemId: string): Promise<boolean>;
+
+  listExhibitPackets(userId: string, caseId: string): Promise<ExhibitPacket[]>;
+  getExhibitPacket(userId: string, packetId: string): Promise<ExhibitPacket | undefined>;
+  createExhibitPacket(userId: string, caseId: string, data: InsertExhibitPacket): Promise<ExhibitPacket>;
+  updateExhibitPacket(userId: string, packetId: string, data: UpdateExhibitPacket): Promise<ExhibitPacket | undefined>;
+  deleteExhibitPacket(userId: string, packetId: string): Promise<boolean>;
+
+  listPacketItems(userId: string, packetId: string): Promise<ExhibitPacketItem[]>;
+  getPacketItem(userId: string, itemId: string): Promise<ExhibitPacketItem | undefined>;
+  createPacketItem(userId: string, packetId: string, caseId: string, data: InsertExhibitPacketItem): Promise<ExhibitPacketItem>;
+  updatePacketItem(userId: string, itemId: string, data: UpdateExhibitPacketItem): Promise<ExhibitPacketItem | undefined>;
+  deletePacketItem(userId: string, itemId: string): Promise<boolean>;
+  reorderPacketItems(userId: string, packetId: string, orderedIds: string[]): Promise<boolean>;
+
+  listPacketItemEvidence(userId: string, packetItemId: string): Promise<EvidenceFile[]>;
+  addEvidenceToPacketItem(userId: string, caseId: string, packetItemId: string, evidenceId: string): Promise<ExhibitPacketEvidence | null>;
+  removeEvidenceFromPacketItem(userId: string, packetItemId: string, evidenceId: string): Promise<boolean>;
+  reorderPacketItemEvidence(userId: string, packetItemId: string, orderedEvidenceIds: string[]): Promise<boolean>;
+
+  listGeneratedExhibitPackets(userId: string, caseId: string): Promise<GeneratedExhibitPacket[]>;
+  getGeneratedExhibitPacket(userId: string, genId: string): Promise<GeneratedExhibitPacket | undefined>;
+  createGeneratedExhibitPacket(userId: string, caseId: string, packetId: string, title: string, fileKey: string, fileName: string, metaJson: Record<string, unknown>): Promise<GeneratedExhibitPacket>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1361,6 +1395,219 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(trialBinderItems.id, itemId), eq(trialBinderItems.userId, userId)))
       .returning();
     return res.length > 0;
+  }
+
+  async listExhibitPackets(userId: string, caseId: string): Promise<ExhibitPacket[]> {
+    return db.select().from(exhibitPackets)
+      .where(and(eq(exhibitPackets.userId, userId), eq(exhibitPackets.caseId, caseId)))
+      .orderBy(desc(exhibitPackets.createdAt));
+  }
+
+  async getExhibitPacket(userId: string, packetId: string): Promise<ExhibitPacket | undefined> {
+    const [row] = await db.select().from(exhibitPackets)
+      .where(and(eq(exhibitPackets.id, packetId), eq(exhibitPackets.userId, userId)));
+    return row;
+  }
+
+  async createExhibitPacket(userId: string, caseId: string, data: InsertExhibitPacket): Promise<ExhibitPacket> {
+    const [created] = await db.insert(exhibitPackets)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        filingType: data.filingType ?? null,
+        filingDate: data.filingDate ?? null,
+        coverPageText: data.coverPageText ?? null,
+        status: data.status ?? "draft",
+      })
+      .returning();
+    return created;
+  }
+
+  async updateExhibitPacket(userId: string, packetId: string, data: UpdateExhibitPacket): Promise<ExhibitPacket | undefined> {
+    const existing = await this.getExhibitPacket(userId, packetId);
+    if (!existing) return undefined;
+
+    const [updated] = await db.update(exhibitPackets)
+      .set({
+        title: data.title ?? existing.title,
+        filingType: data.filingType !== undefined ? data.filingType : existing.filingType,
+        filingDate: data.filingDate !== undefined ? data.filingDate : existing.filingDate,
+        coverPageText: data.coverPageText !== undefined ? data.coverPageText : existing.coverPageText,
+        status: data.status ?? existing.status,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(exhibitPackets.id, packetId), eq(exhibitPackets.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteExhibitPacket(userId: string, packetId: string): Promise<boolean> {
+    const items = await this.listPacketItems(userId, packetId);
+    for (const item of items) {
+      await this.deletePacketItem(userId, item.id);
+    }
+    const res = await db.delete(exhibitPackets)
+      .where(and(eq(exhibitPackets.id, packetId), eq(exhibitPackets.userId, userId)))
+      .returning();
+    return res.length > 0;
+  }
+
+  async listPacketItems(userId: string, packetId: string): Promise<ExhibitPacketItem[]> {
+    return db.select().from(exhibitPacketItems)
+      .where(and(eq(exhibitPacketItems.packetId, packetId), eq(exhibitPacketItems.userId, userId)))
+      .orderBy(asc(exhibitPacketItems.sortOrder));
+  }
+
+  async getPacketItem(userId: string, itemId: string): Promise<ExhibitPacketItem | undefined> {
+    const [row] = await db.select().from(exhibitPacketItems)
+      .where(and(eq(exhibitPacketItems.id, itemId), eq(exhibitPacketItems.userId, userId)));
+    return row;
+  }
+
+  async createPacketItem(userId: string, packetId: string, caseId: string, data: InsertExhibitPacketItem): Promise<ExhibitPacketItem> {
+    const [created] = await db.insert(exhibitPacketItems)
+      .values({
+        userId,
+        caseId,
+        packetId,
+        exhibitLabel: data.exhibitLabel,
+        exhibitTitle: data.exhibitTitle,
+        exhibitNotes: data.exhibitNotes ?? null,
+        sortOrder: data.sortOrder ?? 0,
+      })
+      .returning();
+    return created;
+  }
+
+  async updatePacketItem(userId: string, itemId: string, data: UpdateExhibitPacketItem): Promise<ExhibitPacketItem | undefined> {
+    const existing = await this.getPacketItem(userId, itemId);
+    if (!existing) return undefined;
+
+    const [updated] = await db.update(exhibitPacketItems)
+      .set({
+        exhibitLabel: data.exhibitLabel ?? existing.exhibitLabel,
+        exhibitTitle: data.exhibitTitle ?? existing.exhibitTitle,
+        exhibitNotes: data.exhibitNotes !== undefined ? data.exhibitNotes : existing.exhibitNotes,
+        sortOrder: data.sortOrder ?? existing.sortOrder,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(exhibitPacketItems.id, itemId), eq(exhibitPacketItems.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deletePacketItem(userId: string, itemId: string): Promise<boolean> {
+    await db.delete(exhibitPacketEvidence)
+      .where(and(eq(exhibitPacketEvidence.packetItemId, itemId), eq(exhibitPacketEvidence.userId, userId)));
+    const res = await db.delete(exhibitPacketItems)
+      .where(and(eq(exhibitPacketItems.id, itemId), eq(exhibitPacketItems.userId, userId)))
+      .returning();
+    return res.length > 0;
+  }
+
+  async reorderPacketItems(userId: string, packetId: string, orderedIds: string[]): Promise<boolean> {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.update(exhibitPacketItems)
+        .set({ sortOrder: i, updatedAt: new Date() })
+        .where(and(
+          eq(exhibitPacketItems.id, orderedIds[i]),
+          eq(exhibitPacketItems.userId, userId),
+          eq(exhibitPacketItems.packetId, packetId)
+        ));
+    }
+    return true;
+  }
+
+  async listPacketItemEvidence(userId: string, packetItemId: string): Promise<EvidenceFile[]> {
+    const links = await db.select().from(exhibitPacketEvidence)
+      .where(and(eq(exhibitPacketEvidence.packetItemId, packetItemId), eq(exhibitPacketEvidence.userId, userId)))
+      .orderBy(asc(exhibitPacketEvidence.sortOrder));
+
+    if (links.length === 0) return [];
+
+    const evidenceIds = links.map(l => l.evidenceId);
+    const files = await db.select().from(evidenceFiles)
+      .where(and(inArray(evidenceFiles.id, evidenceIds), eq(evidenceFiles.userId, userId)));
+
+    const fileMap = new Map(files.map(f => [f.id, f]));
+    return links.map(l => fileMap.get(l.evidenceId)).filter(Boolean) as EvidenceFile[];
+  }
+
+  async addEvidenceToPacketItem(userId: string, caseId: string, packetItemId: string, evidenceId: string): Promise<ExhibitPacketEvidence | null> {
+    const [existing] = await db.select().from(exhibitPacketEvidence)
+      .where(and(
+        eq(exhibitPacketEvidence.packetItemId, packetItemId),
+        eq(exhibitPacketEvidence.evidenceId, evidenceId),
+        eq(exhibitPacketEvidence.userId, userId)
+      ));
+    if (existing) return existing;
+
+    const currentLinks = await db.select().from(exhibitPacketEvidence)
+      .where(and(eq(exhibitPacketEvidence.packetItemId, packetItemId), eq(exhibitPacketEvidence.userId, userId)));
+    const nextOrder = currentLinks.length;
+
+    const [created] = await db.insert(exhibitPacketEvidence)
+      .values({
+        userId,
+        caseId,
+        packetItemId,
+        evidenceId,
+        sortOrder: nextOrder,
+      })
+      .returning();
+    return created;
+  }
+
+  async removeEvidenceFromPacketItem(userId: string, packetItemId: string, evidenceId: string): Promise<boolean> {
+    const res = await db.delete(exhibitPacketEvidence)
+      .where(and(
+        eq(exhibitPacketEvidence.packetItemId, packetItemId),
+        eq(exhibitPacketEvidence.evidenceId, evidenceId),
+        eq(exhibitPacketEvidence.userId, userId)
+      ))
+      .returning();
+    return res.length > 0;
+  }
+
+  async reorderPacketItemEvidence(userId: string, packetItemId: string, orderedEvidenceIds: string[]): Promise<boolean> {
+    for (let i = 0; i < orderedEvidenceIds.length; i++) {
+      await db.update(exhibitPacketEvidence)
+        .set({ sortOrder: i })
+        .where(and(
+          eq(exhibitPacketEvidence.packetItemId, packetItemId),
+          eq(exhibitPacketEvidence.evidenceId, orderedEvidenceIds[i]),
+          eq(exhibitPacketEvidence.userId, userId)
+        ));
+    }
+    return true;
+  }
+
+  async listGeneratedExhibitPackets(userId: string, caseId: string): Promise<GeneratedExhibitPacket[]> {
+    return db.select().from(generatedExhibitPackets)
+      .where(and(eq(generatedExhibitPackets.userId, userId), eq(generatedExhibitPackets.caseId, caseId)))
+      .orderBy(desc(generatedExhibitPackets.generatedAt));
+  }
+
+  async getGeneratedExhibitPacket(userId: string, genId: string): Promise<GeneratedExhibitPacket | undefined> {
+    const [row] = await db.select().from(generatedExhibitPackets)
+      .where(and(eq(generatedExhibitPackets.id, genId), eq(generatedExhibitPackets.userId, userId)));
+    return row;
+  }
+
+  async createGeneratedExhibitPacket(userId: string, caseId: string, packetId: string, title: string, fileKey: string, fileName: string, metaJson: Record<string, unknown>): Promise<GeneratedExhibitPacket> {
+    const [created] = await db.insert(generatedExhibitPackets)
+      .values({
+        userId,
+        caseId,
+        packetId,
+        title,
+        fileKey,
+        fileName,
+        metaJson,
+      })
+      .returning();
+    return created;
   }
 }
 

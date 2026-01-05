@@ -1,0 +1,127 @@
+REPLIT TASK: Fix Contacts “Copy” + add Case Contacts vs Witnesses grouping
+
+GOALS
+A) Copy button must copy ALL contact fields (not just name + role).
+B) Contacts must be organized into TWO groups:
+   - Case Contacts (default)
+   - Witnesses
+   UI should show two sections side-by-side on desktop (stacked on mobile).
+   User must be able to assign/move a contact between groups.
+
+----------------------------------------
+1) DATA MODEL UPDATE (shared/schema.ts + db init)
+----------------------------------------
+
+Add a column to case_contacts:
+
+- contactGroup TEXT NOT NULL DEFAULT 'case'
+  Allowed values:
+    - 'case'       (Case Contacts)
+    - 'witness'    (Witnesses)
+
+Update:
+- Insert schema default contactGroup = 'case'
+- Update schema for PATCH to allow updating contactGroup
+
+DB init:
+- Ensure ALTER TABLE happens safely in db.ts initializer:
+  - If column doesn’t exist, add it with default 'case'
+- Add index for grouping:
+  - (userId, caseId, contactGroup)
+
+----------------------------------------
+2) BACKEND: STORAGE + ROUTES
+----------------------------------------
+
+Storage changes (server/storage.ts):
+- Ensure listCaseContacts(userId, caseId) returns contactGroup
+- Ensure create/update accept contactGroup
+
+Routes changes (server/routes.ts):
+- No new endpoints needed if existing contacts CRUD already supports PATCH/POST with arbitrary fields.
+- Confirm POST /api/cases/:caseId/contacts accepts contactGroup
+- Confirm PATCH /api/contacts/:contactId accepts contactGroup
+
+----------------------------------------
+3) FRONTEND: COPY SHOULD COPY EVERYTHING
+----------------------------------------
+
+In client/src/pages/AppContacts.tsx:
+
+A) Build a single “copyText” for a contact:
+Format like:
+
+Full Name: Jane Doe
+Role: Opposing Counsel
+Organization/Firm: Smith Law (optional)
+Phone: 208-555-1212 (optional)
+Email: jane@smithlaw.com (optional)
+Address: 123 Main St, City, ST ZIP (optional)
+Notes: ... (optional)
+
+Rules:
+- Only include lines for fields that exist
+- Always include name
+- Put each field on its own line for easy paste into emails/court forms
+
+B) Replace existing copy handlers so:
+- “Copy” copies the full block above
+- If you still keep per-field copy icons, that’s fine, but the main copy must be full.
+
+C) Toast message:
+- “Copied full contact to clipboard”
+
+----------------------------------------
+4) FRONTEND: CASE CONTACTS vs WITNESSES UI (two columns)
+----------------------------------------
+
+In AppContacts.tsx:
+
+A) Split the list into two arrays:
+- caseContacts = contacts.filter(c => c.contactGroup !== 'witness')
+- witnessContacts = contacts.filter(c => c.contactGroup === 'witness')
+
+B) Layout:
+- Desktop: two columns with section headers:
+  Left: “Case Contacts”
+  Right: “Witnesses”
+- Mobile: stack sections vertically
+
+C) Add a “Group” selector in Add/Edit dialog:
+- Label: “Contact Type”
+- Options:
+  - Case Contact
+  - Witness
+
+Save this as contactGroup: 'case' or 'witness'
+
+D) Add quick “Move” action on each card:
+- Button: “Move to Witnesses” or “Move to Case Contacts”
+- Calls PATCH /api/contacts/:id with contactGroup swapped
+- Optimistically update state + invalidate query
+
+E) Empty states:
+- Case Contacts empty: “No case contacts yet. Add attorneys, the other party, school, doctors, etc.”
+- Witnesses empty: “No witnesses yet. Add people who can testify or provide statements.”
+
+----------------------------------------
+5) ACCEPTANCE TESTS
+----------------------------------------
+
+1) Create a contact with phone + email + address + notes.
+2) Click Copy on that contact.
+   EXPECT: clipboard contains all fields, one per line.
+3) Create a witness contact.
+   EXPECT: appears under Witnesses column.
+4) Use “Move to …” toggle.
+   EXPECT: contact moves between columns immediately and persists on refresh.
+5) Edit contact group in dialog and save.
+   EXPECT: grouping updates correctly.
+
+----------------------------------------
+DELIVERABLE
+- Implement changes and provide a detailed summary:
+  - files edited
+  - schema migration/alter behavior
+  - how copy text is formatted
+  - screenshots of two-column layout (desktop + mobile)

@@ -534,5 +534,74 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section_pinned ON trial_binder_items(user_id, case_id, section_key, pinned_rank)`
   ]);
 
+  await initTable("exhibit_packets", `
+    CREATE TABLE IF NOT EXISTS exhibit_packets (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      filing_type TEXT,
+      filing_date TIMESTAMP,
+      cover_page_text TEXT,
+      status TEXT NOT NULL DEFAULT 'draft',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_packets_user_case ON exhibit_packets(user_id, case_id)`
+  ]);
+
+  await initTable("exhibit_packet_items", `
+    CREATE TABLE IF NOT EXISTS exhibit_packet_items (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      packet_id VARCHAR(255) NOT NULL,
+      exhibit_label TEXT NOT NULL,
+      exhibit_title TEXT NOT NULL,
+      exhibit_notes TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_items_packet ON exhibit_packet_items(packet_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_items_user_case ON exhibit_packet_items(user_id, case_id)`
+  ]);
+
+  await initTable("exhibit_packet_evidence", `
+    CREATE TABLE IF NOT EXISTS exhibit_packet_evidence (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      packet_item_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_packet_item ON exhibit_packet_evidence(packet_item_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_evidence ON exhibit_packet_evidence(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_user_case ON exhibit_packet_evidence(user_id, case_id)`
+  ]);
+
+  await initTable("generated_exhibit_packets", `
+    CREATE TABLE IF NOT EXISTS generated_exhibit_packets (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      packet_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      file_key TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      meta_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_generated_exhibit_packets_packet ON generated_exhibit_packets(packet_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_generated_exhibit_packets_user_case ON generated_exhibit_packets(user_id, case_id)`
+  ]);
+
   console.log("Database table initialization complete");
 }
