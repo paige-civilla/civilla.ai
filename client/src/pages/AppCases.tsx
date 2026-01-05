@@ -64,8 +64,12 @@ export default function AppCases() {
   };
 
   const user = authData?.user;
-  const cases = casesData?.cases || [];
+  const rawCases = casesData?.cases || [];
+  const cases = [...rawCases].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   const canCreateCase = user ? cases.length < user.casesAllowed : false;
+  const atCaseLimit = user ? cases.length >= user.casesAllowed : false;
   const noCases = cases.length === 0;
 
   useEffect(() => {
@@ -95,128 +99,19 @@ export default function AppCases() {
             )}
           </div>
 
-          {!canCreateCase && !noCases && (
-            <div className="w-full bg-muted-green/30 border border-bush/20 rounded-lg p-4 mb-6">
-              <p className="font-sans text-sm text-neutral-darkest">
-                You've reached your limit of {user?.casesAllowed} case(s).{" "}
-                <Link href="/plans" className="text-primary font-medium underline" data-testid="link-upgrade">
-                  Upgrade to create more
-                </Link>
-              </p>
-            </div>
-          )}
-
           {error && (
             <div className="w-full bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-6">
               <p className="font-sans text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          {showForm && (
-            <div className="w-full bg-white border border-neutral-darkest/10 rounded-lg p-6 mb-6">
-              <h2 className="font-heading font-bold text-lg text-neutral-darkest mb-4">Create New Case</h2>
-              <form onSubmit={handleCreateCase} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="title" className="font-sans text-sm font-medium text-neutral-darkest">
-                    Case Title <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    id="title"
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                    required
-                    placeholder="e.g., My Custody Case"
-                    data-testid="input-case-title"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="state" className="font-sans text-sm font-medium text-neutral-darkest">
-                      State
-                    </label>
-                    <input
-                      id="state"
-                      type="text"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                      placeholder="e.g., California"
-                      data-testid="input-case-state"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="county" className="font-sans text-sm font-medium text-neutral-darkest">
-                      County
-                    </label>
-                    <input
-                      id="county"
-                      type="text"
-                      value={county}
-                      onChange={(e) => setCounty(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                      placeholder="e.g., Alameda"
-                      data-testid="input-case-county"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="caseType" className="font-sans text-sm font-medium text-neutral-darkest">
-                      Case Type
-                    </label>
-                    <input
-                      id="caseType"
-                      type="text"
-                      value={caseType}
-                      onChange={(e) => setCaseType(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
-                      placeholder="e.g., Custody"
-                      data-testid="input-case-type"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hasChildren}
-                      onChange={(e) => setHasChildren(e.target.checked)}
-                      className="w-4 h-4 rounded border-neutral-darkest/30 text-primary focus:ring-bush"
-                      data-testid="checkbox-has-children"
-                    />
-                    <span className="font-sans text-sm text-neutral-darkest">
-                      Does this case involve children?
-                    </span>
-                  </label>
-                </div>
-                <div className="flex flex-wrap gap-3 mt-4">
-                  <button
-                    type="submit"
-                    disabled={createCaseMutation.isPending}
-                    className="bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
-                    data-testid="button-create-case"
-                  >
-                    {createCaseMutation.isPending ? "Creating..." : "Create Case"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="font-sans text-sm font-medium text-neutral-darkest px-5 py-2.5 border border-neutral-darkest/20 rounded-md hover:bg-neutral-darkest/5"
-                    data-testid="button-cancel-case"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
+          {/* 1) Cases list - ALWAYS FIRST */}
           {casesLoading ? (
             <div className="w-full flex items-center justify-center py-12">
               <p className="font-sans text-neutral-darkest/60">Loading cases...</p>
             </div>
           ) : noCases ? (
-            <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 text-center">
+            <div className="w-full bg-[#e7ebea] rounded-lg p-8 md:p-12 text-center mb-6">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Briefcase className="w-8 h-8 text-primary" />
               </div>
@@ -236,7 +131,7 @@ export default function AppCases() {
               </button>
             </div>
           ) : (
-            <div className="w-full flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4 mb-6">
               {cases.map((c) => (
                 <button
                   key={c.id}
@@ -262,6 +157,133 @@ export default function AppCases() {
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* 2) Upgrade block - ONLY IF AT LIMIT */}
+          {atCaseLimit && !noCases && (
+            <div className="w-full bg-muted-green/30 border border-bush/20 rounded-lg p-4 mb-6">
+              <p className="font-sans text-sm text-neutral-darkest">
+                You've reached your limit of {user?.casesAllowed} case(s).{" "}
+                <Link href="/plans" className="text-primary font-medium underline" data-testid="link-upgrade">
+                  Upgrade to create more
+                </Link>
+              </p>
+            </div>
+          )}
+
+          {/* 3) Create New Case section - ALWAYS LAST */}
+          {!noCases && (
+            <div className={`w-full bg-white border border-neutral-darkest/10 rounded-lg p-6 ${atCaseLimit ? 'opacity-60' : ''}`}>
+              <h2 className="font-heading font-bold text-lg text-neutral-darkest mb-4">Create New Case</h2>
+              {atCaseLimit ? (
+                <p className="font-sans text-sm text-neutral-darkest/70">
+                  You've reached your case limit. <Link href="/plans" className="text-primary font-medium underline">Upgrade</Link> to add another case.
+                </p>
+              ) : showForm ? (
+                <form onSubmit={handleCreateCase} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="title" className="font-sans text-sm font-medium text-neutral-darkest">
+                      Case Title <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      id="title"
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                      required
+                      placeholder="e.g., My Custody Case"
+                      data-testid="input-case-title"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="state" className="font-sans text-sm font-medium text-neutral-darkest">
+                        State
+                      </label>
+                      <input
+                        id="state"
+                        type="text"
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                        placeholder="e.g., California"
+                        data-testid="input-case-state"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="county" className="font-sans text-sm font-medium text-neutral-darkest">
+                        County
+                      </label>
+                      <input
+                        id="county"
+                        type="text"
+                        value={county}
+                        onChange={(e) => setCounty(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                        placeholder="e.g., Alameda"
+                        data-testid="input-case-county"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="caseType" className="font-sans text-sm font-medium text-neutral-darkest">
+                        Case Type
+                      </label>
+                      <input
+                        id="caseType"
+                        type="text"
+                        value={caseType}
+                        onChange={(e) => setCaseType(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-neutral-darkest/20 rounded-md font-sans text-sm text-neutral-darkest placeholder:text-neutral-darkest/40 focus:outline-none focus:ring-2 focus:ring-bush/30 focus:border-bush"
+                        placeholder="e.g., Custody"
+                        data-testid="input-case-type"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasChildren}
+                        onChange={(e) => setHasChildren(e.target.checked)}
+                        className="w-4 h-4 rounded border-neutral-darkest/30 text-primary focus:ring-bush"
+                        data-testid="checkbox-has-children"
+                      />
+                      <span className="font-sans text-sm text-neutral-darkest">
+                        Does this case involve children?
+                      </span>
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <button
+                      type="submit"
+                      disabled={createCaseMutation.isPending}
+                      className="bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow disabled:opacity-50"
+                      data-testid="button-create-case"
+                    >
+                      {createCaseMutation.isPending ? "Creating..." : "Create Case"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="font-sans text-sm font-medium text-neutral-darkest px-5 py-2.5 border border-neutral-darkest/20 rounded-md hover:bg-neutral-darkest/5"
+                      data-testid="button-cancel-case"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-md button-inset-shadow"
+                  data-testid="button-show-create-form"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Case
+                </button>
+              )}
             </div>
           )}
         </div>

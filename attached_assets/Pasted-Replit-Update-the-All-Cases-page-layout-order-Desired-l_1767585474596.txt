@@ -1,0 +1,60 @@
+Replit — Update the “All Cases” page layout order.
+
+Desired layout order (top → bottom):
+1) The list/grid of existing cases (most recent first, with the one they just created at the very top)
+2) The “Upgrade to add more cases” paywall/notice (ONLY if user is at their casesAllowed limit)
+3) The “Create New Case” form/button section at the bottom
+
+Current issue:
+Right now the page shows upgrade + create new case above the cases list. Flip it.
+
+Files:
+- Find the Cases page component (likely one of):
+  client/src/pages/AppCases.tsx
+  client/src/pages/Cases.tsx
+  client/src/pages/AppAllCases.tsx
+Search keywords: “Upgrade”, “casesAllowed”, “Create New Case”, “Create your first case”, “View all cases”.
+
+Implementation steps:
+
+A) Ensure sorting: newest case first
+- Wherever cases array is derived, sort by createdAt DESC (or updatedAt if that’s what you have).
+Example:
+  const sortedCases = [...cases].sort((a,b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+B) Reorder JSX sections
+- Render sections in this order:
+
+  1) Existing cases list (ALWAYS first)
+     - If there are zero cases: show the empty state here (top).
+     - If cases exist: show the list/grid here.
+
+  2) Upgrade block (CONDITIONAL)
+     - Only show if `cases.length >= user.casesAllowed` (or the equivalent logic already used).
+     - This block should be between the case list and the create form.
+
+  3) Create New Case section (ALWAYS last)
+     - If the user is at limit, the create form should either:
+       - be disabled with helper text “Upgrade to create another case”, OR
+       - be hidden (your choice), but the section header can still show.
+     - If not at limit, normal create flow.
+
+C) UX details
+- If user is at limit:
+  - Keep “Create New Case” section visible but disabled (preferred), so they understand where it would be.
+  - Put a short line of helper text inside create section: “You’ve reached your case limit. Upgrade to add another case.”
+- If user is NOT at limit:
+  - Hide the upgrade block entirely.
+
+D) Verify behavior
+- Create a new case:
+  - It should appear at the top of the list immediately.
+  - The upgrade notice should appear only if they hit the limit.
+  - The create form should remain at bottom (or disabled if at limit).
+
+After changes, paste back:
+- The updated JSX order from the Cases page component (just the relevant section)
+- The condition you used to show the upgrade block
+- Confirmation that cases are sorted newest-first
