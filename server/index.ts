@@ -8,6 +8,7 @@ import { pool, initDbTables } from "./db";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
+import { requeueStaleExtractions } from "./services/evidenceJobs";
 
 const app = express();
 const httpServer = createServer(app);
@@ -155,6 +156,16 @@ async function initStripe() {
 (async () => {
   await initDbTables();
   await initStripe();
+  
+  try {
+    const requeuedCount = await requeueStaleExtractions();
+    if (requeuedCount > 0) {
+      console.log(`Re-queued ${requeuedCount} stale evidence extractions`);
+    }
+  } catch (err) {
+    console.error("Failed to re-queue stale extractions:", err);
+  }
+  
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

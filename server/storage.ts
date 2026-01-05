@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, lt, sql } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -324,6 +324,9 @@ export interface IStorage {
   getEvidenceExtraction(userId: string, caseId: string, evidenceId: string): Promise<EvidenceExtraction | undefined>;
   createEvidenceExtraction(userId: string, caseId: string, payload: InsertEvidenceExtraction): Promise<EvidenceExtraction>;
   updateEvidenceExtraction(userId: string, extractionId: string, payload: UpdateEvidenceExtraction): Promise<EvidenceExtraction | undefined>;
+  findStaleProcessingExtractions(staleMinutes?: number): Promise<EvidenceExtraction[]>;
+  resetExtractionToQueued(extractionId: string): Promise<EvidenceExtraction | undefined>;
+  getExtractionById(extractionId: string): Promise<EvidenceExtraction | undefined>;
 
   listEvidenceNotesFull(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceNoteFull[]>;
   createEvidenceNoteFull(userId: string, caseId: string, payload: InsertEvidenceNoteFull): Promise<EvidenceNoteFull>;
@@ -2251,6 +2254,34 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(evidenceExtractions.id, extractionId), eq(evidenceExtractions.userId, userId)))
       .returning();
     return updated;
+  }
+
+  async findStaleProcessingExtractions(staleMinutes: number = 15): Promise<EvidenceExtraction[]> {
+    const cutoff = new Date(Date.now() - staleMinutes * 60 * 1000);
+    return db.select().from(evidenceExtractions)
+      .where(and(
+        eq(evidenceExtractions.status, "processing"),
+        lt(evidenceExtractions.updatedAt, cutoff)
+      ));
+  }
+
+  async resetExtractionToQueued(extractionId: string): Promise<EvidenceExtraction | undefined> {
+    const [updated] = await db.update(evidenceExtractions)
+      .set({
+        status: "queued",
+        error: null,
+        metadata: sql`COALESCE(${evidenceExtractions.metadata}, '{}'::jsonb) || '{"requeued": true}'::jsonb`,
+        updatedAt: new Date(),
+      })
+      .where(eq(evidenceExtractions.id, extractionId))
+      .returning();
+    return updated;
+  }
+
+  async getExtractionById(extractionId: string): Promise<EvidenceExtraction | undefined> {
+    const [row] = await db.select().from(evidenceExtractions)
+      .where(eq(evidenceExtractions.id, extractionId));
+    return row;
   }
 
   async listEvidenceNotesFull(userId: string, caseId: string, evidenceId?: string): Promise<EvidenceNoteFull[]> {

@@ -4,8 +4,17 @@ import { getSignedDownloadUrl } from "../r2";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import pLimit from "p-limit";
+import type { EvidenceExtraction } from "@shared/schema";
+
+const GLOBAL_CONCURRENCY = 2;
+const STALE_THRESHOLD_MINUTES = 15;
+
+const globalLimit = pLimit(GLOBAL_CONCURRENCY);
 
 const activeJobs = new Map<string, Promise<void>>();
+
+const processingLocks = new Set<string>();
 
 interface EnqueueOptions {
   userId: string;
@@ -35,6 +44,13 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
   const { userId, caseId, evidenceId, storageKey, mimeType, originalFilename } = opts;
   let tempFilePath: string | null = null;
 
+  if (processingLocks.has(evidenceId)) {
+    console.log(`[ExtractionJob] Lock already held for evidence ${evidenceId}, skipping`);
+    return;
+  }
+
+  processingLocks.add(evidenceId);
+
   try {
     let extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
 
@@ -44,6 +60,20 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
         provider: "internal",
         mimeType,
       });
+    }
+
+    if (extraction.status === "processing") {
+      const updatedAt = new Date(extraction.updatedAt).getTime();
+      const staleCutoff = Date.now() - STALE_THRESHOLD_MINUTES * 60 * 1000;
+      if (updatedAt > staleCutoff) {
+        console.log(`[ExtractionJob] Extraction ${evidenceId} already processing (not stale), skipping`);
+        return;
+      }
+    }
+
+    if (extraction.status === "complete") {
+      console.log(`[ExtractionJob] Extraction ${evidenceId} already complete, skipping`);
+      return;
     }
 
     await storage.updateEvidenceExtraction(userId, extraction.id, {
@@ -90,6 +120,7 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
       } catch {
       }
     }
+    processingLocks.delete(evidenceId);
     activeJobs.delete(evidenceId);
   }
 }
@@ -98,16 +129,64 @@ export function enqueueEvidenceExtraction(opts: EnqueueOptions): void {
   const { evidenceId } = opts;
 
   if (activeJobs.has(evidenceId)) {
-    console.log(`[ExtractionJob] Job already running for evidence ${evidenceId}`);
+    console.log(`[ExtractionJob] Job already queued/running for evidence ${evidenceId}`);
     return;
   }
 
-  const jobPromise = runExtractionJob(opts);
+  if (processingLocks.has(evidenceId)) {
+    console.log(`[ExtractionJob] Lock held for evidence ${evidenceId}, not enqueuing`);
+    return;
+  }
+
+  const jobPromise = globalLimit(() => runExtractionJob(opts));
   activeJobs.set(evidenceId, jobPromise);
 
-  console.log(`[ExtractionJob] Enqueued extraction for evidence ${evidenceId}`);
+  console.log(`[ExtractionJob] Enqueued extraction for evidence ${evidenceId} (concurrency: ${GLOBAL_CONCURRENCY})`);
 }
 
 export function isExtractionRunning(evidenceId: string): boolean {
-  return activeJobs.has(evidenceId);
+  return activeJobs.has(evidenceId) || processingLocks.has(evidenceId);
+}
+
+export async function requeueStaleExtractions(): Promise<number> {
+  try {
+    const staleExtractions = await storage.findStaleProcessingExtractions(STALE_THRESHOLD_MINUTES);
+    
+    if (staleExtractions.length === 0) {
+      console.log("[ExtractionJob] No stale extractions to re-queue");
+      return 0;
+    }
+
+    console.log(`[ExtractionJob] Found ${staleExtractions.length} stale extractions, re-queuing...`);
+
+    for (const extraction of staleExtractions) {
+      await storage.resetExtractionToQueued(extraction.id);
+      
+      const file = await storage.getEvidenceFile(extraction.evidenceId, extraction.userId);
+      if (file && file.storageKey) {
+        enqueueEvidenceExtraction({
+          userId: extraction.userId,
+          caseId: extraction.caseId,
+          evidenceId: extraction.evidenceId,
+          storageKey: file.storageKey,
+          mimeType: file.mimeType,
+          originalFilename: file.originalFilename,
+        });
+      }
+    }
+
+    console.log(`[ExtractionJob] Re-queued ${staleExtractions.length} stale extractions`);
+    return staleExtractions.length;
+  } catch (error) {
+    console.error("[ExtractionJob] Error re-queuing stale extractions:", error);
+    return 0;
+  }
+}
+
+export function getQueueStats(): { activeCount: number; lockedCount: number; concurrency: number } {
+  return {
+    activeCount: activeJobs.size,
+    lockedCount: processingLocks.size,
+    concurrency: GLOBAL_CONCURRENCY,
+  };
 }

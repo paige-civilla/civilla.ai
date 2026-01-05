@@ -1528,15 +1528,39 @@ export default function AppEvidence() {
           </DialogHeader>
           {extractionViewFileId && extractionStatuses[extractionViewFileId] ? (
             <div className="flex-1 overflow-hidden flex flex-col gap-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ExtractionStatusBadge status={extractionStatuses[extractionViewFileId].status} />
-                {extractionStatuses[extractionViewFileId].meta && (() => {
-                  const meta = extractionStatuses[extractionViewFileId].meta as Record<string, unknown>;
-                  const parts: string[] = [];
-                  if (meta.pagesProcessed) parts.push(`${meta.pagesProcessed} pages processed`);
-                  if (meta.usedOcr) parts.push("OCR");
-                  if (meta.usedNativeText) parts.push("Native PDF");
-                  return parts.length > 0 ? <span>{parts.join(" | ")}</span> : null;
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800">
+                <AlertCircle className="w-4 h-4 inline-block mr-2" />
+                Text extraction may contain errors. Verify against the original document.
+              </div>
+              <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <ExtractionStatusBadge status={extractionStatuses[extractionViewFileId].status} />
+                  {extractionStatuses[extractionViewFileId].meta && (() => {
+                    const meta = extractionStatuses[extractionViewFileId].meta as Record<string, unknown>;
+                    const parts: string[] = [];
+                    if (meta.pagesProcessed) parts.push(`${meta.pagesProcessed} pages processed`);
+                    if (meta.usedOcr) parts.push("OCR");
+                    if (meta.usedNativeText) parts.push("Native PDF");
+                    return parts.length > 0 ? <span>{parts.join(" | ")}</span> : null;
+                  })()}
+                </div>
+                {(() => {
+                  const file = files.find(f => f.id === extractionViewFileId);
+                  if (file && file.downloadUrl) {
+                    return (
+                      <a
+                        href={file.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
+                        data-testid="link-open-original-evidence"
+                      >
+                        <Download className="w-4 h-4" />
+                        Open Original
+                      </a>
+                    );
+                  }
+                  return null;
                 })()}
               </div>
               <ScrollArea className="flex-1 max-h-[60vh]">
