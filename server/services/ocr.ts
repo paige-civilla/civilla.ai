@@ -1,7 +1,5 @@
-import { ImageAnnotatorClient } from "@google-cloud/vision";
 import * as fs from "fs";
 import * as path from "path";
-import PQueue from "p-queue";
 import sharp from "sharp";
 import { storage } from "../storage";
 import type { UpsertEvidenceOcrPage, OcrProvider } from "@shared/schema";
@@ -10,45 +8,39 @@ const OCR_MAX_PAGES = parseInt(process.env.OCR_MAX_PAGES || "50", 10);
 const OCR_MAX_FILE_MB = parseInt(process.env.OCR_MAX_FILE_MB || "25", 10);
 const OCR_PROVIDER_MODE = process.env.OCR_PROVIDER_MODE || "gcv_primary";
 
-let visionClient: ImageAnnotatorClient | null = null;
+function createConcurrencyLimiter(concurrency: number) {
+  let activeCount = 0;
+  const queue: Array<() => void> = [];
 
-function getVisionClient(): ImageAnnotatorClient | null {
-  if (visionClient) return visionClient;
-  
-  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
-  const clientEmail = process.env.GOOGLE_CLOUD_VISION_CLIENT_EMAIL;
-  let privateKey = process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY;
-  
-  if (!projectId || !clientEmail || !privateKey) {
-    console.log("Google Cloud Vision credentials not configured");
-    return null;
-  }
-  
-  if (privateKey.includes("\\n")) {
-    privateKey = privateKey.replace(/\\n/g, "\n");
-  }
-  
-  try {
-    visionClient = new ImageAnnotatorClient({
-      credentials: {
-        client_email: clientEmail,
-        private_key: privateKey,
-      },
-      projectId,
+  return function limit<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const run = async () => {
+        activeCount++;
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        } finally {
+          activeCount--;
+          if (queue.length > 0) {
+            const next = queue.shift();
+            if (next) next();
+          }
+        }
+      };
+
+      if (activeCount < concurrency) {
+        run();
+      } else {
+        queue.push(run);
+      }
     });
-    return visionClient;
-  } catch (error) {
-    console.error("Failed to initialize Vision client:", error);
-    return null;
-  }
+  };
 }
 
 export function isGcvConfigured(): boolean {
-  return !!(
-    process.env.GOOGLE_CLOUD_PROJECT_ID &&
-    process.env.GOOGLE_CLOUD_VISION_CLIENT_EMAIL &&
-    process.env.GOOGLE_CLOUD_VISION_PRIVATE_KEY
-  );
+  return !!process.env.GOOGLE_CLOUD_VISION_API_KEY;
 }
 
 function computeJaccardSimilarity(text1: string, text2: string): number {
@@ -87,38 +79,61 @@ function shouldNeedReview(
 }
 
 async function extractTextWithGcv(imageBuffer: Buffer): Promise<{ text: string; confidence: number | null }> {
-  const client = getVisionClient();
-  if (!client) {
-    throw new Error("Google Cloud Vision not configured");
+  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+  if (!apiKey) {
+    throw new Error("OCR not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets.");
   }
-  
-  const [result] = await client.documentTextDetection(imageBuffer);
-  const fullTextAnnotation = result.fullTextAnnotation;
-  
-  if (!fullTextAnnotation) {
-    return { text: "", confidence: null };
+
+  const content = imageBuffer.toString("base64");
+  const body = {
+    requests: [
+      {
+        image: { content },
+        features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+      },
+    ],
+  };
+
+  const res = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Vision OCR failed: ${res.status} ${res.statusText} ${errText}`.slice(0, 500));
   }
-  
-  let totalConfidence = 0;
-  let confidenceCount = 0;
-  
-  if (fullTextAnnotation.pages) {
+
+  const json = await res.json();
+  const first = json?.responses?.[0];
+
+  if (first?.error) {
+    throw new Error(`Vision API error: ${first.error.message || JSON.stringify(first.error)}`.slice(0, 500));
+  }
+
+  const fullTextAnnotation = first?.fullTextAnnotation;
+  const text = fullTextAnnotation?.text || (first?.textAnnotations?.[0]?.description ?? "") || "";
+
+  let avgConfidence: number | null = null;
+  if (fullTextAnnotation?.pages) {
+    let totalConfidence = 0;
+    let confidenceCount = 0;
     for (const page of fullTextAnnotation.pages) {
       if (page.confidence !== undefined && page.confidence !== null) {
         totalConfidence += page.confidence;
         confidenceCount++;
       }
     }
+    if (confidenceCount > 0) {
+      avgConfidence = Math.round((totalConfidence / confidenceCount) * 100);
+    }
   }
-  
-  const avgConfidence = confidenceCount > 0 
-    ? Math.round((totalConfidence / confidenceCount) * 100) 
-    : null;
-  
-  return {
-    text: fullTextAnnotation.text || "",
-    confidence: avgConfidence,
-  };
+
+  return { text, confidence: avgConfidence };
 }
 
 async function extractTextFromPdfWithPdfjs(pdfPath: string): Promise<{ pageCount: number; pages: { pageNumber: number; text: string }[] }> {
@@ -136,9 +151,9 @@ async function extractTextFromPdfWithPdfjs(pdfPath: string): Promise<{ pageCount
   for (let i = 1; i <= pagesToProcess; i++) {
     const page = await pdfDocument.getPage(i);
     const textContent = await page.getTextContent();
-    const text = textContent.items
-      .filter((item): item is { str: string } => "str" in item && typeof (item as { str: string }).str === "string")
-      .map((item) => item.str)
+    const text = (textContent.items as Array<{ str?: string }>)
+      .filter((item) => typeof item?.str === "string")
+      .map((item) => item.str!)
       .join(" ");
     pages.push({ pageNumber: i, text });
   }
@@ -207,11 +222,11 @@ async function processPdfWithDualMode(
   const { pageCount, pages: pdfTextPages } = await extractTextFromPdfWithPdfjs(filePath);
   const pagesToProcess = Math.min(pageCount, OCR_MAX_PAGES);
   
-  const queue = new PQueue({ concurrency: 2 });
+  const limit = createConcurrencyLimiter(2);
   let processed = 0;
   
   const tasks = pdfTextPages.map((pdfPage, idx) => {
-    return queue.add(async () => {
+    return limit(async () => {
       let payload: UpsertEvidenceOcrPage;
       
       const pdfText = pdfPage.text.trim();

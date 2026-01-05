@@ -1,12 +1,42 @@
 import * as fs from "fs";
-import pLimit from "p-limit";
 import sharp from "sharp";
 
 const OCR_MAX_PAGES = parseInt(process.env.OCR_MAX_PAGES || "25", 10);
 const OCR_CONCURRENCY = 3;
 
+function createConcurrencyLimiter(concurrency: number) {
+  let activeCount = 0;
+  const queue: Array<() => void> = [];
+
+  return function limit<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const run = async () => {
+        activeCount++;
+        try {
+          const result = await fn();
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        } finally {
+          activeCount--;
+          if (queue.length > 0) {
+            const next = queue.shift();
+            if (next) next();
+          }
+        }
+      };
+
+      if (activeCount < concurrency) {
+        run();
+      } else {
+        queue.push(run);
+      }
+    });
+  };
+}
+
 export function isGcvConfigured(): boolean {
-  return !!(process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_API_KEY);
+  return !!process.env.GOOGLE_CLOUD_VISION_API_KEY;
 }
 
 export function logGcvStatus(): void {
@@ -28,9 +58,9 @@ interface VisionOcrResult {
 }
 
 async function visionOcrImageBuffer(imageBuffer: Buffer): Promise<VisionOcrResult> {
-  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GOOGLE_API_KEY || "";
+  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
   if (!apiKey) {
-    throw new Error("missing GOOGLE_CLOUD_VISION_API_KEY");
+    throw new Error("OCR not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets.");
   }
 
   const content = imageBuffer.toString("base64");
@@ -171,7 +201,7 @@ async function extractPdfWithOcr(pdfBuffer: Buffer, totalPages: number): Promise
   const capped = totalPages > OCR_MAX_PAGES;
   const pagesSkipped = capped ? totalPages - OCR_MAX_PAGES : 0;
 
-  const limit = pLimit(OCR_CONCURRENCY);
+  const limit = createConcurrencyLimiter(OCR_CONCURRENCY);
   const pageTexts: string[] = new Array(pagesToProcess).fill("");
 
   const tasks = Array.from({ length: pagesToProcess }, (_, i) => i + 1).map((pageNum) =>
