@@ -4575,7 +4575,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const completion = await openai.chat.completions.create({
         model: "gpt-4.1",
         messages: chatHistory,
-        max_completion_tokens: 2048,
+        temperature: 0.3,
+        max_completion_tokens: 1024,
       });
 
       let assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
