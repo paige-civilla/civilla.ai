@@ -1,0 +1,248 @@
+REPLIT TASK: Upgrade Exhibits into real “Exhibit Packets” that actually include Evidence, support ordering, cover pages, and downloadable history.
+
+GOAL
+- Exhibits must allow building an “Exhibit Packet” for a specific filing that includes:
+  1) Packet cover page (optional)
+  2) Exhibit index page (auto-generated)
+  3) Exhibits A/B/C… each with optional exhibit cover sheet + included evidence files in a defined order
+- User can download the whole packet as ONE file.
+- Previously generated packets are stored as HISTORY and re-downloadable unchanged.
+
+IMPORTANT IMPLEMENTATION CHOICE (Phase 1)
+- “Download as one” = generate a ZIP packet.
+  - Includes generated PDFs (cover + exhibit index + exhibit cover sheets)
+  - Includes the evidence files themselves (the real uploads)
+- Later Phase 2 can merge into a single PDF; do not block Phase 1 on that.
+
+----------------------------------------
+1) DATA MODEL CHANGES (schema.ts + db init)
+----------------------------------------
+
+Add new tables:
+
+A) exhibit_packets
+- id (uuid)
+- userId
+- caseId
+- title (text)                // e.g., "Motion to Modify Exhibits"
+- filingType (text, nullable) // e.g., "Motion", "Response", etc (optional)
+- filingDate (date, nullable)
+- coverPageText (text, nullable)
+- status (text) default "draft" // draft | generated
+- createdAt, updatedAt
+
+B) exhibit_packet_items
+- id (uuid)
+- userId
+- caseId
+- packetId (fk exhibit_packets.id)
+- exhibitLabel (text)         // "A", "B", "C" etc
+- exhibitTitle (text)
+- exhibitNotes (text, nullable)
+- sortOrder (int)             // ordering of exhibits inside packet
+- createdAt, updatedAt
+
+C) exhibit_packet_evidence
+- id (uuid)
+- userId
+- caseId
+- packetItemId (fk exhibit_packet_items.id)
+- evidenceId (fk case_evidence.id)
+- sortOrder (int)             // ordering of evidence within an exhibit
+- createdAt
+
+D) generated_exhibit_packets
+- id (uuid)
+- userId
+- caseId
+- packetId (fk exhibit_packets.id)
+- title (text)
+- generatedAt (timestamp)
+- fileKey (text)              // stored file reference (where zip is stored)
+- fileName (text)             // e.g. "Motion_to_Modify_Exhibits_2026-01-03.zip"
+- metaJson (jsonb)            // snapshot of structure (labels, evidence list) for history
+- createdAt
+
+DB init:
+- Ensure these tables auto-create in db.ts like other modules.
+- Add indexes:
+  - (userId, caseId)
+  - packetId
+  - packetItemId
+  - evidenceId
+
+----------------------------------------
+2) STORAGE LAYER (server/storage.ts)
+----------------------------------------
+
+Add CRUD:
+
+Exhibit Packets:
+- listExhibitPackets(userId, caseId)
+- createExhibitPacket(userId, caseId, payload)
+- updateExhibitPacket(userId, packetId, payload)
+- deleteExhibitPacket(userId, packetId)
+
+Packet Items:
+- listPacketItems(userId, packetId)
+- createPacketItem(userId, packetId, payload)
+- updatePacketItem(userId, itemId, payload)
+- deletePacketItem(userId, itemId)
+- reorderPacketItems(userId, packetId, [{itemId, sortOrder}])
+
+Packet Evidence:
+- listPacketItemEvidence(userId, packetItemId)
+- addEvidenceToPacketItem(userId, packetItemId, evidenceId)
+- removeEvidenceFromPacketItem(userId, packetItemId, evidenceId)
+- reorderPacketItemEvidence(userId, packetItemId, [{evidenceId, sortOrder}])
+
+Generated History:
+- listGeneratedExhibitPackets(userId, caseId)
+- createGeneratedExhibitPacket(userId, caseId, packetId, fileKey, fileName, metaJson)
+
+Ownership enforcement:
+- EVERY query must filter by userId (same as other modules).
+- Validate case ownership before allowing packet operations.
+
+----------------------------------------
+3) API ROUTES (server/routes.ts)
+----------------------------------------
+
+Add endpoints:
+
+Packets:
+GET    /api/cases/:caseId/exhibit-packets
+POST   /api/cases/:caseId/exhibit-packets
+PATCH  /api/exhibit-packets/:packetId
+DELETE /api/exhibit-packets/:packetId
+
+Packet Items:
+GET    /api/exhibit-packets/:packetId/items
+POST   /api/exhibit-packets/:packetId/items
+PATCH  /api/exhibit-packet-items/:itemId
+DELETE /api/exhibit-packet-items/:itemId
+POST   /api/exhibit-packets/:packetId/items/reorder
+
+Packet Evidence:
+GET    /api/exhibit-packet-items/:itemId/evidence
+POST   /api/exhibit-packet-items/:itemId/evidence   { evidenceId }
+DELETE /api/exhibit-packet-items/:itemId/evidence/:evidenceId
+POST   /api/exhibit-packet-items/:itemId/evidence/reorder
+
+History:
+GET    /api/cases/:caseId/exhibit-packets/history
+
+Generate + Download (Phase 1 ZIP):
+POST   /api/exhibit-packets/:packetId/generate
+- Generates ZIP and stores it, creates history record, marks packet status "generated"
+
+GET    /api/generated-exhibit-packets/:genId/download
+- Streams stored ZIP file back
+
+----------------------------------------
+4) ZIP GENERATION (server/exhibitPacketExport.ts)
+----------------------------------------
+
+Implement packet export as ZIP.
+
+Dependencies (node):
+- archiver (zip)
+- pdfkit (simple PDF generation) OR use existing PDF utility if present
+- Ensure no heavy headless browser required.
+
+ZIP content structure:
+/
+  00_Cover_Page.pdf               (if coverPageText exists)
+  01_Exhibit_Index.pdf            (always)
+  Exhibits/
+    Exhibit_A/
+      00_Exhibit_A_Cover.pdf
+      01_<evidence_filename>
+      02_<evidence_filename>
+    Exhibit_B/
+      00_Exhibit_B_Cover.pdf
+      ...
+
+Cover PDFs content:
+- Cover Page: packet title, case title, case number, filing date (if any), generated date, optional cover text
+- Exhibit Index: table list:
+  - Exhibit Label | Exhibit Title | Evidence Included (count)
+- Exhibit Cover: “Exhibit A – <title>” + optional notes + list of evidence filenames
+
+Evidence file retrieval:
+- Use existing evidence storage mechanism.
+- Include the *actual uploaded evidence files*.
+- If a file is missing, include a placeholder txt file explaining missing fileKey.
+
+Storing generated ZIP:
+- Store ZIP in the same place evidence files are stored (whatever fileKey system exists).
+- Save fileKey + fileName to generated_exhibit_packets.
+
+----------------------------------------
+5) FRONTEND (client/src/pages/AppExhibits.tsx)
+----------------------------------------
+
+Replace current Exhibits UI with “Exhibit Packets” workflow:
+
+A) Top: Exhibit Packets list
+- Create Packet button
+- Each packet card shows title, filing type/date, status (draft/generated)
+- Click opens packet builder view
+
+B) Packet Builder view
+- Packet settings: Title, filing type/date, optional cover text
+- “Add Exhibit” button (creates Exhibit A/B/C… automatically)
+- Exhibit list left:
+  - each exhibit shows label + title + evidence count
+  - supports reorder exhibits (up/down buttons first; drag later)
+
+C) Exhibit detail panel
+- Edit exhibit title/notes
+- “Add Evidence” picker:
+  - searchable list of evidence from case evidence
+  - add multiple evidence items
+- Evidence list within exhibit:
+  - shows filename, date uploaded, notes
+  - reorder evidence (up/down buttons first)
+  - remove from exhibit
+
+D) Generate Packet
+- Button: “Generate Download Packet (ZIP)”
+- Calls POST /generate
+- On success: show toast, move user to History tab
+
+E) History tab
+- List generated packets with generated date, packet title
+- “Download ZIP” button to GET download route
+- This is the immutable history (do NOT mutate when packet changes later)
+
+Also add “Add to Exhibit Packet” in Evidence module (optional enhancement)
+- Keep existing “Add to Exhibit” but point it to exhibit packets/items model:
+  - select packet + exhibit within packet
+
+----------------------------------------
+6) ACCEPTANCE TESTS
+----------------------------------------
+
+1) Create packet “Motion Exhibits”
+2) Add Exhibit A and Exhibit B
+3) Add 2 evidence files to Exhibit A (set order), 1 file to Exhibit B
+4) Generate ZIP
+5) Download ZIP
+- ZIP contains Cover, Index, and both exhibit folders
+- Each folder contains cover + evidence files in correct order
+6) Change packet (add another evidence) and generate again
+- History shows two generated packets
+- Older ZIP remains unchanged
+
+----------------------------------------
+7) IMPORTANT UX COPY (non-UPL)
+----------------------------------------
+Packet description in Exhibits page:
+“Build exhibit packets for a filing. You control what is included and the order. Civilla organizes your materials; it does not file documents for you.”
+
+----------------------------------------
+DELIVERABLES
+- Implement the above with detailed commit summary.
+- Include file list changed and routes added.
+- Confirm ZIP generation works end-to-end.

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { getLexiHelp, type LexiHelpContent } from "@/lib/lexiHelpContent";
-import { HelpCircle, MessageSquare, Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -9,6 +8,14 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { LexiThread, LexiMessage } from "@shared/schema";
 
 const OPEN_KEY = "civilla_lexi_open_v1";
+
+const SUGGESTED_QUESTIONS = [
+  "What are deadlines I should know about in family court?",
+  "How do I organize evidence for my case?",
+  "What is discovery and how does it work?",
+  "How do I respond to a motion?",
+  "What documents do I need for child custody?",
+];
 
 function getRouteKey(path: string): string {
   if (path.includes("/dashboard")) return "dashboard";
@@ -91,23 +98,16 @@ function containsDeadlineInfo(content: string): boolean {
 export default function LexiPanel() {
   const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"help" | "chat">("help");
   const [input, setInput] = useState("");
-  const [selectedDocKey, setSelectedDocKey] = useState<string | undefined>();
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [showThreadList, setShowThreadList] = useState(false);
   const [currentModuleKey, setCurrentModuleKey] = useState<string | undefined>();
   const [pendingAsk, setPendingAsk] = useState<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string } | null>(null);
 
   const endRef = useRef<HTMLDivElement | null>(null);
-  const title = useMemo(() => "Lexi", []);
-  const routeKey = getRouteKey(location);
+  const title = "Lexi";
   const caseId = extractCaseId(location);
   const { toast } = useToast();
-
-  const helpContent: LexiHelpContent = useMemo(() => {
-    return getLexiHelp({ routeKey, selectedDocKey });
-  }, [routeKey, selectedDocKey]);
 
   const { data: disclaimerData } = useQuery<{ disclaimer: string; welcome: string }>({
     queryKey: ["/api/lexi/disclaimer"],
@@ -116,14 +116,14 @@ export default function LexiPanel() {
 
   const { data: threadsData, isLoading: threadsLoading } = useQuery<{ threads: LexiThread[] }>({
     queryKey: caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"],
-    enabled: open && mode === "chat",
+    enabled: open,
   });
 
   const threads = threadsData?.threads ?? [];
 
   const { data: messagesData, isLoading: messagesLoading } = useQuery<{ messages: LexiMessage[] }>({
     queryKey: ["/api/lexi/threads", activeThreadId, "messages"],
-    enabled: open && mode === "chat" && !!activeThreadId,
+    enabled: open && !!activeThreadId,
   });
 
   const messages = messagesData?.messages ?? [];
@@ -193,16 +193,12 @@ export default function LexiPanel() {
   }, [open]);
 
   useEffect(() => {
-    if (open && mode === "chat") endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [open, messages.length, mode]);
+    if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [open, messages.length]);
 
   useEffect(() => {
-    const handleOpenHelp = (e: CustomEvent<{ docKey?: string }>) => {
+    const handleOpenHelp = () => {
       setOpen(true);
-      setMode("help");
-      if (e.detail?.docKey) {
-        setSelectedDocKey(e.detail.docKey);
-      }
     };
 
     window.addEventListener("openLexiHelp" as any, handleOpenHelp);
@@ -212,12 +208,11 @@ export default function LexiPanel() {
   }, []);
 
   useEffect(() => {
-    const handleLexiAsk = (e: CustomEvent<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string; caseId?: string }>) => {
+    const handleLexiAsk = (e: CustomEvent<{ text: string; mode?: "research"; moduleKey?: string; caseId?: string }>) => {
       const { text, mode: requestedMode, moduleKey } = e.detail || {};
       if (!text) return;
       
       setOpen(true);
-      setMode("chat");
       setInput(text);
       setCurrentModuleKey(moduleKey);
       
@@ -239,10 +234,6 @@ export default function LexiPanel() {
       setPendingAsk(null);
     }
   }, [pendingAsk, activeThreadId, sendMessageMutation]);
-
-  useEffect(() => {
-    setSelectedDocKey(undefined);
-  }, [location]);
 
   useEffect(() => {
     if (threads.length > 0 && !activeThreadId) {
@@ -385,7 +376,7 @@ export default function LexiPanel() {
               <div>
                 <p className="font-heading font-semibold text-neutral-darkest leading-tight">{title}</p>
                 <p className="font-sans text-xs text-neutral-darkest/60 leading-tight">
-                  {mode === "help" ? "Contextual help" : "Ask questions"}
+                  Your legal education assistant
                 </p>
               </div>
             </div>
@@ -409,66 +400,7 @@ export default function LexiPanel() {
             </div>
           )}
 
-          <div className="flex border-b border-neutral-light shrink-0">
-            <button
-              type="button"
-              onClick={() => setMode("help")}
-              className={[
-                "flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors",
-                mode === "help"
-                  ? "text-primary border-b-2 border-primary bg-primary/5"
-                  : "text-neutral-darkest/60 hover:text-neutral-darkest",
-              ].join(" ")}
-              data-testid="lexi-mode-help"
-            >
-              <HelpCircle className="w-4 h-4" />
-              Help
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("chat")}
-              className={[
-                "flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors",
-                mode === "chat"
-                  ? "text-primary border-b-2 border-primary bg-primary/5"
-                  : "text-neutral-darkest/60 hover:text-neutral-darkest",
-              ].join(" ")}
-              data-testid="lexi-mode-chat"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Chat
-            </button>
-          </div>
-
-          {mode === "help" ? (
-            <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
-              <div className="space-y-4">
-                <h3 className="font-heading font-semibold text-lg text-neutral-darkest">
-                  {helpContent.title}
-                </h3>
-                {helpContent.paragraphs.map((p, idx) => (
-                  <p key={idx} className="font-sans text-sm text-neutral-darkest/80 leading-relaxed">
-                    {p}
-                  </p>
-                ))}
-                {helpContent.bullets && helpContent.bullets.length > 0 && (
-                  <ul className="space-y-2 mt-3">
-                    {helpContent.bullets.map((b, idx) => (
-                      <li key={idx} className="font-sans text-sm text-neutral-darkest/70 flex items-start gap-2">
-                        <span className="text-primary mt-0.5">•</span>
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="mt-6 pt-4 border-t border-neutral-light">
-                  <p className="font-sans text-xs text-neutral-darkest/50 italic">
-                    This information is for educational purposes only. Always consult your court's local rules and procedures.
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : showThreadList ? (
+          {showThreadList ? (
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className="px-4 py-3 border-b border-neutral-light flex items-center justify-between gap-2">
                 <p className="font-sans text-sm font-medium text-neutral-darkest">Conversations</p>
@@ -585,9 +517,29 @@ export default function LexiPanel() {
                 <>
                   <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
                     {messages.length === 0 && (
-                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
-                        {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
-                      </div>
+                      <>
+                        <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
+                          {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
+                        </div>
+                        <div className="mt-4">
+                          <p className="text-xs font-medium text-neutral-darkest/60 mb-2">Suggested questions:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {SUGGESTED_QUESTIONS.map((q, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  setInput(q);
+                                }}
+                                className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors"
+                                data-testid={`suggested-question-${idx}`}
+                              >
+                                {q}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
                     )}
                     {messages.map((m) => {
                       const meta = m.metadata as { intent?: LexiIntent; refused?: boolean; hadSources?: boolean } | null;
