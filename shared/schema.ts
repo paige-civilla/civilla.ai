@@ -185,6 +185,32 @@ export const timelineEventCategories = [
 
 export type TimelineEventCategory = typeof timelineEventCategories[number];
 
+export const timelineCategories = pgTable("timeline_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#628286"),
+  isSystem: boolean("is_system").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("timeline_categories_user_idx").on(table.userId),
+  uniqueUserName: uniqueIndex("timeline_categories_unique_user_name_idx").on(table.userId, table.name),
+}));
+
+export const insertTimelineCategorySchema = z.object({
+  name: z.string().min(1, "Name is required").max(60, "Name must be 60 characters or less"),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color must be a valid hex color").default("#628286"),
+});
+
+export const updateTimelineCategorySchema = z.object({
+  name: z.string().min(1).max(60).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+});
+
+export type InsertTimelineCategory = z.infer<typeof insertTimelineCategorySchema>;
+export type UpdateTimelineCategory = z.infer<typeof updateTimelineCategorySchema>;
+export type TimelineCategory = typeof timelineCategories.$inferSelect;
+
 export const timelineEvents = pgTable("timeline_events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -192,6 +218,7 @@ export const timelineEvents = pgTable("timeline_events", {
   eventDate: timestamp("event_date").notNull(),
   title: text("title").notNull(),
   category: text("category").notNull(),
+  categoryId: varchar("category_id"),
   notes: text("notes"),
   source: text("source").notNull().default("user_manual"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -199,21 +226,17 @@ export const timelineEvents = pgTable("timeline_events", {
 }, (table) => ({
   caseEventDateIdx: index("timeline_case_event_date_idx").on(table.caseId, table.eventDate),
   userIdx: index("timeline_user_idx").on(table.userId),
+  categoryIdx: index("timeline_category_id_idx").on(table.categoryId),
 }));
 
-export const insertTimelineEventSchema = createInsertSchema(timelineEvents)
-  .pick({
-    eventDate: true,
-    title: true,
-    category: true,
-    notes: true,
-  })
-  .extend({
-    title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
-    category: z.enum(timelineEventCategories, { required_error: "Category is required" }),
-    eventDate: z.coerce.date({ required_error: "Event date is required" }),
-    notes: z.string().optional(),
-  });
+export const insertTimelineEventSchema = z.object({
+  title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
+  category: z.string().optional().default("other"),
+  categoryId: z.string().optional().nullable(),
+  eventDate: z.coerce.date({ required_error: "Event date is required" }),
+  notes: z.string().optional(),
+  source: z.string().optional().default("user_manual"),
+});
 
 export type InsertTimelineEvent = z.infer<typeof insertTimelineEventSchema>;
 export type TimelineEvent = typeof timelineEvents.$inferSelect;
