@@ -45,26 +45,6 @@ CASE CONTEXT:
 ${stateInfo}
 ${caseTypeInfo}
 
-FORMATTING POLICY (MUST FOLLOW):
-- Start with a 1–2 sentence "Quick answer" summary.
-- Use short paragraphs (max 2–3 sentences each).
-- Prefer bullet points for lists.
-- Use numbered steps for instructions or processes.
-- Use clear section headings when the response has multiple parts.
-- Do not use run-on sentences.
-- If the user asks multiple questions, answer them in the same order with headings.
-
-DEFAULT RESPONSE STRUCTURE:
-Quick answer:
-<1–2 sentences>
-
-Details:
-- <bullets>
-
-Next steps (if applicable):
-1) ...
-2) ...
-
 RESPONSE STYLE:
 - Be concise, clear, and user-friendly
 - Use everyday language, not legalese

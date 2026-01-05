@@ -4490,7 +4490,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
       }
 
-      const { threadId, message, stateOverride } = parsed.data;
+      const { threadId, message, stateOverride, stylePreset, fastMode } = parsed.data;
       const effectiveCaseId = parsed.data.caseId || null;
 
       let caseRecord = null;
@@ -4556,27 +4556,58 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       );
 
       const existingMessages = await storage.listLexiMessages(userId, threadId);
-      const systemPrompt = buildLexiSystemPrompt({
+      const baseSystemPrompt = buildLexiSystemPrompt({
         state: stateOverride || caseRecord?.state || undefined,
         county: caseRecord?.county || undefined,
         caseType: caseRecord?.caseType || undefined,
       });
 
+      const formattingPolicies: Record<string, string> = {
+        bullets: `FORMATTING POLICY (MUST FOLLOW):
+- Start with "Quick answer:" (1–2 sentences).
+- Then "Details:" using bullet points.
+- Use short paragraphs (max 2 sentences).
+- If steps are needed, use a short numbered list.
+- Avoid run-on text.`,
+        steps: `FORMATTING POLICY (MUST FOLLOW):
+- Start with "Quick answer:" (1–2 sentences).
+- Then "Steps:" as a numbered list (1–8 steps max).
+- Include brief bullets under a step only if necessary.
+- Keep each step to 1–2 sentences.`,
+        short: `FORMATTING POLICY (MUST FOLLOW):
+- Respond in 5 bullets max.
+- No extra sections unless asked.
+- Be direct. No long explanations.`,
+        detailed: `FORMATTING POLICY (MUST FOLLOW):
+- Start with "Quick answer:" (1–2 sentences).
+- Then headings: "Key points", "Examples", "Next steps".
+- Use bullets heavily.
+- Keep paragraphs short.`,
+      };
+
+      const activeStyle = stylePreset || "bullets";
+      const formattingPolicy = formattingPolicies[activeStyle] || formattingPolicies.bullets;
+      const systemPrompt = `${baseSystemPrompt}\n\n${formattingPolicy}`;
+
       const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
       ];
 
-      for (const msg of existingMessages.slice(-20)) {
+      const messageLimit = fastMode ? 10 : 20;
+      for (const msg of existingMessages.slice(-messageLimit)) {
         if (msg.role === "user" || msg.role === "assistant") {
           chatHistory.push({ role: msg.role, content: msg.content });
         }
       }
 
+      const temperature = fastMode ? 0.2 : 0.3;
+      const maxTokens = fastMode ? 450 : 1024;
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4.1",
         messages: chatHistory,
-        temperature: 0.3,
-        max_completion_tokens: 1024,
+        temperature,
+        max_completion_tokens: maxTokens,
       });
 
       let assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
