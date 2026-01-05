@@ -29,6 +29,7 @@ import { prependDisclaimerIfNeeded } from "./lexi/format";
 import { extractSourcesFromContent } from "./lexi/sources";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
+import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -927,6 +928,15 @@ export async function registerRoutes(
         notes,
       });
 
+      enqueueEvidenceExtraction({
+        userId,
+        caseId,
+        evidenceId: file.id,
+        storageKey,
+        mimeType,
+        originalFilename: req.file.originalname,
+      });
+
       res.status(201).json({ file });
     } catch (error) {
       console.error("Upload evidence error:", error);
@@ -1131,6 +1141,86 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete evidence note error:", error);
       res.status(500).json({ error: "Failed to delete evidence note" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
+      if (!extraction) {
+        const isProcessing = isExtractionRunning(evidenceId);
+        return res.json({
+          status: isProcessing ? "processing" : "not_started",
+          extractedTextPreview: null,
+          meta: null,
+          errorMessage: null,
+          updatedAt: null,
+        });
+      }
+
+      const textPreview = extraction.extractedText
+        ? extraction.extractedText.slice(0, 2000)
+        : null;
+
+      res.json({
+        status: extraction.status,
+        extractedTextPreview: textPreview,
+        extractedTextFull: extraction.extractedText,
+        meta: extraction.metadata,
+        errorMessage: extraction.error,
+        updatedAt: extraction.updatedAt,
+      });
+    } catch (error) {
+      console.error("Get extraction error:", error);
+      res.status(500).json({ error: "Failed to get extraction" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      if (isExtractionRunning(evidenceId)) {
+        return res.json({ ok: true, message: "Extraction already in progress" });
+      }
+
+      enqueueEvidenceExtraction({
+        userId,
+        caseId,
+        evidenceId,
+        storageKey: file.storageKey,
+        mimeType: file.mimeType,
+        originalFilename: file.originalName,
+      });
+
+      res.json({ ok: true, message: "Extraction started" });
+    } catch (error) {
+      console.error("Run extraction error:", error);
+      res.status(500).json({ error: "Failed to start extraction" });
     }
   });
 

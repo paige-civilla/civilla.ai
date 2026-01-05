@@ -1,0 +1,229 @@
+REPLIT TASK: Implement BOTH (1) Trial Prep module UI page + (2) “Add to Trial Prep” buttons in Evidence, Timeline, Communications, and Documents.
+
+GOAL
+- Build a real Trial Prep module page that consumes the existing backend endpoints:
+  - GET/POST /api/cases/:caseId/trial-prep-shortlist
+  - PATCH/DELETE /api/trial-prep-shortlist/:itemId
+- Add “Add to Trial Prep” actions across modules to create shortlist items.
+- Ensure no duplicates (backend unique index already exists), show a clean user message if they try to add the same thing twice.
+
+========================
+A) ROUTING + NAV + MODULE FLOW
+========================
+
+1) Add a Trial Prep page route
+- File: client/src/App.tsx
+  - Import: AppTrialPrep from "@/pages/AppTrialPrep"
+  - Add routes:
+    - <Route path="/app/trial-prep/:caseId" component={AppTrialPrep} />
+    - <Route path="/app/trial-prep">{() => <CaseRedirect targetPath="trial-prep" />}</Route>
+
+2) Update CaseRedirect type
+- File: client/src/components/CaseRedirect.tsx
+  - Add "trial-prep" to the targetPath union/type list if needed.
+
+3) Add module definition
+- File: client/src/lib/modules.ts
+  - Add:
+    {
+      key: "trial-prep",
+      label: "Trial Prep",
+      description: "Build your trial binder and shortlist your strongest items.",
+      href: (caseId) => `/app/trial-prep/${caseId}`,
+      icon: (choose a good lucide icon, e.g. Briefcase or ClipboardList),
+      group: "core",
+    }
+
+4) Add to case flow + ordering
+- File: client/src/lib/caseFlow.ts
+  - Add "trial-prep" to the module key type + CASE_FLOW order.
+  - Recommended order (based on your stated “case flow”):
+    Evidence
+    Timeline
+    Communications (rename later if needed)
+    Disclosures & Discovery
+    Document Library
+    Document Creator (Documents)
+    Exhibits
+    Parenting Plan (if present)
+    Deadlines
+    Case To-Do
+    Contacts
+    Pattern Analysis
+    Trial Prep
+    Child Support (gated by children, keep last)
+  - Ensure menu order matches dashboard order by using the same shared list.
+
+5) Add tile to Dashboard + Navbar
+- File: client/src/pages/AppDashboard.tsx
+  - Add Trial Prep tile near the end (after Pattern Analysis, before Child Support).
+- File: client/src/components/layout/AppNavbar.tsx
+  - Add Trial Prep item in the same order list you use for dashboard.
+
+========================
+B) BUILD Trial Prep PAGE UI (AppTrialPrep.tsx)
+========================
+
+Create file: client/src/pages/AppTrialPrep.tsx
+
+UI REQUIREMENTS
+- Uses AppLayout and module intro like others.
+- Pulls caseId from params.
+- Lists shortlist items grouped by binderSection with tabs or an accordion.
+- Can create a manual item (sourceType="manual") with title + summary + binderSection + importance + tags + color + pinned.
+- Supports editing an item (PATCH).
+- Supports deleting an item (DELETE).
+- Supports pin/unpin and importance slider/selector.
+- Tags: simple comma-separated input -> JSON array.
+- Color: small palette picker (use the same approach as calendar categories).
+
+DATA + QUERIES
+- useQuery:
+  - GET /api/cases/:caseId/trial-prep-shortlist  -> { items: TrialPrepShortlist[] }
+- useMutation:
+  - POST /api/cases/:caseId/trial-prep-shortlist
+  - PATCH /api/trial-prep-shortlist/:itemId
+  - DELETE /api/trial-prep-shortlist/:itemId
+- Invalidate the shortlist query after each mutation.
+
+BINDER SECTIONS
+Use the binderSectionValues already added in shared/schema.ts (do NOT hardcode random strings).
+Render grouping by binderSection with counts.
+
+EMPTY STATES
+- If no items: show “Your trial shortlist is empty” + button “Add a manual item”.
+- On each section empty: “No items in this section yet”.
+
+VISUAL
+- Follow the current app theme.
+- Cards for items with:
+  - Title
+  - Summary (truncate with expand)
+  - Source badge (Evidence / Timeline / Communication / Document / Manual)
+  - Binder section tag
+  - Importance (1–5)
+  - Tags chips
+  - Pin icon toggle
+  - Edit / Delete actions
+
+EDIT MODAL
+- Opens a dialog to edit:
+  title, summary, binderSection, importance, tags, color, isPinned
+- PATCH on save.
+
+MANUAL ADD MODAL
+- Dialog form with required title
+- POST with sourceType="manual", sourceId null/empty (or omit), plus other fields.
+
+IMPORTANT: If backend expects sourceId always, send empty string or null consistently with what schema allows. If schema requires sourceId, use sourceId="manual" + sourceType="manual" and rely on uniqueness across sourceType+sourceId. If you must do that, include a random uuid for sourceId on the client.
+
+========================
+C) ADD “Add to Trial Prep” BUTTONS ACROSS MODULES
+========================
+
+You will add a small action button on each item card in these modules:
+- Evidence
+- Timeline
+- Communications
+- Documents (Drafts / Generated docs)
+Optional later: Disclosures, Exhibits, Parenting Plan.
+
+1) Evidence Page
+- File: client/src/pages/AppEvidence.tsx
+- Add button on each evidence file card:
+  Label: “Add to Trial Prep”
+- On click:
+  POST /api/cases/:caseId/trial-prep-shortlist with:
+    sourceType: "evidence"
+    sourceId: evidence.id
+    title: evidence.title OR filename
+    summary: evidence.notes OR empty
+    binderSection: (default) "Key Evidence"
+    importance: 3
+    tags: ["evidence"]
+    color: (optional) null
+    isPinned: false
+- On success: toast “Added to Trial Prep”
+- If duplicate (unique violation): toast “Already in Trial Prep”
+  - Detect by status code/message. If backend returns 409, handle that. If it returns 500, adjust backend to return 409 on duplicate.
+
+2) Timeline Page
+- File: client/src/pages/AppTimeline.tsx
+- Add button on each timeline event card:
+  POST with:
+    sourceType: "timeline"
+    sourceId: timelineEvent.id
+    title: timelineEvent.title
+    summary: timelineEvent.notes
+    binderSection: "Timeline Highlights"
+    importance: 3
+    tags: ["timeline"]
+- Same toast behaviors.
+
+3) Communications Page
+- File: client/src/pages/AppCommunications.tsx
+- Add button on each communication entry:
+  POST with:
+    sourceType: "communication"
+    sourceId: comm.id
+    title: `${comm.type}: ${comm.subject || comm.contactName || "Communication"}`
+    summary: comm.notes or comm.summary
+    binderSection: "Communications"
+    importance: 3
+    tags: ["communication"]
+- Same toast behaviors.
+
+4) Documents Page (Drafts + Generated)
+- File: client/src/pages/AppDocuments.tsx
+- Add button on each draft card and generated doc card:
+  POST with:
+    sourceType: "document"
+    sourceId: doc.id
+    title: doc.title
+    summary: doc.description/notes if any
+    binderSection: "Pleadings"
+    importance: 3
+    tags: ["document"]
+
+========================
+D) BACKEND DUPLICATE HANDLING (IMPORTANT UX)
+========================
+
+If the backend currently throws on duplicate insert due to the unique index:
+- Update the POST route in server/routes.ts for creating shortlist item:
+  - Catch unique violation error and return:
+    status 409
+    { ok:false, error:"duplicate" }
+This makes the frontend UX clean and predictable.
+
+========================
+E) ACCEPTANCE TESTS
+========================
+
+1) Trial Prep page
+- Navigate to /app/trial-prep/:caseId
+- Add manual item -> appears in list
+- Edit item -> updates instantly
+- Pin item -> moves to top of section
+- Delete item -> removed
+
+2) Cross-module add
+- Evidence -> click Add to Trial Prep -> appears under Key Evidence
+- Timeline -> appears under Timeline Highlights
+- Communications -> appears under Communications
+- Documents -> appears under Pleadings
+- Clicking Add twice -> shows “Already in Trial Prep”, does not create duplicate
+
+3) Styling / mobile
+- Buttons are min-h-[44px] on mobile
+- Modals usable at 320px width
+
+========================
+F) DELIVERABLE: FINAL SUMMARY
+========================
+After implementing, output a summary with:
+- Files changed
+- Routes added/updated
+- Where the “Add to Trial Prep” buttons were inserted (exact component sections)
+- What binderSection defaults were used per module
+- What happens on duplicate (409) and how it’s displayed to user

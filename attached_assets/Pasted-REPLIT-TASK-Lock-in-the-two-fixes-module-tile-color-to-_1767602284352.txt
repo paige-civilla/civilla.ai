@@ -1,0 +1,51 @@
+REPLIT TASK: Lock in the two fixes (module tile color to #C3D5D7 + Create First Case button) and verify no remaining hardcoded tile colors.
+
+A) VERIFY + NORMALIZE MODULE TILE COLOR
+1) Repo-wide search:
+- Search for any remaining hardcoded tile backgrounds:
+  - bg-[#E4ECED]
+  - bg-[#A2BEC2]
+  - bg-[#EFF3F4]
+  - bg-muted (when used for tiles)
+2) Replace tile backgrounds to use the CSS token instead of hex:
+- Use a single class for module tiles everywhere, e.g.:
+  - bg-[hsl(var(--module-tile))]
+  - hover:bg-[hsl(var(--module-tile-hover))]
+  - border-[hsl(var(--border))]
+This ensures switching the color in index.css updates all tiles consistently.
+
+3) Confirm the module tile background is visually #C3D5D7 on:
+- Dashboard tiles
+- Case workspace tiles
+- Start Here page cards (if they use tile styling)
+- Any “empty state” cards that are intended to match tiles
+
+B) FIX + VERIFY “CREATE YOUR FIRST CASE” FLOW
+1) In client/src/pages/AppCases.tsx ensure:
+- When noCases && !showForm: show the empty-state welcome card with the Create Your Case button.
+- When noCases && showForm: render the FULL create-case form inline (not hidden behind !noCases).
+- When user submits successfully: navigate to the newly created case dashboard route.
+
+2) Confirm correct route:
+- Check client/src/App.tsx for the actual dashboard route pattern.
+- If it is /app/dashboard/:caseId then navigate there.
+- If it is different, update navigation to match the real route.
+
+3) Acceptance tests:
+- Brand-new user (0 cases):
+  - sees empty state
+  - clicks Create Your Case
+  - form appears
+  - submit creates case
+  - user is redirected to the correct case dashboard page
+- Existing user (>=1 case):
+  - cases list shows
+  - Create new case section still works
+  - redirect after creation works
+
+C) OUTPUT A DETAILED SUMMARY
+After completing, report:
+- Every file changed
+- Every location where a hardcoded tile color was replaced
+- The exact route you redirect to after creation
+- A note confirming the empty state now shows the form when showForm is true

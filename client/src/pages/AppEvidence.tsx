@@ -58,6 +58,30 @@ function getFileIcon(mimeType: string) {
   return File;
 }
 
+interface ExtractionData {
+  status: string;
+  extractedTextPreview: string | null;
+  extractedTextFull: string | null;
+  meta: Record<string, unknown> | null;
+  errorMessage: string | null;
+  updatedAt: string | null;
+}
+
+function ExtractionStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "complete":
+      return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200"><Check className="w-3 h-3 mr-1" />Extracted</Badge>;
+    case "processing":
+      return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Processing</Badge>;
+    case "failed":
+      return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200"><AlertTriangle className="w-3 h-3 mr-1" />Failed</Badge>;
+    case "queued":
+      return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200"><Loader2 className="w-3 h-3 mr-1" />Queued</Badge>;
+    default:
+      return null;
+  }
+}
+
 export default function AppEvidence() {
   const [, setLocation] = useLocation();
   const params = useParams<{ caseId: string }>();
@@ -81,6 +105,8 @@ export default function AppEvidence() {
   const [processingJobs, setProcessingJobs] = useState<Record<string, { status: string; progress: number }>>({});
   const [anchorForm, setAnchorForm] = useState<{ text: string; notes: string; tags: string }>({ text: "", notes: "", tags: "" });
   const [editingAnchorId, setEditingAnchorId] = useState<string | null>(null);
+  const [extractionViewFileId, setExtractionViewFileId] = useState<string | null>(null);
+  const [extractionStatuses, setExtractionStatuses] = useState<Record<string, ExtractionData>>({});
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -129,6 +155,31 @@ export default function AppEvidence() {
     enabled: !!textExtractFileId && !!caseId,
   });
 
+  const { data: extractionData, refetch: refetchExtraction } = useQuery<ExtractionData>({
+    queryKey: ["/api/cases", caseId, "evidence", extractionViewFileId, "extraction"],
+    enabled: !!extractionViewFileId && !!caseId,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (data && (data.status === "processing" || data.status === "queued")) {
+        return 5000;
+      }
+      return false;
+    },
+  });
+
+  const retryExtractionMutation = useMutation({
+    mutationFn: async (evidenceId: string) => {
+      return apiRequest("POST", `/api/cases/${caseId}/evidence/${evidenceId}/extraction/run`);
+    },
+    onSuccess: (_, evidenceId) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", evidenceId, "extraction"] });
+      toast({ title: "Extraction started", description: "Text extraction is now processing." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to start extraction", variant: "destructive" });
+    },
+  });
+
   const ocrJob = ocrJobData?.job;
   const ocrPages = ocrPagesData?.pages || [];
   const anchors = anchorsData?.anchors || [];
@@ -162,6 +213,32 @@ export default function AppEvidence() {
       setLocation("/app/cases");
     }
   }, [caseLoading, currentCase, caseId, setLocation]);
+
+  useEffect(() => {
+    if (!caseId || rawFiles.length === 0) return;
+
+    const fetchExtractionStatuses = async () => {
+      const statuses: Record<string, ExtractionData> = {};
+      for (const file of rawFiles) {
+        try {
+          const res = await fetch(`/api/cases/${caseId}/evidence/${file.id}/extraction`, { credentials: "include" });
+          if (res.ok) {
+            statuses[file.id] = await res.json();
+          }
+        } catch {
+        }
+      }
+      setExtractionStatuses(statuses);
+    };
+
+    fetchExtractionStatuses();
+
+    const hasProcessing = Object.values(extractionStatuses).some(s => s.status === "processing" || s.status === "queued");
+    if (hasProcessing) {
+      const interval = setInterval(fetchExtractionStatuses, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [caseId, rawFiles.length]);
 
   const updateMutation = useMutation({
     mutationFn: async ({ evidenceId, data }: { evidenceId: string; data: { category?: string; description?: string; tags?: string } }) => {
@@ -702,6 +779,9 @@ export default function AppEvidence() {
                                 {getCategoryLabel(file.category)}
                               </span>
                             )}
+                            {extractionStatuses[file.id] && extractionStatuses[file.id].status !== "not_started" && (
+                              <ExtractionStatusBadge status={extractionStatuses[file.id].status} />
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -770,6 +850,31 @@ export default function AppEvidence() {
                               >
                                 <FileSearch className="w-4 h-4" />
                               </Button>
+                              {extractionStatuses[file.id]?.status === "complete" && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => setExtractionViewFileId(file.id)}
+                                  data-testid={`button-view-extraction-${file.id}`}
+                                  title="View extracted text"
+                                  className="text-green-600"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {extractionStatuses[file.id]?.status === "failed" && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => retryExtractionMutation.mutate(file.id)}
+                                  disabled={retryExtractionMutation.isPending}
+                                  data-testid={`button-retry-extraction-${file.id}`}
+                                  title="Retry text extraction"
+                                  className="text-red-600"
+                                >
+                                  <AlertTriangle className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1380,6 +1485,43 @@ export default function AppEvidence() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!extractionViewFileId} onOpenChange={(open) => !open && setExtractionViewFileId(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Extracted Text</DialogTitle>
+          </DialogHeader>
+          {extractionViewFileId && extractionStatuses[extractionViewFileId] ? (
+            <div className="flex-1 overflow-hidden flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ExtractionStatusBadge status={extractionStatuses[extractionViewFileId].status} />
+                {extractionStatuses[extractionViewFileId].meta && (() => {
+                  const meta = extractionStatuses[extractionViewFileId].meta as Record<string, unknown>;
+                  const parts: string[] = [];
+                  if (meta.pagesProcessed) parts.push(`${meta.pagesProcessed} pages processed`);
+                  if (meta.usedOcr) parts.push("OCR");
+                  if (meta.usedNativeText) parts.push("Native PDF");
+                  return parts.length > 0 ? <span>{parts.join(" | ")}</span> : null;
+                })()}
+              </div>
+              <ScrollArea className="flex-1 max-h-[60vh]">
+                <pre className="text-sm whitespace-pre-wrap font-mono p-4 bg-muted rounded-lg" data-testid="text-extracted-content">
+                  {extractionStatuses[extractionViewFileId].extractedTextFull || extractionStatuses[extractionViewFileId].extractedTextPreview || "No text extracted"}
+                </pre>
+              </ScrollArea>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              Loading...
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtractionViewFileId(null)} data-testid="button-close-extraction-modal">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
