@@ -1,0 +1,272 @@
+REPLIT TASK: Evidence Module “Next Iteration” (C3) — Notes + AI Analysis + Cross-Module Actions
+
+CONTEXT
+C1+C2 are done:
+- Evidence upload + extraction pipeline (native text + OCR via Vision REST API key)
+- evidence_extractions table + UI status + modal
+- Durable queue + concurrency + security checks
+
+NOW BUILD C3:
+1) Evidence Notes (highlight-style notes tied to an evidence file)
+2) Evidence AI Analysis (Lexi analyzes extracted text + notes; stores structured findings)
+3) Cross-module actions:
+   - Add Note to Exhibit List (as a “snippet exhibit”)
+   - Add Note to Trial Prep Shortlist (binder sections)
+   - Add Note to Timeline (optional)
+4) Pattern Analysis must include AI findings + counts (not just deadlines/tasks/comms)
+
+HARD REQUIREMENTS
+- Must work even if extraction is still processing (disable AI analyze button until extractedText exists)
+- Must NOT require a caseId to use Lexi generally, but Evidence AI Analysis DOES require caseId/evidenceId because it stores results
+- Ownership checks everywhere: user owns caseId, evidence belongs to caseId, note belongs to evidenceId
+- UI must be mobile-friendly, use existing spacing/tokens, and match current app theme tokens
+- Keep Lexi scope: EDUCATIONAL + ORGANIZATIONAL + RESEARCH (and avoid UPL; no outcome prediction; no “you should file X”)
+
+========================
+A) DATA MODEL UPDATES
+========================
+
+1) Ensure evidence_notes table supports:
+- id (uuid)
+- userId, caseId, evidenceId (uuid)
+- title (text, optional)
+- noteText (text, required)
+- pageNumber (int, nullable)
+- timestamp (text, nullable)
+- quote (text, nullable)  // optional copied excerpt from extracted text (user-selected)
+- tags (jsonb text[], default [])
+- createdAt, updatedAt
+
+2) Ensure evidence_ai_analyses table supports:
+- id (uuid)
+- userId, caseId, evidenceId
+- status: queued|processing|complete|failed
+- model (text)
+- summary (text)
+- findings (jsonb)  // structured output described below
+- createdAt, updatedAt
+- error (text nullable)
+
+3) Add “snippet exhibits” support WITHOUT breaking existing exhibits:
+- Add a new table exhibit_snippets:
+  id (uuid), userId, caseId, exhibitListId (uuid), evidenceId (uuid),
+  noteId (uuid nullable),
+  title (text),
+  snippetText (text),
+  pageNumber (int nullable),
+  timestamp (text nullable),
+  createdAt
+- This table represents the “cover page / snippet page” concept and lets a user include notes/snippets even if they do not want the entire evidence file.
+- Keep existing exhibit_evidence table for attaching whole files.
+
+4) Trial Prep shortlist already exists and is updated. We will use:
+sourceType = "evidence_note"
+sourceId = noteId
+title/summary/binderSection/importance/tags/color/isPinned
+
+DB INIT
+- Update server/db.ts table creation to include exhibit_snippets if not exists.
+- No destructive migrations unless required; if you must, write safe migration logic.
+
+========================
+B) BACKEND ROUTES
+========================
+
+1) NOTES CRUD (scoped to case/evidence)
+Routes (requireAuth):
+GET    /api/cases/:caseId/evidence/:evidenceId/notes
+POST   /api/cases/:caseId/evidence/:evidenceId/notes
+PATCH  /api/cases/:caseId/evidence/:evidenceId/notes/:noteId
+DELETE /api/cases/:caseId/evidence/:evidenceId/notes/:noteId
+
+POST body:
+{ title?, noteText, pageNumber?, timestamp?, quote?, tags?[] }
+
+PATCH body:
+{ title?, noteText?, pageNumber?, timestamp?, quote?, tags?[] }
+
+2) AI ANALYSIS
+Routes (requireAuth):
+GET  /api/cases/:caseId/evidence/:evidenceId/ai-analysis   // returns latest analysis (or null)
+POST /api/cases/:caseId/evidence/:evidenceId/ai-analysis/run
+
+Behavior:
+- If extraction is missing or status != complete, return 409 with {error:"extraction_not_ready"}
+- On run:
+  - Create analysis row status=processing
+  - Build prompt from:
+    - extractedText (capped to a reasonable token limit; include metadata like pages + OCR/native)
+    - user notes list (titles + text + page/timestamp)
+    - case metadata (state/county optional) ONLY for context labeling, not advice
+  - Call OpenAI using your existing Lexi guardrails system:
+    - intent: research|organize|educate (this one = organize + educate)
+    - explicit instruction: no legal advice, no strategy, no predictions
+  - Store:
+    - summary: 5-10 bullets maximum
+    - findings: JSON structured as:
+
+findings = {
+  keyThemes: string[],
+  timelineCandidates: Array<{ title:string, dateHint?:string, source:"text"|"note", confidence:"low"|"med"|"high", quote?:string, pageNumber?:number }>,
+  potentialContradictions: Array<{ description:string, supportingQuotes:string[], pageNumbers?:number[] }>,
+  communicationPatterns: Array<{ label:string, evidence:string[], notesRef?:string[] }>,
+  riskFlags: Array<{ label:string, description:string, verifyWithOriginal:boolean }>,
+  courtTermsToResearch: Array<{ term:string, why:string }>
+}
+
+- status complete/failed accordingly.
+
+3) CROSS-MODULE ACTION ROUTES
+
+A) Add Note -> Exhibit List
+POST /api/cases/:caseId/exhibit-lists/:listId/snippets
+Body:
+{ evidenceId, noteId?, title, snippetText, pageNumber?, timestamp? }
+
+GET /api/cases/:caseId/exhibit-lists/:listId/snippets
+
+DELETE /api/cases/:caseId/exhibit-lists/:listId/snippets/:snippetId
+
+Ownership checks:
+- listId belongs to caseId/userId
+- evidenceId belongs to caseId/userId
+- noteId (if provided) belongs to that evidenceId/userId
+
+B) Add Note -> Trial Prep Shortlist
+POST /api/cases/:caseId/trial-prep-shortlist/from-note
+Body:
+{ noteId, binderSection, importance?, tags?[], color?, isPinned? }
+
+This should create (or upsert) shortlist item with:
+sourceType="evidence_note", sourceId=noteId
+title = note.title || first 60 chars of noteText
+summary = note.noteText (truncated safely) + page/timestamp context
+
+C) Add Note -> Timeline (optional but requested)
+POST /api/cases/:caseId/timeline/from-note
+Body:
+{ noteId, eventDate?, title?, category?, notes? }
+
+If eventDate is omitted, Lexi analysis “timelineCandidates” can propose it but user must confirm manually on the UI.
+
+========================
+C) FRONTEND (AppEvidence.tsx)
+========================
+
+1) Evidence card additions:
+- Show extraction badge (already exists)
+- New section/button group:
+  - “Notes” button opens a Notes drawer/modal for that evidence file
+  - “Analyze” button (disabled until extractedText complete)
+  - “View Analysis” button if analysis exists
+
+2) Notes UI (per evidence file):
+- List notes newest first
+- Each note shows:
+  title (optional), pageNumber, timestamp, tags chips, noteText preview
+  actions: Edit, Delete, Add to Exhibit, Add to Trial Prep, Add to Timeline
+- “Add Note” form:
+  title, page number, timestamp, tags, noteText
+  Optional “Quote from extracted text”:
+    - In the extracted text modal, allow selecting text and clicking “Create Note from Selection”
+    - This pre-fills quote field + opens Add Note modal
+- Copy button copies FULL note (title + page + timestamp + text + tags)
+
+3) Analysis UI:
+- “Analyze” triggers POST run
+- Show status: processing spinner, complete badge, failed badge w/ retry
+- Render analysis summary and sections:
+  - Key Themes
+  - Timeline Candidates (with “Add to Timeline” quick action per item)
+  - Potential Contradictions
+  - Communication Patterns
+  - Risk Flags (always show verify warning)
+  - Terms to Research (each has a “Ask Lexi (Research Mode)” chip)
+
+4) Cross-module actions UI:
+- Add to Exhibit:
+  - modal chooses exhibit list (existing exhibit_lists query)
+  - prefill snippetText with quote or noteText
+  - saves to exhibit_snippets
+- Add to Trial Prep:
+  - modal chooses binderSection + importance + tags
+  - calls /trial-prep-shortlist/from-note
+- Add to Timeline:
+  - modal chooses date/title/category
+  - calls /timeline/from-note
+
+5) UX Requirements
+- Every modal includes disclaimer:
+  “AI and extraction can be wrong. Verify against the original.”
+- Touch targets: min-h-[44px]
+- Colors: use existing tokens (module-tile/bg/border) — no new hardcoded colors.
+
+========================
+D) EXHIBITS MODULE UPGRADES (AppExhibits.tsx)
+========================
+
+Goal: Exhibits must actually “contain” things.
+Currently it creates exhibit lists and attaches evidence, but user needs:
+- Cover page / snippet pages
+- A history of “used for filing X”
+- Download as one package
+
+Implement in iterations:
+
+D1) Exhibit List page shows:
+- ExhibitList details
+- Tabs:
+  - “Attached Files” (existing exhibit_evidence)
+  - “Snippets / Cover Pages” (NEW from exhibit_snippets)
+- Snippets list shows title + snippetText + page/timestamp + source evidence link
+
+D2) “Used For Filing” history (lightweight)
+Add optional fields on exhibit_lists:
+usedForFiling (text nullable)
+usedForFilingDate (date nullable)
+Allow user to set it; show as “History” section.
+
+D3) Download as one (initial version)
+Provide “Download Packet (ZIP)” endpoint:
+GET /api/cases/:caseId/exhibit-lists/:listId/download
+Server creates a ZIP:
+- snippets as .txt files with numbering
+- each attached evidence file included (download from storage)
+Return as attachment.
+(If ZIP is too heavy for now, implement “Download Snippets TXT” first.)
+
+========================
+E) PATTERN ANALYSIS INTEGRATION
+========================
+
+Update Pattern Analysis to include:
+- Count of evidence files
+- Count of extracted complete vs pending
+- Count of evidence notes
+- Count of AI analyses complete
+- A “Top Themes” section aggregated from latest analyses (per evidence)
+- Trial Prep shortlist summary (top 3 pinned items per binderSection)
+
+Add endpoints as needed:
+GET /api/cases/:caseId/pattern-analysis/overview
+This should aggregate from:
+deadlines, tasks, calendar, communications, evidence_extractions, evidence_notes, evidence_ai_analyses, trial_prep_shortlist
+
+========================
+F) REPORT BACK (DETAILED)
+========================
+
+After implementing, provide:
+- Files changed list
+- New tables and columns
+- New routes list
+- Ownership validations confirmed
+- UI screenshots are not required, but describe where buttons appear
+- Confirm flow:
+  upload evidence -> extraction -> create note -> analyze -> add note to exhibit/trial prep -> pattern analysis shows it
+
+IMPORTANT
+Do not introduce UPL outputs.
+AI analysis must be framed as:
+“organizational patterns and things to verify,” not legal conclusions.
+No probability, no strategy, no “you should file X.”
