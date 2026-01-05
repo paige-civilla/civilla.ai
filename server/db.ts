@@ -775,5 +775,85 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_user_case ON evidence_anchors(user_id, case_id)`
   ]);
 
+  await initTable("evidence_extractions", `
+    CREATE TABLE IF NOT EXISTS evidence_extractions (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued',
+      provider TEXT NOT NULL DEFAULT 'internal',
+      mime_type TEXT,
+      page_count INTEGER,
+      extracted_text TEXT,
+      metadata JSONB,
+      error TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_evidence ON evidence_extractions(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_user_case ON evidence_extractions(user_id, case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_status ON evidence_extractions(status)`
+  ]);
+
+  await initTable("evidence_ai_analyses", `
+    CREATE TABLE IF NOT EXISTS evidence_ai_analyses (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      analysis_type TEXT NOT NULL,
+      content TEXT NOT NULL,
+      metadata JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_evidence ON evidence_ai_analyses(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_user_case ON evidence_ai_analyses(user_id, case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_type ON evidence_ai_analyses(analysis_type)`
+  ]);
+
+  await initTable("evidence_notes", `
+    CREATE TABLE IF NOT EXISTS evidence_notes (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255) NOT NULL,
+      note_title TEXT,
+      note_text TEXT NOT NULL,
+      anchor_type TEXT NOT NULL DEFAULT 'page',
+      page_number INTEGER,
+      timestamp INTEGER,
+      selection_text TEXT,
+      tags JSONB,
+      color TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_evidence ON evidence_notes(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user_case ON evidence_notes(user_id, case_id)`
+  ]);
+
+  await initTable("trial_prep_shortlist", `
+    CREATE TABLE IF NOT EXISTS trial_prep_shortlist (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_id VARCHAR(255),
+      note_id VARCHAR(255),
+      analysis_id VARCHAR(255),
+      item_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      excerpt TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_case ON trial_prep_shortlist(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_user_case ON trial_prep_shortlist(user_id, case_id)`
+  ]);
+
   console.log("Database table initialization complete");
 }
