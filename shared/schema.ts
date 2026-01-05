@@ -110,6 +110,9 @@ export const insertMagicLinkSchema = createInsertSchema(authMagicLinks).pick({
 export type InsertMagicLink = z.infer<typeof insertMagicLinkSchema>;
 export type MagicLink = typeof authMagicLinks.$inferSelect;
 
+export const startingPointValues = ["served_papers", "starting_case", "modifying_enforcing", "not_sure"] as const;
+export type StartingPoint = typeof startingPointValues[number];
+
 export const cases = pgTable("cases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -120,6 +123,7 @@ export const cases = pgTable("cases", {
   caseNumber: text("case_number"),
   caseType: text("case_type"),
   hasChildren: boolean("has_children").notNull().default(false),
+  startingPoint: text("starting_point").notNull().default("not_sure"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -132,6 +136,9 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   caseNumber: true,
   caseType: true,
   hasChildren: true,
+  startingPoint: true,
+}).extend({
+  startingPoint: z.enum(startingPointValues).optional().default("not_sure"),
 });
 
 export type InsertCase = z.infer<typeof insertCaseSchema>;

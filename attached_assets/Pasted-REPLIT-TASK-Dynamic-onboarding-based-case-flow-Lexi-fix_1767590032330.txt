@@ -1,0 +1,240 @@
+REPLIT TASK: Dynamic onboarding-based case flow + Lexi fixes (C → end)
+
+GOAL
+1) Add “Starting Point” to onboarding and persist it on the CASE.
+2) Use that to dynamically order dashboard modules and drive “Continue to next module” + “Back to dashboard” placement.
+3) Fix Lexi so it works for ANY logged-in user (no case required) and fix Lexi panel UI/positioning/help prompts.
+
+========================================================
+PART 1 — DATA MODEL: Case “Starting Point”
+========================================================
+
+A) DB / Schema
+1. Update `shared/schema.ts`:
+   - Add a new column on `cases` table:
+     - `startingPoint` (TEXT, NOT NULL, default `"not_sure"`)
+   - Suggested allowed values (keep as text, but enforce in Zod):
+     - `"served_papers" | "starting_case" | "modifying_enforcing" | "not_sure"`
+
+2. Update any Zod schemas for cases:
+   - `insertCaseSchema` should accept `startingPoint` optional with default `"not_sure"`
+   - `updateCaseSchema` should allow PATCH for `startingPoint`
+
+3. DB initialization (`server/db.ts`) runtime-create:
+   - Ensure the `cases` table includes `starting_point` (snake) or whichever naming pattern you use.
+   - If the table already exists, add a safe “ALTER TABLE ADD COLUMN IF NOT EXISTS starting_point …” (or equivalent in your runtime init style).
+
+B) API
+1. Ensure existing case PATCH route supports updating `startingPoint` (it probably already does if it uses update schema—verify).
+2. If you have a dedicated “create case” endpoint, ensure it persists `startingPoint`.
+
+========================================================
+PART 2 — ONBOARDING: Add “Starting Point” question
+========================================================
+
+A) UI
+In `client/src/pages/AppOnboarding.tsx`:
+
+1. Add a new step early (right after Intro screen, before “Your Information”), or embed it at the top of Case Details step:
+   - Title: “Where are you starting from?”
+   - Options (radio cards):
+     - I was served papers (I need to respond) → value: served_papers
+     - I want to start a case (I’m filing first) → value: starting_case
+     - I already have a case (I’m modifying/enforcing) → value: modifying_enforcing
+     - I’m not sure yet → value: not_sure
+   - Add helper text: “This helps Civilla organize your dashboard in the order most people need.”
+
+2. Add a “I don’t know yet” button (same behavior as your other defer buttons).
+
+B) Persistence
+When onboarding creates/updates the first case:
+- Persist the selected `startingPoint` onto the case record.
+- If the user later edits it, it should be editable in Case Settings (see Part 3).
+
+========================================================
+PART 3 — CASE SETTINGS: Editable + Dashboard uses it
+========================================================
+
+A) Case Settings
+In `client/src/pages/AppCaseSettings.tsx` (or wherever case settings lives):
+- Add an editable field for Starting Point (same options).
+- Save via existing PATCH /api/cases/:caseId.
+
+B) Dashboard uses Starting Point to order modules + “Continue to next”
+In `client/src/pages/AppDashboard.tsx`:
+
+1. Define a single module registry array with:
+   - key, label, route, description, icon, gatedByChildren?, etc.
+
+2. Create 2 orderings:
+   - Base canonical order (the “ideal flow” you described)
+   - Served-papers order (evidence + comms + timeline first)
+   - Starting-case order (library/templates + evidence first)
+   - Modifying/enforcing order (timeline + comms + evidence first)
+   - Not-sure order = base order
+
+3. Apply children gating:
+   - If case.hasChildren is false, remove Children module from module list.
+   - If true, insert Children after Timeline.
+
+Suggested module order mapping (base / not_sure):
+1 Evidence (paperwork upload)
+2 Message and Call Log (rename Communications)
+3 Timeline
+4 Children (only if hasChildren)
+5 Disclosures and Discovery
+6 Pattern Analysis
+7 Document Library
+8 Document Creator (rename Documents)
+9 Deadlines
+10 Case To-Do
+11 Contacts
+12 Exhibits
+13 Child Support Estimator (last)
+
+4. Add “Continue to next module” behavior:
+   - On each module page, show a right-side action area under the page’s main Add button:
+     - Secondary button: “Back to dashboard”
+     - Primary button: “Continue to <Next Module Name>”
+   - “Next module” is computed from the ordered list above.
+
+Implementation details:
+- Add a small helper:
+  - `getOrderedModules(case)` returns ordered list for that case.
+  - `getNextModule(currentKey, modules)` returns next module (wrap or null).
+- In each module page (Evidence, Timeline, etc.):
+  - Replace the left “Back to Dashboard” link with the right action buttons.
+  - Keep mobile behavior: on small screens stack these under the Add button full-width.
+
+Files likely to update for consistent placement:
+- `client/src/pages/AppEvidence.tsx`
+- `client/src/pages/AppTimeline.tsx`
+- `client/src/pages/AppDeadlines.tsx`
+- `client/src/pages/AppTasks.tsx` (Case To-Do)
+- `client/src/pages/AppDocuments.tsx` (Document Creator)
+- `client/src/pages/AppLibrary.tsx` (Document Library)
+- `client/src/pages/AppCommunications.tsx` (Message + Call Log)
+- `client/src/pages/AppDisclosures.tsx`
+- `client/src/pages/AppExhibits.tsx`
+- `client/src/pages/AppContacts.tsx`
+- `client/src/pages/AppChildSupport.tsx`
+- `client/src/pages/AppPatterns.tsx` (Pattern Analysis)
+
+Also rename labels:
+- “Communications” → “Message and Call Log” (everywhere: dashboard tile, navbar menu, page title)
+- “Documents” → “Document Creator” (everywhere)
+
+========================================================
+PART 4 — LEXI FIXES (C → end)
+========================================================
+
+A) Remove case requirement (Lexi works for any logged-in user)
+Problem: it says “Open a case to chat…” and blocks sending.
+
+Fix:
+1. In `client/src/components/lexi/LexiPanel.tsx`:
+   - Remove any guard that disables chat if no caseId.
+   - If caseId is missing, still allow chat threads under user scope.
+   - If your backend currently requires caseId for threads/messages, update backend to accept `caseId: null`.
+
+2. Backend:
+- In Lexi thread/message tables, ensure `caseId` is nullable (or create “general” threads without a case).
+- Update Lexi routes:
+  - Create/list threads should work with (caseId optional).
+  - Message send route should accept caseId optional.
+- Storage methods must enforce user ownership even when caseId is null.
+
+B) Lexi panel sizing + navbar offset
+Problems:
+- Panel starts from very top (ignores navbar)
+- Panel is too wide; blocks page; hard to type
+- Needs “centered 3/4 size” with margins
+
+Fix:
+1. Positioning:
+   - LexiPanel should be `fixed` on the right, but top should be below AppNavbar height.
+   - Use a CSS variable or constant:
+     - Example: `top: var(--app-navbar-height, 72px)`
+   - Ensure bottom has breathing room above footer if needed.
+
+2. Width:
+   - On desktop: `width: min(420px, calc(100vw - 120px))`
+   - Ensure left margin exists: at least 48–72px of the page remains visible.
+   - On mobile: full width overlay with close button.
+
+C) Toggle tab text + chevron + “Lexi” label
+Problems:
+- It became only chevrons or “</>”
+- User wants: “Lexi” + chevron that changes based on open/closed.
+
+Fix:
+1. Replace the collapsed vertical tab content:
+   - Show vertically written “Lexi” (rotated) plus chevron icon.
+   - When closed: chevron points left (indicating it will open from right).
+   - When open: chevron points right (indicating close).
+2. Keep it accessible:
+   - aria-label: “Open Lexi” / “Close Lexi”
+
+D) Help/Chat UI: remove big tabs; use tiny suggestion bars inside chat
+Problems:
+- “Help” and “Chat” big toggles aren’t desired.
+- Wants small, slim prompt bars inside chat that disappear once typing starts.
+
+Fix:
+1. Remove the large Help/Chat segmented control from the header.
+2. Instead, inside the chat area (above message list or above input):
+   - Render small “Suggested questions” chips/bars (your existing LexiSuggestedQuestions system)
+   - Behavior:
+     - Visible when input is empty and thread is empty or user hasn’t typed yet.
+     - Hidden once user types (on first non-empty input) or once a message is sent.
+3. Keep “Help mode” as a subtle link:
+   - A small “Help” icon button near the header (optional) that opens a tiny modal explaining Lexi modes.
+   - But default should just be chat.
+
+E) Fix the menu dropdown transparency (light + dark)
+Problem: dropdown is see-through / shows page underneath.
+
+Fix:
+1. In `client/src/components/layout/AppNavbar.tsx` dropdown panel:
+   - Ensure panel has solid background in both themes:
+     - Light: background = `#E4ECED` (or token muted)
+     - Dark: background = dark surface (new token), not transparent
+   - Add `backdrop-filter` only if background is opaque enough; otherwise remove.
+   - Set `opacity: 1` and remove any `bg-…/xx` alpha classes causing transparency.
+
+2. Dark mode dropdown text:
+   - Ensure text is white or high-contrast.
+   - Fix any muted text being too low-contrast.
+
+========================================================
+PART 5 — QA / ACCEPTANCE TESTS
+========================================================
+
+1) Onboarding
+- Complete onboarding once → always lands on dashboard (no loop)
+- Starting Point persists on the created case
+- Editing Starting Point in Case Settings updates dashboard module order immediately
+
+2) Dashboard Module Order
+- Served papers → Evidence and Message/Call Log appear before Timeline
+- Children module appears only when hasChildren is true and appears after Timeline
+
+3) “Continue to next module”
+- On each module page, right side under Add button:
+  - Back to dashboard
+  - Continue to <Next Module>
+- Next module matches the dynamic order
+
+4) Lexi
+- Works while logged in even with no case open
+- No “open a case” message
+- Panel starts below navbar
+- Panel width is reasonable; input is reachable
+- Toggle tab shows “Lexi” + chevron (no </> and no chevron-only)
+
+5) Dropdown
+- Menu dropdown is fully opaque in light and dark mode and readable
+
+DELIVERABLE
+- After implementing, provide a concise “What changed” summary and list every file edited.
+- Also confirm the acceptance tests above were manually verified on desktop + mobile widths.

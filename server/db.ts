@@ -113,11 +113,13 @@ export async function initDbTables(): Promise<void> {
       county TEXT,
       case_type TEXT,
       has_children BOOLEAN NOT NULL DEFAULT false,
+      starting_point TEXT NOT NULL DEFAULT 'not_sure',
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`
+    `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`,
+    `ALTER TABLE cases ADD COLUMN IF NOT EXISTS starting_point TEXT NOT NULL DEFAULT 'not_sure'`
   ]);
 
   await initTable("user_profiles", `
