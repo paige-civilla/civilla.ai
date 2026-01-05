@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
-import { testDbConnection, pool } from "./db";
+import { testDbConnection, pool, checkAiTableColumns } from "./db";
 import oauthRouter from "./oauth";
 import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, LEXI_GENERAL_CASE_ID, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
@@ -4287,6 +4287,20 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       res.json({ ok: true, provider: "openai-direct" });
     } else {
       res.status(503).json({ ok: false, error: "missing OPENAI_API_KEY" });
+    }
+  });
+
+  app.get("/api/ai/health", requireAuth, async (_req, res) => {
+    try {
+      const result = await checkAiTableColumns();
+      if (result.ok) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error("AI health check error:", error);
+      res.status(500).json({ ok: false, error: "Health check failed" });
     }
   });
 
