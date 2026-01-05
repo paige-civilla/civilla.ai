@@ -1,0 +1,189 @@
+REPLIT — NEXT ITERATION: EXHIBITS V2 (EVIDENCE + NOTES + COVER PAGE + “DOWNLOAD AS ONE”)
+
+GOAL
+Fix Exhibits so it actually works for court-style exhibit packets:
+- Exhibit Lists can contain:
+  1) A generated Cover Page (optional, editable)
+  2) Evidence files (linked from Evidence)
+  3) Evidence Notes (linked notes created inside Evidence → Notes drawer)
+- Exhibits must support ordering and “Used for Filing” tagging
+- Users can download the entire Exhibit List “as one” (ZIP bundle for now; PDF merge later)
+
+IMPORTANT
+This is ORGANIZATION ONLY. No legal advice, no strategy, no “you should file.”
+We are generating an exhibit packet as a document bundle the user can review.
+
+A) DATA MODEL UPGRADES (shared/schema.ts)
+
+1) Add/extend table: exhibit_lists (if exists, add these columns via ALTER IF NOT EXISTS)
+- title TEXT NOT NULL
+- description TEXT NULL
+- isUsedForFiling BOOLEAN NOT NULL DEFAULT false
+- filingLabel TEXT NULL (max 120)  // e.g. “Response to Motion” (user-entered)
+- coverPageEnabled BOOLEAN NOT NULL DEFAULT true
+- coverPageTitle TEXT NULL
+- coverPageSubtitle TEXT NULL
+- updatedAt TIMESTAMP NOT NULL DEFAULT NOW()
+
+2) Ensure join table exists for files:
+exhibit_evidence (if already exists, confirm columns; otherwise create)
+- id UUID
+- userId, caseId
+- exhibitListId
+- evidenceFileId
+- sortOrder INTEGER NOT NULL DEFAULT 0
+- label TEXT NULL (max 120)  // “Exhibit A”, etc. (user-entered)
+- notes TEXT NULL
+- createdAt
+
+Unique constraint:
+- (exhibitListId, evidenceFileId) unique to prevent duplicates
+
+3) Ensure note-links exist (from prior iteration):
+case_exhibit_note_links
+Add:
+- sortOrder INTEGER NOT NULL DEFAULT 0
+- label TEXT NULL (max 120)
+
+Unique constraint:
+- (exhibitListId, evidenceNoteId)
+
+4) Add a single “Exhibit Items View” endpoint needs unified ordering:
+We will NOT add a DB view—just aggregate in storage.
+
+B) DB INIT (server/db.ts)
+Add ALTERs and initTable/indices:
+- exhibit_lists: add missing columns with addColumnIfNotExists
+- exhibit_evidence: index on (exhibit_list_id), (case_id), (sort_order)
+- case_exhibit_note_links: index on (exhibit_list_id), (sort_order)
+
+C) STORAGE METHODS (server/storage.ts)
+
+Exhibits:
+- listExhibitLists(userId, caseId)
+- createExhibitList(userId, caseId, data)
+- updateExhibitList(userId, exhibitListId, data)
+- deleteExhibitList(userId, exhibitListId)
+
+Evidence items in exhibit list:
+- addEvidenceToExhibitList(userId, caseId, exhibitListId, evidenceFileId, { label?, notes? })
+- removeEvidenceFromExhibitList(userId, exhibitListId, evidenceFileId)
+- reorderExhibitEvidence(userId, exhibitListId, ordered: {id, sortOrder}[])
+
+Note items in exhibit list:
+- addEvidenceNoteToExhibitList(userId, caseId, exhibitListId, evidenceNoteId, { label? })
+- removeEvidenceNoteFromExhibitList(userId, exhibitListId, evidenceNoteId)
+- reorderExhibitNotes(userId, exhibitListId, ordered: {id, sortOrder}[])
+
+Unified items:
+- getExhibitItems(userId, caseId, exhibitListId)
+Return array of:
+  { type: "cover", sortOrder: 0, cover data... } (virtual item if enabled)
+  { type: "file", id, sortOrder, label, evidenceFile (name, mime, storageKey, createdAt), notes }
+  { type: "note", id, sortOrder, label, evidenceNote (text, pageNumber, timestampSeconds, isKey, evidenceFileId, createdAt) }
+
+Download bundle:
+- buildExhibitZip(userId, caseId, exhibitListId) -> Buffer
+Includes:
+  - 00_CoverPage.txt (for now) OR 00_CoverPage.md with fields (title/subtitle/case/caption later)
+  - Evidence files copied from storage by storageKey (reuse existing evidence download mechanism)
+  - Notes exported to 01_Notes.md (grouped by file, include page/timestamp)
+Return ZIP with deterministic naming.
+
+NOTE: If you already have evidence file download streaming, reuse that to fetch from storage.
+
+D) API ROUTES (server/routes.ts) — requireAuth
+
+Exhibit list management:
+1) GET    /api/cases/:caseId/exhibits/lists
+2) POST   /api/cases/:caseId/exhibits/lists
+3) PATCH  /api/exhibits/lists/:listId
+4) DELETE /api/exhibits/lists/:listId
+
+Items:
+5) GET    /api/cases/:caseId/exhibits/lists/:listId/items  (unified)
+
+Evidence-in-list:
+6) POST   /api/cases/:caseId/exhibits/lists/:listId/evidence/:fileId
+7) DELETE /api/exhibits/lists/:listId/evidence/:fileId
+8) PATCH  /api/exhibits/lists/:listId/evidence/reorder   body: ordered[]
+
+Notes-in-list:
+9) POST   /api/cases/:caseId/exhibits/lists/:listId/notes/:noteId
+10) DELETE /api/exhibits/lists/:listId/notes/:noteId
+11) PATCH  /api/exhibits/lists/:listId/notes/reorder    body: ordered[]
+
+Download:
+12) GET /api/cases/:caseId/exhibits/lists/:listId/download-zip
+Returns application/zip with filename like:
+civilla_exhibit_list_{listTitle_sanitized}.zip
+
+E) FRONTEND — AppExhibits.tsx (upgrade to “Exhibits V2”)
+
+Layout:
+Left side: Exhibit Lists (create/edit/delete)
+Right side: Selected Exhibit List details
+
+Selected list details show:
+1) Header:
+- Title + “Used for Filing” toggle
+- Optional Filing Label input (only shown if UsedForFiling = true)
+- Cover Page toggle (enabled/disabled)
+- Download button: “Download Exhibit Bundle (ZIP)”
+
+2) Items section:
+- Cover Page (virtual card) if enabled:
+  - editable cover title/subtitle fields (simple inputs)
+  - explain “This becomes the first page of your exhibit packet.”
+- Evidence items list (cards):
+  - label field (e.g., Exhibit A)
+  - file name + open/download
+  - remove button
+- Notes items list (cards):
+  - label field
+  - shows note text + page/timestamp + linked evidence filename
+  - remove button
+
+Ordering:
+- Add “Move Up / Move Down” buttons (simple first pass; no drag/drop yet)
+- Reordering calls reorder endpoints and refreshes unified items query
+
+Add flows:
+- “Add Evidence” button:
+  - modal lists evidence files for case with search
+  - select one, optional label, add
+- “Add Note” button:
+  - modal lists evidence notes across case (search by text/file name)
+  - select one, optional label, add
+
+F) EVIDENCE PAGE FIX (AppEvidence.tsx)
+The “Add to Exhibit” action must add the EVIDENCE FILE to an exhibit list (not create a blank exhibit).
+Ensure it calls:
+POST /api/cases/:caseId/exhibits/lists/:listId/evidence/:fileId
+
+Also ensure Evidence Notes “Use in Exhibit List” calls:
+POST /api/cases/:caseId/exhibits/lists/:listId/notes/:noteId
+
+G) UX COPY (UPL-SAFE)
+In Exhibits:
+“Exhibit Lists help you organize files and notes into packets you can download. Civilla does not file anything with the court.”
+
+H) ACCEPTANCE TESTS
+1) Upload a PDF to Evidence
+2) Create Exhibit List “Exhibits for Filing”
+3) From Evidence card → Add to Exhibit → select list → confirm the file appears in Exhibits
+4) Add an Evidence Note; link note to same exhibit list; confirm it appears
+5) Turn on Cover Page; set cover title/subtitle; confirm it shows as first item
+6) Reorder items; refresh page; confirm order persists
+7) Download ZIP; confirm it contains:
+   - 00_CoverPage.md (or .txt)
+   - 01_Notes.md
+   - Evidence file(s)
+
+FINAL REPLIT SUMMARY REQUIREMENTS
+- List all files edited
+- List all new routes
+- Confirm the Evidence “Add to Exhibit” now actually attaches the file
+- Provide 2 screenshots:
+  1) Exhibit list with cover + file + note items
+  2) Evidence page showing “Add to Exhibit” working

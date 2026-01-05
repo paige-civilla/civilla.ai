@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip } from "lucide-react";
+import { ArrowLeft, FolderOpen, Briefcase, Upload, Download, Trash2, File, FileText, Image, Archive, AlertCircle, Save, ChevronDown, ChevronUp, Paperclip, StickyNote, Plus, Pencil, X } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Case, EvidenceFile, ExhibitList, Exhibit } from "@shared/schema";
+import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 
@@ -69,6 +69,9 @@ export default function AppEvidence() {
   const [selectedExhibitListId, setSelectedExhibitListId] = useState<string>("");
   const [selectedExhibitId, setSelectedExhibitId] = useState<string>("");
   const [newExhibitTitle, setNewExhibitTitle] = useState("");
+  const [notesFileId, setNotesFileId] = useState<string | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteForm, setNoteForm] = useState<{ pageNumber: string; label: string; note: string }>({ pageNumber: "", label: "", note: "" });
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -90,12 +93,19 @@ export default function AppEvidence() {
     enabled: !!selectedExhibitListId,
   });
 
+  const { data: notesData, isLoading: notesLoading } = useQuery<{ notes: EvidenceNote[] }>({
+    queryKey: ["/api/cases", caseId, "evidence", notesFileId, "notes"],
+    enabled: !!notesFileId && !!caseId,
+  });
+
   const exhibitLists = exhibitListsData?.exhibitLists || [];
   const exhibits = exhibitsData?.exhibits || [];
+  const notes = notesData?.notes || [];
 
   const currentCase = caseData?.case;
   const rawFiles = evidenceData?.files || [];
   const r2Configured = evidenceData?.r2Configured ?? false;
+  const notesFile = rawFiles.find(f => f.id === notesFileId);
 
   const filteredFiles = rawFiles
     .filter((f) => filterCategory === "all" || f.category === filterCategory)
@@ -161,6 +171,85 @@ export default function AppEvidence() {
       toast({ title: "Error", description: error.message || "Failed to add to exhibit", variant: "destructive" });
     },
   });
+
+  const createNoteMutation = useMutation({
+    mutationFn: async (data: { pageNumber?: number | null; label?: string | null; note: string }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/evidence/${notesFileId}/notes`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", notesFileId, "notes"] });
+      toast({ title: "Note created", description: "Evidence note added successfully." });
+      resetNoteForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to create note", variant: "destructive" });
+    },
+  });
+
+  const updateNoteMutation = useMutation({
+    mutationFn: async ({ noteId, data }: { noteId: string; data: { pageNumber?: number | null; label?: string | null; note?: string } }) => {
+      return apiRequest("PATCH", `/api/evidence-notes/${noteId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", notesFileId, "notes"] });
+      toast({ title: "Note updated", description: "Evidence note updated successfully." });
+      resetNoteForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to update note", variant: "destructive" });
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      return apiRequest("DELETE", `/api/evidence-notes/${noteId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", notesFileId, "notes"] });
+      toast({ title: "Note deleted", description: "Evidence note removed successfully." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to delete note", variant: "destructive" });
+    },
+  });
+
+  const resetNoteForm = () => {
+    setEditingNoteId(null);
+    setNoteForm({ pageNumber: "", label: "", note: "" });
+  };
+
+  const closeNotesModal = () => {
+    setNotesFileId(null);
+    resetNoteForm();
+  };
+
+  const startEditNote = (n: EvidenceNote) => {
+    setEditingNoteId(n.id);
+    setNoteForm({
+      pageNumber: n.pageNumber != null ? String(n.pageNumber) : "",
+      label: n.label || "",
+      note: n.note,
+    });
+  };
+
+  const handleSaveNote = () => {
+    const pageNum = noteForm.pageNumber.trim() ? parseInt(noteForm.pageNumber, 10) : null;
+    const labelVal = noteForm.label.trim() || null;
+    if (!noteForm.note.trim()) return;
+
+    if (editingNoteId) {
+      updateNoteMutation.mutate({
+        noteId: editingNoteId,
+        data: { pageNumber: pageNum, label: labelVal, note: noteForm.note.trim() },
+      });
+    } else {
+      createNoteMutation.mutate({
+        pageNumber: pageNum,
+        label: labelVal,
+        note: noteForm.note.trim(),
+      });
+    }
+  };
 
   const closeAddToExhibitModal = () => {
     setAddToExhibitEvidenceId(null);
@@ -515,6 +604,15 @@ export default function AppEvidence() {
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                onClick={() => setNotesFileId(file.id)}
+                                data-testid={`button-notes-${file.id}`}
+                                title="View/add notes"
+                              >
+                                <StickyNote className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 onClick={() => setDeleteConfirmId(file.id)}
                                 data-testid={`button-delete-${file.id}`}
                               >
@@ -664,6 +762,145 @@ export default function AppEvidence() {
               disabled={!selectedExhibitListId || (!selectedExhibitId && !newExhibitTitle.trim()) || addToExhibitMutation.isPending}
             >
               {addToExhibitMutation.isPending ? "Adding..." : "Add to Exhibit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!notesFileId} onOpenChange={(open) => !open && closeNotesModal()}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <StickyNote className="w-5 h-5" />
+              Notes for: {notesFile?.originalName || "File"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="w-full sm:w-24">
+                  <Label htmlFor="note-page" className="text-xs text-muted-foreground">Page #</Label>
+                  <Input
+                    id="note-page"
+                    placeholder="Optional"
+                    value={noteForm.pageNumber}
+                    onChange={(e) => setNoteForm((prev) => ({ ...prev, pageNumber: e.target.value.replace(/\D/g, "") }))}
+                    maxLength={10}
+                    data-testid="input-note-page"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="note-label" className="text-xs text-muted-foreground">Label</Label>
+                  <Input
+                    id="note-label"
+                    placeholder="Optional label (e.g., Important, Follow-up)"
+                    value={noteForm.label}
+                    onChange={(e) => setNoteForm((prev) => ({ ...prev, label: e.target.value }))}
+                    maxLength={80}
+                    data-testid="input-note-label"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="note-content" className="text-xs text-muted-foreground">Note</Label>
+                <Textarea
+                  id="note-content"
+                  placeholder="Add your note here..."
+                  value={noteForm.note}
+                  onChange={(e) => setNoteForm((prev) => ({ ...prev, note: e.target.value }))}
+                  rows={3}
+                  maxLength={5000}
+                  data-testid="textarea-note-content"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                {editingNoteId && (
+                  <Button variant="outline" size="sm" onClick={resetNoteForm} data-testid="button-cancel-edit-note">
+                    Cancel Edit
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleSaveNote}
+                  disabled={!noteForm.note.trim() || createNoteMutation.isPending || updateNoteMutation.isPending}
+                  data-testid="button-save-note"
+                >
+                  {editingNoteId ? (
+                    <>
+                      <Save className="w-4 h-4 mr-1" />
+                      {updateNoteMutation.isPending ? "Saving..." : "Update Note"}
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-1" />
+                      {createNoteMutation.isPending ? "Adding..." : "Add Note"}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {notesLoading ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Loading notes...</div>
+            ) : notes.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No notes yet. Add your first note above.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {notes.map((n) => (
+                  <Card key={n.id} className="relative" data-testid={`card-note-${n.id}`}>
+                    <CardContent className="py-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            {n.pageNumber != null && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                Page {n.pageNumber}
+                              </span>
+                            )}
+                            {n.label && (
+                              <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded">
+                                {n.label}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(n.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground whitespace-pre-wrap" data-testid={`text-note-content-${n.id}`}>
+                            {n.note}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => startEditNote(n)}
+                            data-testid={`button-edit-note-${n.id}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteNoteMutation.mutate(n.id)}
+                            disabled={deleteNoteMutation.isPending}
+                            data-testid={`button-delete-note-${n.id}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeNotesModal} data-testid="button-close-notes-modal">
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
