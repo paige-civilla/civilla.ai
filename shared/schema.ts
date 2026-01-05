@@ -336,6 +336,29 @@ export type InsertEvidenceNote = z.infer<typeof insertEvidenceNoteSchema>;
 export type UpdateEvidenceNote = z.infer<typeof updateEvidenceNoteSchema>;
 export type EvidenceNote = typeof caseEvidenceNotes.$inferSelect;
 
+export const caseExhibitNoteLinks = pgTable("case_exhibit_note_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  exhibitListId: varchar("exhibit_list_id").notNull(),
+  evidenceNoteId: varchar("evidence_note_id").notNull().references(() => caseEvidenceNotes.id),
+  sortOrder: integer("sort_order").notNull().default(0),
+  label: text("label"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  noteIdx: index("exhibit_note_links_note_idx").on(table.evidenceNoteId),
+  listIdx: index("exhibit_note_links_list_idx").on(table.exhibitListId),
+  caseIdx: index("exhibit_note_links_case_idx").on(table.caseId),
+  uniqueListNote: uniqueIndex("exhibit_note_links_unique_idx").on(table.exhibitListId, table.evidenceNoteId),
+}));
+
+export const insertExhibitNoteLinkSchema = z.object({
+  label: z.string().max(120).optional().nullable(),
+});
+
+export type InsertExhibitNoteLink = z.infer<typeof insertExhibitNoteLinkSchema>;
+export type ExhibitNoteLink = typeof caseExhibitNoteLinks.$inferSelect;
+
 export const documentTemplateKeys = [
   "declaration",
   "affidavit",
@@ -778,6 +801,12 @@ export const exhibitLists = pgTable("exhibit_lists", {
   userId: varchar("user_id").notNull().references(() => users.id),
   caseId: varchar("case_id").notNull().references(() => cases.id),
   title: text("title").notNull(),
+  description: text("description"),
+  isUsedForFiling: boolean("is_used_for_filing").notNull().default(false),
+  filingLabel: text("filing_label"),
+  coverPageEnabled: boolean("cover_page_enabled").notNull().default(true),
+  coverPageTitle: text("cover_page_title"),
+  coverPageSubtitle: text("cover_page_subtitle"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -789,11 +818,23 @@ export const exhibitLists = pgTable("exhibit_lists", {
 
 export const insertExhibitListSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or less"),
+  description: z.string().max(5000).optional().nullable(),
+  isUsedForFiling: z.boolean().optional().default(false),
+  filingLabel: z.string().max(120).optional().nullable(),
+  coverPageEnabled: z.boolean().optional().default(true),
+  coverPageTitle: z.string().max(200).optional().nullable(),
+  coverPageSubtitle: z.string().max(200).optional().nullable(),
   notes: z.string().max(5000, "Notes must be 5,000 characters or less").optional().nullable(),
 });
 
 export const updateExhibitListSchema = z.object({
   title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  isUsedForFiling: z.boolean().optional(),
+  filingLabel: z.string().max(120).optional().nullable(),
+  coverPageEnabled: z.boolean().optional(),
+  coverPageTitle: z.string().max(200).optional().nullable(),
+  coverPageSubtitle: z.string().max(200).optional().nullable(),
   notes: z.string().max(5000).optional().nullable(),
 });
 
@@ -840,21 +881,35 @@ export const exhibitEvidence = pgTable("exhibit_evidence", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   caseId: varchar("case_id").notNull().references(() => cases.id),
-  exhibitId: varchar("exhibit_id").notNull(),
-  evidenceId: varchar("evidence_id").notNull(),
+  exhibitId: varchar("exhibit_id"),
+  exhibitListId: varchar("exhibit_list_id"),
+  evidenceId: varchar("evidence_id"),
+  evidenceFileId: varchar("evidence_file_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  label: text("label"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   exhibitIdx: index("exhibit_evidence_exhibit_idx").on(table.exhibitId),
+  listIdx: index("exhibit_evidence_list_idx").on(table.exhibitListId),
   evidenceIdx: index("exhibit_evidence_evidence_idx").on(table.evidenceId),
+  fileIdx: index("exhibit_evidence_file_idx").on(table.evidenceFileId),
   caseIdx: index("exhibit_evidence_case_idx").on(table.caseId),
-  uniqueExhibitEvidence: uniqueIndex("exhibit_evidence_unique_idx").on(table.exhibitId, table.evidenceId),
+  sortIdx: index("exhibit_evidence_sort_idx").on(table.exhibitListId, table.sortOrder),
+  uniqueListFile: uniqueIndex("exhibit_evidence_list_file_unique_idx").on(table.exhibitListId, table.evidenceFileId),
 }));
 
 export const attachEvidenceToExhibitSchema = z.object({
   evidenceId: z.string().min(1, "Evidence ID is required"),
 });
 
+export const attachEvidenceToExhibitListSchema = z.object({
+  label: z.string().max(120).optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
 export type AttachEvidenceToExhibit = z.infer<typeof attachEvidenceToExhibitSchema>;
+export type AttachEvidenceToExhibitList = z.infer<typeof attachEvidenceToExhibitListSchema>;
 export type ExhibitEvidence = typeof exhibitEvidence.$inferSelect;
 
 export const lexiMessageRoles = ["user", "assistant", "system"] as const;
