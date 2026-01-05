@@ -28,6 +28,7 @@ import {
   exhibitPacketItems,
   exhibitPacketEvidence,
   generatedExhibitPackets,
+  caseEvidenceNotes,
   type User,
   type InsertUser,
   type Case,
@@ -89,6 +90,9 @@ import {
   type UpdateExhibitPacketItem,
   type ExhibitPacketEvidence,
   type GeneratedExhibitPacket,
+  type EvidenceNote,
+  type InsertEvidenceNote,
+  type UpdateEvidenceNote,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -227,6 +231,12 @@ export interface IStorage {
   listGeneratedExhibitPackets(userId: string, caseId: string): Promise<GeneratedExhibitPacket[]>;
   getGeneratedExhibitPacket(userId: string, genId: string): Promise<GeneratedExhibitPacket | undefined>;
   createGeneratedExhibitPacket(userId: string, caseId: string, packetId: string, title: string, fileKey: string, fileName: string, metaJson: Record<string, unknown>): Promise<GeneratedExhibitPacket>;
+
+  listEvidenceNotes(userId: string, caseId: string, evidenceFileId: string): Promise<EvidenceNote[]>;
+  getEvidenceNote(userId: string, noteId: string): Promise<EvidenceNote | undefined>;
+  createEvidenceNote(userId: string, caseId: string, evidenceFileId: string, data: InsertEvidenceNote): Promise<EvidenceNote>;
+  updateEvidenceNote(userId: string, noteId: string, data: UpdateEvidenceNote): Promise<EvidenceNote | undefined>;
+  deleteEvidenceNote(userId: string, noteId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1608,6 +1618,58 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return created;
+  }
+
+  async listEvidenceNotes(userId: string, caseId: string, evidenceFileId: string): Promise<EvidenceNote[]> {
+    return db.select().from(caseEvidenceNotes)
+      .where(and(
+        eq(caseEvidenceNotes.userId, userId),
+        eq(caseEvidenceNotes.caseId, caseId),
+        eq(caseEvidenceNotes.evidenceFileId, evidenceFileId)
+      ))
+      .orderBy(desc(caseEvidenceNotes.createdAt));
+  }
+
+  async getEvidenceNote(userId: string, noteId: string): Promise<EvidenceNote | undefined> {
+    const [row] = await db.select().from(caseEvidenceNotes)
+      .where(and(eq(caseEvidenceNotes.id, noteId), eq(caseEvidenceNotes.userId, userId)));
+    return row;
+  }
+
+  async createEvidenceNote(userId: string, caseId: string, evidenceFileId: string, data: InsertEvidenceNote): Promise<EvidenceNote> {
+    const [created] = await db.insert(caseEvidenceNotes)
+      .values({
+        userId,
+        caseId,
+        evidenceFileId,
+        pageNumber: data.pageNumber ?? null,
+        label: data.label ?? null,
+        note: data.note,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateEvidenceNote(userId: string, noteId: string, data: UpdateEvidenceNote): Promise<EvidenceNote | undefined> {
+    const existing = await this.getEvidenceNote(userId, noteId);
+    if (!existing) return undefined;
+
+    const [updated] = await db.update(caseEvidenceNotes)
+      .set({
+        pageNumber: data.pageNumber !== undefined ? data.pageNumber : existing.pageNumber,
+        label: data.label !== undefined ? data.label : existing.label,
+        note: data.note ?? existing.note,
+      })
+      .where(and(eq(caseEvidenceNotes.id, noteId), eq(caseEvidenceNotes.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteEvidenceNote(userId: string, noteId: string): Promise<boolean> {
+    const res = await db.delete(caseEvidenceNotes)
+      .where(and(eq(caseEvidenceNotes.id, noteId), eq(caseEvidenceNotes.userId, userId)))
+      .returning();
+    return res.length > 0;
   }
 }
 
