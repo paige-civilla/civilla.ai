@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, LEXI_GENERAL_CASE_ID, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, LEXI_GENERAL_CASE_ID, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -1020,6 +1020,116 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Delete evidence error:", error);
       res.status(500).json({ error: "Failed to delete evidence file" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, fileId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(fileId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      const notes = await storage.listEvidenceNotes(userId, caseId, fileId);
+      res.json({ notes });
+    } catch (error) {
+      console.error("List evidence notes error:", error);
+      res.status(500).json({ error: "Failed to list evidence notes" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, fileId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(fileId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      const parseResult = insertEvidenceNoteSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const note = await storage.createEvidenceNote(userId, caseId, fileId, parseResult.data);
+      res.status(201).json({ note });
+    } catch (error) {
+      console.error("Create evidence note error:", error);
+      res.status(500).json({ error: "Failed to create evidence note" });
+    }
+  });
+
+  app.patch("/api/evidence-notes/:noteId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { noteId } = req.params;
+
+      const existing = await storage.getEvidenceNote(userId, noteId);
+      if (!existing) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+
+      const parseResult = updateEvidenceNoteSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        parseResult.error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          fieldErrors[field] = err.message;
+        });
+        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+      }
+
+      const updated = await storage.updateEvidenceNote(userId, noteId, parseResult.data);
+      if (!updated) {
+        return res.status(500).json({ error: "Failed to update note" });
+      }
+
+      res.json({ note: updated });
+    } catch (error) {
+      console.error("Update evidence note error:", error);
+      res.status(500).json({ error: "Failed to update evidence note" });
+    }
+  });
+
+  app.delete("/api/evidence-notes/:noteId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { noteId } = req.params;
+
+      const existing = await storage.getEvidenceNote(userId, noteId);
+      if (!existing) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+
+      const deleted = await storage.deleteEvidenceNote(userId, noteId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete note" });
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Delete evidence note error:", error);
+      res.status(500).json({ error: "Failed to delete evidence note" });
     }
   });
 

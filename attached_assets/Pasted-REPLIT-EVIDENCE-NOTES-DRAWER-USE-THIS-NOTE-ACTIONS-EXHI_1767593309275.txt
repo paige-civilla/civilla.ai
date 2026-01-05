@@ -1,0 +1,163 @@
+REPLIT — EVIDENCE NOTES DRAWER + “USE THIS NOTE” ACTIONS (EXHIBITS + TIMELINE + TRIAL FLAG)
+
+GOAL
+Inside AppEvidence:
+- Each evidence file card has a collapsible “Notes” drawer (expand/collapse)
+- Users can add notes with: page number OR timestamp OR general note
+- Notes render under that evidence file (inside drawer), newest-first
+- Each note has actions:
+  1) “Add to Exhibit…” (choose exhibit list; links note + file to that exhibit list)
+  2) “Add to Timeline…” (creates timeline event that references evidence + page/timestamp)
+  3) “Mark Key” toggle (flag note as important for Trial Prep later)
+
+IMPORTANT
+This is ORGANIZATION ONLY. We do not alter original evidence files.
+
+A) DATABASE + SCHEMA CHANGES
+
+1) Update/extend the evidence notes table in shared/schema.ts:
+Create table case_evidence_notes (or extend it if already created) with columns:
+
+- id UUID
+- userId (fk users.id)
+- caseId (fk cases.id)
+- evidenceFileId (fk evidence_files.id)
+- pageNumber INTEGER NULL
+- timestampSeconds INTEGER NULL
+- label TEXT NULL (max 80)
+- note TEXT NOT NULL (max 5000)
+- isKey BOOLEAN NOT NULL DEFAULT false
+- createdAt TIMESTAMP default now()
+
+Add zod schemas:
+- insertEvidenceNoteSchema: pageNumber optional, timestampSeconds optional, label optional, note required, isKey optional
+- updateEvidenceNoteSchema: same fields optional
+Export types: EvidenceNote, InsertEvidenceNote, UpdateEvidenceNote
+
+2) Add a linking table for “note -> exhibit list” (so one note can be used in multiple places later):
+case_exhibit_note_links:
+- id UUID
+- userId
+- caseId
+- exhibitListId (fk exhibit_lists.id)
+- evidenceNoteId (fk case_evidence_notes.id)
+- createdAt
+
+Indexes:
+- evidence_note_id
+- exhibit_list_id
+- case_id
+
+3) server/db.ts:
+Add initTable for:
+- case_evidence_notes (if not already)
+- case_exhibit_note_links
+Add indexes listed above.
+
+B) STORAGE METHODS (server/storage.ts)
+
+Add to IStorage + DatabaseStorage:
+
+Evidence Notes:
+- listEvidenceNotes(userId, caseId, evidenceFileId)
+- createEvidenceNote(userId, caseId, evidenceFileId, data)
+- updateEvidenceNote(userId, noteId, data)
+- deleteEvidenceNote(userId, noteId)
+
+Note -> Exhibit links:
+- linkEvidenceNoteToExhibitList(userId, caseId, evidenceNoteId, exhibitListId)
+- listExhibitLists(userId, caseId)  (should already exist from Exhibits module; reuse it)
+
+Timeline creation helper:
+- createTimelineEvent(userId, caseId, { eventDate, title, category, notes, source })
+
+All queries must filter by userId and enforce case ownership.
+
+C) API ROUTES (server/routes.ts) — requireAuth
+
+Evidence Notes:
+1) GET  /api/cases/:caseId/evidence/:fileId/notes
+2) POST /api/cases/:caseId/evidence/:fileId/notes
+3) PATCH /api/evidence-notes/:noteId
+4) DELETE /api/evidence-notes/:noteId
+
+Note -> Exhibit:
+5) POST /api/cases/:caseId/exhibits/:exhibitListId/notes/:noteId
+Creates a row in case_exhibit_note_links (idempotent if you want; optional)
+
+Note -> Timeline:
+6) POST /api/cases/:caseId/timeline/from-evidence-note/:noteId
+Body: { eventDate?: string } (optional; default = today)
+Server builds:
+- title: “Evidence Note: {file originalName}”
+- category: “filing” or “communication” or “other” (pick “other” if unsure)
+- notes: includes label + note text + “Page X” or “Timestamp mm:ss”
+- source: “evidence_note”
+
+Return created timeline event.
+
+D) FRONTEND (client/src/pages/AppEvidence.tsx)
+
+1) Collapsible Notes Drawer per evidence file card:
+- Add a “Notes” toggle row on the card: “Notes (N)” with chevron
+- When collapsed: show nothing (or show top 1 note preview optional)
+- When expanded:
+  - “Add Note” button
+  - List notes with actions
+
+2) Add Note Modal:
+Fields:
+- Label (optional)
+- Page # (number, optional)
+- Timestamp (mm:ss input optional) -> convert to seconds for API
+- Note textarea (required)
+- “Mark as Key” checkbox
+
+Rules:
+- Page # and Timestamp can both be empty (general note allowed)
+- If user enters timestamp, parse mm:ss into seconds
+- Save via POST and refresh query
+
+3) Note actions UI (per note row):
+Buttons:
+- “Add to Exhibit…” -> opens modal:
+   - dropdown of Exhibit Lists (fetch via existing endpoint)
+   - confirm -> call POST /api/cases/:caseId/exhibits/:exhibitListId/notes/:noteId
+   - toast success
+- “Add to Timeline” -> immediate call POST /api/cases/:caseId/timeline/from-evidence-note/:noteId
+   - toast success and optionally show “View Timeline” link
+- “Key” toggle -> PATCH note with isKey true/false
+
+4) Queries/mutations (React Query):
+- evidenceNotesQuery keyed by fileId
+- exhibitListsQuery keyed by caseId (reuse if already present in Exhibits page)
+- invalidate queries after mutation:
+  - ['evidenceNotes', caseId, fileId]
+  - ['timeline', caseId] if you have it
+  - ['exhibits', caseId] optionally
+
+E) UX COPY (UPL-SAFE)
+Inside the Notes drawer header add:
+“Notes help you track what matters. They do not change the original file.”
+
+For Exhibit action button label:
+“Use in Exhibit List” (not “Use as evidence for filing”)
+
+For Timeline action:
+“Add to Timeline” (organizational)
+
+F) ACCEPTANCE TESTS
+1) Upload PDF evidence
+2) Expand Notes drawer, add note w/ page number
+3) Add another note w/ timestamp
+4) Toggle Key on/off
+5) Add note to Exhibit List and confirm it appears in that exhibit list context (even if only as a linked note for now)
+6) Add note to Timeline; verify a timeline event created with page/timestamp in notes
+7) Collapse drawer; confirm UI stays clean
+
+FINAL REPLIT SUMMARY REQUIREMENTS
+- List all files edited
+- List all new routes
+- Screenshot: evidence card with Notes collapsed + expanded
+- Screenshot: note action buttons + exhibit picker modal
+- Screenshot: timeline event created from note
