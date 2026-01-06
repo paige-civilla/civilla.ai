@@ -7066,6 +7066,37 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  app.post("/api/claims/:claimId/citations/auto", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId } = req.params;
+      const { maxAttach, preferEvidenceId } = req.body || {};
+      
+      const claim = await storage.getCaseClaim(userId, claimId);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      const result = await storage.autoAttachClaimCitation(userId, claimId, {
+        maxAttach: typeof maxAttach === "number" ? Math.min(maxAttach, 5) : 1,
+        preferEvidenceId: typeof preferEvidenceId === "string" ? preferEvidenceId : undefined,
+      });
+      
+      if (result.attached === 0 && result.citationIds.length === 0) {
+        const existingCitations = await storage.listClaimCitations(userId, claimId);
+        if (existingCitations.length > 0) {
+          return res.json({ ok: true, attached: 0, citationIds: [], message: "Claim already has citations" });
+        }
+        return res.json({ ok: false, error: "no_citations_available" });
+      }
+      
+      res.json({ ok: true, attached: result.attached, citationIds: result.citationIds });
+    } catch (error) {
+      console.error("Auto-attach citation error:", error);
+      res.status(500).json({ error: "Failed to auto-attach citation" });
+    }
+  });
+
   app.get("/api/cases/:caseId/issues", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

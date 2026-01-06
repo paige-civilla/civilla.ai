@@ -1,0 +1,103 @@
+REPLIT TASK: Phase 2B — One-Click Citations + Auto-Attach “Best Source” for Claims (Evidence-First Compile UX)
+
+Goal
+Make “Compile from Claims” frictionless by ensuring every ACCEPTED claim can get a citation with one click.
+Also improve AI-suggested claims so they arrive with citations already attached whenever possible.
+
+What to build (do ALL)
+
+A) BACKEND: Make AI Suggested Claims Auto-Attach Their Citations (so they’re never “citationless” by default)
+File: server/routes.ts
+Route (already exists): POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest
+
+Change behavior:
+1) When the route creates citation_pointers, ALSO create the join rows in claim_citations for each suggested claim.
+2) If the AI suggestion includes multiple quotes per claim, attach the “best” one first, and optionally attach up to 2 total citations per claim.
+
+Rules:
+- Only create claim_citations rows if both claimId and citationId exist and belong to the same user/case.
+- If a claim already has citations (regenerated suggestions), do NOT duplicate. Use unique constraint if present; otherwise check before insert.
+
+Expected outcome:
+- Suggested claims immediately show “Sources: 1” (or 2) without user action.
+- Accepting a claim generally does not require extra citation work.
+
+B) BACKEND: Add Auto-Attach Endpoint for Any Claim Missing Citations
+Add route:
+POST /api/claims/:claimId/citations/auto   (requireAuth)
+
+Request body (optional):
+{
+  "maxAttach": 1,          // default 1
+  "preferEvidenceId": "...", // optional, if you want to force within a file
+  "refresh": false
+}
+
+Response:
+{ ok: true, attached: number, citationIds: string[] }
+OR
+{ ok: false, error: "no_citations_available" }
+
+Server logic:
+1) Load claim by claimId (must belong to userId).
+2) If claim already has >= maxAttach citations, return ok: true with attached: 0.
+3) Determine candidate citation pointers:
+   - Prefer citation pointers from same evidence_file_id if claim has evidenceFileId
+   - Else use any citations within the same case
+4) Score candidates (simple + reliable):
+   - If citation.pointerText/quoteSnippet contains any meaningful words from claim.claimText -> + points
+   - If candidate has pageNumber/timestamp -> + small bonus
+   - If candidate length between 20–350 chars -> + bonus
+5) Attach top N citations via claim_citations.
+
+IMPORTANT:
+- Never return full secrets.
+- Return only IDs and counts.
+
+C) FRONTEND: One-Click Citation Controls in Claims UI (EvidenceViewer)
+Files likely:
+- client/src/components/evidence/EvidenceViewer.tsx (or wherever claims are rendered)
+- any Claim row component if extracted
+
+UI requirements:
+1) Each claim row shows a “Sources” indicator:
+   - “Sources: 0” (red) if none
+   - “Sources: 1” (neutral/green) if present
+2) Add a button for claims with Sources: 0
+   - Label: “Auto-attach source”
+   - Calls POST /api/claims/:claimId/citations/auto
+   - On success, refetch claim citations and update the count
+3) Add a “Manage sources” toggle (small)
+   - Expands a compact list of citation pointers attached to the claim:
+     - Evidence filename
+     - Page/timestamp if available
+     - Short quote snippet (truncate)
+   - Each entry has a Remove button (uses existing detach endpoint)
+4) When the user clicks “Accept” on a suggested claim:
+   - If claim has 0 citations, show a confirm-style toast:
+     “Accepted. This claim needs a source to compile. Tap ‘Auto-attach source’.”
+   - Do NOT block acceptance (the compile preflight already blocks later).
+
+D) FRONTEND: Document Creator Preflight UX Improvement (fast fix)
+File: client/src/pages/AppDocuments.tsx (or Document Creator dialog component)
+In the “Preflight Checklist”:
+- For “Accepted claims missing citations”
+  - Add a small action button: “Auto-attach missing sources”
+  - This loops over accepted claims missing citations and calls /api/claims/:id/citations/auto sequentially (NOT parallel spam).
+  - Then refetch draft readiness and update checklist.
+Add safety:
+- Disable while running
+- Show progress toast: “Fixing 3 claims…”
+
+E) VERIFY + REPORT
+After changes, confirm:
+1) New suggested claims come with citations attached automatically.
+2) Accept a claim, go to Document Creator → checklist should usually be green.
+3) If a claim has 0 citations, “Auto-attach source” adds at least 1 citation (when any exist in the case/file).
+4) “Auto-attach missing sources” fixes all eligible claims and enables compile.
+
+In your reply, include:
+- Files changed
+- Endpoints added
+- Any new helper functions
+- Exact behavior for: suggested claims, accepted claims, preflight bulk fix

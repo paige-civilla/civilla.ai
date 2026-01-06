@@ -408,6 +408,10 @@ export interface IStorage {
     acceptedClaims: { id: string; missingInfoFlag: boolean }[];
     claimCitationCounts: Record<string, number>;
   }>;
+
+  autoAttachClaimCitation(userId: string, claimId: string, options?: { maxAttach?: number; preferEvidenceId?: string }): Promise<{ attached: number; citationIds: string[] }>;
+  
+  listCitationPointersForCase(userId: string, caseId: string): Promise<CitationPointer[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3095,6 +3099,86 @@ export class DatabaseStorage implements IStorage {
       acceptedClaims: accepted.map((c) => ({ id: c.id, missingInfoFlag: c.missingInfoFlag ?? false })),
       claimCitationCounts,
     };
+  }
+
+  async listCitationPointersForCase(userId: string, caseId: string): Promise<CitationPointer[]> {
+    return db
+      .select()
+      .from(citationPointers)
+      .where(and(eq(citationPointers.userId, userId), eq(citationPointers.caseId, caseId)));
+  }
+
+  async autoAttachClaimCitation(
+    userId: string,
+    claimId: string,
+    options?: { maxAttach?: number; preferEvidenceId?: string }
+  ): Promise<{ attached: number; citationIds: string[] }> {
+    const maxAttach = options?.maxAttach ?? 1;
+    const preferEvidenceId = options?.preferEvidenceId;
+
+    const claim = await this.getCaseClaim(userId, claimId);
+    if (!claim) return { attached: 0, citationIds: [] };
+
+    const existingCitations = await this.listClaimCitations(userId, claimId);
+    if (existingCitations.length >= maxAttach) {
+      return { attached: 0, citationIds: [] };
+    }
+
+    const needed = maxAttach - existingCitations.length;
+    const existingCitationIds = new Set(existingCitations.map((c) => c.id));
+
+    let candidates = await this.listCitationPointersForCase(userId, claim.caseId);
+    candidates = candidates.filter((c) => !existingCitationIds.has(c.id));
+
+    if (candidates.length === 0) {
+      return { attached: 0, citationIds: [] };
+    }
+
+    const claimWords = new Set(
+      claim.claimText
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(/\s+/)
+        .filter((w) => w.length > 3)
+    );
+
+    const scored = candidates.map((cit) => {
+      let score = 0;
+      const citText = (cit.quote || "").toLowerCase();
+
+      if (preferEvidenceId && cit.evidenceFileId === preferEvidenceId) {
+        score += 50;
+      }
+
+      for (const word of claimWords) {
+        if (citText.includes(word)) score += 5;
+      }
+
+      if (cit.pageNumber !== null || cit.timestampSeconds !== null) {
+        score += 3;
+      }
+
+      const len = (cit.quote || "").length;
+      if (len >= 20 && len <= 350) {
+        score += 2;
+      }
+
+      return { cit, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const toAttach = scored.slice(0, needed);
+    const attachedIds: string[] = [];
+
+    for (const { cit } of toAttach) {
+      const success = await this.attachClaimCitation(userId, claimId, cit.id);
+      if (success) {
+        attachedIds.push(cit.id);
+      }
+    }
+
+    return { attached: attachedIds.length, citationIds: attachedIds };
   }
 }
 
