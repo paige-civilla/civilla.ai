@@ -6470,6 +6470,343 @@ Return a JSON object with this structure:
     }
   });
 
+  app.post("/api/cases/:caseId/citations", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertCitationPointerSchema } = await import("@shared/schema");
+      const parsed = insertCitationPointerSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const citation = await storage.createCitationPointer(userId, caseId, parsed.data);
+      res.status(201).json({ citation });
+    } catch (error) {
+      console.error("Create citation pointer error:", error);
+      res.status(500).json({ error: "Failed to create citation" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/citations", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const citations = await storage.listCitationPointersByEvidence(userId, caseId, evidenceId);
+      res.json({ citations });
+    } catch (error) {
+      console.error("List citations error:", error);
+      res.status(500).json({ error: "Failed to list citations" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/claims", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { status, evidenceFileId } = req.query;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const filters: { status?: "suggested" | "accepted" | "rejected"; evidenceFileId?: string } = {};
+      if (status && ["suggested", "accepted", "rejected"].includes(status as string)) {
+        filters.status = status as "suggested" | "accepted" | "rejected";
+      }
+      if (evidenceFileId && typeof evidenceFileId === "string") {
+        filters.evidenceFileId = evidenceFileId;
+      }
+      
+      const claims = await storage.listCaseClaims(userId, caseId, filters);
+      res.json({ claims });
+    } catch (error) {
+      console.error("List claims error:", error);
+      res.status(500).json({ error: "Failed to list claims" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/claims", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertCaseClaimSchema } = await import("@shared/schema");
+      const parsed = insertCaseClaimSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const claim = await storage.createCaseClaim(userId, caseId, parsed.data);
+      res.status(201).json({ claim });
+    } catch (error) {
+      console.error("Create claim error:", error);
+      res.status(500).json({ error: "Failed to create claim" });
+    }
+  });
+
+  app.get("/api/claims/:claimId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId } = req.params;
+      
+      const claim = await storage.getCaseClaim(userId, claimId);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      const citations = await storage.listClaimCitations(userId, claimId);
+      res.json({ claim, citations });
+    } catch (error) {
+      console.error("Get claim error:", error);
+      res.status(500).json({ error: "Failed to get claim" });
+    }
+  });
+
+  app.patch("/api/claims/:claimId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId } = req.params;
+      
+      const { updateCaseClaimSchema } = await import("@shared/schema");
+      const parsed = updateCaseClaimSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const updated = await storage.updateCaseClaim(userId, claimId, parsed.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      res.json({ claim: updated });
+    } catch (error) {
+      console.error("Update claim error:", error);
+      res.status(500).json({ error: "Failed to update claim" });
+    }
+  });
+
+  app.delete("/api/claims/:claimId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId } = req.params;
+      
+      const deleted = await storage.deleteCaseClaim(userId, claimId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete claim error:", error);
+      res.status(500).json({ error: "Failed to delete claim" });
+    }
+  });
+
+  app.post("/api/claims/:claimId/citations/:citationId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId, citationId } = req.params;
+      
+      const attached = await storage.attachClaimCitation(userId, claimId, citationId);
+      if (!attached) {
+        return res.status(404).json({ error: "Claim or citation not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Attach citation error:", error);
+      res.status(500).json({ error: "Failed to attach citation" });
+    }
+  });
+
+  app.delete("/api/claims/:claimId/citations/:citationId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId, citationId } = req.params;
+      
+      const detached = await storage.detachClaimCitation(userId, claimId, citationId);
+      if (!detached) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Detach citation error:", error);
+      res.status(500).json({ error: "Failed to detach citation" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/issues", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const issues = await storage.listIssueGroupings(userId, caseId);
+      res.json({ issues });
+    } catch (error) {
+      console.error("List issues error:", error);
+      res.status(500).json({ error: "Failed to list issues" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/issues", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertIssueGroupingSchema } = await import("@shared/schema");
+      const parsed = insertIssueGroupingSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const issue = await storage.createIssueGrouping(userId, caseId, parsed.data);
+      res.status(201).json({ issue });
+    } catch (error) {
+      console.error("Create issue error:", error);
+      res.status(500).json({ error: "Failed to create issue" });
+    }
+  });
+
+  app.get("/api/issues/:issueId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { issueId } = req.params;
+      
+      const issue = await storage.getIssueGrouping(userId, issueId);
+      if (!issue) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      const claims = await storage.listIssueClaims(userId, issueId);
+      res.json({ issue, claims });
+    } catch (error) {
+      console.error("Get issue error:", error);
+      res.status(500).json({ error: "Failed to get issue" });
+    }
+  });
+
+  app.patch("/api/issues/:issueId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { issueId } = req.params;
+      
+      const { updateIssueGroupingSchema } = await import("@shared/schema");
+      const parsed = updateIssueGroupingSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      
+      const updated = await storage.updateIssueGrouping(userId, issueId, parsed.data);
+      if (!updated) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      res.json({ issue: updated });
+    } catch (error) {
+      console.error("Update issue error:", error);
+      res.status(500).json({ error: "Failed to update issue" });
+    }
+  });
+
+  app.delete("/api/issues/:issueId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { issueId } = req.params;
+      
+      const deleted = await storage.deleteIssueGrouping(userId, issueId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Issue not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete issue error:", error);
+      res.status(500).json({ error: "Failed to delete issue" });
+    }
+  });
+
+  app.post("/api/issues/:issueId/claims/:claimId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { issueId, claimId } = req.params;
+      
+      const added = await storage.addClaimToIssue(userId, issueId, claimId);
+      if (!added) {
+        return res.status(404).json({ error: "Issue or claim not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Add claim to issue error:", error);
+      res.status(500).json({ error: "Failed to add claim to issue" });
+    }
+  });
+
+  app.delete("/api/issues/:issueId/claims/:claimId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { issueId, claimId } = req.params;
+      
+      const removed = await storage.removeClaimFromIssue(userId, issueId, claimId);
+      if (!removed) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove claim from issue error:", error);
+      res.status(500).json({ error: "Failed to remove claim from issue" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/draft-readiness", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const stats = await storage.getCaseDraftReadiness(userId, caseId);
+      res.json({ stats });
+    } catch (error) {
+      console.error("Get draft readiness error:", error);
+      res.status(500).json({ error: "Failed to get draft readiness" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep/export", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
