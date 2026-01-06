@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { LexiThread, LexiMessage } from "@shared/schema";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const OPEN_KEY = "civilla_lexi_open_v1";
 const STYLE_KEY = "civilla_lexi_style_v1";
@@ -67,25 +69,14 @@ function getIntentBadge(intent?: LexiIntent): { label: string; icon: typeof Sear
   }
 }
 
-function formatMessageContent(content: string) {
-  const urlRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-  const parts: (string | { text: string; url: string })[] = [];
-  let lastIndex = 0;
-  let match;
-  
-  while ((match = urlRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
-    }
-    parts.push({ text: match[1], url: match[2] });
-    lastIndex = match.index + match[0].length;
-  }
-  
-  if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
-  }
-  
-  return parts;
+function LexiMessageBody({ content }: { content: string }) {
+  return (
+    <div className="prose prose-sm max-w-none text-neutral-darkest prose-p:my-2 prose-li:my-1 prose-ul:my-2 prose-ol:my-2 prose-strong:text-neutral-darkest prose-a:text-[hsl(var(--module-tile-border))] prose-headings:font-heading prose-headings:text-neutral-darkest prose-headings:text-base prose-headings:mt-3 prose-headings:mb-1">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
 function containsDeadlineInfo(content: string): boolean {
@@ -621,7 +612,6 @@ export default function LexiPanel() {
                     {messages.map((m) => {
                       const meta = m.metadata as { intent?: LexiIntent; refused?: boolean; hadSources?: boolean } | null;
                       const badge = m.role === "assistant" ? getIntentBadge(meta?.intent) : null;
-                      const formattedContent = formatMessageContent(m.content);
                       const showDeadlineButton = m.role === "assistant" && containsDeadlineInfo(m.content) && caseId;
                       
                       return (
@@ -639,26 +629,16 @@ export default function LexiPanel() {
                           )}
                           <div
                             className={[
-                              "rounded-lg px-3 py-2 whitespace-pre-wrap text-sm",
+                              "rounded-lg px-3 py-2 text-sm",
                               m.role === "user"
-                                ? "ml-8 bg-primary text-primary-foreground"
+                                ? "ml-8 bg-primary text-primary-foreground whitespace-pre-wrap"
                                 : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
                             ].join(" ")}
                           >
-                            {formattedContent.map((part, idx) => 
-                              typeof part === "string" ? (
-                                <span key={idx}>{part}</span>
-                              ) : (
-                                <a 
-                                  key={idx} 
-                                  href={part.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 underline hover:text-blue-800"
-                                >
-                                  {part.text}
-                                </a>
-                              )
+                            {m.role === "assistant" ? (
+                              <LexiMessageBody content={m.content} />
+                            ) : (
+                              m.content
                             )}
                           </div>
                           {showDeadlineButton && (

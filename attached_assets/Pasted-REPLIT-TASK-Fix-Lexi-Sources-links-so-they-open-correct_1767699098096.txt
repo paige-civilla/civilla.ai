@@ -1,0 +1,98 @@
+REPLIT TASK: Fix Lexi “Sources” links so they open correctly (no “false / unavailable / not found”)
+
+Problem
+All Lexi “source links” fail (false/unavailable/not found). Likely causes:
+- Lexi outputs non-URL citations (titles, “Idaho Code § …”, etc.) instead of real https:// links
+- UI is routing links through internal navigation (wouter) so external links become “not found”
+- Markdown renderer isn’t creating anchors properly or links are being sanitized/blocked
+
+Goal
+- Lexi outputs SOURCES as real URLs
+- UI renders them as external <a href="https://..."> links that open in a new tab
+- No internal router interception
+- If a source doesn’t have a reliable URL, Lexi must say so and provide the official site path to search
+
+A) Enforce “real URLs only” in Lexi research output (server prompt)
+File: server/routes.ts (Lexi chat handler)
+
+In the system prompt (or research-mode instruction block), add:
+
+"SOURCES REQUIREMENT:
+- When you cite a source, include the full URL starting with https://
+- Provide sources as a bullet list under a 'Sources' heading
+- Prefer primary sources (state legislature, judiciary, official court rules/forms pages)
+- If you cannot find an official URL, say 'No official URL found' and give the official site name + what to search for"
+
+Also add:
+"Never output placeholder links (example.com) or text like 'Idaho Courts (link)'. Always include the real https URL."
+
+B) Make Markdown links open externally (client)
+File: client/src/components/lexi/LexiPanel.tsx
+
+If you implemented react-markdown already:
+- Add a custom link renderer that forces:
+  - target="_blank"
+  - rel="noreferrer noopener"
+  - allows only http/https
+
+Example:
+
+<ReactMarkdown
+  remarkPlugins={[remarkGfm]}
+  components={{
+    a: ({ href, children, ...props }) => {
+      const safe = typeof href === "string" && /^https?:\/\//i.test(href);
+      if (!safe) {
+        return <span className="underline decoration-dotted">{children}</span>;
+      }
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="underline"
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    },
+  }}
+>
+  {content}
+</ReactMarkdown>
+
+Important:
+- Do NOT use Link from wouter for Lexi content.
+- Ensure nothing is calling setLocation(href) for Lexi links.
+
+C) Stop internal navigation interception (if present)
+Search for any “onClick” handler that intercepts anchor clicks inside the Lexi message container.
+
+Repo search:
+rg -n "preventDefault|setLocation\\(|navigate\\(" client/src/components/lexi
+
+If found, change it so:
+- Only intercepts internal app links that start with "/app"
+- Everything else is left as a normal external link click
+
+Rule:
+if href startsWith("/app") -> internal navigation
+else -> let browser open normally
+
+D) Improve “Sources” UX (optional but recommended)
+In Lexi UI, detect a “Sources” section and visually separate it:
+- small header “Sources”
+- each link shows domain + title snippet if available
+But do not rewrite URLs.
+
+E) Test Plan
+1) Ask Lexi (Research mode): "What is the deadline to respond to a divorce petition in Idaho? Provide official sources with URLs."
+2) Expected:
+- Sources render as clickable links
+- Clicking opens new tab to official Idaho Legislature / Idaho Courts pages
+- No “not found” in-app page
+
+Report back
+- Files changed
+- Confirm at least 3 real https:// links open successfully from Lexi
