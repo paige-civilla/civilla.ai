@@ -22,6 +22,7 @@ import {
 } from "docx";
 import OpenAI from "openai";
 import { buildLexiSystemPrompt } from "./lexi/systemPrompt";
+import { getLexiPersonalization, buildPersonalizationPrompt } from "./lexi/lexiMemory";
 import { SAFETY_TEMPLATES, detectUPLRequest, shouldBlockMessage } from "./lexi/safetyTemplates";
 import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer";
 import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
@@ -4879,6 +4880,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         caseType: caseRecord?.caseType || undefined,
       });
 
+      const personalization = await getLexiPersonalization(userId, effectiveCaseId);
+      const personalizationBlock = buildPersonalizationPrompt(personalization);
+
       let caseContextBlock = "";
       if (effectiveCaseId) {
         const lexiContext = await buildLexiContext({ userId, caseId: effectiveCaseId });
@@ -4937,7 +4941,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const activeStyle = stylePreset || "bullets";
       const formattingPolicy = formattingPolicies[activeStyle] || formattingPolicies.bullets;
       const intentTemplate = intentTemplates[intent] || "";
-      const systemPrompt = `${baseSystemPrompt}${caseContextBlock}\n\n${formattingPolicy}${intentTemplate ? `\n\n${intentTemplate}` : ""}`;
+      const systemPrompt = `${baseSystemPrompt}${personalizationBlock}${caseContextBlock}\n\n${formattingPolicy}${intentTemplate ? `\n\n${intentTemplate}` : ""}`;
 
       const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
