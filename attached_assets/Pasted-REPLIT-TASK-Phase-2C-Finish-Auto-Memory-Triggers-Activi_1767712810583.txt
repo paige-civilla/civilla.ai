@@ -1,0 +1,55 @@
+REPLIT TASK: Phase 2C – Finish Auto-Memory Triggers + Activity Logs (make Personal Lexi actually learn)
+
+Goal
+Expand the debounced memory rebuild triggers beyond claims/timeline so the case memory stays current and accurate across the whole app. Also log major actions into activity_logs so users have immutable audit history.
+
+Do ALL sections A–E.
+
+A) ADD TRIGGERS: Evidence Extraction completion/failure
+Where extraction status changes to complete/failed (wherever evidence_extractions is updated):
+- call scheduleCaseMemoryRebuild(userId, caseId, "evidence_extraction_complete")
+- write activity_logs row:
+  type: "evidence_extraction_complete" or "evidence_extraction_failed"
+  metadata: { evidenceId, extractionId, status, provider, pageCount?, error? }
+
+If there isn’t a single place where status is updated, centralize it into a helper:
+server/lexi/triggerMemory.ts:
+  export function triggerCaseMemory(userId, caseId, reason, meta?)
+
+B) ADD TRIGGERS: Evidence AI Analysis completion/failure
+Where evidence_ai_analyses is created/updated to complete/failed:
+- call scheduleCaseMemoryRebuild(userId, caseId, "evidence_ai_analysis_complete")
+- write activity_logs row:
+  type: "evidence_ai_analysis_complete" or "evidence_ai_analysis_failed"
+  metadata: { evidenceId, analysisId, status, model?, error? }
+
+This must include the new run endpoint:
+POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run
+
+C) ADD TRIGGERS: Trial Prep shortlist changes + pin/unpin
+On these endpoints:
+POST /api/cases/:caseId/trial-prep-shortlist
+PATCH /api/trial-prep-shortlist/:itemId
+DELETE /api/trial-prep-shortlist/:itemId
+When isPinned changes OR item added/edited/deleted:
+- scheduleCaseMemoryRebuild(userId, caseId, "trial_prep_updated")
+- activity_logs type: trial_prep_created / trial_prep_updated / trial_prep_deleted / trial_prep_pinned / trial_prep_unpinned
+
+D) ADD TRIGGERS: Document compilation + exports
+On:
+POST /api/cases/:caseId/documents/compile-claims
+Any export routes:
+- pattern analysis export
+- trial prep export binder
+- exhibits export zip
+Log activity_logs entries like:
+type: "doc_compile_claims", "export_pattern_analysis", "export_trial_prep_binder", "export_exhibits_zip"
+metadata: { docId?, caseId, counts? }
+Also scheduleCaseMemoryRebuild(userId, caseId, "doc_export") (debounced)
+
+E) REPORT BACK
+After implementing, report:
+- files changed
+- exact routes that now trigger memory rebuild + activity logs
+- confirm debounce remains 60 seconds per (userId, caseId)
+- show 1 example log line for each of: extraction complete, analysis failed, trial prep pinned, export

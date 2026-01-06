@@ -2809,8 +2809,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const document = await storage.createDocument(userId, caseId, {
         title: title.trim(),
-        templateKey: "compiled_claims",
+        templateKey: "declaration",
         content: markdown,
+      });
+
+      await storage.createLexiFeedbackEvent(userId, caseId, "doc_compile_claims", {
+        documentId: document.id,
+        claimCount: claims.length,
+      });
+      
+      await storage.createActivityLog(userId, caseId, "document_compiled", `Compiled ${claims.length} claims into document`, {
+        documentId: document.id,
+        claimCount: claims.length,
       });
 
       res.status(201).json({
@@ -4574,15 +4584,52 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
   app.get("/api/ai/health", requireAuth, async (_req, res) => {
     try {
-      const result = await checkAiTableColumns();
-      if (result.ok) {
-        res.json(result);
+      const openaiStatus: { ok: boolean; error?: string; code?: string } = { ok: false };
+      if (!process.env.OPENAI_API_KEY) {
+        openaiStatus.error = "OPENAI_API_KEY not configured";
+        openaiStatus.code = "OPENAI_KEY_MISSING";
       } else {
-        res.status(500).json(result);
+        try {
+          const testClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+          await testClient.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: "ping" }],
+            max_tokens: 5,
+          });
+          openaiStatus.ok = true;
+        } catch (err: unknown) {
+          const errAny = err as { status?: number; code?: string; message?: string };
+          if (errAny?.status === 401 || errAny?.code === "invalid_api_key") {
+            openaiStatus.error = "Invalid OpenAI API key";
+            openaiStatus.code = "OPENAI_KEY_INVALID";
+          } else if (errAny?.status === 429) {
+            openaiStatus.error = "OpenAI rate limit exceeded";
+            openaiStatus.code = "OPENAI_RATE_LIMIT";
+          } else {
+            openaiStatus.error = errAny?.message || "OpenAI call failed";
+            openaiStatus.code = "OPENAI_ERROR";
+          }
+        }
       }
+
+      const visionStatus = await checkVisionHealth();
+
+      const dbStatus = await checkAiTableColumns();
+
+      const allOk = openaiStatus.ok && visionStatus.ok && dbStatus.ok;
+      res.json({
+        ok: allOk,
+        openai: openaiStatus,
+        vision: visionStatus,
+        db: {
+          ok: dbStatus.ok,
+          evidence_extractions_status: dbStatus.ok,
+          evidence_ai_analyses_status: dbStatus.ok,
+        },
+      });
     } catch (error) {
       console.error("AI health check error:", error);
-      res.status(500).json({ ok: false, error: "Health check failed" });
+      res.status(500).json({ ok: false, error: "Health check failed", code: "INTERNAL_ERROR" });
     }
   });
 
@@ -5086,59 +5133,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(404).json({ error: "Case not found" });
       }
 
-      const summaryParts: string[] = [];
-
-      if (caseRecord.caseName) {
-        summaryParts.push(`## Case: ${caseRecord.caseName}`);
-      }
-      if (caseRecord.caseNumber) {
-        summaryParts.push(`Case Number: ${caseRecord.caseNumber}`);
-      }
-      if (caseRecord.courtName) {
-        summaryParts.push(`Court: ${caseRecord.courtName}`);
-      }
-
-      const claims = await storage.listCaseClaims(caseId, userId);
-      const acceptedClaims = claims.filter(c => c.status === "accepted");
-      if (acceptedClaims.length > 0) {
-        summaryParts.push(`\n## Accepted Claims (${acceptedClaims.length})`);
-        for (const claim of acceptedClaims.slice(0, 10)) {
-          summaryParts.push(`- ${claim.claimText.slice(0, 200)}${claim.claimText.length > 200 ? "..." : ""}`);
-        }
-        if (acceptedClaims.length > 10) {
-          summaryParts.push(`- ... and ${acceptedClaims.length - 10} more`);
-        }
-      }
-
-      const events = await storage.listTimelineEvents(caseId, userId);
-      if (events.length > 0) {
-        summaryParts.push(`\n## Key Timeline Events (${events.length} total)`);
-        const recentEvents = events.slice(0, 5);
-        for (const ev of recentEvents) {
-          const dateStr = ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : "Unknown date";
-          summaryParts.push(`- ${dateStr}: ${ev.title || "Untitled event"}`);
-        }
-      }
-
-      const trialPrepItems = await storage.listTrialBinderItems(userId, caseId);
-      const pinnedItems = trialPrepItems.filter((i: { isPinned?: boolean }) => i.isPinned);
-      if (pinnedItems.length > 0) {
-        summaryParts.push(`\n## Pinned Trial Prep Items (${pinnedItems.length})`);
-        for (const item of pinnedItems.slice(0, 5)) {
-          summaryParts.push(`- ${item.title || "Untitled"}`);
-        }
-      }
-
-      const memoryMarkdown = summaryParts.join("\n");
-
-      await storage.updateLexiCaseMemoryMarkdown(userId, caseId, memoryMarkdown);
-
-      await storage.createActivityLog(userId, caseId, "memory_rebuild", `Rebuilt case memory from ${acceptedClaims.length} claims, ${events.length} events`, {
-        claimCount: acceptedClaims.length,
-        eventCount: events.length,
-        pinnedItemCount: pinnedItems.length,
-      });
-
+      const memoryMarkdown = await rebuildCaseMemory(userId, caseId);
       res.json({ ok: true, memoryMarkdown, updatedAt: new Date().toISOString() });
     } catch (err) {
       console.error("Rebuild Lexi case memory error:", err);
@@ -5251,10 +5246,29 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       if (!parsed.success) {
         return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
       }
+      
+      const existingItem = await storage.getTrialBinderItem(userId, itemId);
       const item = await storage.updateTrialBinderItem(userId, itemId, parsed.data);
       if (!item) {
         return res.status(404).json({ error: "Item not found" });
       }
+      
+      if (parsed.data.pinnedRank !== undefined) {
+        const wasPinned = existingItem?.pinnedRank !== null;
+        const isPinned = parsed.data.pinnedRank !== null;
+        if (wasPinned !== isPinned) {
+          await storage.createLexiFeedbackEvent(userId, caseId, isPinned ? "trial_prep_pin" : "trial_prep_unpin", {
+            itemId: item.id,
+            sectionKey: item.sectionKey,
+          });
+          
+          const caseIdNum = parseInt(caseId, 10);
+          if (!isNaN(caseIdNum)) {
+            scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, caseId));
+          }
+        }
+      }
+      
       res.json(item);
     } catch (error) {
       console.error("Error updating trial prep item:", error);
@@ -7200,10 +7214,21 @@ Limit to ${limit} most important claims.`;
         return res.status(404).json({ error: "Claim not found" });
       }
       
-      if (parsed.data.status === "accepted" && existingClaim?.status !== "accepted" && updated.caseId) {
-        const caseIdNum = parseInt(updated.caseId, 10);
-        if (!isNaN(caseIdNum)) {
-          scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, updated.caseId));
+      if (parsed.data.status && parsed.data.status !== existingClaim?.status && updated.caseId) {
+        const eventType = parsed.data.status === "accepted" ? "claim_accept" : parsed.data.status === "rejected" ? "claim_reject" : null;
+        if (eventType) {
+          await storage.createLexiFeedbackEvent(userId, updated.caseId, eventType, {
+            claimId: updated.id,
+            claimText: updated.claimText.slice(0, 100),
+            previousStatus: existingClaim?.status,
+          });
+        }
+        
+        if (parsed.data.status === "accepted" || parsed.data.status === "rejected") {
+          const caseIdNum = parseInt(updated.caseId, 10);
+          if (!isNaN(caseIdNum)) {
+            scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, updated.caseId));
+          }
         }
       }
       

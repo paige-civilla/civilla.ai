@@ -1,0 +1,73 @@
+REPLIT TASK: Continue “Personal Lexi” + Mod-Project Workflow Wiring (Do NOT pause for testing)
+
+Goal
+Make Civilla behave like the Modification project workflow:
+- Evidence-first
+- Structured records first
+- Claims + citations drive drafting
+- Transparent validation gates
+- Per-case “Personal Lexi” memory updates automatically
+- Account-level immutable logs
+
+Do ALL sections A–F.
+
+A) COMPLETE TASK G: Connect feedback signals to real user actions
+Whenever these actions occur, record into lexi_feedback_events (userId, caseId, type, metadata):
+- claim_accept / claim_reject (already in UI)  
+- doc_compile_claims (when claims-mode compile happens)
+- doc_export (pattern analysis export, trial prep export, exhibits export)
+- evidence_extraction_complete / failed
+- evidence_ai_analysis_complete / failed
+- trial_prep_pin / unpin
+- search_click (deep link click)
+
+Implementation:
+- Add server-side logging in each relevant route after success.
+- Add a small client-side hook ONLY where there is no server route (example: search_click).
+
+B) AUTO-REBUILD lexi_case_memory (this is the “personal Lexi learns the case” behavior)
+Implement scheduleLexiMemoryRefresh(userId, caseId) in server/services/lexiMemory.ts:
+- debounce per (userId, caseId) for 60 seconds
+- runs rebuildLexiCaseMemoryFromCaseData(userId, caseId)
+- upserts lexi_case_memory
+
+Trigger scheduleLexiMemoryRefresh from:
+- claim accept/reject routes (or claim update route when status changes)
+- timeline event create/update
+- trial prep create/update/pin
+- evidence extraction complete
+- evidence AI analysis complete
+- pattern analysis generation completion (if applicable)
+
+C) Lexi Chat: ALWAYS inject memory + user prefs when caseId exists
+In /api/lexi/chat:
+- Fetch lexi_user_prefs for userId (if exists)
+- Fetch lexi_case_memory for (userId, caseId) when caseId is present
+- Add BOTH into the system prompt:
+  - “USER PREFERENCES”
+  - “CASE MEMORY”
+- Ensure it never uses __general__ caseId if cases FK exists. If caseId missing, operate without case memory.
+
+D) Fix “Extraction not working / Analysis not working” with hard checks + better errors
+Add /api/ai/health already exists — expand it:
+- Verify OPENAI_API_KEY works with a minimal models call OR a tiny chat completion (safe)
+- Verify GOOGLE_CLOUD_VISION_API_KEY exists (no need to call Vision if it costs; just confirm presence)
+Return clear error codes.
+
+In Evidence UI, if extraction/analysis fails:
+- show the REAL error message (sanitized), not just “contact support”
+- add a “Copy error details” button for debugging
+
+E) Make Lexi formatting match Civilla style (non-run-on)
+Update Lexi system prompt rules:
+- Short paragraphs (max 2–3 sentences)
+- Bullet lists for steps
+- Use headings
+- End with “Next best action inside Civilla” (organizational suggestion, not legal advice)
+
+F) REPORT BACK
+After implementing, report:
+- Files changed
+- Which routes now generate lexi_feedback_events + activity logs
+- Proof that lexi_case_memory updates automatically (log statement is fine)
+- /api/ai/health now checks OpenAI key validity and returns clear codes

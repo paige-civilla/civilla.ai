@@ -2,7 +2,7 @@ const DEBOUNCE_MS = 60_000;
 
 const pendingRebuilds = new Map<number, NodeJS.Timeout>();
 
-export function scheduleMemoryRebuild(caseId: number, rebuildFn: () => Promise<void>) {
+export function scheduleMemoryRebuild(caseId: number, rebuildFn: () => Promise<unknown>) {
   if (pendingRebuilds.has(caseId)) {
     clearTimeout(pendingRebuilds.get(caseId)!);
   }

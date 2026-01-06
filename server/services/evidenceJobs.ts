@@ -128,6 +128,16 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
       error: null,
     });
 
+    await storage.createLexiFeedbackEvent(userId, caseId, "evidence_extraction_complete", {
+      evidenceId,
+      charCount: result.text.length,
+    });
+    
+    await storage.createActivityLog(userId, caseId, "evidence_upload", `Extraction complete for ${originalFilename}: ${result.text.length} chars`, {
+      evidenceId,
+      charCount: result.text.length,
+    });
+
     console.log(`[ExtractionJob] Complete for evidence ${evidenceId}: ${result.text.length} chars`);
   } catch (error) {
     console.error(`[ExtractionJob] Error for evidence ${evidenceId}:`, error);
@@ -137,6 +147,11 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
       if (extraction) {
         await storage.updateEvidenceExtraction(userId, extraction.id, {
           status: "failed",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        
+        await storage.createLexiFeedbackEvent(userId, caseId, "evidence_extraction_failed", {
+          evidenceId,
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
