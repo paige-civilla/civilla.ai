@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { X, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText, StickyNote, Plus, Pencil, Trash2, Check, Loader2, BookOpen, Scale, ChevronDown, ChevronUp, CheckCircle, Circle, Tag, Clock, AlignLeft, AlertTriangle, Sparkles, XCircle, MessageSquareQuote } from "lucide-react";
+import { X, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText, StickyNote, Plus, Pencil, Trash2, Check, Loader2, BookOpen, Scale, ChevronDown, ChevronUp, CheckCircle, Circle, Tag, Clock, AlignLeft, AlertTriangle, Sparkles, XCircle, MessageSquareQuote, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -304,8 +304,66 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
     },
   });
 
+  const [autoAttachingClaimId, setAutoAttachingClaimId] = useState<string | null>(null);
+  const autoAttachMutation = useMutation({
+    mutationFn: async (claimId: string) => {
+      setAutoAttachingClaimId(claimId);
+      const res = await apiRequest("POST", `/api/claims/${claimId}/citations/auto`, { maxAttach: 1 });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setAutoAttachingClaimId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "claims"] });
+      if (data.ok && data.attached > 0) {
+        toast({ title: "Source attached" });
+      } else if (data.error === "no_citations_available") {
+        toast({ title: "No sources available", description: "No matching citations found in this case", variant: "destructive" });
+      } else {
+        toast({ title: "Claim already has sources" });
+      }
+    },
+    onError: () => {
+      setAutoAttachingClaimId(null);
+      toast({ title: "Failed to attach source", variant: "destructive" });
+    },
+  });
+
+  const detachCitationMutation = useMutation({
+    mutationFn: async ({ claimId, citationId }: { claimId: string; citationId: string }) => {
+      return apiRequest("DELETE", `/api/claims/${claimId}/citations/${citationId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "claims"] });
+      toast({ title: "Source removed" });
+    },
+    onError: () => {
+      toast({ title: "Failed to remove source", variant: "destructive" });
+    },
+  });
+
+  const [expandedClaimSources, setExpandedClaimSources] = useState<Set<string>>(new Set());
+  function toggleClaimSources(claimId: string) {
+    setExpandedClaimSources(prev => {
+      const next = new Set(prev);
+      if (next.has(claimId)) next.delete(claimId);
+      else next.add(claimId);
+      return next;
+    });
+  }
+
   function handleAcceptClaim(claimId: string) {
-    updateClaimMutation.mutate({ claimId, data: { status: "accepted" } });
+    const claim = suggestedClaims.find(c => c.id === claimId);
+    const hasCitations = claim?.citations && claim.citations.length > 0;
+    updateClaimMutation.mutate({ claimId, data: { status: "accepted" } }, {
+      onSuccess: () => {
+        if (!hasCitations) {
+          toast({ 
+            title: "Accepted", 
+            description: "This claim needs a source to compile. Tap 'Auto-attach source'.",
+          });
+        }
+      }
+    });
   }
 
   function handleRejectClaim(claimId: string) {
@@ -693,11 +751,64 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
                             {Array.isArray(claim.tags) && (claim.tags as string[]).map((tag, i) => (
                               <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
                             ))}
+                            <Badge 
+                              variant={claim.citations && claim.citations.length > 0 ? "secondary" : "destructive"} 
+                              className="text-xs"
+                              data-testid={`badge-sources-${claim.id}`}
+                            >
+                              Sources: {claim.citations?.length || 0}
+                            </Badge>
                           </div>
+                          {(!claim.citations || claim.citations.length === 0) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs"
+                              onClick={() => autoAttachMutation.mutate(claim.id)}
+                              disabled={autoAttachingClaimId === claim.id}
+                              data-testid={`button-auto-attach-${claim.id}`}
+                            >
+                              {autoAttachingClaimId === claim.id ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <LinkIcon className="w-3 h-3 mr-1" />
+                              )}
+                              Auto-attach source
+                            </Button>
+                          )}
                           {claim.citations && claim.citations.length > 0 && (
-                            <div className="text-xs italic text-muted-foreground border-l-2 border-primary/30 pl-2">
-                              "{claim.citations[0].quote?.substring(0, 80)}..."
-                              {claim.citations[0].pageNumber && <span className="ml-1">(p.{claim.citations[0].pageNumber})</span>}
+                            <div className="space-y-1">
+                              <button 
+                                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                onClick={() => toggleClaimSources(claim.id)}
+                                data-testid={`button-manage-sources-${claim.id}`}
+                              >
+                                {expandedClaimSources.has(claim.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                Manage sources
+                              </button>
+                              {expandedClaimSources.has(claim.id) && (
+                                <div className="space-y-1 pl-2 border-l-2 border-primary/30">
+                                  {claim.citations.map((cit) => (
+                                    <div key={cit.id} className="flex items-start justify-between gap-2 text-xs text-muted-foreground">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-medium truncate">{evidence.originalName}</p>
+                                        {cit.pageNumber && <span>p.{cit.pageNumber}</span>}
+                                        {cit.timestampSeconds && <span>{Math.floor(cit.timestampSeconds / 60)}:{(cit.timestampSeconds % 60).toString().padStart(2, "0")}</span>}
+                                        {cit.quote && <p className="italic truncate">"{cit.quote.substring(0, 60)}..."</p>}
+                                      </div>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-5 w-5"
+                                        onClick={() => detachCitationMutation.mutate({ claimId: claim.id, citationId: cit.id })}
+                                        data-testid={`button-remove-citation-${cit.id}`}
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                           <div className="flex gap-1 pt-2">
@@ -734,6 +845,31 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
                       <Card key={claim.id} className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                         <CardContent className="p-2 space-y-1">
                           <p className="text-xs">{claim.claimText.length > 100 ? claim.claimText.substring(0, 100) + "..." : claim.claimText}</p>
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <Badge 
+                              variant={claim.citations && claim.citations.length > 0 ? "secondary" : "destructive"} 
+                              className="text-xs"
+                            >
+                              Sources: {claim.citations?.length || 0}
+                            </Badge>
+                            {(!claim.citations || claim.citations.length === 0) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-5 text-xs"
+                                onClick={() => autoAttachMutation.mutate(claim.id)}
+                                disabled={autoAttachingClaimId === claim.id}
+                                data-testid={`button-auto-attach-accepted-${claim.id}`}
+                              >
+                                {autoAttachingClaimId === claim.id ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <LinkIcon className="w-3 h-3 mr-1" />
+                                )}
+                                Auto-attach
+                              </Button>
+                            )}
+                          </div>
                           <Button
                             size="sm"
                             variant="outline"
