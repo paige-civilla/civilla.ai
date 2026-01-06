@@ -1,0 +1,100 @@
+REPLIT TASK: Fix Lexi “Sources” links opening as broken relative paths
+
+Problem
+Clicking Lexi source links does NOT open the intended webpage.
+Instead it navigates to a base site and then a “not found” state page.
+This happens when Lexi outputs sources without an absolute URL scheme
+(e.g., "www.example.com/..." or "example.com/..." or "/courts/forms").
+
+Goal
+All Lexi links must become absolute, external URLs (https://...) and open in a new tab.
+No internal router navigation.
+No relative-path links.
+
+A) Force Lexi to output ABSOLUTE URLs
+File: server/routes.ts (Lexi chat system prompt)
+
+Add this rule to the prompt:
+
+"SOURCES FORMAT:
+- Every source MUST be a full absolute URL starting with https://
+- Do not output 'www.' links without https://
+- Do not output bare domains (example.com) without https://
+- Do not output relative paths (/forms, courts.idaho.gov/forms, etc.)
+- If you can't find a working official URL, say: 'No official URL found' and provide what to search on the official site."
+
+B) Normalize hrefs in Lexi UI so even imperfect links work
+File: client/src/components/lexi/LexiPanel.tsx
+
+1) Add this helper near the top of the file:
+
+function normalizeHref(href?: string | null) {
+  if (!href) return null;
+  const raw = href.trim();
+
+  // Already absolute http(s)
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  // Starts with www.
+  if (/^www\./i.test(raw)) return `https://${raw}`;
+
+  // Bare domain like idaho.gov/forms
+  // If it contains a dot and no spaces, treat as domain/path
+  if (/^[^\s]+\.[^\s]+$/i.test(raw)) return `https://${raw}`;
+
+  // Prevent accidental relative navigation
+  // Anything else is considered unsafe/unusable as a link
+  return null;
+}
+
+2) In your ReactMarkdown components override (or add one),
+force external link behavior using normalizeHref:
+
+components={{
+  a: ({ href, children, ...props }) => {
+    const normalized = normalizeHref(href);
+
+    // If not a usable external link, render as plain text (NOT a broken link)
+    if (!normalized) {
+      return <span className="underline decoration-dotted">{children}</span>;
+    }
+
+    return (
+      <a
+        href={normalized}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="underline break-words"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  },
+}}
+
+Important:
+- Do NOT use wouter Link for Lexi content.
+- Do NOT intercept clicks for external links.
+
+C) Stop internal router interception if present
+Search for handlers inside Lexi message container that do preventDefault + setLocation.
+Repo search:
+rg -n "preventDefault|setLocation\\(|navigate\\(" client/src/components/lexi
+
+If found, change the logic so it ONLY intercepts internal app links that start with "/app".
+Everything else must be allowed to open normally.
+
+D) Quick test
+Ask Lexi:
+"List the official Idaho Courts family law forms page and Idaho Legislature site. Include Sources as full URLs."
+
+Expected:
+- Links begin with https://
+- Clicking opens correct external pages (new tab)
+- No “base site” + “not found” behavior
+- If Lexi outputs "www..." it still opens correctly because UI normalizes it
+
+Report back
+- Files changed
+- Confirm at least 2 source links open correctly

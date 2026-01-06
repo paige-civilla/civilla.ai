@@ -69,6 +69,15 @@ function getIntentBadge(intent?: LexiIntent): { label: string; icon: typeof Sear
   }
 }
 
+function normalizeHref(href?: string | null): string | null {
+  if (!href) return null;
+  const raw = href.trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^www\./i.test(raw)) return `https://${raw}`;
+  if (/^[^\s\/]+\.[^\s]+$/i.test(raw) && raw.includes('.')) return `https://${raw}`;
+  return null;
+}
+
 function LexiMessageBody({ content }: { content: string }) {
   return (
     <div className="prose prose-sm max-w-none text-neutral-darkest prose-p:my-2 prose-li:my-1 prose-ul:my-2 prose-ol:my-2 prose-strong:text-neutral-darkest prose-a:text-[hsl(var(--module-tile-border))] prose-headings:font-heading prose-headings:text-neutral-darkest prose-headings:text-base prose-headings:mt-3 prose-headings:mb-1">
@@ -76,16 +85,16 @@ function LexiMessageBody({ content }: { content: string }) {
         remarkPlugins={[remarkGfm]}
         components={{
           a: ({ href, children, ...props }) => {
-            const isExternal = typeof href === "string" && /^https?:\/\//i.test(href);
-            if (!isExternal) {
+            const normalized = normalizeHref(href);
+            if (!normalized) {
               return <span className="underline decoration-dotted text-neutral-darkest/70">{children}</span>;
             }
             return (
               <a
-                href={href}
+                href={normalized}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="text-[hsl(var(--module-tile-border))] underline hover:text-primary"
+                className="text-[hsl(var(--module-tile-border))] underline hover:text-primary break-words"
                 {...props}
               >
                 {children}
