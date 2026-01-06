@@ -72,7 +72,28 @@ function getIntentBadge(intent?: LexiIntent): { label: string; icon: typeof Sear
 function LexiMessageBody({ content }: { content: string }) {
   return (
     <div className="prose prose-sm max-w-none text-neutral-darkest prose-p:my-2 prose-li:my-1 prose-ul:my-2 prose-ol:my-2 prose-strong:text-neutral-darkest prose-a:text-[hsl(var(--module-tile-border))] prose-headings:font-heading prose-headings:text-neutral-darkest prose-headings:text-base prose-headings:mt-3 prose-headings:mb-1">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      <ReactMarkdown 
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ href, children, ...props }) => {
+            const isExternal = typeof href === "string" && /^https?:\/\//i.test(href);
+            if (!isExternal) {
+              return <span className="underline decoration-dotted text-neutral-darkest/70">{children}</span>;
+            }
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[hsl(var(--module-tile-border))] underline hover:text-primary"
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
+        }}
+      >
         {content}
       </ReactMarkdown>
     </div>
