@@ -40,31 +40,49 @@ export function buildPrefsPromptFragment(prefs: LexiUserPrefs | null): string {
   return `\n## User Preferences\n${lines.join("\n")}\n`;
 }
 
+interface CasePreferences {
+  tone?: "formal" | "friendly" | "concise" | "default";
+  formatting?: {
+    useBullets?: boolean;
+    useHeadings?: boolean;
+    shortParagraphs?: boolean;
+  };
+  bannedPhrases?: string[];
+  customInstructions?: string;
+}
+
 export function buildCaseMemoryPromptFragment(memory: LexiCaseMemory | null): string {
   if (!memory) return "";
   const lines: string[] = [];
   
-  if (memory.pinnedContext && memory.pinnedContext.trim()) {
-    lines.push(`**Pinned Context:** ${memory.pinnedContext.trim()}`);
+  if (memory.memoryMarkdown && memory.memoryMarkdown.trim()) {
+    lines.push(`**Case Context:**\n${memory.memoryMarkdown.trim()}`);
   }
   
-  if (memory.goalsJson && Array.isArray(memory.goalsJson) && memory.goalsJson.length > 0) {
-    const goals = memory.goalsJson as string[];
-    lines.push(`**Case Goals:**\n${goals.map((g, i) => `${i + 1}. ${g}`).join("\n")}`);
-  }
-  
-  if (memory.writingRulesJson && typeof memory.writingRulesJson === "object") {
-    const rules = memory.writingRulesJson as { bannedPhrases?: string[]; tone?: string };
-    if (rules.tone) {
-      lines.push(`**Preferred Tone:** ${rules.tone}`);
+  if (memory.preferencesJson && typeof memory.preferencesJson === "object") {
+    const prefs = memory.preferencesJson as CasePreferences;
+    
+    if (prefs.tone && prefs.tone !== "default") {
+      lines.push(`**Preferred Tone:** ${prefs.tone}`);
     }
-    if (rules.bannedPhrases && rules.bannedPhrases.length > 0) {
-      lines.push(`**Avoid These Phrases:** ${rules.bannedPhrases.join(", ")}`);
+    
+    if (prefs.formatting) {
+      const fmtRules: string[] = [];
+      if (prefs.formatting.useBullets) fmtRules.push("use bullet points");
+      if (prefs.formatting.useHeadings) fmtRules.push("use markdown headings");
+      if (prefs.formatting.shortParagraphs) fmtRules.push("keep paragraphs short");
+      if (fmtRules.length > 0) {
+        lines.push(`**Formatting Preferences:** ${fmtRules.join(", ")}`);
+      }
     }
-  }
-  
-  if (memory.lastAutoSummary && memory.lastAutoSummary.trim()) {
-    lines.push(`**Recent Case Summary:** ${memory.lastAutoSummary.trim()}`);
+    
+    if (prefs.bannedPhrases && prefs.bannedPhrases.length > 0) {
+      lines.push(`**Avoid These Phrases:** ${prefs.bannedPhrases.join(", ")}`);
+    }
+    
+    if (prefs.customInstructions && prefs.customInstructions.trim()) {
+      lines.push(`**Custom Instructions:** ${prefs.customInstructions.trim()}`);
+    }
   }
   
   if (lines.length === 0) return "";
