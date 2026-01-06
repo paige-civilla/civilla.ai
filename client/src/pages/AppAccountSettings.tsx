@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp } from "lucide-react";
+import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,15 @@ interface UserProfile {
   autoFillEnabled: boolean;
   firmName: string | null;
   barNumber: string | null;
+}
+
+interface LexiUserPrefs {
+  id: string;
+  userId: string;
+  responseStyle: string | null;
+  verbosity: number | null;
+  citationStrictness: string | null;
+  defaultMode: string | null;
 }
 
 export default function AppAccountSettings() {
@@ -51,6 +61,17 @@ export default function AppAccountSettings() {
     queryKey: ["/api/profile"],
   });
 
+  const { data: lexiPrefsData } = useQuery<{ prefs: LexiUserPrefs | null }>({
+    queryKey: ["/api/lexi/prefs"],
+  });
+
+  const [lexiPrefs, setLexiPrefs] = useState({
+    responseStyle: "default",
+    verbosity: 3,
+    citationStrictness: "default",
+    defaultMode: "research",
+  });
+
   useEffect(() => {
     if (profileData?.profile) {
       setFormData({
@@ -66,6 +87,17 @@ export default function AppAccountSettings() {
     }
   }, [profileData]);
 
+  useEffect(() => {
+    if (lexiPrefsData?.prefs) {
+      setLexiPrefs({
+        responseStyle: lexiPrefsData.prefs.responseStyle || "default",
+        verbosity: lexiPrefsData.prefs.verbosity ?? 3,
+        citationStrictness: lexiPrefsData.prefs.citationStrictness || "default",
+        defaultMode: lexiPrefsData.prefs.defaultMode || "research",
+      });
+    }
+  }, [lexiPrefsData]);
+
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       return apiRequest("PATCH", "/api/profile", data);
@@ -76,6 +108,19 @@ export default function AppAccountSettings() {
     },
     onError: () => {
       toast({ title: "Failed to update profile", variant: "destructive" });
+    },
+  });
+
+  const updateLexiPrefsMutation = useMutation({
+    mutationFn: async (data: typeof lexiPrefs) => {
+      return apiRequest("PUT", "/api/lexi/prefs", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/lexi/prefs"] });
+      toast({ title: "Lexi preferences saved" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save Lexi preferences", variant: "destructive" });
     },
   });
 
@@ -354,6 +399,113 @@ export default function AppAccountSettings() {
                       <SelectItem value="dark">Dark</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg font-heading font-bold text-neutral-darkest">
+                <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                Lexi AI Preferences
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-neutral-darkest">Response Style</Label>
+                  <p className="font-sans text-sm text-neutral-darkest/60 mb-2">
+                    How should Lexi structure responses?
+                  </p>
+                  <Select
+                    value={lexiPrefs.responseStyle}
+                    onValueChange={(val) => setLexiPrefs({ ...lexiPrefs, responseStyle: val })}
+                  >
+                    <SelectTrigger className="w-full max-w-xs" data-testid="select-lexi-style">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      <SelectItem value="formal">Formal / Professional</SelectItem>
+                      <SelectItem value="friendly">Friendly / Conversational</SelectItem>
+                      <SelectItem value="concise">Concise / Direct</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-neutral-darkest">Verbosity Level</Label>
+                  <p className="font-sans text-sm text-neutral-darkest/60 mb-2">
+                    How detailed should responses be? (1 = brief, 5 = comprehensive)
+                  </p>
+                  <div className="flex items-center gap-4 max-w-xs">
+                    <span className="text-sm text-neutral-darkest/60">1</span>
+                    <Slider
+                      value={[lexiPrefs.verbosity]}
+                      onValueChange={([v]) => setLexiPrefs({ ...lexiPrefs, verbosity: v })}
+                      min={1}
+                      max={5}
+                      step={1}
+                      className="flex-1"
+                      data-testid="slider-lexi-verbosity"
+                    />
+                    <span className="text-sm text-neutral-darkest/60">5</span>
+                    <span className="w-8 text-center font-medium text-neutral-darkest">{lexiPrefs.verbosity}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-neutral-darkest">Citation Approach</Label>
+                  <p className="font-sans text-sm text-neutral-darkest/60 mb-2">
+                    How strict should Lexi be about citing sources?
+                  </p>
+                  <Select
+                    value={lexiPrefs.citationStrictness}
+                    onValueChange={(val) => setLexiPrefs({ ...lexiPrefs, citationStrictness: val })}
+                  >
+                    <SelectTrigger className="w-full max-w-xs" data-testid="select-lexi-citation">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      <SelectItem value="strict">Strict (always cite sources)</SelectItem>
+                      <SelectItem value="relaxed">Relaxed (cite when helpful)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-neutral-darkest">Default Mode</Label>
+                  <p className="font-sans text-sm text-neutral-darkest/60 mb-2">
+                    What should Lexi optimize for by default?
+                  </p>
+                  <Select
+                    value={lexiPrefs.defaultMode}
+                    onValueChange={(val) => setLexiPrefs({ ...lexiPrefs, defaultMode: val })}
+                  >
+                    <SelectTrigger className="w-full max-w-xs" data-testid="select-lexi-mode">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="research">Research (comprehensive)</SelectItem>
+                      <SelectItem value="organization">Organization (case-focused)</SelectItem>
+                      <SelectItem value="analysis">Analysis (evidence review)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={() => updateLexiPrefsMutation.mutate(lexiPrefs)}
+                    disabled={updateLexiPrefsMutation.isPending}
+                    className="bg-primary text-primary-foreground"
+                    data-testid="button-save-lexi-prefs"
+                  >
+                    {updateLexiPrefsMutation.isPending ? "Saving..." : "Save Lexi Preferences"}
+                  </Button>
                 </div>
               </div>
             </CardContent>
