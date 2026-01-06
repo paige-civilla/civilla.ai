@@ -403,6 +403,11 @@ export interface IStorage {
   listIssueClaims(userId: string, issueId: string): Promise<CaseClaim[]>;
 
   getCaseDraftReadiness(userId: string, caseId: string): Promise<DraftReadinessStats>;
+
+  getClaimsCompilePreflight(caseId: string, userId: string): Promise<{
+    acceptedClaims: { id: string; missingInfoFlag: boolean }[];
+    claimCitationCounts: Record<string, number>;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3055,6 +3060,40 @@ export class DatabaseStorage implements IStorage {
       suggestedClaimsCount: suggestedClaims.length,
       timelineEventsWithCitationsCount: 0,
       lastUpdatedAt: lastUpdated ? lastUpdated.toISOString() : null,
+    };
+  }
+
+  async getClaimsCompilePreflight(caseId: string, userId: string): Promise<{
+    acceptedClaims: { id: string; missingInfoFlag: boolean }[];
+    claimCitationCounts: Record<string, number>;
+  }> {
+    const accepted = await db
+      .select({ id: caseClaims.id, missingInfoFlag: caseClaims.missingInfoFlag })
+      .from(caseClaims)
+      .where(
+        and(
+          eq(caseClaims.userId, userId),
+          eq(caseClaims.caseId, caseId),
+          eq(caseClaims.status, "accepted")
+        )
+      );
+
+    const claimCitationCounts: Record<string, number> = {};
+    if (accepted.length > 0) {
+      const claimIds = accepted.map((c) => c.id);
+      const citationLinks = await db
+        .select({ claimId: claimCitations.claimId })
+        .from(claimCitations)
+        .where(inArray(claimCitations.claimId, claimIds));
+
+      for (const link of citationLinks) {
+        claimCitationCounts[link.claimId] = (claimCitationCounts[link.claimId] || 0) + 1;
+      }
+    }
+
+    return {
+      acceptedClaims: accepted.map((c) => ({ id: c.id, missingInfoFlag: c.missingInfoFlag ?? false })),
+      claimCitationCounts,
     };
   }
 }

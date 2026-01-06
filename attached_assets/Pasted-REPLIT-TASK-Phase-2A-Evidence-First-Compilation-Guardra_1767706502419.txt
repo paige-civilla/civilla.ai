@@ -1,0 +1,196 @@
+REPLIT TASK: Phase 2A — Evidence-First Compilation Guardrails + Preflight Validation + Traceability Preview
+
+GOAL
+Make “Compile from Claims” behave like Paige’s evidence-first custody workflow:
+- No compilation if there are zero ACCEPTED claims with at least 1 citation each
+- Preflight checklist shows exactly what’s missing
+- Preview shows Claim → Citation Pointer mapping (file, page/timestamp, quote)
+
+DO ALL CHANGES BELOW.
+
+===========================================================
+A) BACKEND — Add Preflight Endpoint
+===========================================================
+
+1) In server/routes.ts
+Add a new authenticated endpoint:
+
+GET /api/cases/:caseId/documents/compile-claims/preflight
+
+Behavior:
+- requireAuth
+- Verify user owns case
+- Gather:
+  - acceptedClaims = case_claims where caseId + userId + status='accepted'
+  - For each accepted claim, count citations in claim_citations join citation_pointers
+- Return:
+
+{
+  ok: true,
+  canCompile: boolean,
+  totals: {
+    acceptedClaims: number,
+    acceptedClaimsWithCitations: number,
+    acceptedClaimsMissingCitations: number,
+    acceptedClaimsMissingInfoFlagged: number
+  },
+  missing: {
+    claimIdsMissingCitations: string[],
+    claimIdsMissingInfoFlagged: string[]
+  },
+  message: string
+}
+
+Rules:
+- canCompile TRUE only if:
+  acceptedClaimsWithCitations >= 1
+  AND acceptedClaimsMissingCitations == 0
+(We allow missingInfoFlagged claims, but we warn.)
+
+2) In server/storage.ts
+Add a helper method (interface + implementation) to support preflight cleanly:
+
+getClaimsCompilePreflight(caseId: string, userId: string): Promise<{
+  acceptedClaims: { id: string; missingInfoFlag: boolean }[];
+  claimCitationCounts: Record<string, number>;
+}>
+
+Implementation detail:
+- Query accepted claims first
+- Query citation counts grouped by claimId from claim_citations
+- Build the map
+
+3) Wire the endpoint to use the new storage method.
+
+===========================================================
+B) BACKEND — Enforce Guardrails in the Compile Endpoint
+===========================================================
+
+In the existing endpoint:
+POST /api/cases/:caseId/documents/compile-claims
+
+Before generating output:
+- Call getClaimsCompilePreflight
+- If acceptedClaims.length === 0:
+  return 409 with:
+  { error: "No accepted claims to compile", code: "NO_ACCEPTED_CLAIMS" }
+
+- If any accepted claim has 0 citations:
+  return 409 with:
+  {
+    error: "Some accepted claims are missing citations",
+    code: "ACCEPTED_CLAIMS_MISSING_CITATIONS",
+    missingClaimIds: [...]
+  }
+
+Keep it strictly workflow-based (not advice).
+
+===========================================================
+C) BACKEND — Add a Traceability Payload (for the Preview)
+===========================================================
+
+Update compile endpoint response to include traceability data:
+Return:
+
+{
+  ok: true,
+  markdown: string,
+  trace: Array<{
+    claimId: string,
+    claimText: string,
+    citations: Array<{
+      citationId: string,
+      evidenceId: string,
+      evidenceName: string,
+      pointer: {
+        pageNumber?: number,
+        timestampSeconds?: number,
+        quote?: string
+      }
+    }>
+  }>
+}
+
+If you already build markdown using claims, just also build this trace array.
+
+You will need to join:
+case_claims -> claim_citations -> citation_pointers
+and also evidence_files to get evidenceName (originalName).
+
+===========================================================
+D) FRONTEND — Document Creator UX (Compile From Claims Tab)
+===========================================================
+
+Find the Document Creator page (likely client/src/pages/AppDocuments.tsx or AppDocumentCreator.tsx).
+
+1) Add preflight call on entering “Compile from Claims” tab:
+GET /api/cases/:caseId/documents/compile-claims/preflight
+
+2) UI behavior:
+- If canCompile = false:
+  - Show a prominent “Compilation blocked” box
+  - Show checklist:
+    - Accepted claims: X
+    - Accepted claims missing citations: Y
+    - Accepted claims flagged missing info: Z (warning only)
+  - Show message returned by API
+  - Disable “Generate Draft” button
+
+- If canCompile = true:
+  - Show checklist (green/neutral)
+  - Enable “Generate Draft”
+
+3) After compile runs successfully:
+- Show the markdown preview as usual
+- Add a “Traceability” section under the preview:
+  For each claim:
+    - Claim text
+    - List citations:
+      - Evidence file name
+      - Page or timestamp (if present)
+      - Quote snippet (truncate to ~200 chars)
+This should be very readable with spacing, bullets, and line breaks.
+
+===========================================================
+E) SAFETY / UPL TONE REQUIREMENTS
+===========================================================
+
+Make sure strings are workflow-only:
+- “Blocked until citations are attached”
+- “Add at least one citation per accepted claim”
+Avoid:
+- “You should file…”
+- “Best strategy…”
+
+===========================================================
+F) VERIFY
+===========================================================
+
+1) With 0 accepted claims:
+- Preflight canCompile=false
+- Compile endpoint returns 409 NO_ACCEPTED_CLAIMS
+
+2) With accepted claims but one missing citations:
+- Preflight canCompile=false
+- Compile endpoint returns 409 ACCEPTED_CLAIMS_MISSING_CITATIONS
+
+3) With accepted claims all having citations:
+- Preflight canCompile=true
+- Compile returns markdown + trace array
+- UI shows traceability section
+
+REPORT BACK:
+- Files changed
+- Endpoint responses (example JSON shapes)
+- Any new types added
+
+===========================================================
+IMPLEMENTATION HINTS (FAST SEARCH)
+===========================================================
+
+Search:
+- "/documents/compile-claims" in server/routes.ts and client
+- "Compile from Claims" UI section
+- "case_claims" usage
+
+Make sure ALL endpoints are requireAuth and case ownership-checked.

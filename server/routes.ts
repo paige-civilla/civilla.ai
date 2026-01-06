@@ -2636,17 +2636,72 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/cases/:caseId/documents/compile-claims/preflight", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const preflight = await storage.getClaimsCompilePreflight(caseId, userId);
+      const { acceptedClaims, claimCitationCounts } = preflight;
+
+      const acceptedClaimsWithCitations = acceptedClaims.filter(c => (claimCitationCounts[c.id] || 0) > 0).length;
+      const acceptedClaimsMissingCitations = acceptedClaims.filter(c => (claimCitationCounts[c.id] || 0) === 0).length;
+      const acceptedClaimsMissingInfoFlagged = acceptedClaims.filter(c => c.missingInfoFlag).length;
+
+      const claimIdsMissingCitations = acceptedClaims
+        .filter(c => (claimCitationCounts[c.id] || 0) === 0)
+        .map(c => c.id);
+      const claimIdsMissingInfoFlagged = acceptedClaims
+        .filter(c => c.missingInfoFlag)
+        .map(c => c.id);
+
+      const canCompile = acceptedClaimsWithCitations >= 1 && acceptedClaimsMissingCitations === 0;
+
+      let message = "";
+      if (acceptedClaims.length === 0) {
+        message = "No accepted claims. Review and accept claims from your evidence files first.";
+      } else if (acceptedClaimsMissingCitations > 0) {
+        message = `Blocked until citations are attached. ${acceptedClaimsMissingCitations} claim(s) missing citations.`;
+      } else if (acceptedClaimsMissingInfoFlagged > 0) {
+        message = `Ready to compile. Note: ${acceptedClaimsMissingInfoFlagged} claim(s) flagged as missing info.`;
+      } else {
+        message = "Ready to compile.";
+      }
+
+      res.json({
+        ok: true,
+        canCompile,
+        totals: {
+          acceptedClaims: acceptedClaims.length,
+          acceptedClaimsWithCitations,
+          acceptedClaimsMissingCitations,
+          acceptedClaimsMissingInfoFlagged,
+        },
+        missing: {
+          claimIdsMissingCitations,
+          claimIdsMissingInfoFlagged,
+        },
+        message,
+      });
+    } catch (error) {
+      console.error("Compile preflight error:", error);
+      res.status(500).json({ error: "Failed to check compile readiness" });
+    }
+  });
+
   app.post("/api/cases/:caseId/documents/compile-claims", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
-      const { title, claimIds } = req.body as { title: string; claimIds: string[] };
+      const { title } = req.body as { title: string };
 
       if (!title?.trim()) {
         return res.status(400).json({ error: "Title is required" });
-      }
-      if (!Array.isArray(claimIds) || claimIds.length === 0) {
-        return res.status(400).json({ error: "At least one claim is required" });
       }
 
       const caseRecord = await storage.getCase(caseId, userId);
@@ -2654,41 +2709,107 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(404).json({ error: "Case not found" });
       }
 
-      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
-      const selectedClaims = claims.filter(c => claimIds.includes(c.id));
+      const preflight = await storage.getClaimsCompilePreflight(caseId, userId);
+      const { acceptedClaims, claimCitationCounts } = preflight;
 
-      if (selectedClaims.length === 0) {
-        return res.status(400).json({ error: "No valid claims found" });
+      if (acceptedClaims.length === 0) {
+        return res.status(409).json({
+          error: "No accepted claims to compile",
+          code: "NO_ACCEPTED_CLAIMS",
+        });
       }
 
-      let content = `# ${title}\n\n`;
-      content += `Compiled from ${selectedClaims.length} evidence-backed claims.\n\n`;
-      content += `---\n\n`;
+      const claimsMissingCitations = acceptedClaims.filter(c => (claimCitationCounts[c.id] || 0) === 0);
+      if (claimsMissingCitations.length > 0) {
+        return res.status(409).json({
+          error: "Some accepted claims are missing citations",
+          code: "ACCEPTED_CLAIMS_MISSING_CITATIONS",
+          missingClaimIds: claimsMissingCitations.map(c => c.id),
+        });
+      }
 
-      for (let i = 0; i < selectedClaims.length; i++) {
-        const claim = selectedClaims[i];
-        content += `${i + 1}. ${claim.claimText}\n`;
-        
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        if (citations.length > 0) {
-          const cit = citations[0];
-          if (cit.citationPointer?.quote) {
-            content += `   > "${cit.citationPointer.quote.substring(0, 150)}${cit.citationPointer.quote.length > 150 ? "..." : ""}"\n`;
-          }
-          if (cit.citationPointer?.pageNumber) {
-            content += `   (Source: page ${cit.citationPointer.pageNumber})\n`;
+      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+      const evidenceFiles = await storage.getEvidenceFiles(caseId, userId);
+      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e.originalName]));
+
+      type TraceEntry = {
+        claimId: string;
+        claimText: string;
+        citations: Array<{
+          citationId: string;
+          evidenceId: string;
+          evidenceName: string;
+          pointer: {
+            pageNumber?: number;
+            timestampSeconds?: number;
+            quote?: string;
+          };
+        }>;
+      };
+
+      const trace: TraceEntry[] = [];
+      let markdown = `# ${title}\n\n`;
+      markdown += `Compiled from ${claims.length} evidence-backed claims.\n\n`;
+      markdown += `---\n\n`;
+
+      for (let i = 0; i < claims.length; i++) {
+        const claim = claims[i];
+        markdown += `${i + 1}. ${claim.claimText}\n`;
+
+        const citationPointers = await storage.listClaimCitations(userId, claim.id);
+        const traceEntry: TraceEntry = {
+          claimId: claim.id,
+          claimText: claim.claimText,
+          citations: [],
+        };
+
+        for (const cit of citationPointers) {
+          const ptr = cit.citationPointer;
+          if (ptr) {
+            const evidenceName = ptr.evidenceFileId ? (evidenceMap.get(ptr.evidenceFileId) || "Unknown file") : "Unknown file";
+            traceEntry.citations.push({
+              citationId: cit.id,
+              evidenceId: ptr.evidenceFileId || "",
+              evidenceName,
+              pointer: {
+                pageNumber: ptr.pageNumber ?? undefined,
+                timestampSeconds: ptr.timestampSeconds ?? undefined,
+                quote: ptr.quote ?? undefined,
+              },
+            });
+
+            if (ptr.quote) {
+              const truncatedQuote = ptr.quote.length > 150 ? ptr.quote.substring(0, 150) + "..." : ptr.quote;
+              markdown += `   > "${truncatedQuote}"\n`;
+            }
+            if (ptr.pageNumber) {
+              markdown += `   (Source: ${evidenceName}, page ${ptr.pageNumber})\n`;
+            } else if (ptr.timestampSeconds) {
+              const mins = Math.floor(ptr.timestampSeconds / 60);
+              const secs = ptr.timestampSeconds % 60;
+              markdown += `   (Source: ${evidenceName}, ${mins}:${secs.toString().padStart(2, "0")})\n`;
+            } else {
+              markdown += `   (Source: ${evidenceName})\n`;
+            }
           }
         }
-        content += `\n`;
+
+        trace.push(traceEntry);
+        markdown += `\n`;
       }
 
       const document = await storage.createDocument(userId, caseId, {
         title: title.trim(),
         templateKey: "compiled_claims",
-        content,
+        content: markdown,
       });
 
-      res.status(201).json({ document });
+      res.status(201).json({
+        ok: true,
+        document,
+        markdown,
+        trace,
+      });
     } catch (error) {
       console.error("Compile claims error:", error);
       res.status(500).json({ error: "Failed to compile claims into document" });
