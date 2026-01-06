@@ -143,6 +143,9 @@ import {
   claimCitations,
   issueGroupings,
   issueClaims,
+  lexiUserPrefs,
+  lexiCaseMemory,
+  lexiFeedbackEvents,
   type CitationPointer,
   type InsertCitationPointer,
   type CaseClaim,
@@ -153,6 +156,12 @@ import {
   type InsertIssueGrouping,
   type UpdateIssueGrouping,
   type DraftReadinessStats,
+  type LexiUserPrefs,
+  type UpsertLexiUserPrefs,
+  type LexiCaseMemory,
+  type UpsertLexiCaseMemory,
+  type LexiFeedbackEvent,
+  type CreateLexiFeedbackEvent,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -412,6 +421,16 @@ export interface IStorage {
   autoAttachClaimCitation(userId: string, claimId: string, options?: { maxAttach?: number; preferEvidenceId?: string }): Promise<{ attached: number; citationIds: string[] }>;
   
   listCitationPointersForCase(userId: string, caseId: string): Promise<CitationPointer[]>;
+
+  getLexiUserPrefs(userId: string): Promise<LexiUserPrefs | undefined>;
+  upsertLexiUserPrefs(userId: string, data: UpsertLexiUserPrefs): Promise<LexiUserPrefs>;
+
+  getLexiCaseMemory(userId: string, caseId: string): Promise<LexiCaseMemory | undefined>;
+  upsertLexiCaseMemory(userId: string, caseId: string, data: Partial<UpsertLexiCaseMemory>): Promise<LexiCaseMemory>;
+  updateLexiCaseAutoSummary(userId: string, caseId: string, summaryText: string): Promise<void>;
+
+  createLexiFeedbackEvent(userId: string, caseId: string | null, eventType: string, payload: Record<string, unknown>): Promise<LexiFeedbackEvent>;
+  listLexiFeedbackEvents(userId: string, caseId: string | null, limit?: number): Promise<LexiFeedbackEvent[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3179,6 +3198,93 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { attached: attachedIds.length, citationIds: attachedIds };
+  }
+
+  async getLexiUserPrefs(userId: string): Promise<LexiUserPrefs | undefined> {
+    const [prefs] = await db.select().from(lexiUserPrefs).where(eq(lexiUserPrefs.userId, userId));
+    return prefs;
+  }
+
+  async upsertLexiUserPrefs(userId: string, data: UpsertLexiUserPrefs): Promise<LexiUserPrefs> {
+    const existing = await this.getLexiUserPrefs(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(lexiUserPrefs)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(lexiUserPrefs.userId, userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(lexiUserPrefs)
+        .values({ userId, ...data })
+        .returning();
+      return created;
+    }
+  }
+
+  async getLexiCaseMemory(userId: string, caseId: string): Promise<LexiCaseMemory | undefined> {
+    const [memory] = await db
+      .select()
+      .from(lexiCaseMemory)
+      .where(and(eq(lexiCaseMemory.userId, userId), eq(lexiCaseMemory.caseId, caseId)));
+    return memory;
+  }
+
+  async upsertLexiCaseMemory(userId: string, caseId: string, data: Partial<UpsertLexiCaseMemory>): Promise<LexiCaseMemory> {
+    const existing = await this.getLexiCaseMemory(userId, caseId);
+    if (existing) {
+      const [updated] = await db
+        .update(lexiCaseMemory)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(eq(lexiCaseMemory.userId, userId), eq(lexiCaseMemory.caseId, caseId)))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(lexiCaseMemory)
+        .values({ userId, caseId, ...data })
+        .returning();
+      return created;
+    }
+  }
+
+  async updateLexiCaseAutoSummary(userId: string, caseId: string, summaryText: string): Promise<void> {
+    const existing = await this.getLexiCaseMemory(userId, caseId);
+    if (existing) {
+      await db
+        .update(lexiCaseMemory)
+        .set({ lastAutoSummary: summaryText, updatedAt: new Date() })
+        .where(and(eq(lexiCaseMemory.userId, userId), eq(lexiCaseMemory.caseId, caseId)));
+    } else {
+      await db.insert(lexiCaseMemory).values({ userId, caseId, lastAutoSummary: summaryText });
+    }
+  }
+
+  async createLexiFeedbackEvent(userId: string, caseId: string | null, eventType: string, payload: Record<string, unknown>): Promise<LexiFeedbackEvent> {
+    const [event] = await db
+      .insert(lexiFeedbackEvents)
+      .values({ userId, caseId, eventType, payloadJson: payload })
+      .returning();
+    return event;
+  }
+
+  async listLexiFeedbackEvents(userId: string, caseId: string | null, limit: number = 50): Promise<LexiFeedbackEvent[]> {
+    if (caseId) {
+      return db
+        .select()
+        .from(lexiFeedbackEvents)
+        .where(and(eq(lexiFeedbackEvents.userId, userId), eq(lexiFeedbackEvents.caseId, caseId)))
+        .orderBy(desc(lexiFeedbackEvents.createdAt))
+        .limit(limit);
+    } else {
+      return db
+        .select()
+        .from(lexiFeedbackEvents)
+        .where(eq(lexiFeedbackEvents.userId, userId))
+        .orderBy(desc(lexiFeedbackEvents.createdAt))
+        .limit(limit);
+    }
   }
 }
 
