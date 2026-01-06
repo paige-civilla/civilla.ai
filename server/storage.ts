@@ -138,6 +138,21 @@ import {
   type InsertExhibitSnippet,
   type UpdateExhibitSnippet,
   type UpdateEvidenceAiAnalysis,
+  citationPointers,
+  caseClaims,
+  claimCitations,
+  issueGroupings,
+  issueClaims,
+  type CitationPointer,
+  type InsertCitationPointer,
+  type CaseClaim,
+  type InsertCaseClaim,
+  type UpdateCaseClaim,
+  type ClaimStatus,
+  type IssueGrouping,
+  type InsertIssueGrouping,
+  type UpdateIssueGrouping,
+  type DraftReadinessStats,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -365,6 +380,29 @@ export interface IStorage {
     updatedAt: string | null;
     rank: number;
   }>>;
+
+  createCitationPointer(userId: string, caseId: string, data: InsertCitationPointer): Promise<CitationPointer>;
+  listCitationPointersByEvidence(userId: string, caseId: string, evidenceFileId: string): Promise<CitationPointer[]>;
+
+  createCaseClaim(userId: string, caseId: string, data: InsertCaseClaim): Promise<CaseClaim>;
+  listCaseClaims(userId: string, caseId: string, filters?: { status?: ClaimStatus; evidenceFileId?: string }): Promise<CaseClaim[]>;
+  getCaseClaim(userId: string, claimId: string): Promise<CaseClaim | undefined>;
+  updateCaseClaim(userId: string, claimId: string, patch: UpdateCaseClaim): Promise<CaseClaim | undefined>;
+  deleteCaseClaim(userId: string, claimId: string): Promise<boolean>;
+  attachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean>;
+  detachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean>;
+  listClaimCitations(userId: string, claimId: string): Promise<CitationPointer[]>;
+
+  createIssueGrouping(userId: string, caseId: string, data: InsertIssueGrouping): Promise<IssueGrouping>;
+  listIssueGroupings(userId: string, caseId: string): Promise<IssueGrouping[]>;
+  getIssueGrouping(userId: string, issueId: string): Promise<IssueGrouping | undefined>;
+  updateIssueGrouping(userId: string, issueId: string, patch: UpdateIssueGrouping): Promise<IssueGrouping | undefined>;
+  deleteIssueGrouping(userId: string, issueId: string): Promise<boolean>;
+  addClaimToIssue(userId: string, issueId: string, claimId: string): Promise<boolean>;
+  removeClaimFromIssue(userId: string, issueId: string, claimId: string): Promise<boolean>;
+  listIssueClaims(userId: string, issueId: string): Promise<CaseClaim[]>;
+
+  getCaseDraftReadiness(userId: string, caseId: string): Promise<DraftReadinessStats>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2744,6 +2782,280 @@ export class DatabaseStorage implements IStorage {
     `);
 
     return (result.rows ?? result) as any;
+  }
+
+  async createCitationPointer(userId: string, caseId: string, data: InsertCitationPointer): Promise<CitationPointer> {
+    const [citation] = await db
+      .insert(citationPointers)
+      .values({
+        userId,
+        caseId,
+        evidenceFileId: data.evidenceFileId,
+        quote: data.quote,
+        pageNumber: data.pageNumber ?? null,
+        timestampSeconds: data.timestampSeconds ?? null,
+        messageRange: data.messageRange ?? null,
+        excerpt: data.excerpt ?? null,
+        startOffset: data.startOffset ?? null,
+        endOffset: data.endOffset ?? null,
+        confidence: data.confidence ?? null,
+      })
+      .returning();
+    return citation;
+  }
+
+  async listCitationPointersByEvidence(userId: string, caseId: string, evidenceFileId: string): Promise<CitationPointer[]> {
+    return db
+      .select()
+      .from(citationPointers)
+      .where(
+        and(
+          eq(citationPointers.userId, userId),
+          eq(citationPointers.caseId, caseId),
+          eq(citationPointers.evidenceFileId, evidenceFileId)
+        )
+      )
+      .orderBy(desc(citationPointers.createdAt));
+  }
+
+  async createCaseClaim(userId: string, caseId: string, data: InsertCaseClaim): Promise<CaseClaim> {
+    const [claim] = await db
+      .insert(caseClaims)
+      .values({
+        userId,
+        caseId,
+        claimText: data.claimText,
+        claimType: data.claimType ?? "fact",
+        tags: data.tags ?? [],
+        color: data.color ?? null,
+        missingInfoFlag: data.missingInfoFlag ?? false,
+        createdFrom: data.createdFrom ?? "manual",
+        status: data.status ?? "suggested",
+        sourceNoteId: data.sourceNoteId ?? null,
+      })
+      .returning();
+    return claim;
+  }
+
+  async listCaseClaims(userId: string, caseId: string, filters?: { status?: ClaimStatus; evidenceFileId?: string }): Promise<CaseClaim[]> {
+    const conditions = [eq(caseClaims.userId, userId), eq(caseClaims.caseId, caseId)];
+    if (filters?.status) {
+      conditions.push(eq(caseClaims.status, filters.status));
+    }
+    let claims = await db
+      .select()
+      .from(caseClaims)
+      .where(and(...conditions))
+      .orderBy(desc(caseClaims.createdAt));
+
+    if (filters?.evidenceFileId) {
+      const citationIds = await db
+        .select({ citationId: claimCitations.citationId })
+        .from(claimCitations)
+        .innerJoin(citationPointers, eq(claimCitations.citationId, citationPointers.id))
+        .where(eq(citationPointers.evidenceFileId, filters.evidenceFileId));
+      const cidSet = new Set(citationIds.map((r) => r.citationId));
+
+      const claimLinks = await db.select().from(claimCitations);
+      const claimIdSet = new Set(
+        claimLinks.filter((l) => cidSet.has(l.citationId)).map((l) => l.claimId)
+      );
+      claims = claims.filter((c) => claimIdSet.has(c.id));
+    }
+    return claims;
+  }
+
+  async getCaseClaim(userId: string, claimId: string): Promise<CaseClaim | undefined> {
+    const [claim] = await db
+      .select()
+      .from(caseClaims)
+      .where(and(eq(caseClaims.id, claimId), eq(caseClaims.userId, userId)));
+    return claim;
+  }
+
+  async updateCaseClaim(userId: string, claimId: string, patch: UpdateCaseClaim): Promise<CaseClaim | undefined> {
+    const existing = await this.getCaseClaim(userId, claimId);
+    if (!existing) return undefined;
+    const [updated] = await db
+      .update(caseClaims)
+      .set({
+        claimText: patch.claimText ?? existing.claimText,
+        claimType: patch.claimType ?? existing.claimType,
+        tags: patch.tags ?? existing.tags,
+        color: patch.color !== undefined ? patch.color : existing.color,
+        missingInfoFlag: patch.missingInfoFlag ?? existing.missingInfoFlag,
+        status: patch.status ?? existing.status,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(caseClaims.id, claimId), eq(caseClaims.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteCaseClaim(userId: string, claimId: string): Promise<boolean> {
+    const result = await db
+      .delete(caseClaims)
+      .where(and(eq(caseClaims.id, claimId), eq(caseClaims.userId, userId)));
+    return (result as any).rowCount > 0;
+  }
+
+  async attachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean> {
+    const claim = await this.getCaseClaim(userId, claimId);
+    if (!claim) return false;
+    try {
+      await db.insert(claimCitations).values({ claimId, citationId });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async detachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean> {
+    const claim = await this.getCaseClaim(userId, claimId);
+    if (!claim) return false;
+    const result = await db
+      .delete(claimCitations)
+      .where(and(eq(claimCitations.claimId, claimId), eq(claimCitations.citationId, citationId)));
+    return (result as any).rowCount > 0;
+  }
+
+  async listClaimCitations(userId: string, claimId: string): Promise<CitationPointer[]> {
+    const claim = await this.getCaseClaim(userId, claimId);
+    if (!claim) return [];
+    const links = await db
+      .select({ citationId: claimCitations.citationId })
+      .from(claimCitations)
+      .where(eq(claimCitations.claimId, claimId));
+    if (links.length === 0) return [];
+    const cIds = links.map((l) => l.citationId);
+    return db.select().from(citationPointers).where(inArray(citationPointers.id, cIds));
+  }
+
+  async createIssueGrouping(userId: string, caseId: string, data: InsertIssueGrouping): Promise<IssueGrouping> {
+    const [issue] = await db
+      .insert(issueGroupings)
+      .values({
+        userId,
+        caseId,
+        title: data.title,
+        description: data.description ?? null,
+        tags: data.tags ?? [],
+      })
+      .returning();
+    return issue;
+  }
+
+  async listIssueGroupings(userId: string, caseId: string): Promise<IssueGrouping[]> {
+    return db
+      .select()
+      .from(issueGroupings)
+      .where(and(eq(issueGroupings.userId, userId), eq(issueGroupings.caseId, caseId)))
+      .orderBy(desc(issueGroupings.createdAt));
+  }
+
+  async getIssueGrouping(userId: string, issueId: string): Promise<IssueGrouping | undefined> {
+    const [issue] = await db
+      .select()
+      .from(issueGroupings)
+      .where(and(eq(issueGroupings.id, issueId), eq(issueGroupings.userId, userId)));
+    return issue;
+  }
+
+  async updateIssueGrouping(userId: string, issueId: string, patch: UpdateIssueGrouping): Promise<IssueGrouping | undefined> {
+    const existing = await this.getIssueGrouping(userId, issueId);
+    if (!existing) return undefined;
+    const [updated] = await db
+      .update(issueGroupings)
+      .set({
+        title: patch.title ?? existing.title,
+        description: patch.description !== undefined ? patch.description : existing.description,
+        tags: patch.tags ?? existing.tags,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(issueGroupings.id, issueId), eq(issueGroupings.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteIssueGrouping(userId: string, issueId: string): Promise<boolean> {
+    const result = await db
+      .delete(issueGroupings)
+      .where(and(eq(issueGroupings.id, issueId), eq(issueGroupings.userId, userId)));
+    return (result as any).rowCount > 0;
+  }
+
+  async addClaimToIssue(userId: string, issueId: string, claimId: string): Promise<boolean> {
+    const issue = await this.getIssueGrouping(userId, issueId);
+    const claim = await this.getCaseClaim(userId, claimId);
+    if (!issue || !claim) return false;
+    try {
+      await db.insert(issueClaims).values({ issueId, claimId });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async removeClaimFromIssue(userId: string, issueId: string, claimId: string): Promise<boolean> {
+    const issue = await this.getIssueGrouping(userId, issueId);
+    if (!issue) return false;
+    const result = await db
+      .delete(issueClaims)
+      .where(and(eq(issueClaims.issueId, issueId), eq(issueClaims.claimId, claimId)));
+    return (result as any).rowCount > 0;
+  }
+
+  async listIssueClaims(userId: string, issueId: string): Promise<CaseClaim[]> {
+    const issue = await this.getIssueGrouping(userId, issueId);
+    if (!issue) return [];
+    const links = await db
+      .select({ claimId: issueClaims.claimId })
+      .from(issueClaims)
+      .where(eq(issueClaims.issueId, issueId));
+    if (links.length === 0) return [];
+    const claimIds = links.map((l) => l.claimId);
+    return db
+      .select()
+      .from(caseClaims)
+      .where(and(eq(caseClaims.userId, userId), inArray(caseClaims.id, claimIds)));
+  }
+
+  async getCaseDraftReadiness(userId: string, caseId: string): Promise<DraftReadinessStats> {
+    const acceptedClaims = await db
+      .select()
+      .from(caseClaims)
+      .where(
+        and(eq(caseClaims.userId, userId), eq(caseClaims.caseId, caseId), eq(caseClaims.status, "accepted"))
+      );
+    const suggestedClaims = await db
+      .select()
+      .from(caseClaims)
+      .where(
+        and(eq(caseClaims.userId, userId), eq(caseClaims.caseId, caseId), eq(caseClaims.status, "suggested"))
+      );
+    const acceptedIds = acceptedClaims.map((c) => c.id);
+    let acceptedWithCitationsCount = 0;
+    if (acceptedIds.length > 0) {
+      const citationLinks = await db
+        .select({ claimId: claimCitations.claimId })
+        .from(claimCitations)
+        .where(inArray(claimCitations.claimId, acceptedIds));
+      const claimsWithCitations = new Set(citationLinks.map((l) => l.claimId));
+      acceptedWithCitationsCount = claimsWithCitations.size;
+    }
+    const acceptedMissingInfo = acceptedClaims.filter((c) => c.missingInfoFlag).length;
+    const lastUpdated = acceptedClaims.length > 0
+      ? acceptedClaims.reduce((latest, c) => (c.updatedAt > latest ? c.updatedAt : latest), acceptedClaims[0].updatedAt)
+      : null;
+
+    return {
+      acceptedClaimsCount: acceptedClaims.length,
+      acceptedClaimsWithCitationsCount: acceptedWithCitationsCount,
+      acceptedClaimsMissingInfoCount: acceptedMissingInfo,
+      suggestedClaimsCount: suggestedClaims.length,
+      timelineEventsWithCitationsCount: 0,
+      lastUpdatedAt: lastUpdated ? lastUpdated.toISOString() : null,
+    };
   }
 }
 
