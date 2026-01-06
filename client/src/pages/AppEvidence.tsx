@@ -69,14 +69,22 @@ interface ExtractionData {
   updatedAt: string | null;
 }
 
-function ExtractionStatusBadge({ status }: { status: string }) {
+function ExtractionStatusBadge({ status, errorMessage }: { status: string; errorMessage?: string | null }) {
   switch (status) {
     case "complete":
       return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200"><Check className="w-3 h-3 mr-1" />Extracted</Badge>;
     case "processing":
       return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Processing</Badge>;
     case "failed":
-      return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200"><AlertTriangle className="w-3 h-3 mr-1" />Failed</Badge>;
+      return (
+        <Badge 
+          variant="outline" 
+          className="bg-red-100 text-red-800 border-red-200"
+          title={errorMessage || "Extraction failed"}
+        >
+          <AlertTriangle className="w-3 h-3 mr-1" />Failed
+        </Badge>
+      );
     case "queued":
       return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200"><Loader2 className="w-3 h-3 mr-1" />Queued</Badge>;
     default:
@@ -959,7 +967,7 @@ export default function AppEvidence() {
                               </span>
                             )}
                             {extractionStatuses[file.id] && extractionStatuses[file.id].status !== "not_started" && (
-                              <ExtractionStatusBadge status={extractionStatuses[file.id].status} />
+                              <ExtractionStatusBadge status={extractionStatuses[file.id].status} errorMessage={extractionStatuses[file.id].errorMessage} />
                             )}
                           </div>
                         </div>
@@ -1057,7 +1065,9 @@ export default function AppEvidence() {
                                   onClick={() => retryExtractionMutation.mutate(file.id)}
                                   disabled={retryExtractionMutation.isPending}
                                   data-testid={`button-retry-extraction-${file.id}`}
-                                  title="Retry text extraction"
+                                  title={extractionStatuses[file.id]?.errorMessage 
+                                    ? `Error: ${extractionStatuses[file.id].errorMessage} - Click to retry`
+                                    : "Extraction failed - Click to retry"}
                                   className="text-red-600"
                                 >
                                   <AlertTriangle className="w-4 h-4" />
@@ -1743,7 +1753,7 @@ export default function AppEvidence() {
               </div>
               <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <ExtractionStatusBadge status={extractionStatuses[extractionViewFileId].status} />
+                  <ExtractionStatusBadge status={extractionStatuses[extractionViewFileId].status} errorMessage={extractionStatuses[extractionViewFileId].errorMessage} />
                   {extractionStatuses[extractionViewFileId].meta && (() => {
                     const meta = extractionStatuses[extractionViewFileId].meta as Record<string, unknown>;
                     const parts: string[] = [];

@@ -1266,12 +1266,31 @@ export async function registerRoutes(
 
       const caseRecord = await storage.getCase(caseId, userId);
       if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        return res.status(404).json({ error: "Case not found", code: "CASE_NOT_FOUND" });
       }
 
       const file = await storage.getEvidenceFile(evidenceId, userId);
       if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence file not found" });
+        return res.status(400).json({ error: "Evidence file not found", code: "EVIDENCE_NOT_FOUND" });
+      }
+
+      if (!file.storageKey) {
+        return res.status(400).json({ error: "Evidence file has no storage key", code: "NO_STORAGE_KEY" });
+      }
+
+      const requiresOcr = file.mimeType.startsWith("image/") || file.mimeType === "application/pdf";
+      if (requiresOcr && !isGcvConfigured()) {
+        return res.status(503).json({ 
+          error: "OCR not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets.",
+          code: "VISION_NOT_CONFIGURED"
+        });
+      }
+
+      if (!isR2Configured()) {
+        return res.status(503).json({ 
+          error: "File storage not configured",
+          code: "R2_NOT_CONFIGURED"
+        });
       }
 
       if (isExtractionRunning(evidenceId)) {
@@ -1290,7 +1309,8 @@ export async function registerRoutes(
       res.json({ ok: true, message: "Extraction started" });
     } catch (error) {
       console.error("Run extraction error:", error);
-      res.status(500).json({ error: "Failed to start extraction" });
+      const message = error instanceof Error ? error.message : "Failed to start extraction";
+      res.status(500).json({ error: message, code: "EXTRACTION_ERROR" });
     }
   });
 
@@ -6182,7 +6202,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       
       const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
       if (!extraction || extraction.status !== "complete") {
-        return res.status(400).json({ error: "Text extraction must be complete before running AI analysis" });
+        return res.status(409).json({ 
+          error: "Run text extraction first.", 
+          code: "EXTRACTION_NOT_COMPLETE",
+          extractionStatus: extraction?.status || "not_started"
+        });
       }
       
       if (!extraction.extractedText || extraction.extractedText.trim().length === 0) {
@@ -6212,6 +6236,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         model: "gpt-4o",
       });
       
+      console.log(`[AI_ANALYSIS] start { caseId: ${caseId}, evidenceId: ${evidenceId}, analysisId: ${analysis.id} }`);
       res.status(202).json({ analysis, message: "Analysis started" });
       
       analysisLimiter(async () => {
@@ -6259,12 +6284,11 @@ Return a JSON object with this structure:
             content: responseText,
           });
           
-          if (process.env.NODE_ENV !== "production") {
-            console.log(`[AIAnalysis] Complete for evidence ${evidenceId}`);
-          }
+          console.log(`[AI_ANALYSIS] complete { analysisId: ${analysis.id} }`);
         } catch (error) {
-          console.error("[AIAnalysis] Failed:", error);
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
+          const code = (error as any)?.code || "ANALYSIS_ERROR";
+          console.error(`[AI_ANALYSIS] failed { analysisId: ${analysis.id}, code: ${code}, message: ${errorMsg} }`);
           await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
             status: "failed",
             error: errorMsg.slice(0, 500),
