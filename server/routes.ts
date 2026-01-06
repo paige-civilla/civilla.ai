@@ -5044,7 +5044,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.put("/api/cases/:caseId/lexi/memory", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/lexi/memory", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -5052,16 +5052,84 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       if (!caseRecord) {
         return res.status(404).json({ error: "Case not found" });
       }
-      const { pinnedContext, writingRulesJson, goalsJson } = req.body;
+      const { memoryMarkdown, preferencesJson } = req.body;
       const memory = await storage.upsertLexiCaseMemory(userId, caseId, {
-        pinnedContext: pinnedContext ?? undefined,
-        writingRulesJson: writingRulesJson ?? undefined,
-        goalsJson: goalsJson ?? undefined,
+        memoryMarkdown: memoryMarkdown ?? undefined,
+        preferencesJson: preferencesJson ?? undefined,
       });
-      res.json({ memory });
+      res.json({ ok: true, memory });
     } catch (err) {
       console.error("Upsert Lexi case memory error:", err);
       res.status(500).json({ error: "Failed to save case memory" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/lexi/memory/rebuild", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const summaryParts: string[] = [];
+
+      if (caseRecord.caseName) {
+        summaryParts.push(`## Case: ${caseRecord.caseName}`);
+      }
+      if (caseRecord.caseNumber) {
+        summaryParts.push(`Case Number: ${caseRecord.caseNumber}`);
+      }
+      if (caseRecord.courtName) {
+        summaryParts.push(`Court: ${caseRecord.courtName}`);
+      }
+
+      const claims = await storage.listCaseClaims(caseId, userId);
+      const acceptedClaims = claims.filter(c => c.status === "accepted");
+      if (acceptedClaims.length > 0) {
+        summaryParts.push(`\n## Accepted Claims (${acceptedClaims.length})`);
+        for (const claim of acceptedClaims.slice(0, 10)) {
+          summaryParts.push(`- ${claim.claimText.slice(0, 200)}${claim.claimText.length > 200 ? "..." : ""}`);
+        }
+        if (acceptedClaims.length > 10) {
+          summaryParts.push(`- ... and ${acceptedClaims.length - 10} more`);
+        }
+      }
+
+      const events = await storage.listTimelineEvents(caseId, userId);
+      if (events.length > 0) {
+        summaryParts.push(`\n## Key Timeline Events (${events.length} total)`);
+        const recentEvents = events.slice(0, 5);
+        for (const ev of recentEvents) {
+          const dateStr = ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : "Unknown date";
+          summaryParts.push(`- ${dateStr}: ${ev.title || "Untitled event"}`);
+        }
+      }
+
+      const trialPrepItems = await storage.listTrialBinderItems(userId, caseId);
+      const pinnedItems = trialPrepItems.filter((i: { isPinned?: boolean }) => i.isPinned);
+      if (pinnedItems.length > 0) {
+        summaryParts.push(`\n## Pinned Trial Prep Items (${pinnedItems.length})`);
+        for (const item of pinnedItems.slice(0, 5)) {
+          summaryParts.push(`- ${item.title || "Untitled"}`);
+        }
+      }
+
+      const memoryMarkdown = summaryParts.join("\n");
+
+      await storage.updateLexiCaseMemoryMarkdown(userId, caseId, memoryMarkdown);
+
+      await storage.createActivityLog(userId, caseId, "memory_rebuild", `Rebuilt case memory from ${acceptedClaims.length} claims, ${events.length} events`, {
+        claimCount: acceptedClaims.length,
+        eventCount: events.length,
+        pinnedItemCount: pinnedItems.length,
+      });
+
+      res.json({ ok: true, memoryMarkdown, updatedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error("Rebuild Lexi case memory error:", err);
+      res.status(500).json({ error: "Failed to rebuild case memory" });
     }
   });
 
@@ -5090,6 +5158,19 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (err) {
       console.error("List Lexi feedback events error:", err);
       res.status(500).json({ error: "Failed to fetch feedback events" });
+    }
+  });
+
+  app.get("/api/activity-logs", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const limit = parseInt((req.query.limit as string) || "50", 10);
+      const offset = parseInt((req.query.offset as string) || "0", 10);
+      const logs = await storage.listActivityLogs(userId, limit, offset);
+      res.json({ logs });
+    } catch (err) {
+      console.error("List activity logs error:", err);
+      res.status(500).json({ error: "Failed to fetch activity logs" });
     }
   });
 
