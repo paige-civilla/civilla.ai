@@ -2636,6 +2636,65 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.post("/api/cases/:caseId/documents/compile-claims", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { title, claimIds } = req.body as { title: string; claimIds: string[] };
+
+      if (!title?.trim()) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      if (!Array.isArray(claimIds) || claimIds.length === 0) {
+        return res.status(400).json({ error: "At least one claim is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+      const selectedClaims = claims.filter(c => claimIds.includes(c.id));
+
+      if (selectedClaims.length === 0) {
+        return res.status(400).json({ error: "No valid claims found" });
+      }
+
+      let content = `# ${title}\n\n`;
+      content += `Compiled from ${selectedClaims.length} evidence-backed claims.\n\n`;
+      content += `---\n\n`;
+
+      for (let i = 0; i < selectedClaims.length; i++) {
+        const claim = selectedClaims[i];
+        content += `${i + 1}. ${claim.claimText}\n`;
+        
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length > 0) {
+          const cit = citations[0];
+          if (cit.citationPointer?.quote) {
+            content += `   > "${cit.citationPointer.quote.substring(0, 150)}${cit.citationPointer.quote.length > 150 ? "..." : ""}"\n`;
+          }
+          if (cit.citationPointer?.pageNumber) {
+            content += `   (Source: page ${cit.citationPointer.pageNumber})\n`;
+          }
+        }
+        content += `\n`;
+      }
+
+      const document = await storage.createDocument(userId, caseId, {
+        title: title.trim(),
+        templateKey: "compiled_claims",
+        content,
+      });
+
+      res.status(201).json({ document });
+    } catch (error) {
+      console.error("Compile claims error:", error);
+      res.status(500).json({ error: "Failed to compile claims into document" });
+    }
+  });
+
   app.get("/api/generated-documents/:docId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;

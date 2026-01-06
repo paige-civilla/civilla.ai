@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
-import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale } from "lucide-react";
+import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale, FileCheck, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -110,10 +110,12 @@ export default function AppDocuments() {
   const { toast } = useToast();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<"template" | "claims">("template");
   const [editingDoc, setEditingDoc] = useState<Document | null>(null);
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
   const [newDocTitle, setNewDocTitle] = useState("");
   const [newDocTemplate, setNewDocTemplate] = useState("");
+  const [compileClaimsTitle, setCompileClaimsTitle] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
 
@@ -142,6 +144,29 @@ export default function AppDocuments() {
     queryKey: ["/api/cases", caseId, "generated-documents"],
     enabled: !!currentCase,
   });
+
+  interface ClaimWithCitations {
+    id: string;
+    caseId: string;
+    claimText: string;
+    claimType: string;
+    status: string;
+    tags: string[] | null;
+    missingInfoFlag: boolean | null;
+    citations?: { quote: string | null; pageNumber: number | null; evidenceId: string | null }[];
+  }
+
+  const { data: acceptedClaimsData, isLoading: claimsLoading } = useQuery<{ claims: ClaimWithCitations[] }>({
+    queryKey: ["/api/cases", caseId, "claims", { status: "accepted" }],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/claims?status=accepted`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch claims");
+      return res.json();
+    },
+    enabled: !!currentCase && isCreateDialogOpen && createMode === "claims",
+  });
+
+  const acceptedClaims = acceptedClaimsData?.claims || [];
 
   const generatedDocuments = generatedDocsData?.documents || [];
 
@@ -179,6 +204,22 @@ export default function AppDocuments() {
       }, 100);
     }
   }, [docsLoading, documents]);
+
+  const compileClaimsMutation = useMutation({
+    mutationFn: async (data: { title: string; claimIds: string[] }) => {
+      return apiRequest("POST", `/api/cases/${caseId}/documents/compile-claims`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "documents"] });
+      setIsCreateDialogOpen(false);
+      setCompileClaimsTitle("");
+      setCreateMode("template");
+      toast({ title: "Document compiled from claims" });
+    },
+    onError: () => {
+      toast({ title: "Failed to compile document", variant: "destructive" });
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; templateKey: string }) => {
@@ -1054,52 +1095,147 @@ export default function AppDocuments() {
         </div>
       </section>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+      <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+        setIsCreateDialogOpen(open);
+        if (!open) {
+          setCreateMode("template");
+          setCompileClaimsTitle("");
+        }
+      }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>New Document</DialogTitle>
-            <DialogDescription>Choose a template and give your document a title.</DialogDescription>
+            <DialogDescription>Create from a template or compile from your accepted claims.</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="doc-title">Title</Label>
-              <Input
-                id="doc-title"
-                placeholder="e.g., Motion to Modify Custody"
-                value={newDocTitle}
-                onChange={(e) => setNewDocTitle(e.target.value)}
-                maxLength={200}
-                data-testid="input-new-document-title"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="doc-template">Template</Label>
-              <Select value={newDocTemplate} onValueChange={setNewDocTemplate}>
-                <SelectTrigger id="doc-template" data-testid="select-document-template">
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((t) => (
-                    <SelectItem key={t.key} value={t.key} data-testid={`option-template-${t.key}`}>
-                      {t.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
+
+          <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as "template" | "claims")} className="mt-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="template" data-testid="tab-create-template">
+                <FileText className="w-4 h-4 mr-2" />
+                From Template
+              </TabsTrigger>
+              <TabsTrigger value="claims" data-testid="tab-create-claims">
+                <FileCheck className="w-4 h-4 mr-2" />
+                Compile from Claims
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="template" className="mt-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="doc-title">Title</Label>
+                  <Input
+                    id="doc-title"
+                    placeholder="e.g., Motion to Modify Custody"
+                    value={newDocTitle}
+                    onChange={(e) => setNewDocTitle(e.target.value)}
+                    maxLength={200}
+                    data-testid="input-new-document-title"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="doc-template">Template</Label>
+                  <Select value={newDocTemplate} onValueChange={setNewDocTemplate}>
+                    <SelectTrigger id="doc-template" data-testid="select-document-template">
+                      <SelectValue placeholder="Select a template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((t) => (
+                        <SelectItem key={t.key} value={t.key} data-testid={`option-template-${t.key}`}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="claims" className="mt-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="compile-title">Document Title</Label>
+                  <Input
+                    id="compile-title"
+                    placeholder="e.g., Statement of Facts"
+                    value={compileClaimsTitle}
+                    onChange={(e) => setCompileClaimsTitle(e.target.value)}
+                    maxLength={200}
+                    data-testid="input-compile-claims-title"
+                  />
+                </div>
+
+                <div className="border rounded-lg p-3 bg-muted/50">
+                  <p className="text-sm font-medium mb-2">Accepted Claims ({acceptedClaims.length})</p>
+                  {claimsLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : acceptedClaims.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">
+                      No accepted claims yet. Review and accept claims from your evidence files first.
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-48">
+                      <div className="space-y-2">
+                        {acceptedClaims.map((claim) => (
+                          <div
+                            key={claim.id}
+                            className="bg-background rounded p-2 border text-sm"
+                            data-testid={`claim-preview-${claim.id}`}
+                          >
+                            <p className="text-xs">{claim.claimText.length > 120 ? claim.claimText.substring(0, 120) + "..." : claim.claimText}</p>
+                            {claim.citations && claim.citations.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1 italic">
+                                Source: {claim.citations[0].pageNumber ? `p.${claim.citations[0].pageNumber}` : "evidence"}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} data-testid="button-cancel-create">
               Cancel
             </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending}
-              className="bg-primary text-primary-foreground"
-              data-testid="button-confirm-create"
-            >
-              {createMutation.isPending ? "Creating..." : "Create"}
-            </Button>
+            {createMode === "template" ? (
+              <Button
+                onClick={handleCreate}
+                disabled={createMutation.isPending}
+                className="bg-primary text-primary-foreground"
+                data-testid="button-confirm-create"
+              >
+                {createMutation.isPending ? "Creating..." : "Create"}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  if (!compileClaimsTitle.trim()) {
+                    toast({ title: "Please enter a title", variant: "destructive" });
+                    return;
+                  }
+                  if (acceptedClaims.length === 0) {
+                    toast({ title: "No claims to compile", description: "Accept some claims first", variant: "destructive" });
+                    return;
+                  }
+                  compileClaimsMutation.mutate({
+                    title: compileClaimsTitle,
+                    claimIds: acceptedClaims.map(c => c.id),
+                  });
+                }}
+                disabled={compileClaimsMutation.isPending || acceptedClaims.length === 0}
+                className="bg-primary text-primary-foreground"
+                data-testid="button-compile-claims"
+              >
+                {compileClaimsMutation.isPending ? "Compiling..." : `Compile ${acceptedClaims.length} Claims`}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
