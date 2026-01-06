@@ -1162,6 +1162,48 @@ export async function initDbTables(): Promise<void> {
     )
   `, []);
 
+  await initTable("lexi_user_prefs", `
+    CREATE TABLE IF NOT EXISTS lexi_user_prefs (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id) UNIQUE,
+      response_style TEXT NOT NULL DEFAULT 'bullets',
+      verbosity INTEGER NOT NULL DEFAULT 3,
+      citation_strictness TEXT NOT NULL DEFAULT 'when_available',
+      default_mode TEXT NOT NULL DEFAULT 'organize',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, []);
+
+  await initTable("lexi_case_memory", `
+    CREATE TABLE IF NOT EXISTS lexi_case_memory (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      pinned_context TEXT,
+      writing_rules_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      goals_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+      last_auto_summary TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE UNIQUE INDEX IF NOT EXISTS lexi_case_memory_user_case_idx ON lexi_case_memory(user_id, case_id)`
+  ]);
+
+  await initTable("lexi_feedback_events", `
+    CREATE TABLE IF NOT EXISTS lexi_feedback_events (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255),
+      event_type TEXT NOT NULL,
+      payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS lexi_feedback_user_case_event_idx ON lexi_feedback_events(user_id, case_id, event_type, created_at)`
+  ]);
+
   await ensureSchemaMigrations();
   
   console.log("Database table initialization complete");

@@ -1827,3 +1827,80 @@ export interface DraftReadinessStats {
   timelineEventsWithCitationsCount: number;
   lastUpdatedAt: string | null;
 }
+
+export const lexiUserPrefs = pgTable("lexi_user_prefs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  responseStyle: text("response_style").notNull().default("bullets"),
+  verbosity: integer("verbosity").notNull().default(3),
+  citationStrictness: text("citation_strictness").notNull().default("when_available"),
+  defaultMode: text("default_mode").notNull().default("organize"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const upsertLexiUserPrefsSchema = z.object({
+  responseStyle: z.enum(["bullets", "headings", "compact", "detailed"]).optional(),
+  verbosity: z.number().int().min(1).max(5).optional(),
+  citationStrictness: z.enum(["always", "when_available"]).optional(),
+  defaultMode: z.enum(["organize", "research"]).optional(),
+});
+
+export type UpsertLexiUserPrefs = z.infer<typeof upsertLexiUserPrefsSchema>;
+export type LexiUserPrefs = typeof lexiUserPrefs.$inferSelect;
+
+export const lexiCaseMemory = pgTable("lexi_case_memory", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  pinnedContext: text("pinned_context"),
+  writingRulesJson: jsonb("writing_rules_json").notNull().default(sql`'{}'::jsonb`),
+  goalsJson: jsonb("goals_json").notNull().default(sql`'[]'::jsonb`),
+  lastAutoSummary: text("last_auto_summary"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseUnique: uniqueIndex("lexi_case_memory_user_case_idx").on(table.userId, table.caseId),
+}));
+
+export const upsertLexiCaseMemorySchema = z.object({
+  pinnedContext: z.string().max(2000).optional().nullable(),
+  writingRulesJson: z.object({
+    bannedPhrases: z.array(z.string()).optional(),
+    tone: z.string().optional(),
+  }).optional(),
+  goalsJson: z.array(z.string()).optional(),
+});
+
+export type UpsertLexiCaseMemory = z.infer<typeof upsertLexiCaseMemorySchema>;
+export type LexiCaseMemory = typeof lexiCaseMemory.$inferSelect;
+
+export const lexiFeedbackEventTypes = [
+  "claim_accept",
+  "claim_reject",
+  "doc_export",
+  "search_click",
+  "lexi_rating",
+  "trial_prep_pin",
+] as const;
+export type LexiFeedbackEventType = typeof lexiFeedbackEventTypes[number];
+
+export const lexiFeedbackEvents = pgTable("lexi_feedback_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id"),
+  eventType: text("event_type").notNull(),
+  payloadJson: jsonb("payload_json").notNull().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userCaseEventIdx: index("lexi_feedback_user_case_event_idx").on(table.userId, table.caseId, table.eventType, table.createdAt),
+}));
+
+export const createLexiFeedbackEventSchema = z.object({
+  caseId: z.string().optional().nullable(),
+  eventType: z.enum(lexiFeedbackEventTypes),
+  payload: z.record(z.unknown()).optional().default({}),
+});
+
+export type CreateLexiFeedbackEvent = z.infer<typeof createLexiFeedbackEventSchema>;
+export type LexiFeedbackEvent = typeof lexiFeedbackEvents.$inferSelect;

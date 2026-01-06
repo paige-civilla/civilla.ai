@@ -1,0 +1,182 @@
+REPLIT TASK: Add “Personal Lexi” (Per-User + Per-Case Memory + Preferences) — NO cross-user learning
+
+Goal
+Make Lexi feel like a personalized assistant per user and per case by storing:
+1) User-level response preferences (formatting + verbosity)
+2) Case-level pinned context (“Case Memory”)
+3) Lightweight feedback signals (accepted/rejected claims, exports) to adapt prompts
+This is NOT model training. It is retrieval + prompt injection + rules.
+
+Do ALL sections A–H.
+
+--------------------------------------------
+A) DATABASE: Add 3 new tables (shared/schema.ts)
+--------------------------------------------
+
+1) lexi_user_prefs
+- id (uuid pk)
+- userId (uuid, fk users.id, unique)
+- responseStyle (text)  // "bullets" | "headings" | "compact" | "detailed" (store as string)
+- verbosity (int)       // 1-5 default 3
+- citationStrictness (text) // "always" | "when_available" default "when_available"
+- defaultMode (text)    // "organize" | "research" default "organize"
+- updatedAt, createdAt
+
+2) lexi_case_memory
+- id (uuid pk)
+- userId (uuid fk users.id)
+- caseId (text fk cases.id)
+- pinnedContext (text)          // user-editable pinned context, short
+- writingRulesJson (jsonb)      // e.g. {"bannedPhrases":["my kids"],"tone":"neutral"}
+- goalsJson (jsonb)             // e.g. ["organize evidence","build binder"]
+- lastAutoSummary (text)        // auto-maintained short memory summary
+- updatedAt, createdAt
+Indexes: (userId, caseId) unique
+
+3) lexi_feedback_events
+- id (uuid pk)
+- userId (uuid fk users.id)
+- caseId (text nullable)        // can be null for general feedback
+- eventType (text)              // "claim_accept" | "claim_reject" | "doc_export" | "search_click" | "lexi_rating"
+- payloadJson (jsonb)           // flexible
+- createdAt
+Indexes: (userId, caseId, eventType, createdAt)
+
+Add these to server/db.ts migration system:
+- ensureLexiUserPrefsTable()
+- ensureLexiCaseMemoryTable()
+- ensureLexiFeedbackEventsTable()
+All must be idempotent.
+
+--------------------------------------------
+B) STORAGE LAYER (server/storage.ts)
+--------------------------------------------
+
+Add methods:
+User prefs:
+- getLexiUserPrefs(userId)
+- upsertLexiUserPrefs(userId, data)
+
+Case memory:
+- getLexiCaseMemory(userId, caseId)
+- upsertLexiCaseMemory(userId, caseId, data)
+- updateLexiCaseAutoSummary(userId, caseId, summaryText)
+
+Feedback:
+- createLexiFeedbackEvent(userId, caseId | null, eventType, payload)
+- listLexiFeedbackEvents(userId, caseId | null, limit=50)
+
+--------------------------------------------
+C) API ROUTES (server/routes.ts) — requireAuth
+--------------------------------------------
+
+1) User prefs endpoints
+GET  /api/lexi/prefs
+PATCH /api/lexi/prefs
+Body: { responseStyle?, verbosity?, citationStrictness?, defaultMode? }
+
+2) Case memory endpoints
+GET  /api/cases/:caseId/lexi/memory
+PATCH /api/cases/:caseId/lexi/memory
+Body: { pinnedContext?, writingRulesJson?, goalsJson? }
+
+3) Feedback event endpoint (optional but recommended)
+POST /api/lexi/feedback
+Body: { caseId?: string|null, eventType: string, payload?: object }
+
+Return minimal responses. Do not expose sensitive data.
+
+--------------------------------------------
+D) “CASE MEMORY BUILDER” (server/services/lexiMemory.ts)
+--------------------------------------------
+
+Create a function:
+buildCaseMemorySummary(userId, caseId): Promise<string>
+
+It should pull ONLY safe, structured highlights from existing DB:
+- accepted claims (limit 25) with short text
+- issue groupings (names)
+- trial prep pinned/top items (limit 15)
+- case title/state/caseType
+DO NOT include raw evidence text or long quotes in the memory summary.
+Return a short, readable summary (max ~1500 chars) in bullet style.
+
+Create:
+refreshCaseMemoryIfStale(userId, caseId)
+- If memory missing OR updatedAt older than X hours (e.g., 6h), rebuild.
+
+--------------------------------------------
+E) INJECT PREFS + MEMORY INTO LEXI CHAT (server/routes.ts)
+--------------------------------------------
+
+In POST /api/lexi/chat (and any analysis endpoints that use Lexi chat prompts):
+Before calling OpenAI:
+1) Load user prefs (defaults if none)
+2) If request has caseId: load case memory and refresh if stale
+3) Add a “Personalization” block to the system prompt, like:
+
+- Preferred response style: bullets/headings
+- Verbosity: 1-5
+- Citation strictness: ...
+- Case memory summary: ...
+
+Hard requirement:
+- Enforce formatting: “Use headings + bullet lists. Avoid run-on paragraphs. Use short paragraphs. Use blank lines.”
+- If citationStrictness = "always": when making factual statements about the user’s case, reference accepted claims/citations; otherwise say “No source available yet.”
+
+Also log (server-side) a SAFE debug line in dev only:
+[Lexi] prefs loaded: true/false, memory loaded: true/false
+
+--------------------------------------------
+F) FRONTEND UI
+--------------------------------------------
+
+1) Account Settings: Lexi Preferences (small card)
+- Response style dropdown
+- Verbosity slider (1–5)
+- Citation strictness dropdown
+- Default mode dropdown
+- Save button, toast on success
+
+2) Case Settings (or Case page settings area): “Case Memory”
+- Textarea: pinnedContext
+- Optional: small “Last updated” label
+- Button: “Refresh Auto Summary” (calls PATCH with { refresh: true } OR separate endpoint)
+- Show the auto summary (read-only) collapsed by default
+
+Keep UI lightweight and consistent with existing styling.
+
+--------------------------------------------
+G) CONNECT FEEDBACK SIGNALS (IMPORTANT)
+--------------------------------------------
+
+Whenever these actions occur, post feedback events:
+
+- Claim accepted/rejected (existing UI): POST /api/lexi/feedback
+  eventType: "claim_accept" or "claim_reject"
+  payload: { claimId }
+
+- Document compiled/exported:
+  eventType: "doc_export"
+  payload: { docId, mode: "claims"|"template" }
+
+- (Optional) Trial prep item pinned:
+  eventType: "trial_prep_pin"
+  payload: { itemId }
+
+Do NOT block the UI if feedback post fails; fire-and-forget.
+
+--------------------------------------------
+H) REPORT BACK
+--------------------------------------------
+
+After implementation, report:
+- Files changed
+- Confirmation that nothing is shared across users
+- Example of the injected personalization system prompt snippet
+- Screenshot descriptions not required; just describe where settings appear
+- Confirm defaults work if user never sets anything
+
+Notes
+- This is personalization by retrieval + prompt rules, not training.
+- Keep it UPL-safe: no strategy advice, no outcome prediction.
