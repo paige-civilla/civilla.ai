@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -187,6 +187,8 @@ export default function LexiPanel() {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [showThreadList, setShowThreadList] = useState(false);
   const [currentModuleKey, setCurrentModuleKey] = useState<string | undefined>();
+  const [isRenamingThread, setIsRenamingThread] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const [pendingAsk, setPendingAsk] = useState<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string } | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
   const [stylePreset, setStylePreset] = useState<StylePreset>(() => {
@@ -274,6 +276,26 @@ export default function LexiPanel() {
     },
   });
 
+  const renameThreadMutation = useMutation({
+    mutationFn: async ({ threadId, title }: { threadId: string; title: string }) => {
+      const res = await apiRequest("PATCH", `/api/lexi/threads/${threadId}`, { title });
+      return res.json();
+    },
+    onSuccess: () => {
+      const key = caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"];
+      queryClient.invalidateQueries({ queryKey: key });
+      setIsRenamingThread(false);
+      setRenameValue("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Could not rename conversation.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: { text: string; mode?: "help" | "chat" | "research"; moduleKey?: string }) => {
       const res = await apiRequest("POST", "/api/lexi/chat", {
@@ -292,6 +314,23 @@ export default function LexiPanel() {
       setCurrentModuleKey(undefined);
     },
   });
+
+  const handleRenameStart = () => {
+    const activeThread = threads.find(t => t.id === activeThreadId);
+    setRenameValue(activeThread?.title || "");
+    setIsRenamingThread(true);
+  };
+
+  const handleRenameSubmit = () => {
+    if (activeThreadId && renameValue.trim()) {
+      renameThreadMutation.mutate({ threadId: activeThreadId, title: renameValue.trim() });
+    }
+  };
+
+  const handleRenameCancel = () => {
+    setIsRenamingThread(false);
+    setRenameValue("");
+  };
 
   const handleStyleChange = (value: StylePreset) => {
     setStylePreset(value);
@@ -600,25 +639,79 @@ export default function LexiPanel() {
             </div>
           ) : (
             <>
-              <div className="px-4 py-2 border-b border-neutral-light flex items-center justify-between gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowThreadList(true)}
-                  className="text-xs text-primary hover:text-primary/80"
-                  data-testid="lexi-show-threads"
-                >
-                  All conversations ({threads.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={startNewThread}
-                  disabled={createThreadMutation.isPending}
-                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
-                  data-testid="lexi-new-thread-inline"
-                >
-                  <Plus className="w-3 h-3" />
-                  New
-                </button>
+              <div className="px-4 py-2 border-b border-neutral-light flex flex-col gap-2 shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowThreadList(true)}
+                    className="text-xs text-primary hover:text-primary/80"
+                    data-testid="lexi-show-threads"
+                  >
+                    All conversations ({threads.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startNewThread}
+                    disabled={createThreadMutation.isPending}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
+                    data-testid="lexi-new-thread-inline"
+                  >
+                    <Plus className="w-3 h-3" />
+                    New
+                  </button>
+                </div>
+                {activeThreadId && (
+                  <div className="flex items-center gap-2">
+                    {isRenamingThread ? (
+                      <div className="flex items-center gap-1 flex-1">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameSubmit();
+                            if (e.key === "Escape") handleRenameCancel();
+                          }}
+                          className="flex-1 px-2 py-1 text-xs border border-neutral-light rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                          autoFocus
+                          data-testid="input-rename-thread"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRenameSubmit}
+                          disabled={renameThreadMutation.isPending || !renameValue.trim()}
+                          className="p-1 text-green-600 hover:text-green-700 disabled:opacity-50"
+                          data-testid="button-rename-save"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRenameCancel}
+                          className="p-1 text-neutral-darkest/50 hover:text-neutral-darkest"
+                          data-testid="button-rename-cancel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium text-neutral-darkest truncate flex-1" data-testid="text-thread-title">
+                          {threads.find(t => t.id === activeThreadId)?.title || "Untitled"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRenameStart}
+                          className="p-1 text-neutral-darkest/40 hover:text-neutral-darkest"
+                          title="Rename conversation"
+                          data-testid="button-rename-thread"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {!activeThreadId ? (
