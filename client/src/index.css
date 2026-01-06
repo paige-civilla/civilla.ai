@@ -120,14 +120,14 @@
   --app-surface-2: 187.1 16.2% 18%;       /* #27363A hover */
   --app-panel: 40 37.5% 96.9%;            /* #FAF8F4 solid cream dropdown bg */
   --app-panel-border: 180 3% 12%;         /* #1E2020 */
-  --app-tile-bg: 190 27% 86%;             /* #D4E0E2 lighter tile bg */
+  --app-tile-bg: 187 18% 91%;             /* #E4ECED lighter tile bg */
 
   /* Module & interaction tokens */
-  --module-tile: 190 27% 86%;             /* #D4E0E2 lighter module card surface */
+  --module-tile: 187 18% 91%;             /* #E4ECED module card surface */
   --module-tile-border: 187 17% 37%;      /* #4F6A6E darker for distinction */
-  --module-tile-hover: 190 27% 82%;       /* slightly darker hover tint */
+  --module-tile-hover: 187 18% 87%;       /* slightly darker hover tint */
   --module-tile-icon: 187 17% 37%;        /* matches border */
-  --module: 190 27% 86%;                  /* #D4E0E2 lighter module surface (unified) */
+  --module: 187 18% 91%;                  /* #E4ECED module surface (unified) */
   --module-border: 189 20% 46%;           /* #628286 legacy */
   --ink: 180 3% 12%;                      /* #1E2020 */
 

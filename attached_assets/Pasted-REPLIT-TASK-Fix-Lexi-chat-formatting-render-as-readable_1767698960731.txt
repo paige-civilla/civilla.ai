@@ -1,0 +1,84 @@
+REPLIT TASK: Fix Lexi chat formatting (render as readable bullets/paragraphs like ChatGPT)
+
+Problem
+Lexi responses display as a run-on paragraph inside the chat UI. Even when the model includes newlines/bullets, the UI collapses them.
+
+Goal
+- Render Lexi assistant messages with proper formatting: paragraphs, bullet lists, numbered lists, headings
+- Keep styling consistent with Civilla (no giant markdown look)
+- Prevent unsafe HTML injection (no raw HTML rendering)
+- Make Lexi default to concise, structured responses
+
+A) Add Markdown rendering in LexiPanel
+1) Install these dependencies:
+- react-markdown
+- remark-gfm
+
+(If already installed, skip.)
+
+2) Update: client/src/components/lexi/LexiPanel.tsx
+- Replace the assistant message content renderer with react-markdown.
+- Do NOT allow raw HTML.
+- Add readable spacing and list styling.
+
+Example implementation:
+
+- At top imports:
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+- Create a small renderer component near the top of the file:
+
+function LexiMessageBody({ content }: { content: string }) {
+  return (
+    <div className="prose prose-sm max-w-none text-neutral-darkest
+                    prose-p:my-2 prose-li:my-1 prose-ul:my-2 prose-ol:my-2
+                    prose-strong:text-neutral-darkest prose-a:text-[hsl(var(--module-tile-border))]
+                    prose-headings:font-heading prose-headings:text-neutral-darkest">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+- Then, wherever assistant messages are rendered (usually map over messages),
+replace something like:
+<p className="...">{msg.content}</p>
+
+with:
+<LexiMessageBody content={msg.content} />
+
+Notes:
+- Use prose classes for spacing (Tailwind Typography is already typically present; if not, use standard spacing classes instead).
+- No rehypeRaw. Do not render HTML.
+
+B) Preserve user message formatting too (optional)
+User messages can remain plain text, but if you want newlines preserved, wrap them:
+<div className="whitespace-pre-wrap">{msg.content}</div>
+
+C) Update server-side Lexi system prompt to encourage structured output
+File: server/routes.ts (Lexi chat endpoint)
+In the system prompt / instructions block, add:
+
+"FORMAT RULES:
+- Use short paragraphs (1–3 sentences max each)
+- Use bullet points for lists
+- Use headings when helpful
+- Never write everything as one paragraph
+- Prefer: Overview, Key points, Next steps, Sources (when research)
+- If giving steps, use numbered lists"
+
+This won’t fix the UI alone, but it makes outputs consistently structured.
+
+D) Confirm it works with a quick test
+1) Ask Lexi: “Explain what discovery is in family court. Use bullets and a numbered checklist.”
+2) Expected:
+- Bullets render as real bullets
+- Numbered list renders correctly
+- Clear spacing between sections
+
+Report back
+- Files changed
+- Whether react-markdown / remark-gfm were added
+- Screenshot or confirmation that bullets/numbered lists render properly

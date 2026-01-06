@@ -1,0 +1,101 @@
+REPLIT TASK: Fix module page scrolling + zoom responsiveness (boxes not resizing, can’t reach bottom button)
+
+Problem
+When users zoom in/out, module form boxes don’t reflow correctly and the user can’t scroll down to reach the primary button. This is usually caused by a layout container using fixed viewport height (h-screen/min-h-screen) or a flex child missing min-h-0, which prevents scrolling.
+
+Goal
+- All module pages must scroll correctly at any browser zoom level
+- Forms/boxes must reflow responsively (no fixed widths that break at zoom)
+- Bottom CTAs must always be reachable (either via scroll or sticky action bar)
+
+A) Fix the root layout scroll container (AppLayout)
+1) Open: client/src/components/layout/AppLayout.tsx (or wherever the authenticated layout is)
+2) Ensure the layout uses a flex column with a scrollable main area:
+
+- The top-level wrapper should be: min-h-[100dvh] flex flex-col
+- The "main content" area MUST include: flex-1 min-h-0 overflow-y-auto
+
+Example target structure:
+
+<div className="min-h-[100dvh] flex flex-col bg-[...optional...]">
+  <AppNavbar />
+  <main className="flex-1 min-h-0 overflow-y-auto">
+    {children}
+  </main>
+</div>
+
+Important:
+- Do NOT use h-screen anywhere in AppLayout
+- The scroll MUST be on the <main>, not on individual pages, to avoid nested scroll traps
+
+B) Ensure all module pages don’t hard-lock height
+Search for and remove/replace these patterns inside module pages:
+- h-screen
+- min-h-screen
+- overflow-hidden on a main wrapper
+If you need a full-height page section, use:
+- min-h-[calc(100dvh-<navbarHeight>)] only if necessary
+But ideally rely on AppLayout’s scrolling main.
+
+C) Make module “cards/boxes” responsive at all zoom levels
+Across module pages (Evidence, Timeline, Documents, etc.), standardize the page wrapper to:
+
+<section className="w-full max-w-container mx-auto px-4 sm:px-5 md:px-8 py-6 sm:py-10">
+  ...content...
+</section>
+
+And ensure “box/card” wrappers never use a fixed width:
+- Replace w-[###px] with w-full and max-w-*
+- Use grid/flex responsive:
+  - grid-cols-1 md:grid-cols-2
+  - flex-col md:flex-row
+- Inputs/textareas should always be w-full
+
+D) Ensure any flex row with side panels can scroll
+Anywhere you have: flex + side panel + content, add min-h-0 to the scrolling child.
+
+Example:
+<div className="flex gap-4">
+  <aside className="w-[320px] shrink-0">...</aside>
+  <div className="flex-1 min-h-0">
+    <div className="h-full overflow-y-auto">...</div>
+  </div>
+</div>
+
+Without min-h-0, overflow-y-auto often won’t work inside flex.
+
+E) Optional but recommended: Sticky bottom action bar for primary CTA
+For forms with a “Save/Create/Run” button that must always be reachable:
+- Wrap page content in a flex column
+- Put the CTA inside a sticky footer within the page scroll area
+
+Pattern:
+<div className="flex flex-col gap-6">
+  <div className="flex-1">
+    ...form...
+  </div>
+
+  <div className="sticky bottom-0 bg-white/90 backdrop-blur border-t p-3 flex justify-end gap-2">
+    <Button variant="outline">Cancel</Button>
+    <Button>Save</Button>
+  </div>
+</div>
+
+If dark mode exists, use tokenized background (bg-[hsl(var(--background))]/90) instead of white.
+
+F) Verify with this test plan
+1) Open a module with a long form (Case create, Evidence note modal, Parenting plan, etc.)
+2) Zoom browser to 80%, 100%, 125%, 150%
+3) Confirm:
+   - Cards reflow (no horizontal overflow)
+   - You can scroll to the bottom in all zoom levels
+   - Primary button is reachable (scroll or sticky footer)
+4) Confirm no nested scroll traps: mouse wheel scroll should move content consistently
+
+Deliverable
+- Implement these layout changes
+- Report back:
+  - Files changed
+  - Locations where h-screen/min-h-screen were removed
+  - Confirm AppLayout main uses flex-1 min-h-0 overflow-y-auto
+  - Confirm tested at 80/100/125/150% zoom with reachable CTAs
