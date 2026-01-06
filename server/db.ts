@@ -1089,6 +1089,79 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_trial_prep_shortlist_unique_source ON trial_prep_shortlist(user_id, case_id, source_type, source_id)`
   ]);
 
+  await initTable("citation_pointers", `
+    CREATE TABLE IF NOT EXISTS citation_pointers (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      evidence_file_id VARCHAR(255) NOT NULL,
+      page_number INTEGER,
+      timestamp_seconds INTEGER,
+      message_range TEXT,
+      quote TEXT NOT NULL,
+      excerpt TEXT,
+      start_offset INTEGER,
+      end_offset INTEGER,
+      confidence INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_citation_pointers_case ON citation_pointers(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_citation_pointers_evidence ON citation_pointers(evidence_file_id)`
+  ]);
+
+  await initTable("case_claims", `
+    CREATE TABLE IF NOT EXISTS case_claims (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      claim_text TEXT NOT NULL,
+      claim_type TEXT NOT NULL DEFAULT 'fact',
+      tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+      color TEXT,
+      missing_info_flag BOOLEAN NOT NULL DEFAULT FALSE,
+      created_from TEXT NOT NULL DEFAULT 'manual',
+      status TEXT NOT NULL DEFAULT 'suggested',
+      source_note_id VARCHAR(255),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_case_claims_case ON case_claims(case_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_case_claims_case_status ON case_claims(case_id, status)`
+  ]);
+
+  await initTable("claim_citations", `
+    CREATE TABLE IF NOT EXISTS claim_citations (
+      claim_id VARCHAR(255) NOT NULL,
+      citation_id VARCHAR(255) NOT NULL,
+      PRIMARY KEY (claim_id, citation_id)
+    )
+  `, []);
+
+  await initTable("issue_groupings", `
+    CREATE TABLE IF NOT EXISTS issue_groupings (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL,
+      case_id VARCHAR(255) NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS idx_issue_groupings_case ON issue_groupings(case_id)`
+  ]);
+
+  await initTable("issue_claims", `
+    CREATE TABLE IF NOT EXISTS issue_claims (
+      issue_id VARCHAR(255) NOT NULL,
+      claim_id VARCHAR(255) NOT NULL,
+      PRIMARY KEY (issue_id, claim_id)
+    )
+  `, []);
+
   await ensureSchemaMigrations();
   
   console.log("Database table initialization complete");
