@@ -1,0 +1,253 @@
+REPLIT TASK: Phase 1 Structure Backbone (Option 2: Auto-suggest Claims + User Approval)
+
+GOAL
+Implement the mandatory Extraction & Structuring phase so Civilla never drafts from raw text. Add Claim + CitationPointer + IssueGrouping as first-class records, then wire:
+- Evidence extraction/notes -> AI claim suggestions
+- User review/accept/reject (required)
+- Claims become usable by Timeline, Exhibits, Documents, Trial Prep
+- Add preflight readiness stats
+
+CONSTRAINTS
+- Do NOT give legal advice. Only factual organization.
+- No fabricated dates or intent.
+- Any claim must have at least 1 citation pointer or be marked missingInfoFlag=true.
+
+========================
+A) DATABASE + TYPES
+========================
+
+1) shared/schema.ts
+Add new tables:
+
+A. citation_pointers
+- id (uuid pk)
+- userId (uuid not null)
+- caseId (uuid not null references cases.id)
+- evidenceFileId (uuid not null references evidence_files.id)
+- pageNumber (int null)
+- timestampSeconds (int null)
+- messageRange (text null)  // for future chat imports
+- quote (text not null)     // short quote used as citation
+- excerpt (text null)       // optional longer excerpt
+- startOffset (int null)    // optional for extracted text anchoring
+- endOffset (int null)
+- confidence (int null)     // 0-100 optional
+- createdAt (timestamp default now)
+
+Indexes:
+- (caseId)
+- (evidenceFileId)
+
+B. case_claims
+- id (uuid pk)
+- userId (uuid not null)
+- caseId (uuid not null references cases.id)
+- claimText (text not null)          // neutral factual statement
+- claimType (enum)                   // "fact" | "procedural" | "context" | "communication" | "financial" | "medical" | "school" | "custody"
+- tags (jsonb default '[]')
+- color (text null)
+- missingInfoFlag (boolean default false)
+- createdFrom (enum)                 // "manual" | "ai_suggested" | "note" | "extraction"
+- status (enum)                      // "suggested" | "accepted" | "rejected"
+- sourceNoteId (uuid null references evidence_notes.id)
+- createdAt (timestamp default now)
+- updatedAt (timestamp default now)
+
+Indexes:
+- (caseId, status)
+- (caseId)
+
+C. claim_citations (join table)
+- claimId (uuid references case_claims.id on delete cascade)
+- citationId (uuid references citation_pointers.id on delete cascade)
+Composite PK (claimId, citationId)
+
+D. issue_groupings
+- id (uuid pk)
+- userId
+- caseId
+- title (text not null)
+- description (text null)
+- tags (jsonb default '[]')
+- createdAt, updatedAt
+
+E. issue_claims (join)
+- issueId references issue_groupings.id on delete cascade
+- claimId references case_claims.id on delete cascade
+Composite PK
+
+Export zod schemas + TS types:
+- InsertCitationPointer, InsertCaseClaim, UpdateCaseClaim
+- IssueGrouping types
+
+2) server/db.ts
+Add ensure* migrations for all new tables/columns.
+Use the existing migration helper pattern.
+Must be additive and idempotent.
+
+========================
+B) STORAGE METHODS
+========================
+
+server/storage.ts
+
+Add methods:
+
+CITATIONS
+- createCitationPointer(userId, data)
+- listCitationPointersByEvidence(userId, caseId, evidenceFileId)
+
+CLAIMS
+- createCaseClaim(userId, data)
+- listCaseClaims(userId, caseId, { status?, evidenceFileId? })
+- updateCaseClaim(userId, claimId, patch)
+- deleteCaseClaim(userId, claimId)
+- attachClaimCitation(userId, claimId, citationId)
+- detachClaimCitation(userId, claimId, citationId)
+
+ISSUES
+- createIssueGrouping(userId, data)
+- listIssueGroupings(userId, caseId)
+- updateIssueGrouping(userId, issueId, patch)
+- deleteIssueGrouping(userId, issueId)
+- addClaimToIssue(userId, issueId, claimId)
+- removeClaimFromIssue(userId, issueId, claimId)
+
+READINESS STATS
+- getCaseDraftReadiness(userId, caseId)
+  returns:
+  - acceptedClaimsCount
+  - acceptedClaimsWithCitationsCount
+  - acceptedClaimsMissingInfoCount
+  - suggestedClaimsCount
+  - timelineEventsWithCitationsCount (if available via category_id or evidence links; otherwise 0 for now)
+  - lastUpdatedAt
+
+========================
+C) API ROUTES
+========================
+
+server/routes.ts (ALL requireAuth + ownership checks)
+
+1) CITATIONS
+POST /api/cases/:caseId/evidence/:evidenceId/citations
+- body: { quote, pageNumber?, timestampSeconds?, excerpt?, startOffset?, endOffset?, confidence? }
+- creates citation pointer linked to evidenceFileId
+
+GET /api/cases/:caseId/evidence/:evidenceId/citations
+
+2) CLAIMS
+GET /api/cases/:caseId/claims?status=accepted|suggested|rejected&evidenceId=...
+POST /api/cases/:caseId/claims
+PATCH /api/claims/:claimId
+DELETE /api/claims/:claimId
+
+3) CLAIM-CITATION LINKS
+POST /api/claims/:claimId/citations/:citationId
+DELETE /api/claims/:claimId/citations/:citationId
+
+4) ISSUES
+GET /api/cases/:caseId/issues
+POST /api/cases/:caseId/issues
+PATCH /api/issues/:issueId
+DELETE /api/issues/:issueId
+POST /api/issues/:issueId/claims/:claimId
+DELETE /api/issues/:issueId/claims/:claimId
+
+5) DRAFT READINESS
+GET /api/cases/:caseId/draft-readiness
+
+========================
+D) AI: AUTO-SUGGEST CLAIMS (OPTION 2)
+========================
+
+Trigger:
+When evidence extraction completes OR when user clicks "Suggest Claims" button.
+
+Add endpoint:
+POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest
+- Requires extraction complete OR notes exist
+- Uses OpenAI with strict prompt:
+  - Output JSON array
+  - Each claim MUST include:
+    - claimText (neutral factual statement)
+    - claimType (enum value)
+    - citation: { quote, pageNumber? or timestampSeconds?, startOffset?, endOffset? }  (at least quote required)
+    - tags[]
+    - missingInfoFlag true/false
+  - MUST NOT infer dates; if date unclear -> missingInfoFlag=true
+
+Implementation:
+- Create citation pointer per suggested item (quote + page/offset if available)
+- Create case_claim with status="suggested", createdFrom="ai_suggested"
+- Attach claim_citation
+- Deduplicate:
+  - if same claimText exists in suggested or accepted for this case, skip
+
+Also add a concurrency limiter (pLimit(2)) like the analyses.
+
+========================
+E) FRONTEND: REVIEW + ACCEPT FLOW
+========================
+
+client/src/pages/AppEvidence.tsx
+Add "Claims" section inside EvidenceViewer (or in expanded evidence card):
+- Button: "Suggest Claims" (visible when extraction complete)
+- List Suggested Claims with:
+  - claimText
+  - citation preview (quote + page)
+  - tags
+  - missing-info badge if flagged
+  - Actions:
+    - Accept
+    - Reject
+    - Edit (opens inline edit for claimText + tags + missingInfoFlag)
+
+Accept sets status="accepted"
+Reject sets status="rejected"
+
+Also add "Add to Timeline" action on accepted claims:
+- Opens small modal:
+  - date (required but can be left unknown => then it creates timeline event with missingInfoFlag true AND no date)
+  - title auto (first 60 chars of claim)
+  - notes includes claimText + citation pointer reference
+  - category pick
+- Creates timeline event (existing endpoint) WITHOUT legal conclusions.
+
+client/src/pages/AppStartHere.tsx or AppDashboard.tsx
+Add a "Draft Readiness" card:
+- shows counts from /api/cases/:caseId/draft-readiness
+- if acceptedClaimsWithCitationsCount < acceptedClaimsCount show warning:
+  "Some accepted claims are missing citations."
+
+========================
+F) DOCUMENT CREATOR: STOP DRAFTING FROM RAW TEXT
+========================
+
+client/src/pages/AppDocuments.tsx (or Document Creator flow)
+Add an explicit compile mode:
+
+- "Build from Accepted Claims" (default)
+- Show a selector: Issues / Tags / Time range
+- When generating a draft outline (NOT legal advice):
+  - Only use accepted claims + citations
+  - If none exist, block and show:
+    "Add evidence and accept claims first."
+
+No final legal filing instructions, only compilation.
+
+========================
+G) REPORT BACK
+========================
+
+After implementing, output:
+
+- files changed
+- /api/cases/:caseId/draft-readiness example response
+- confirm claim suggestion JSON schema
+- confirm dedupe behavior
+- confirm user must accept before document creator uses claims
+
+IMPORTANT
+This Phase 1 layer is the prerequisite for every other AI feature.
+Do not proceed to Phase 2 drafting upgrades until this is complete.

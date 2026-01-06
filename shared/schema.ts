@@ -1666,3 +1666,164 @@ export const updateTrialPrepShortlistSchema = z.object({
 export type InsertTrialPrepShortlist = z.infer<typeof insertTrialPrepShortlistSchema>;
 export type UpdateTrialPrepShortlist = z.infer<typeof updateTrialPrepShortlistSchema>;
 export type TrialPrepShortlist = typeof trialPrepShortlist.$inferSelect;
+
+export const citationPointers = pgTable("citation_pointers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceFileId: varchar("evidence_file_id").notNull().references(() => evidenceFiles.id),
+  pageNumber: integer("page_number"),
+  timestampSeconds: integer("timestamp_seconds"),
+  messageRange: text("message_range"),
+  quote: text("quote").notNull(),
+  excerpt: text("excerpt"),
+  startOffset: integer("start_offset"),
+  endOffset: integer("end_offset"),
+  confidence: integer("confidence"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("citation_pointers_case_idx").on(table.caseId),
+  evidenceIdx: index("citation_pointers_evidence_idx").on(table.evidenceFileId),
+}));
+
+export const insertCitationPointerSchema = z.object({
+  evidenceFileId: z.string().min(1, "Evidence file ID is required"),
+  quote: z.string().min(1, "Quote is required").max(2000),
+  pageNumber: z.number().int().min(1).optional().nullable(),
+  timestampSeconds: z.number().int().min(0).optional().nullable(),
+  messageRange: z.string().max(100).optional().nullable(),
+  excerpt: z.string().max(5000).optional().nullable(),
+  startOffset: z.number().int().min(0).optional().nullable(),
+  endOffset: z.number().int().min(0).optional().nullable(),
+  confidence: z.number().int().min(0).max(100).optional().nullable(),
+});
+
+export type InsertCitationPointer = z.infer<typeof insertCitationPointerSchema>;
+export type CitationPointer = typeof citationPointers.$inferSelect;
+
+export const claimTypeValues = [
+  "fact",
+  "procedural",
+  "context",
+  "communication",
+  "financial",
+  "medical",
+  "school",
+  "custody",
+] as const;
+
+export const claimCreatedFromValues = [
+  "manual",
+  "ai_suggested",
+  "note",
+  "extraction",
+] as const;
+
+export const claimStatusValues = [
+  "suggested",
+  "accepted",
+  "rejected",
+] as const;
+
+export type ClaimType = typeof claimTypeValues[number];
+export type ClaimCreatedFrom = typeof claimCreatedFromValues[number];
+export type ClaimStatus = typeof claimStatusValues[number];
+
+export const caseClaims = pgTable("case_claims", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  claimText: text("claim_text").notNull(),
+  claimType: text("claim_type").notNull().default("fact"),
+  tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
+  color: text("color"),
+  missingInfoFlag: boolean("missing_info_flag").notNull().default(false),
+  createdFrom: text("created_from").notNull().default("manual"),
+  status: text("status").notNull().default("suggested"),
+  sourceNoteId: varchar("source_note_id").references(() => evidenceNotes.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("case_claims_case_idx").on(table.caseId),
+  caseStatusIdx: index("case_claims_case_status_idx").on(table.caseId, table.status),
+}));
+
+export const insertCaseClaimSchema = z.object({
+  claimText: z.string().min(1, "Claim text is required").max(2000),
+  claimType: z.enum(claimTypeValues).optional().default("fact"),
+  tags: z.array(z.string()).optional().default([]),
+  color: z.string().max(20).optional().nullable(),
+  missingInfoFlag: z.boolean().optional().default(false),
+  createdFrom: z.enum(claimCreatedFromValues).optional().default("manual"),
+  status: z.enum(claimStatusValues).optional().default("suggested"),
+  sourceNoteId: z.string().optional().nullable(),
+});
+
+export const updateCaseClaimSchema = z.object({
+  claimText: z.string().min(1).max(2000).optional(),
+  claimType: z.enum(claimTypeValues).optional(),
+  tags: z.array(z.string()).optional(),
+  color: z.string().max(20).optional().nullable(),
+  missingInfoFlag: z.boolean().optional(),
+  status: z.enum(claimStatusValues).optional(),
+});
+
+export type InsertCaseClaim = z.infer<typeof insertCaseClaimSchema>;
+export type UpdateCaseClaim = z.infer<typeof updateCaseClaimSchema>;
+export type CaseClaim = typeof caseClaims.$inferSelect;
+
+export const claimCitations = pgTable("claim_citations", {
+  claimId: varchar("claim_id").notNull().references(() => caseClaims.id, { onDelete: "cascade" }),
+  citationId: varchar("citation_id").notNull().references(() => citationPointers.id, { onDelete: "cascade" }),
+}, (table) => ({
+  pk: uniqueIndex("claim_citations_pk").on(table.claimId, table.citationId),
+}));
+
+export type ClaimCitation = typeof claimCitations.$inferSelect;
+
+export const issueGroupings = pgTable("issue_groupings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("issue_groupings_case_idx").on(table.caseId),
+}));
+
+export const insertIssueGroupingSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(2000).optional().nullable(),
+  tags: z.array(z.string()).optional().default([]),
+});
+
+export const updateIssueGroupingSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  tags: z.array(z.string()).optional(),
+});
+
+export type InsertIssueGrouping = z.infer<typeof insertIssueGroupingSchema>;
+export type UpdateIssueGrouping = z.infer<typeof updateIssueGroupingSchema>;
+export type IssueGrouping = typeof issueGroupings.$inferSelect;
+
+export const issueClaims = pgTable("issue_claims", {
+  issueId: varchar("issue_id").notNull().references(() => issueGroupings.id, { onDelete: "cascade" }),
+  claimId: varchar("claim_id").notNull().references(() => caseClaims.id, { onDelete: "cascade" }),
+}, (table) => ({
+  pk: uniqueIndex("issue_claims_pk").on(table.issueId, table.claimId),
+}));
+
+export type IssueClaim = typeof issueClaims.$inferSelect;
+
+export interface DraftReadinessStats {
+  acceptedClaimsCount: number;
+  acceptedClaimsWithCitationsCount: number;
+  acceptedClaimsMissingInfoCount: number;
+  suggestedClaimsCount: number;
+  timelineEventsWithCitationsCount: number;
+  lastUpdatedAt: string | null;
+}
