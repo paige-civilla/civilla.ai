@@ -1306,12 +1306,12 @@ export default function AppDocuments() {
                             <AlertCircle className="w-4 h-4 text-red-500" />
                           )}
                           <span>Claims missing citations: {preflightData.totals.acceptedClaimsMissingCitations}</span>
-                          {preflightData.totals.acceptedClaimsMissingCitations > 0 && preflightData.claimIdsMissingCitations && (
+                          {preflightData.totals.acceptedClaimsMissingCitations > 0 && preflightData.missing.claimIdsMissingCitations.length > 0 && (
                             <Button
                               size="sm"
                               variant="outline"
                               className="h-6 text-xs ml-2"
-                              onClick={() => bulkAutoAttachMutation.mutate(preflightData.claimIdsMissingCitations)}
+                              onClick={() => bulkAutoAttachMutation.mutate(preflightData.missing.claimIdsMissingCitations)}
                               disabled={bulkAutoAttaching}
                               data-testid="button-bulk-auto-attach"
                             >
