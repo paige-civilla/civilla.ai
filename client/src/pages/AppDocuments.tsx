@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
-import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale, FileCheck, Loader2, Check, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale, FileCheck, Loader2, Check, AlertCircle, Link as LinkIcon } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -267,6 +267,35 @@ export default function AppDocuments() {
       } else {
         toast({ title: "Failed to compile document", variant: "destructive" });
       }
+    },
+  });
+
+  const [bulkAutoAttaching, setBulkAutoAttaching] = useState(false);
+  const bulkAutoAttachMutation = useMutation({
+    mutationFn: async (claimIds: string[]) => {
+      setBulkAutoAttaching(true);
+      let attachedCount = 0;
+      for (const claimId of claimIds) {
+        try {
+          const res = await apiRequest("POST", `/api/claims/${claimId}/citations/auto`, { maxAttach: 1 });
+          const data = await res.json();
+          if (data.ok && data.attached > 0) attachedCount++;
+        } catch { /* continue with next */ }
+      }
+      return attachedCount;
+    },
+    onSuccess: (attachedCount) => {
+      setBulkAutoAttaching(false);
+      refetchPreflight();
+      if (attachedCount > 0) {
+        toast({ title: `Attached sources to ${attachedCount} claims` });
+      } else {
+        toast({ title: "No matching sources found", description: "Add more citations in Evidence Viewer", variant: "destructive" });
+      }
+    },
+    onError: () => {
+      setBulkAutoAttaching(false);
+      toast({ title: "Failed to auto-attach sources", variant: "destructive" });
     },
   });
 
@@ -1277,6 +1306,23 @@ export default function AppDocuments() {
                             <AlertCircle className="w-4 h-4 text-red-500" />
                           )}
                           <span>Claims missing citations: {preflightData.totals.acceptedClaimsMissingCitations}</span>
+                          {preflightData.totals.acceptedClaimsMissingCitations > 0 && preflightData.claimIdsMissingCitations && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs ml-2"
+                              onClick={() => bulkAutoAttachMutation.mutate(preflightData.claimIdsMissingCitations)}
+                              disabled={bulkAutoAttaching}
+                              data-testid="button-bulk-auto-attach"
+                            >
+                              {bulkAutoAttaching ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <LinkIcon className="w-3 h-3 mr-1" />
+                              )}
+                              Auto-attach all
+                            </Button>
+                          )}
                         </div>
                         {preflightData.totals.acceptedClaimsMissingInfoFlagged > 0 && (
                           <div className="flex items-center gap-2 text-xs">
