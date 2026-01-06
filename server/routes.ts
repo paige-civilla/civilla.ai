@@ -4996,6 +4996,99 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/lexi/prefs", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const prefs = await storage.getLexiUserPrefs(userId);
+      res.json({ prefs: prefs || null });
+    } catch (err) {
+      console.error("Get Lexi prefs error:", err);
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+
+  app.put("/api/lexi/prefs", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { responseStyle, verbosity, citationStrictness, defaultMode } = req.body;
+      const prefs = await storage.upsertLexiUserPrefs(userId, {
+        responseStyle: responseStyle ?? undefined,
+        verbosity: verbosity ?? undefined,
+        citationStrictness: citationStrictness ?? undefined,
+        defaultMode: defaultMode ?? undefined,
+      });
+      res.json({ prefs });
+    } catch (err) {
+      console.error("Upsert Lexi prefs error:", err);
+      res.status(500).json({ error: "Failed to save preferences" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/lexi/memory", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const memory = await storage.getLexiCaseMemory(userId, caseId);
+      res.json({ memory: memory || null });
+    } catch (err) {
+      console.error("Get Lexi case memory error:", err);
+      res.status(500).json({ error: "Failed to fetch case memory" });
+    }
+  });
+
+  app.put("/api/cases/:caseId/lexi/memory", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const { pinnedContext, writingRulesJson, goalsJson } = req.body;
+      const memory = await storage.upsertLexiCaseMemory(userId, caseId, {
+        pinnedContext: pinnedContext ?? undefined,
+        writingRulesJson: writingRulesJson ?? undefined,
+        goalsJson: goalsJson ?? undefined,
+      });
+      res.json({ memory });
+    } catch (err) {
+      console.error("Upsert Lexi case memory error:", err);
+      res.status(500).json({ error: "Failed to save case memory" });
+    }
+  });
+
+  app.post("/api/lexi/feedback", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, eventType, payload } = req.body;
+      if (!eventType || typeof eventType !== "string") {
+        return res.status(400).json({ error: "eventType is required" });
+      }
+      const event = await storage.createLexiFeedbackEvent(userId, caseId || null, eventType, payload || {});
+      res.status(201).json({ event });
+    } catch (err) {
+      console.error("Create Lexi feedback event error:", err);
+      res.status(500).json({ error: "Failed to create feedback event" });
+    }
+  });
+
+  app.get("/api/lexi/feedback", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const caseId = (req.query.caseId as string) || null;
+      const limit = parseInt((req.query.limit as string) || "50", 10);
+      const events = await storage.listLexiFeedbackEvents(userId, caseId, limit);
+      res.json({ events });
+    } catch (err) {
+      console.error("List Lexi feedback events error:", err);
+      res.status(500).json({ error: "Failed to fetch feedback events" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep/sections", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
