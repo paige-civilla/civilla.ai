@@ -1,0 +1,79 @@
+REPLIT TASK: Fix zoom/scroll issues + Lexi formatting + make source links truly external + speed improvements
+
+Priority A — Fix “boxes don’t resize / can’t scroll to button” on zoom
+1) Add a single layout rule in AppLayout (or the main authenticated content wrapper):
+   - The main content area must be constrained to viewport height minus navbar.
+   - Ensure content scrolls within the page region.
+
+Implementation guidance:
+- In AppLayout.tsx (or equivalent), wrap the page content in a container like:
+  - className="min-h-[calc(100vh-var(--app-nav-h))] max-h-[calc(100vh-var(--app-nav-h))] overflow-y-auto"
+- If you don’t have a CSS var for navbar height, define one and set it where navbar renders (e.g., 64px).
+- For long forms (Onboarding, Create Case, Evidence modals, etc.), ensure the form container has:
+  - max-h: 70–80vh
+  - overflow-y-auto
+  - and the submit button row is either inside the scroll or sticky:
+    - className="sticky bottom-0 bg-[...] border-t [...]"
+
+Acceptance test:
+- Zoom browser to 125%, 150%, 175%
+- Confirm you can always scroll to the primary button and click it.
+
+Priority B — Lexi responses: readable formatting like ChatGPT
+1) Enforce a structured output style in the Lexi system prompt:
+   - short paragraphs
+   - bullets when listing
+   - headings when helpful
+   - always include blank lines between sections
+   - never produce a single long paragraph
+
+2) Ensure the Lexi message renderer preserves formatting:
+Option 1 (preferred): Render markdown (react-markdown) with safe defaults.
+Option 2: If no markdown renderer, at minimum wrap assistant message content with:
+  - className="whitespace-pre-wrap leading-6"
+  - and add spacing between paragraphs.
+
+Acceptance test:
+- Ask Lexi a multi-part question
+- Confirm output shows bullets, paragraph breaks, and readable sections.
+
+Priority C — Fix “Sources” links opening 404 / base site
+Root cause: external URLs are being handled by the SPA router (wouter Link) or being normalized incorrectly.
+
+Implement:
+1) In Lexi message rendering, treat URLs as external:
+   - Use <a href="FULL_URL" target="_blank" rel="noreferrer noopener">...</a>
+   - DO NOT use wouter <Link> for external URLs.
+2) If you have a “Sources” section UI, ensure it stores full URLs and opens them externally.
+3) In Lexi research mode prompt, require:
+   - full absolute URLs starting with https://
+   - no shortened or implied paths
+   - no “base domain + path” reconstruction by frontend
+
+Acceptance test:
+- Trigger research mode answer with 3–5 sources
+- Click each source and confirm it opens the exact referenced page in a new tab (no 404).
+
+Priority D — Make Lexi feel faster (without breaking quality)
+1) Enable streaming in Lexi chat route:
+   - Use OpenAI streaming (stream: true)
+   - Send tokens to client as they arrive (SSE)
+   - Update LexiPanel to render partial text as it streams in.
+2) Model strategy:
+   - Default “Chat” mode uses a faster model (e.g., gpt-4o-mini).
+   - “Research” mode uses the higher quality model only when needed.
+3) Reduce latency:
+   - cap max_output_tokens
+   - keep context injection concise (only top N relevant items)
+   - cache research answers (already have case_rule_terms; reuse it)
+
+Acceptance test:
+- Send a normal chat question: first token appears quickly
+- Send a research question: shows streaming progress, still returns Sources.
+
+Report back:
+- files changed
+- what CSS/layout change fixed zoom + scroll
+- how Lexi formatting is enforced (prompt + renderer)
+- exactly where external links are rendered as <a>
+- streaming implementation notes

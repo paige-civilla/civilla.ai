@@ -1,0 +1,59 @@
+REPLIT TASK: Make Lexi “Sources” produce and render real, clickable links (no 404 / no base-site fallback)
+
+Goal
+When Lexi includes Sources, every item must be a full, real URL that opens in a new tab and lands on the correct page.
+
+A) Update Lexi system prompt to REQUIRE absolute URLs
+In the Lexi chat route (server/routes.ts where the system prompt is built), add these requirements:
+
+- If the answer includes a Sources section, each source must be a FULL URL starting with https://
+- No shortened links, no “www.” without scheme, no relative paths
+- Prefer official primary sources: state legislature, judiciary/courts sites, official court rules/forms pages
+- If Lexi cannot find an official URL confidently, it must say so and omit the link rather than guessing
+
+Also require a strict Sources format:
+
+Sources:
+1. Title — https://example.com/path
+2. Title — https://example.com/path
+
+B) Server-side URL cleanup/normalization (defensive)
+Before storing Lexi messages (or before returning the response), run a small sanitizer on any detected URLs:
+- Trim whitespace
+- If a URL starts with "www.", prefix "https://"
+- Reject/strip anything that isn’t http/https
+- Do NOT attempt to “rebuild” URLs from base domains + paths (that’s what causes broken links)
+
+C) Fix the frontend renderer so links are external anchors (not SPA routing)
+In LexiPanel message rendering:
+- Do NOT use wouter <Link> for external URLs
+- Render links as:
+  <a href="https://..." target="_blank" rel="noopener noreferrer" className="underline">
+- If you’re using a markdown renderer (react-markdown):
+  - Override the link component so it always renders as <a> with target=_blank
+  - Ensure it does not pass through the SPA router
+
+D) Optional but strongly recommended: add a “Link Preview / Copy” UX
+For each source link:
+- Show a small “Copy” button that copies the URL
+- (Optional) Show domain label (e.g., courts.idaho.gov)
+
+E) Add a lightweight “sources validator” for Research mode (no heavy crawling)
+When Lexi returns Sources, validate each URL string:
+- Must start with https://
+- Must contain at least one dot in the hostname
+- Must be <= 2048 chars
+If any fail validation, replace Sources section with:
+“Sources: unavailable (Lexi could not produce verified URLs for this answer).”
+
+F) Acceptance tests
+1) Ask: “What are the family court disclosure requirements in Idaho? Provide official sources.”
+- Expect 3–5 sources that open real pages in a new tab
+2) Ask: “What’s the deadline to respond to a petition in my state?”
+- If Lexi cannot verify an official link, it must say it cannot and show how to find it (without guessing URLs)
+3) Confirm clicking a link does NOT route inside the app and does NOT land on a base site “not found” page.
+
+Report back
+- Files changed
+- Example output of a Sources section
+- Confirm links open externally (target=_blank) and no router hijack

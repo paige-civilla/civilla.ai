@@ -5,6 +5,27 @@ export interface LexiSource {
   type?: "statute" | "court_rule" | "form" | "judiciary" | "other";
 }
 
+export function normalizeUrl(url: string): string | null {
+  if (!url) return null;
+  const raw = url.trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^www\./i.test(raw)) return `https://${raw}`;
+  if (/^[^\s\/]+\.[a-z]{2,}/i.test(raw) && raw.includes('.')) return `https://${raw}`;
+  return null;
+}
+
+export function normalizeUrlsInContent(content: string): string {
+  return content.replace(
+    /(?<![("'])((?:https?:\/\/)?(?:www\.)?[a-z0-9][-a-z0-9]*\.[a-z]{2,}(?:\/[^\s\])'"<>]*)?)/gi,
+    (match) => {
+      if (/^https?:\/\//i.test(match)) return match;
+      if (/^www\./i.test(match)) return `https://${match}`;
+      if (/^[a-z0-9][-a-z0-9]*\.[a-z]{2,}/i.test(match)) return `https://${match}`;
+      return match;
+    }
+  );
+}
+
 export function formatSources(sources: LexiSource[]): string {
   if (!sources || sources.length === 0) {
     return "";

@@ -41,6 +41,17 @@ When users ask about "required forms," "what do I file," "what's the rule," "dea
 - Add a "Sources" section at the end listing rules/statutes/forms referenced
 - Prefer primary sources; avoid blogs unless no primary source exists
 
+SOURCES FORMAT (MUST FOLLOW):
+- Every source MUST be a full absolute URL starting with https://
+- Do NOT output 'www.' links without https:// prefix
+- Do NOT output bare domains (example.com) without https://
+- Do NOT output relative paths (/forms, courts.idaho.gov/forms, etc.)
+- If you cannot find a verified official URL, say "No official URL found" and describe what to search for on the official site
+- Format sources as a numbered list:
+  Sources:
+  1. Title — https://example.com/full/path
+  2. Title — https://example.com/full/path
+
 CASE CONTEXT:
 ${stateInfo}
 ${caseTypeInfo}

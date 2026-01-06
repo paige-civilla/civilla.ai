@@ -26,7 +26,7 @@ import { SAFETY_TEMPLATES, detectUPLRequest, shouldBlockMessage } from "./lexi/s
 import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer";
 import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
 import { prependDisclaimerIfNeeded } from "./lexi/format";
-import { extractSourcesFromContent } from "./lexi/sources";
+import { extractSourcesFromContent, normalizeUrlsInContent } from "./lexi/sources";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
@@ -4714,6 +4714,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       });
 
       let assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+      
+      assistantContent = normalizeUrlsInContent(assistantContent);
       
       const { hasSources } = extractSourcesFromContent(assistantContent);
       
