@@ -55,6 +55,59 @@ function extractCaseId(path: string): string | null {
 
 type LexiIntent = "research" | "organize" | "educate";
 
+interface LexiSource {
+  title: string;
+  url: string;
+  jurisdiction?: string;
+  reachable?: boolean;
+  accessedAt?: string;
+  publisher?: string;
+}
+
+interface MessageMetadata {
+  intent?: LexiIntent;
+  refused?: boolean;
+  hadSources?: boolean;
+  sources?: LexiSource[];
+}
+
+function LexiSourcesList({ sources }: { sources: LexiSource[] }) {
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-neutral-light">
+      <p className="text-xs font-medium text-neutral-darkest/60 mb-2">Sources:</p>
+      <ul className="space-y-1">
+        {sources.map((source, idx) => (
+          <li key={idx} className="text-xs flex items-start gap-1">
+            <span className="text-neutral-darkest/40 shrink-0">{idx + 1}.</span>
+            {source.reachable && source.url ? (
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[hsl(var(--module-tile-border))] hover:underline break-words"
+              >
+                {source.title || source.url}
+              </a>
+            ) : (
+              <span className="text-neutral-darkest/70">
+                {source.title || source.url}
+                {!source.reachable && source.url && (
+                  <span className="text-neutral-darkest/40 ml-1">(link unavailable)</span>
+                )}
+              </span>
+            )}
+            {source.jurisdiction && (
+              <span className="text-neutral-darkest/40 shrink-0">({source.jurisdiction})</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function getIntentBadge(intent?: LexiIntent): { label: string; icon: typeof Search; color: string } | null {
   if (!intent) return null;
   switch (intent) {
@@ -640,9 +693,10 @@ export default function LexiPanel() {
                       </>
                     )}
                     {messages.map((m) => {
-                      const meta = m.metadata as { intent?: LexiIntent; refused?: boolean; hadSources?: boolean } | null;
+                      const meta = m.metadata as MessageMetadata | null;
                       const badge = m.role === "assistant" ? getIntentBadge(meta?.intent) : null;
                       const showDeadlineButton = m.role === "assistant" && containsDeadlineInfo(m.content) && caseId;
+                      const metaSources = meta?.sources || [];
                       
                       return (
                         <div key={m.id} className="space-y-1">
@@ -666,7 +720,10 @@ export default function LexiPanel() {
                             ].join(" ")}
                           >
                             {m.role === "assistant" ? (
-                              <LexiMessageBody content={m.content} />
+                              <>
+                                <LexiMessageBody content={m.content} />
+                                {metaSources.length > 0 && <LexiSourcesList sources={metaSources} />}
+                              </>
                             ) : (
                               m.content
                             )}
