@@ -3,6 +3,9 @@ export interface LexiSource {
   url: string;
   jurisdiction?: string;
   type?: "statute" | "court_rule" | "form" | "judiciary" | "other";
+  reachable?: boolean;
+  accessedAt?: string;
+  publisher?: string;
 }
 
 export function normalizeUrl(url: string): string | null {
@@ -79,6 +82,69 @@ export function extractSourcesFromContent(content: string): {
     sources,
     hasSources: sources.length > 0,
   };
+}
+
+async function checkUrlReachable(url: string, timeoutMs: number = 3000): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    
+    const response = await fetch(url, {
+      method: "HEAD",
+      signal: controller.signal,
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; CivillaBot/1.0)",
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    return response.status >= 200 && response.status < 400;
+  } catch {
+    return false;
+  }
+}
+
+function isValidUrl(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  if (!url.startsWith("https://") && !url.startsWith("http://")) return false;
+  if (url.includes("placeholder") || url.includes("example.com")) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function normalizeAndValidateSources(sources: LexiSource[]): Promise<LexiSource[]> {
+  const accessedAt = new Date().toISOString();
+  
+  const validatedSources = await Promise.all(
+    sources.map(async (source) => {
+      const normalizedUrl = normalizeUrl(source.url);
+      
+      if (!normalizedUrl || !isValidUrl(normalizedUrl)) {
+        return {
+          ...source,
+          url: source.url,
+          reachable: false,
+          accessedAt,
+        };
+      }
+      
+      const reachable = await checkUrlReachable(normalizedUrl);
+      
+      return {
+        ...source,
+        url: normalizedUrl,
+        reachable,
+        accessedAt,
+      };
+    })
+  );
+  
+  return validatedSources;
 }
 
 export const NO_SOURCES_FOUND_MESSAGE = `I did not find an official source for that yet. To verify this information, I recommend checking:
