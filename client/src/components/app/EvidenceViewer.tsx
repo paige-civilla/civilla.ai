@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { X, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText, StickyNote, Plus, Pencil, Trash2, Check, Loader2, BookOpen, Scale, ChevronDown, ChevronUp, CheckCircle, Circle, Tag, Clock, AlignLeft, AlertTriangle } from "lucide-react";
+import { X, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText, StickyNote, Plus, Pencil, Trash2, Check, Loader2, BookOpen, Scale, ChevronDown, ChevronUp, CheckCircle, Circle, Tag, Clock, AlignLeft, AlertTriangle, Sparkles, XCircle, MessageSquareQuote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { EvidenceFile, EvidenceNoteFull, ExhibitList } from "@shared/schema";
+import type { EvidenceFile, EvidenceNoteFull, ExhibitList, CaseClaim, CitationPointer } from "@shared/schema";
 
 interface EvidenceViewerProps {
   caseId: string;
@@ -78,6 +78,11 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const [snippetNoteId, setSnippetNoteId] = useState<string | null>(null);
   const [showTrialPrepModal, setShowTrialPrepModal] = useState(false);
   const [trialPrepNoteId, setTrialPrepNoteId] = useState<string | null>(null);
+  const [claimsOpen, setClaimsOpen] = useState(true);
+  const [acceptedClaimsOpen, setAcceptedClaimsOpen] = useState(false);
+  const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
+  const [claimEditForm, setClaimEditForm] = useState({ claimText: "", tags: "", missingInfoFlag: false });
+  const [suggestingClaims, setSuggestingClaims] = useState(false);
 
   const [noteForm, setNoteForm] = useState({
     noteTitle: "",
@@ -121,6 +126,23 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const notes = notesData?.notes || [];
   const exhibitLists = exhibitListsData?.exhibitLists || [];
   const resolvedCount = notes.filter(n => n.isResolved).length;
+
+  interface ClaimWithCitations extends CaseClaim {
+    citations?: CitationPointer[];
+  }
+
+  const { data: claimsData, isLoading: claimsLoading } = useQuery<{ claims: ClaimWithCitations[] }>({
+    queryKey: ["/api/cases", caseId, "claims", { evidenceFileId: evidence.id }],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/claims?evidenceFileId=${evidence.id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch claims");
+      return res.json();
+    },
+  });
+
+  const allClaims = claimsData?.claims || [];
+  const suggestedClaims = allClaims.filter(c => c.status === "suggested");
+  const acceptedClaims = allClaims.filter(c => c.status === "accepted");
 
   const createNoteMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -210,6 +232,106 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
       }
     },
   });
+
+  const suggestClaimsMutation = useMutation({
+    mutationFn: async (refresh: boolean) => {
+      setSuggestingClaims(true);
+      const res = await fetch(`/api/cases/${caseId}/evidence/${evidence.id}/claims/suggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ refresh, limit: 10 }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to suggest claims");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setSuggestingClaims(false);
+      if (data.message?.includes("Generating")) {
+        toast({ title: "Generating claims...", description: "This may take a moment" });
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "claims"] });
+        }, 3000);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "claims"] });
+        toast({ title: "Claims suggested" });
+      }
+    },
+    onError: (err: Error) => {
+      setSuggestingClaims(false);
+      toast({ title: "Failed to suggest claims", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const updateClaimMutation = useMutation({
+    mutationFn: async ({ claimId, data }: { claimId: string; data: Record<string, unknown> }) => {
+      return apiRequest("PATCH", `/api/claims/${claimId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "claims"] });
+      setEditingClaimId(null);
+      toast({ title: "Claim updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update claim", variant: "destructive" });
+    },
+  });
+
+  const addClaimToTrialPrepMutation = useMutation({
+    mutationFn: async (claim: CaseClaim) => {
+      return apiRequest("POST", `/api/cases/${caseId}/trial-prep-shortlist`, {
+        sourceType: "claim",
+        sourceId: claim.id,
+        title: claim.claimText.substring(0, 80),
+        summary: claim.claimText,
+        binderSection: "Key Facts",
+        importance: 3,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "trial-prep-shortlist"] });
+      toast({ title: "Added to Trial Prep" });
+    },
+    onError: (err: Error) => {
+      if (err.message?.includes("duplicate") || err.message?.includes("unique")) {
+        toast({ title: "Already in Trial Prep" });
+      } else {
+        toast({ title: "Failed to add to Trial Prep", variant: "destructive" });
+      }
+    },
+  });
+
+  function handleAcceptClaim(claimId: string) {
+    updateClaimMutation.mutate({ claimId, data: { status: "accepted" } });
+  }
+
+  function handleRejectClaim(claimId: string) {
+    updateClaimMutation.mutate({ claimId, data: { status: "rejected" } });
+  }
+
+  function startEditClaim(claim: CaseClaim) {
+    setEditingClaimId(claim.id);
+    setClaimEditForm({
+      claimText: claim.claimText,
+      tags: Array.isArray(claim.tags) ? (claim.tags as string[]).join(", ") : "",
+      missingInfoFlag: claim.missingInfoFlag || false,
+    });
+  }
+
+  function handleSaveClaimEdit() {
+    if (!editingClaimId) return;
+    updateClaimMutation.mutate({
+      claimId: editingClaimId,
+      data: {
+        claimText: claimEditForm.claimText,
+        tags: claimEditForm.tags ? claimEditForm.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
+        missingInfoFlag: claimEditForm.missingInfoFlag,
+      },
+    });
+  }
 
   function resetNoteForm() {
     setNoteForm({
@@ -470,6 +592,172 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
     </div>
   );
 
+  const claimsPanel = (
+    <div className="flex flex-col border-t">
+      <Collapsible open={claimsOpen} onOpenChange={setClaimsOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center justify-between gap-2 p-3 w-full hover-elevate" data-testid="button-toggle-claims">
+            <div className="flex items-center gap-2">
+              <MessageSquareQuote className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium text-sm">Claims (Evidence-Backed Facts)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">{suggestedClaims.length} pending</Badge>
+              {claimsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-3 border-t space-y-3">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => suggestClaimsMutation.mutate(false)}
+                disabled={suggestingClaims || extractionStatus !== "complete"}
+                data-testid="button-suggest-claims"
+              >
+                {suggestingClaims ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-1" />
+                )}
+                Suggest Claims (AI)
+              </Button>
+              {suggestedClaims.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => suggestClaimsMutation.mutate(true)}
+                  disabled={suggestingClaims}
+                  data-testid="button-refresh-claims"
+                >
+                  Refresh
+                </Button>
+              )}
+            </div>
+
+            {extractionStatus !== "complete" && (
+              <p className="text-xs text-muted-foreground">Extract text first to enable AI claim suggestions.</p>
+            )}
+
+            {claimsLoading ? (
+              <div className="py-4 text-center">
+                <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+              </div>
+            ) : suggestedClaims.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">No suggested claims yet. Click "Suggest Claims" to generate.</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {suggestedClaims.map((claim) => (
+                  <Card key={claim.id} className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                    <CardContent className="p-3 space-y-2">
+                      {editingClaimId === claim.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={claimEditForm.claimText}
+                            onChange={(e) => setClaimEditForm(prev => ({ ...prev, claimText: e.target.value }))}
+                            rows={3}
+                            className="text-sm"
+                            data-testid={`textarea-edit-claim-${claim.id}`}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder="Tags (comma-separated)"
+                              value={claimEditForm.tags}
+                              onChange={(e) => setClaimEditForm(prev => ({ ...prev, tags: e.target.value }))}
+                              className="text-xs"
+                              data-testid={`input-claim-tags-${claim.id}`}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id={`missing-${claim.id}`}
+                              checked={claimEditForm.missingInfoFlag}
+                              onCheckedChange={(c) => setClaimEditForm(prev => ({ ...prev, missingInfoFlag: !!c }))}
+                            />
+                            <Label htmlFor={`missing-${claim.id}`} className="text-xs">Missing info</Label>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={handleSaveClaimEdit} disabled={updateClaimMutation.isPending} data-testid={`button-save-claim-${claim.id}`}>
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingClaimId(null)}>Cancel</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm">{claim.claimText}</p>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-xs">{claim.claimType}</Badge>
+                            {claim.missingInfoFlag && <Badge variant="destructive" className="text-xs">Missing Info</Badge>}
+                            {Array.isArray(claim.tags) && (claim.tags as string[]).map((tag, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                          {claim.citations && claim.citations.length > 0 && (
+                            <div className="text-xs italic text-muted-foreground border-l-2 border-primary/30 pl-2">
+                              "{claim.citations[0].quote?.substring(0, 80)}..."
+                              {claim.citations[0].pageNumber && <span className="ml-1">(p.{claim.citations[0].pageNumber})</span>}
+                            </div>
+                          )}
+                          <div className="flex gap-1 pt-2">
+                            <Button size="sm" variant="default" onClick={() => handleAcceptClaim(claim.id)} disabled={updateClaimMutation.isPending} data-testid={`button-accept-claim-${claim.id}`}>
+                              <Check className="w-3 h-3 mr-1" />Accept
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleRejectClaim(claim.id)} disabled={updateClaimMutation.isPending} data-testid={`button-reject-claim-${claim.id}`}>
+                              <XCircle className="w-3 h-3 mr-1" />Reject
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => startEditClaim(claim)} data-testid={`button-edit-claim-${claim.id}`}>
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {acceptedClaims.length > 0 && (
+              <Collapsible open={acceptedClaimsOpen} onOpenChange={setAcceptedClaimsOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground w-full" data-testid="button-toggle-accepted-claims">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Accepted ({acceptedClaims.length})</span>
+                    {acceptedClaimsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                    {acceptedClaims.map((claim) => (
+                      <Card key={claim.id} className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                        <CardContent className="p-2 space-y-1">
+                          <p className="text-xs">{claim.claimText.length > 100 ? claim.claimText.substring(0, 100) + "..." : claim.claimText}</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs"
+                            onClick={() => addClaimToTrialPrepMutation.mutate(claim)}
+                            disabled={addClaimToTrialPrepMutation.isPending}
+                            data-testid={`button-trial-prep-claim-${claim.id}`}
+                          >
+                            <Scale className="w-3 h-3 mr-1" />
+                            Add to Trial Prep
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col" style={{ top: "64px" }}>
       <div className="flex items-center justify-between gap-2 p-3 border-b bg-background">
@@ -596,8 +884,9 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
           )}
         </div>
 
-        <div className="hidden md:block w-80 border-l bg-background">
+        <div className="hidden md:flex md:flex-col w-80 border-l bg-background overflow-y-auto">
           {notesPanel}
+          {claimsPanel}
         </div>
       </div>
 
