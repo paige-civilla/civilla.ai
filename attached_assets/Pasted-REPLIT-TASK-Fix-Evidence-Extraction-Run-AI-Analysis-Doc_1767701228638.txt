@@ -1,0 +1,147 @@
+REPLIT TASK: Fix Evidence Extraction + Run AI Analysis + Document Creator Autofill (end-to-end)
+
+Context
+Paige reports:
+- “Extract text” not working
+- “Run AI analysis” not working
+- Document Creator not auto-populating from evidence
+
+Goal
+1) Make extraction + analysis jobs actually run and update status rows
+2) Make failures visible with clear errors (instead of silent disappearance)
+3) Add a concrete “Autofill from Evidence” flow for Document Creator
+
+PART A — Add ONE consolidated AI/Evidence health endpoint (auth required)
+Add GET /api/system/health-ai (requireAuth) returning:
+
+{
+  ok: true/false,
+  openai: { ok, error? },
+  vision: { ok, error? },
+  r2: { ok, error? },
+  db: {
+    evidence_extractions_status: boolean,
+    evidence_ai_analyses_status: boolean
+  }
+}
+
+Implementation notes:
+- openai: perform a tiny OpenAI call (same client used by Lexi) and catch errors
+- vision: confirm GOOGLE_CLOUD_VISION_API_KEY exists; optionally do a tiny annotate call
+- r2: attempt a HEAD or small getSignedDownloadUrl for a known file or a lightweight “list bucket” if available
+- db: run simple columnExists checks (you already have helpers)
+
+PART B — Make Evidence Extraction failures obvious and actionable
+1) In server/services/evidenceJobs.ts (or your queue runner):
+- Wrap the entire extraction run with:
+  - status=processing + started_at
+  - on success: status=complete + completed_at + extracted_text
+  - on failure: status=failed + error string + completed_at
+- ALWAYS persist an error message. Never swallow it.
+
+2) In server/routes.ts for:
+POST /api/cases/:caseId/evidence/:evidenceId/extraction/run
+Return structured errors:
+- 400 if evidence record missing
+- 503 if OCR not configured (missing GOOGLE_CLOUD_VISION_API_KEY) AND the file requires OCR
+- 500 with a short error code if R2 download fails
+
+3) In client/src/pages/AppEvidence.tsx:
+When extraction status is failed:
+- Show the stored extraction.error directly (trimmed)
+- If error indicates missing Vision key or 401/403 -> show:
+  “OCR is not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets.”
+
+Also ensure the UI isn’t “optimistically” hiding the error after a second.
+
+PART C — Fix “Run AI Analysis” so it really runs and persists results
+Right now this usually breaks because the endpoint exists but:
+- extraction text is empty
+- OpenAI key/model misconfigured
+- errors aren’t written back to evidence_ai_analyses
+
+1) Server: POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run
+Hard requirements:
+- If no extraction exists or extraction.status != complete -> return 409 with message:
+  “Run text extraction first.”
+- Create or update an evidence_ai_analyses row:
+  status: queued -> processing -> complete/failed
+  model: string
+  summary/findings: JSON/text fields
+  error: string if failed
+
+2) Logging:
+Add a single safe log line per run:
+[AI_ANALYSIS] start { caseId, evidenceId, analysisId }
+[AI_ANALYSIS] complete { analysisId }
+[AI_ANALYSIS] failed { analysisId, code, message }
+
+3) Client:
+If “Run AI Analysis” fails, show the returned error in toast AND keep the sheet open.
+
+PART D — Make Document Creator actually “Auto-fill from Evidence”
+This is not automatic today unless we explicitly build it.
+
+Add a new button in Document Creator:
+“Autofill from Case Materials”
+
+Flow
+1) Client: In AppDocuments (or the document editor page), add a button that calls:
+POST /api/cases/:caseId/documents/:docId/autofill
+Body:
+{
+  scope: "case",
+  include: {
+    evidenceExtractions: true,
+    evidenceNotes: true,
+    timeline: true,
+    communications: true
+  }
+}
+
+2) Server: Implement POST /api/cases/:caseId/documents/:docId/autofill (requireAuth)
+Behavior:
+- Load:
+  - document template key/type
+  - user profile (names, address if allowed)
+  - case details (case number, parties)
+  - TOP evidence notes marked key / pinned / or most recent
+  - extracted text for up to N evidence files (cap to avoid token explosion)
+  - relevant timeline events
+- Ask OpenAI to produce STRICT JSON:
+{
+  "caption": {...},
+  "facts": [...],
+  "requestedRelief": [...],
+  "exhibitsReferenced": [...],
+  "missingInfo": [...]
+}
+
+Then:
+- Save the JSON to document metadata OR update the draft’s content with inserted sections
+- Return preview + list of “missingInfo” so the user can fill gaps
+
+3) Guardrails:
+- The prompt must be educational and must NOT output legal strategy or predicted outcomes
+- It can organize facts, summarize evidence, and propose neutral section headings
+
+PART E — Quick verification checklist (must pass)
+1) Upload an image evidence item:
+- extraction status transitions to complete
+- extracted text is visible
+
+2) Run AI analysis:
+- analysis row shows processing then complete
+- sheet shows summary/findings
+
+3) Document autofill:
+- button populates a draft with structured bullets and headings
+- no long run-on paragraph blocks
+- includes “Missing info” list
+
+Report back (required)
+After implementing, provide:
+- files changed
+- the response shape for /api/system/health-ai
+- one example of a successful extraction row + analysis row status transitions
+- confirm Document Autofill button appears and writes data to the document

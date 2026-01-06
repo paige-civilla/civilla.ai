@@ -4377,6 +4377,53 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/system/health-ai", requireAuth, async (_req, res) => {
+    try {
+      const openaiStatus: { ok: boolean; error?: string } = { ok: false };
+      if (!process.env.OPENAI_API_KEY) {
+        openaiStatus.error = "OPENAI_API_KEY not configured";
+      } else {
+        try {
+          const testClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+          await testClient.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: "ping" }],
+            max_tokens: 5,
+          });
+          openaiStatus.ok = true;
+        } catch (err: any) {
+          openaiStatus.error = err?.message || "OpenAI call failed";
+        }
+      }
+
+      const visionStatus = await checkVisionHealth();
+
+      const r2Status: { ok: boolean; error?: string } = { ok: false };
+      if (!isR2Configured()) {
+        r2Status.error = "R2 storage not configured";
+      } else {
+        r2Status.ok = true;
+      }
+
+      const dbStatus = await checkAiTableColumns();
+
+      const allOk = openaiStatus.ok && visionStatus.ok && r2Status.ok && dbStatus.ok;
+      res.json({
+        ok: allOk,
+        openai: openaiStatus,
+        vision: visionStatus,
+        r2: r2Status,
+        db: {
+          evidence_extractions_status: dbStatus.ok,
+          evidence_ai_analyses_status: dbStatus.ok,
+        },
+      });
+    } catch (error) {
+      console.error("System health-ai check error:", error);
+      res.status(500).json({ ok: false, error: "Health check failed" });
+    }
+  });
+
   app.get("/api/lexi/disclaimer", requireAuth, (_req, res) => {
     res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
   });
