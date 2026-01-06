@@ -1180,15 +1180,15 @@ export async function initDbTables(): Promise<void> {
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
       case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
-      pinned_context TEXT,
-      writing_rules_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-      goals_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-      last_auto_summary TEXT,
+      memory_markdown TEXT,
+      preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE UNIQUE INDEX IF NOT EXISTS lexi_case_memory_user_case_idx ON lexi_case_memory(user_id, case_id)`
+    `CREATE UNIQUE INDEX IF NOT EXISTS lexi_case_memory_user_case_idx ON lexi_case_memory(user_id, case_id)`,
+    `ALTER TABLE lexi_case_memory ADD COLUMN IF NOT EXISTS memory_markdown TEXT`,
+    `ALTER TABLE lexi_case_memory ADD COLUMN IF NOT EXISTS preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb`
   ]);
 
   await initTable("lexi_feedback_events", `
@@ -1202,6 +1202,20 @@ export async function initDbTables(): Promise<void> {
     )
   `, [
     `CREATE INDEX IF NOT EXISTS lexi_feedback_user_case_event_idx ON lexi_feedback_events(user_id, case_id, event_type, created_at)`
+  ]);
+
+  await initTable("activity_logs", `
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255),
+      type TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS activity_logs_user_created_idx ON activity_logs(user_id, created_at)`
   ]);
 
   await ensureSchemaMigrations();

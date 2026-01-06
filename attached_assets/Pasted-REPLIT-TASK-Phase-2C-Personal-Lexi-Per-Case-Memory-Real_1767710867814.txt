@@ -1,0 +1,154 @@
+REPLIT TASK: Phase 2C — Personal Lexi (Per-Case Memory) + Real Sources + Better Formatting + Rename Threads + Activity Logs
+
+Goal
+Implement “Personal Lexi” that adapts per user/case (NO global training), improves readability, fixes broken source links, allows renaming conversations, and adds read-only activity logs.
+
+Do ALL sections A–G.
+
+A) DATABASE: Personal Lexi Memory + Activity Logs
+
+1) Add table: lexi_case_memory
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID NOT NULL (index)
+- case_id UUID NOT NULL (index)
+- memory_markdown TEXT NOT NULL DEFAULT ''
+- preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb
+- updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+Unique: (user_id, case_id)
+
+2) Add table: activity_logs
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID NOT NULL (index)
+- case_id UUID NULL (index)
+- type TEXT NOT NULL
+- summary TEXT NOT NULL
+- metadata JSONB NOT NULL DEFAULT '{}'::jsonb
+- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+3) Migrations
+Update server/db.ts ensureSchemaMigrations() with:
+- ensureLexiCaseMemoryTable()
+- ensureActivityLogsTable()
+Both must be idempotent.
+
+B) STORAGE LAYER
+
+In server/storage.ts add:
+
+Lexi Memory
+- getLexiCaseMemory(userId, caseId)
+- upsertLexiCaseMemory(userId, caseId, { memoryMarkdown, preferencesJson })
+- rebuildLexiCaseMemoryFromCaseData(userId, caseId)  // returns memoryMarkdown
+
+Activity Logs
+- createActivityLog(userId, { caseId?, type, summary, metadata? })
+- listActivityLogs(userId, { caseId?, limit?, offset? })
+
+C) API ROUTES (requireAuth)
+
+1) Lexi Case Memory
+GET   /api/cases/:caseId/lexi/memory
+PATCH /api/cases/:caseId/lexi/memory
+Body: { memoryMarkdown?: string, preferencesJson?: object }
+
+POST  /api/cases/:caseId/lexi/memory/rebuild
+- rebuild must summarize from existing structured data ONLY:
+  - case fields (title, state, caseType, hasChildren, startingPoint)
+  - accepted claims + their citations (quotes/page pointers)
+  - top timeline events (most recent + tagged “key” if you have it)
+  - pinned / top Trial Prep items
+  - Pattern Analysis themes (if available)
+Return: { ok: true, memoryMarkdown, updatedAt }
+
+2) Activity Logs
+GET /api/activity-logs?caseId=<optional>
+Return: { ok: true, logs: ActivityLog[] }
+
+Log these events from server (minimum):
+- evidence extraction complete / failed
+- AI analysis run complete / failed
+- claims suggested
+- claim accepted/rejected (only if already tracked easily)
+- document compiled (claims mode)
+- exports (trial prep binder, pattern analysis)
+
+D) LEXI CHAT: Inject Memory + Enforce Formatting + Validate Sources
+
+1) Memory injection
+In POST /api/lexi/chat:
+- If request has caseId, fetch lexi_case_memory for (userId, caseId)
+- If no caseId, do NOT rely on fake __general__ caseId. Use memory injection only when caseId is real.
+- Add system prompt section:
+
+“CASE MEMORY (user-maintained, extracted, and accepted items)
+<memory_markdown>”
+
+2) Formatting enforcement
+Update Lexi system prompt to require:
+- Headings
+- Short paragraphs
+- Bullet lists
+- A final “Sources” section when sources exist
+Never output a single run-on paragraph.
+
+3) Sources must be real links
+Implement server helper normalizeAndValidateSources(sources):
+- Require full https:// URLs
+- Remove “placeholder” or malformed URLs
+- Best-effort HEAD (3s timeout) to validate reachability (200-399)
+- If unreachable: keep as plain text source (no link), mark reachable=false
+
+Store sources in Lexi assistant message metadata as:
+metadata.sources = [{ title, url, publisher?, accessedAt, reachable: boolean }]
+
+4) Frontend rendering
+In LexiPanel message renderer:
+- Render assistant content as markdown (existing)
+- Render Sources section using metadata.sources:
+  - If reachable: clickable link
+  - If not reachable: plain text (no <a>)
+No more “fake links that go to base site”.
+
+E) RENAME THREAD FEATURE (User can edit conversation name)
+
+Backend
+PATCH /api/lexi/threads/:threadId
+Body: { title: string }
+- requireAuth
+- validate thread belongs to user
+- update lexi_threads.title and updated_at
+
+Frontend
+- When creating a thread, default title = moduleKey label (Dashboard/Evidence/Timeline/etc.)
+- In Lexi header, show title with an Edit icon
+- Inline edit: Save/Cancel
+- Persist via PATCH endpoint
+
+F) PERSONAL LEXI “LEARNING” (Per-case adaptation, not training)
+Implement a debounced “memory refresh” job:
+- When events happen, call scheduleLexiMemoryRefresh(caseId)
+- debounce 60s per case
+- rebuild memory via rebuildLexiCaseMemoryFromCaseData()
+This is what makes Lexi feel like it’s learning the case.
+
+Minimum triggers:
+- accepting/rejecting claims
+- adding/editing timeline event
+- adding/pinning trial prep item
+- evidence extraction completes
+- AI analysis completes
+
+G) REPORT BACK (Required)
+After you finish, report:
+- files changed
+- confirm table existence + idempotent migrations
+- confirm memory injection is only for real caseId
+- confirm /api/cases/:caseId/lexi/memory works
+- confirm /api/activity-logs works and shows events
+- confirm source link validation + UI rendering works
+- confirm thread rename works end-to-end
+
+Important Guardrails
+- No global learning, no cross-user data
+- No legal advice, no outcome predictions
+- Memory uses ONLY user/case data already in DB

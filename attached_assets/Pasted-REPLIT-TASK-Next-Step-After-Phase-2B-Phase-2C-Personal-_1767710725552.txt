@@ -1,0 +1,132 @@
+REPLIT TASK: Next Step After Phase 2B (Phase 2C) — “Personal Lexi” Case Memory + Reliable Sources + Better Formatting
+
+Context
+Phase 2B is done (citations auto-attach, one-click sources, bulk auto-attach). Next we need Lexi to:
+1) Learn per-user/per-case (WITHOUT training the global model)
+2) Produce readable, structured answers (bullets, headings, spacing)
+3) Provide working, real source links (no “base site / not found” junk)
+4) Make it easy to reuse extracted case facts for drafting without crossing UPL
+
+Deliverables (do ALL)
+
+A) PER-CASE “PERSONAL LEXI” MEMORY (NOT GLOBAL TRAINING)
+Goal: Each case gets its own “Lexi Case Memory” that updates over time.
+
+1) DB: Add a new table (or reuse existing if you already added one)
+Table: lexi_case_memory
+- id (uuid pk)
+- user_id (uuid, indexed)
+- case_id (uuid, indexed)
+- memory_markdown (text)  // compact summary Lexi can use
+- preferences_json (jsonb) // tone + formatting prefs, user toggles, etc.
+- updated_at (timestamp)
+
+2) Storage methods
+- getLexiCaseMemory(userId, caseId)
+- upsertLexiCaseMemory(userId, caseId, { memoryMarkdown, preferencesJson })
+- appendLexiMemoryEvent(userId, caseId, event)  // optional helper
+
+3) API endpoints (requireAuth)
+GET  /api/cases/:caseId/lexi/memory
+PATCH /api/cases/:caseId/lexi/memory
+POST /api/cases/:caseId/lexi/memory/rebuild
+- rebuild should summarize from CURRENT structured data:
+  - case profile fields
+  - accepted claims + citations
+  - key timeline events
+  - trial prep pinned/top items
+  - pattern analysis top themes (optional)
+Return: { ok: true, memoryMarkdown, updatedAt }
+
+4) Auto-update triggers (lightweight)
+When any of these actions happen, enqueue a low-cost memory refresh (debounced):
+- accept/reject claim
+- add/edit timeline event
+- add trial prep item / pin item
+- upload evidence extraction completes
+Implementation: in-memory debounce per caseId (e.g., 60s window) so it doesn’t spam.
+
+B) INJECT MEMORY + PREFERENCES INTO LEXI PROMPT (SAFE + TRACEABLE)
+In /api/lexi/chat:
+- Fetch case memory if caseId exists (or use “general” memory if no caseId)
+- Inject memory as a separate section: “Case Memory (user-provided / extracted)”
+- Also inject formatting preference defaults:
+  - short paragraphs
+  - bullets
+  - headings
+  - “Sources” section at end when sources exist
+Hard rule: If Lexi can’t cite it, it must label it as “Needs verification” or ask a question.
+
+C) MAKE LEXI SOURCES LINKS REAL (NO BROKEN “NOT FOUND”)
+Problem now: the links you’re generating aren’t landing on valid pages.
+
+Fix:
+1) Store sources as structured JSON with URL + title + publisher + accessedAt
+- If your current citations store “sources_json”, enforce:
+  - url must be a full URL that returns 200 when tested (best-effort)
+  - never create links like “state site base + guessed path”
+
+2) Add a server helper: normalizeAndValidateSources(sources)
+- For each source:
+  - if url missing protocol, add https://
+  - reject urls that look like placeholders
+  - optionally do a HEAD request (timeout 3s) to confirm it’s reachable
+  - if unreachable, drop it or label as “Source not reachable” without hyperlink
+
+3) Render in Lexi UI
+- Show Sources as a list with actual anchors (<a href target=_blank rel=noopener>)
+- If a source is dropped/unreachable: show plain text (no link)
+
+D) RESPONSE FORMATTING LIKE CHATGPT (NOT RUN-ON)
+In Lexi system prompt and/or post-processing:
+- Enforce Markdown formatting:
+  - headings
+  - bullet lists
+  - paragraph breaks
+- Add a “readability transform” before saving assistant messages:
+  - split long sentences
+  - ensure blank lines between sections
+Do not alter quoted evidence text.
+
+E) ADD A “RENAME THREAD” FEATURE (UI + API)
+Users want thread titles to auto-default by page but be editable.
+
+1) Backend
+PATCH /api/lexi/threads/:threadId
+Body: { title: string }
+Validate ownership, update title.
+
+2) Frontend
+- When creating a thread, set default title:
+  - Dashboard, Evidence, Timeline, Documents, etc. based on moduleKey/page
+- Add edit icon next to thread title in Lexi thread header
+- Inline edit with save/cancel
+
+F) LOGS (READ-ONLY TO USER)
+Add an Activity Log page in Account Settings:
+- shows events like:
+  - “Ran AI analysis on Evidence X”
+  - “Generated claims from Evidence Y”
+  - “Compiled Document from Claims”
+  - “Exported Trial Prep Binder”
+- Users cannot delete logs.
+
+Implementation:
+- table: activity_logs (userId, caseId nullable, type, summary, metadata jsonb, createdAt)
+- log from server in key endpoints
+- UI: paginated list in Settings
+
+G) REPORT BACK
+After implementing:
+- List files changed
+- Confirm memory table exists and is being written
+- Show sample memoryMarkdown content (sanitized)
+- Confirm sources validation prevents broken links
+- Confirm Lexi responses now appear as structured markdown with headings/bullets
+- Confirm thread rename works end-to-end
+- Confirm activity logs populate and display
+
+Important Guardrails
+- No legal advice, no predictions, no “you should file X”
+- Everything fact-based and traceable back to user data when used in drafting modes
+- Memory is per case/per user only. No cross-user learning.

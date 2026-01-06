@@ -146,6 +146,7 @@ import {
   lexiUserPrefs,
   lexiCaseMemory,
   lexiFeedbackEvents,
+  activityLogs,
   type CitationPointer,
   type InsertCitationPointer,
   type CaseClaim,
@@ -162,6 +163,7 @@ import {
   type UpsertLexiCaseMemory,
   type LexiFeedbackEvent,
   type CreateLexiFeedbackEvent,
+  type ActivityLog,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -427,7 +429,9 @@ export interface IStorage {
 
   getLexiCaseMemory(userId: string, caseId: string): Promise<LexiCaseMemory | undefined>;
   upsertLexiCaseMemory(userId: string, caseId: string, data: Partial<UpsertLexiCaseMemory>): Promise<LexiCaseMemory>;
-  updateLexiCaseAutoSummary(userId: string, caseId: string, summaryText: string): Promise<void>;
+  updateLexiCaseMemoryMarkdown(userId: string, caseId: string, memoryMarkdown: string): Promise<void>;
+  createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata?: Record<string, unknown>): Promise<ActivityLog>;
+  listActivityLogs(userId: string, limit?: number, offset?: number): Promise<ActivityLog[]>;
 
   createLexiFeedbackEvent(userId: string, caseId: string | null, eventType: string, payload: Record<string, unknown>): Promise<LexiFeedbackEvent>;
   listLexiFeedbackEvents(userId: string, caseId: string | null, limit?: number): Promise<LexiFeedbackEvent[]>;
@@ -3249,15 +3253,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateLexiCaseAutoSummary(userId: string, caseId: string, summaryText: string): Promise<void> {
+  async updateLexiCaseMemoryMarkdown(userId: string, caseId: string, memoryMarkdown: string): Promise<void> {
     const existing = await this.getLexiCaseMemory(userId, caseId);
     if (existing) {
       await db
         .update(lexiCaseMemory)
-        .set({ lastAutoSummary: summaryText, updatedAt: new Date() })
+        .set({ memoryMarkdown, updatedAt: new Date() })
         .where(and(eq(lexiCaseMemory.userId, userId), eq(lexiCaseMemory.caseId, caseId)));
     } else {
-      await db.insert(lexiCaseMemory).values({ userId, caseId, lastAutoSummary: summaryText });
+      await db.insert(lexiCaseMemory).values({ userId, caseId, memoryMarkdown });
     }
   }
 
@@ -3285,6 +3289,24 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(lexiFeedbackEvents.createdAt))
         .limit(limit);
     }
+  }
+
+  async createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata: Record<string, unknown> = {}): Promise<ActivityLog> {
+    const [log] = await db
+      .insert(activityLogs)
+      .values({ userId, caseId, type, summary, metadataJson: metadata })
+      .returning();
+    return log;
+  }
+
+  async listActivityLogs(userId: string, limit: number = 50, offset: number = 0): Promise<ActivityLog[]> {
+    return db
+      .select()
+      .from(activityLogs)
+      .where(eq(activityLogs.userId, userId))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 }
 
