@@ -6301,6 +6301,191 @@ Return a JSON object with this structure:
     }
   });
 
+  const claimSuggestionLimiter = createLimiter(2);
+  app.post("/api/cases/:caseId/evidence/:evidenceId/claims/suggest", requireAuth, async (req, res) => {
+    const userId = req.session.userId as string;
+    const { caseId, evidenceId } = req.params;
+    const refresh = req.body.refresh === true;
+    const limit = typeof req.body.limit === "number" ? Math.min(req.body.limit, 20) : 10;
+    
+    try {
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const evidence = await storage.getEvidenceFile(evidenceId, userId);
+      if (!evidence || evidence.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence not found" });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(502).json({ error: "Lexi cannot authenticate to OpenAI." });
+      }
+      
+      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
+      const notes = await storage.listEvidenceNotesFull(userId, caseId, evidenceId);
+      
+      let inputText = "";
+      if (extraction?.status === "complete" && extraction.extractedText?.trim()) {
+        inputText = extraction.extractedText.slice(0, 20000);
+      } else if (notes.length > 0) {
+        inputText = notes
+          .map(n => `[Note: ${n.noteTitle || "Untitled"}]\n${n.noteText || ""}`)
+          .join("\n\n")
+          .slice(0, 20000);
+      }
+      
+      if (!inputText.trim()) {
+        return res.status(409).json({ 
+          error: "Extraction not ready.", 
+          code: "EXTRACTION_NOT_COMPLETE" 
+        });
+      }
+      
+      const existingClaims = await storage.listCaseClaims(userId, caseId);
+      if (!refresh && existingClaims.some(c => c.createdFrom === "ai_suggested" && c.status === "suggested")) {
+        const suggestedForEvidence = existingClaims.filter(c => 
+          c.createdFrom === "ai_suggested" && c.status === "suggested"
+        );
+        return res.status(200).json({ 
+          ok: true, 
+          created: 0, 
+          skipped: 0, 
+          message: "Suggested claims already exist. Use refresh=true to suggest more.",
+          existingCount: suggestedForEvidence.length
+        });
+      }
+      
+      const normalizedExisting = new Set(
+        existingClaims
+          .filter(c => c.status === "suggested" || c.status === "accepted")
+          .map(c => c.claimText.toLowerCase().trim().replace(/\s+/g, " "))
+      );
+      
+      res.status(202).json({ ok: true, message: "Generating claim suggestions..." });
+      
+      claimSuggestionLimiter(async () => {
+        try {
+          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+          
+          const systemPrompt = `You are a legal document analyst extracting factual claims from evidence. Your job is to identify NEUTRAL, FACTUAL statements that can be verified from the text.
+
+RULES:
+- Claims must be neutral factual statements only
+- DO NOT infer dates, motives, diagnoses, or intent
+- If date/location is unclear, set missingInfoFlag=true and do NOT invent
+- citation.quote must be a short direct excerpt present in the text
+- Keep claims objective and traceable
+
+Return ONLY valid JSON (no markdown) as an array of objects:
+[
+  {
+    "claimText": "Factual statement here",
+    "claimType": "fact"|"procedural"|"context"|"communication"|"financial"|"medical"|"school"|"custody",
+    "tags": ["relevant", "tags"],
+    "missingInfoFlag": false,
+    "citation": {
+      "quote": "exact short quote from text",
+      "pageNumber": null,
+      "timestampSeconds": null,
+      "startOffset": null,
+      "endOffset": null
+    }
+  }
+]
+
+Limit to ${limit} most important claims.`;
+
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: `Extract factual claims from this evidence:\n\n${inputText}` }
+            ],
+            temperature: 0.2,
+            max_tokens: 4000,
+            response_format: { type: "json_object" },
+          });
+          
+          const responseText = completion.choices[0]?.message?.content || "[]";
+          let suggestions: Array<{
+            claimText: string;
+            claimType: string;
+            tags: string[];
+            missingInfoFlag: boolean;
+            citation: {
+              quote: string;
+              pageNumber: number | null;
+              timestampSeconds: number | null;
+              startOffset: number | null;
+              endOffset: number | null;
+            };
+          }> = [];
+          
+          try {
+            const parsed = JSON.parse(responseText);
+            suggestions = Array.isArray(parsed) ? parsed : (parsed.claims || parsed.suggestions || []);
+          } catch {
+            console.error("[CLAIM_SUGGEST] Failed to parse OpenAI response");
+            return;
+          }
+          
+          let created = 0;
+          let skipped = 0;
+          
+          for (const sug of suggestions.slice(0, limit)) {
+            if (!sug.claimText?.trim()) {
+              skipped++;
+              continue;
+            }
+            
+            const normalized = sug.claimText.toLowerCase().trim().replace(/\s+/g, " ");
+            if (normalizedExisting.has(normalized)) {
+              skipped++;
+              continue;
+            }
+            normalizedExisting.add(normalized);
+            
+            const citationPointer = await storage.createCitationPointer(userId, caseId, {
+              evidenceFileId: evidenceId,
+              quote: sug.citation?.quote?.slice(0, 500) || "",
+              pageNumber: sug.citation?.pageNumber ?? null,
+              timestampSeconds: sug.citation?.timestampSeconds ?? null,
+              startOffset: sug.citation?.startOffset ?? null,
+              endOffset: sug.citation?.endOffset ?? null,
+              excerpt: sug.citation?.quote?.slice(0, 200) || null,
+              confidence: 0.8,
+            });
+            
+            const validTypes = ["fact", "procedural", "context", "communication", "financial", "medical", "school", "custody"];
+            const claimType = validTypes.includes(sug.claimType) ? sug.claimType as any : "fact";
+            
+            const claim = await storage.createCaseClaim(userId, caseId, {
+              claimText: sug.claimText.trim(),
+              claimType,
+              tags: Array.isArray(sug.tags) ? sug.tags : [],
+              missingInfoFlag: sug.missingInfoFlag === true,
+              createdFrom: "ai_suggested",
+              status: "suggested",
+            });
+            
+            await storage.attachClaimCitation(userId, claim.id, citationPointer.id);
+            created++;
+          }
+          
+          console.log(`[CLAIM_SUGGEST] complete { caseId: ${caseId}, evidenceId: ${evidenceId}, created: ${created}, skipped: ${skipped} }`);
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : "Unknown error";
+          console.error(`[CLAIM_SUGGEST] failed { caseId: ${caseId}, evidenceId: ${evidenceId}, error: ${errorMsg} }`);
+        }
+      });
+    } catch (error) {
+      console.error("Suggest claims error:", error);
+      res.status(500).json({ error: "Failed to suggest claims" });
+    }
+  });
+
   app.get("/api/cases/:caseId/exhibit-snippets", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

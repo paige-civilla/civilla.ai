@@ -1,0 +1,179 @@
+REPLIT TASK: Phase 1 (Option 2) — Finish Layer: AI Claim Suggestions + Evidence UI + Draft Readiness + Document Compile Mode
+
+PRIORITY GOAL
+Make the new Claims/Citations/Issues system usable end-to-end:
+1) AI can suggest claims from extracted evidence
+2) User must Accept/Reject/Edit suggested claims
+3) Draft Readiness appears on Dashboard
+4) Document Creator compiles ONLY from Accepted Claims (no drafting from raw text)
+
+DO NOT CROSS UPL
+- No “what to file”, no outcome prediction, no legal strategy.
+- Keep claims factual/neutral and traceable to citations.
+
+========================================
+A) BACKEND: AI CLAIM SUGGESTION ENDPOINT
+========================================
+
+1) server/routes.ts
+Add endpoint (requireAuth + ownership checks like other evidence routes):
+
+POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest
+
+Request body:
+{
+  refresh?: boolean,     // if true, allows suggesting again even if suggested claims exist
+  limit?: number         // optional cap; default 10
+}
+
+Rules:
+- Only run if extraction exists and is complete OR there are notes for that evidence file.
+- Pull input text in this order:
+  a) extractedText (if available)
+  b) concat of evidence notes (noteTitle + noteText) as fallback
+- Use pLimit(2) global concurrency for this route (same pattern used elsewhere)
+- Deduplicate:
+  If a claim with same normalized claimText already exists (suggested OR accepted) for the case, skip.
+
+Response:
+{ ok: true, created: number, skipped: number }
+
+OpenAI prompt requirements:
+- Output MUST be valid JSON (no markdown)
+- Return an array of objects:
+  {
+    "claimText": string,
+    "claimType": "fact"|"procedural"|"context"|"communication"|"financial"|"medical"|"school"|"custody",
+    "tags": string[],
+    "missingInfoFlag": boolean,
+    "citation": {
+      "quote": string,
+      "pageNumber": number|null,
+      "timestampSeconds": number|null,
+      "startOffset": number|null,
+      "endOffset": number|null
+    }
+  }
+
+Prompt constraints:
+- Claims must be neutral factual statements only.
+- DO NOT infer dates, motives, diagnoses, or intent.
+- If date/location unclear -> missingInfoFlag=true and do not invent.
+- citation.quote must be a short direct excerpt present in the text.
+
+Implementation behavior:
+For each suggestion:
+- storage.createCitationPointer(...) using citation fields
+- storage.createCaseClaim(... status="suggested", createdFrom="ai_suggested", missingInfoFlag)
+- storage.attachClaimCitation(claimId, citationId)
+
+Error handling:
+- If OPENAI key invalid -> return 502 with { error: "Lexi cannot authenticate to OpenAI." }
+- If extraction missing -> 409 with { error: "Extraction not ready." }
+
+========================================
+B) FRONTEND: EVIDENCE UI — CLAIMS REVIEW + ACCEPT FLOW
+========================================
+
+2) client/src/pages/AppEvidence.tsx (and EvidenceViewer modal if exists)
+Add a “Claims” area accessible from:
+- EvidenceViewer (preferred) OR expanded evidence card
+It must work per-evidence file.
+
+UI requirements:
+- Show a section header: “Claims (Evidence-Backed Facts)”
+- Button: “Suggest Claims (AI)” (disabled if extraction not complete)
+- Show list of Suggested claims for THIS evidence file (filter by evidenceId)
+  Each item displays:
+  - claimText (multi-line)
+  - badges: claimType, missing-info (if true)
+  - citation preview (quote + page/timestamp if present)
+  - actions:
+    Accept -> PATCH /api/claims/:claimId { status:"accepted" }
+    Reject -> PATCH ... { status:"rejected" }
+    Edit -> inline textarea to edit claimText + tags + missingInfoFlag, then PATCH
+
+- Also show Accepted claims (collapsed by default) with “Add to Trial Prep” quick action:
+  - Use existing Trial Prep shortlist create endpoint (sourceType="claim", sourceId=claimId)
+
+Important:
+- Do NOT allow Document Creator to use Suggested claims.
+- Only Accepted claims count.
+
+Add loading + error states:
+- If suggest endpoint fails, show toast with error message
+- Keep user in control
+
+========================================
+C) DASHBOARD: DRAFT READINESS CARD
+========================================
+
+3) client/src/pages/AppDashboard.tsx (or wherever the case dashboard modules are)
+Add a card near the top:
+
+Title: “Draft Readiness”
+Uses: GET /api/cases/:caseId/draft-readiness
+
+Display:
+- Accepted claims: X
+- Accepted with citations: Y
+- Missing info flags: Z
+- Suggested pending review: N
+
+If acceptedClaimsWithCitationsCount < acceptedClaimsCount:
+Show a warning line:
+“Some accepted claims are missing citations.”
+
+If acceptedClaimsCount == 0:
+Show helper text:
+“Upload evidence and accept claims to build drafts.”
+
+========================================
+D) DOCUMENT CREATOR: COMPILE FROM ACCEPTED CLAIMS ONLY
+========================================
+
+4) client/src/pages/AppDocuments.tsx (or Document Creator page)
+Add a “Build from Accepted Claims” mode (default).
+
+Behavior:
+- Query accepted claims for the case:
+  GET /api/cases/:caseId/claims?status=accepted
+- If none exist:
+  Block compile and show:
+  “No accepted claims yet. Go to Evidence and accept claims first.”
+
+Compile UI:
+- Filter controls:
+  - by tags (multi-select)
+  - by claimType
+  - by issue grouping (optional; if issues exist)
+- Output is an OUTLINE / DRAFT CONTENT BLOCK that is factual and citation-backed:
+  - Each bullet/paragraph references citations (quote + evidence file + page)
+  - No legal conclusions
+  - No advice about what to file
+
+If DOCX export exists:
+- Allow exporting this compiled factual outline as “Working Draft (Evidence-Backed)”
+- Include disclaimer header in the document.
+
+========================================
+E) ROUTING + TYPES SAFETY
+========================================
+
+5) Ensure all new UI calls use existing auth cookies and handle 401:
+- If any API returns 401, show toast:
+  “Your session expired. Please log in again.”
+  then redirect to /login after 1–2 seconds.
+
+========================================
+F) REPORT BACK
+========================================
+
+After implementing, respond with:
+- Files changed
+- Example response for suggest endpoint
+- Confirm dedupe logic
+- Confirm Document Creator blocks without accepted claims
+- Confirm Draft Readiness card renders and updates
+
+END
