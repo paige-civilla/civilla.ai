@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getDeepLinkParam, scrollAndHighlight, clearDeepLinkQueryParams } from "@/lib/deepLink";
-import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale, FileCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Briefcase, Plus, Copy, Trash2, Download, Save, X, FileType, FileDown, Scale, FileCheck, Loader2, Check, AlertCircle } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -168,6 +168,49 @@ export default function AppDocuments() {
 
   const acceptedClaims = acceptedClaimsData?.claims || [];
 
+  interface PreflightResponse {
+    ok: boolean;
+    canCompile: boolean;
+    totals: {
+      acceptedClaims: number;
+      acceptedClaimsWithCitations: number;
+      acceptedClaimsMissingCitations: number;
+      acceptedClaimsMissingInfoFlagged: number;
+    };
+    missing: {
+      claimIdsMissingCitations: string[];
+      claimIdsMissingInfoFlagged: string[];
+    };
+    message: string;
+  }
+
+  const { data: preflightData, isLoading: preflightLoading, refetch: refetchPreflight } = useQuery<PreflightResponse>({
+    queryKey: ["/api/cases", caseId, "documents/compile-claims/preflight"],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/documents/compile-claims/preflight`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch preflight");
+      return res.json();
+    },
+    enabled: !!currentCase && isCreateDialogOpen && createMode === "claims",
+  });
+
+  interface TraceEntry {
+    claimId: string;
+    claimText: string;
+    citations: Array<{
+      citationId: string;
+      evidenceId: string;
+      evidenceName: string;
+      pointer: {
+        pageNumber?: number;
+        timestampSeconds?: number;
+        quote?: string;
+      };
+    }>;
+  }
+
+  const [compileResult, setCompileResult] = useState<{ markdown: string; trace: TraceEntry[] } | null>(null);
+
   const generatedDocuments = generatedDocsData?.documents || [];
 
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false);
@@ -206,18 +249,24 @@ export default function AppDocuments() {
   }, [docsLoading, documents]);
 
   const compileClaimsMutation = useMutation({
-    mutationFn: async (data: { title: string; claimIds: string[] }) => {
-      return apiRequest("POST", `/api/cases/${caseId}/documents/compile-claims`, data);
+    mutationFn: async (data: { title: string }) => {
+      const res = await apiRequest("POST", `/api/cases/${caseId}/documents/compile-claims`, data);
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { ok: boolean; markdown: string; trace: TraceEntry[] }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "documents"] });
-      setIsCreateDialogOpen(false);
-      setCompileClaimsTitle("");
-      setCreateMode("template");
+      setCompileResult({ markdown: data.markdown, trace: data.trace });
       toast({ title: "Document compiled from claims" });
     },
-    onError: () => {
-      toast({ title: "Failed to compile document", variant: "destructive" });
+    onError: (error: Error) => {
+      const msg = error.message || "Failed to compile document";
+      if (msg.includes("NO_ACCEPTED_CLAIMS")) {
+        toast({ title: "No accepted claims to compile", variant: "destructive" });
+      } else if (msg.includes("ACCEPTED_CLAIMS_MISSING_CITATIONS")) {
+        toast({ title: "Some claims are missing citations", description: "Add citations to all accepted claims first", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to compile document", variant: "destructive" });
+      }
     },
   });
 
@@ -1100,6 +1149,7 @@ export default function AppDocuments() {
         if (!open) {
           setCreateMode("template");
           setCompileClaimsTitle("");
+          setCompileResult(null);
         }
       }}>
         <DialogContent className="max-w-lg">
@@ -1152,57 +1202,111 @@ export default function AppDocuments() {
             </TabsContent>
 
             <TabsContent value="claims" className="mt-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="compile-title">Document Title</Label>
-                  <Input
-                    id="compile-title"
-                    placeholder="e.g., Statement of Facts"
-                    value={compileClaimsTitle}
-                    onChange={(e) => setCompileClaimsTitle(e.target.value)}
-                    maxLength={200}
-                    data-testid="input-compile-claims-title"
-                  />
-                </div>
+              {compileResult ? (
+                <div className="flex flex-col gap-4">
+                  <div className="border rounded-lg p-3 bg-green-50 dark:bg-green-900/20">
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">Document compiled successfully</p>
+                    <p className="text-xs text-muted-foreground">The document has been saved. View it in your documents list.</p>
+                  </div>
 
-                <div className="border rounded-lg p-3 bg-muted/50">
-                  <p className="text-sm font-medium mb-2">Accepted Claims ({acceptedClaims.length})</p>
-                  {claimsLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : acceptedClaims.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">
-                      No accepted claims yet. Review and accept claims from your evidence files first.
-                    </p>
-                  ) : (
-                    <ScrollArea className="h-48">
-                      <div className="space-y-2">
-                        {acceptedClaims.map((claim) => (
-                          <div
-                            key={claim.id}
-                            className="bg-background rounded p-2 border text-sm"
-                            data-testid={`claim-preview-${claim.id}`}
-                          >
-                            <p className="text-xs">{claim.claimText.length > 120 ? claim.claimText.substring(0, 120) + "..." : claim.claimText}</p>
-                            {claim.citations && claim.citations.length > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1 italic">
-                                Source: {claim.citations[0].pageNumber ? `p.${claim.citations[0].pageNumber}` : "evidence"}
-                              </p>
+                  <div className="border rounded-lg p-3">
+                    <p className="text-sm font-medium mb-2">Traceability</p>
+                    <ScrollArea className="h-64">
+                      <div className="space-y-3">
+                        {compileResult.trace.map((entry, idx) => (
+                          <div key={entry.claimId} className="border-b pb-2 last:border-b-0">
+                            <p className="text-xs font-medium">
+                              {idx + 1}. {entry.claimText.length > 100 ? entry.claimText.substring(0, 100) + "..." : entry.claimText}
+                            </p>
+                            {entry.citations.length > 0 && (
+                              <div className="mt-1 pl-3 space-y-1">
+                                {entry.citations.map((cit) => (
+                                  <div key={cit.citationId} className="text-xs text-muted-foreground">
+                                    <span className="font-medium">{cit.evidenceName}</span>
+                                    {cit.pointer.pageNumber && <span> (p.{cit.pointer.pageNumber})</span>}
+                                    {cit.pointer.timestampSeconds && (
+                                      <span> ({Math.floor(cit.pointer.timestampSeconds / 60)}:{(cit.pointer.timestampSeconds % 60).toString().padStart(2, "0")})</span>
+                                    )}
+                                    {cit.pointer.quote && (
+                                      <p className="italic mt-0.5">"{cit.pointer.quote.length > 200 ? cit.pointer.quote.substring(0, 200) + "..." : cit.pointer.quote}"</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         ))}
                       </div>
                     </ScrollArea>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="compile-title">Document Title</Label>
+                    <Input
+                      id="compile-title"
+                      placeholder="e.g., Statement of Facts"
+                      value={compileClaimsTitle}
+                      onChange={(e) => setCompileClaimsTitle(e.target.value)}
+                      maxLength={200}
+                      data-testid="input-compile-claims-title"
+                    />
+                  </div>
+
+                  <div className="border rounded-lg p-3 bg-muted/50">
+                    <p className="text-sm font-medium mb-2">Preflight Checklist</p>
+                    {preflightLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : preflightData ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          {preflightData.totals.acceptedClaims > 0 ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          <span>Accepted claims: {preflightData.totals.acceptedClaims}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          {preflightData.totals.acceptedClaimsMissingCitations === 0 ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          <span>Claims missing citations: {preflightData.totals.acceptedClaimsMissingCitations}</span>
+                        </div>
+                        {preflightData.totals.acceptedClaimsMissingInfoFlagged > 0 && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <AlertCircle className="w-4 h-4 text-amber-500" />
+                            <span>Claims flagged missing info: {preflightData.totals.acceptedClaimsMissingInfoFlagged} (warning)</span>
+                          </div>
+                        )}
+                        <p className={`text-xs mt-2 ${preflightData.canCompile ? "text-green-600" : "text-red-600"}`}>
+                          {preflightData.message}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Unable to check compile readiness</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} data-testid="button-cancel-create">
-              Cancel
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCreateDialogOpen(false);
+                setCompileResult(null);
+              }}
+              data-testid="button-cancel-create"
+            >
+              {compileResult ? "Close" : "Cancel"}
             </Button>
             {createMode === "template" ? (
               <Button
@@ -1213,27 +1317,24 @@ export default function AppDocuments() {
               >
                 {createMutation.isPending ? "Creating..." : "Create"}
               </Button>
-            ) : (
+            ) : !compileResult && (
               <Button
                 onClick={() => {
                   if (!compileClaimsTitle.trim()) {
                     toast({ title: "Please enter a title", variant: "destructive" });
                     return;
                   }
-                  if (acceptedClaims.length === 0) {
-                    toast({ title: "No claims to compile", description: "Accept some claims first", variant: "destructive" });
+                  if (!preflightData?.canCompile) {
+                    toast({ title: "Cannot compile", description: "Resolve issues in the checklist first", variant: "destructive" });
                     return;
                   }
-                  compileClaimsMutation.mutate({
-                    title: compileClaimsTitle,
-                    claimIds: acceptedClaims.map(c => c.id),
-                  });
+                  compileClaimsMutation.mutate({ title: compileClaimsTitle });
                 }}
-                disabled={compileClaimsMutation.isPending || acceptedClaims.length === 0}
+                disabled={compileClaimsMutation.isPending || !preflightData?.canCompile}
                 className="bg-primary text-primary-foreground"
                 data-testid="button-compile-claims"
               >
-                {compileClaimsMutation.isPending ? "Compiling..." : `Compile ${acceptedClaims.length} Claims`}
+                {compileClaimsMutation.isPending ? "Compiling..." : `Compile ${preflightData?.totals.acceptedClaims || 0} Claims`}
               </Button>
             )}
           </DialogFooter>
