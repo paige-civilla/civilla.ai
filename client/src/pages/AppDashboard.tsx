@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Clock, CheckSquare, Calendar } from "lucide-react";
+import { Plus, Clock, CheckSquare, Calendar, FileCheck, AlertCircle, TrendingUp } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
@@ -42,6 +44,18 @@ type DashboardCalendarResponse = {
 };
 
 type AddItemType = "deadline" | "todo" | "calendar";
+
+type DraftReadinessStats = {
+  totalClaims: number;
+  acceptedClaims: number;
+  suggestedClaims: number;
+  rejectedClaims: number;
+  claimsWithMissingInfo: number;
+  totalEvidence: number;
+  evidenceWithExtraction: number;
+  evidenceWithClaims: number;
+  readinessScore: number;
+};
 
 const colorPresets = [
   "#E57373", "#F06292", "#BA68C8", "#9575CD", "#7986CB",
@@ -87,6 +101,18 @@ export default function AppDashboard() {
     },
     enabled: !!caseId,
   });
+
+  const { data: draftReadinessData } = useQuery<{ stats: DraftReadinessStats }>({
+    queryKey: ["/api/cases", caseId, "draft-readiness"],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/draft-readiness`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch draft readiness");
+      return res.json();
+    },
+    enabled: !!caseId,
+  });
+
+  const draftStats = draftReadinessData?.stats;
 
   const upcomingItems = dashboardData?.upcoming || [];
   const categories = dashboardData?.categories || [];
@@ -383,7 +409,69 @@ export default function AppDashboard() {
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="w-full">
+              <div className="w-full space-y-6">
+                {draftStats && (
+                  <Card className="bg-gradient-to-r from-primary/5 to-transparent border-primary/20" data-testid="card-draft-readiness">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <TrendingUp className="w-5 h-5 text-primary" />
+                        Draft Readiness
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-muted-foreground">Readiness Score</span>
+                            <span className="text-sm font-medium">{draftStats.readinessScore}%</span>
+                          </div>
+                          <Progress value={draftStats.readinessScore} className="h-2" />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                        <div className="bg-background rounded-lg p-3 border">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <FileCheck className="w-4 h-4 text-green-600" />
+                            <span className="font-semibold text-lg" data-testid="text-accepted-claims">{draftStats.acceptedClaims}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Accepted Claims</span>
+                        </div>
+                        <div className="bg-background rounded-lg p-3 border">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <Clock className="w-4 h-4 text-amber-600" />
+                            <span className="font-semibold text-lg" data-testid="text-pending-claims">{draftStats.suggestedClaims}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Pending Review</span>
+                        </div>
+                        <div className="bg-background rounded-lg p-3 border">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                            <span className="font-semibold text-lg" data-testid="text-missing-info">{draftStats.claimsWithMissingInfo}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Missing Info</span>
+                        </div>
+                        <div className="bg-background rounded-lg p-3 border">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <FileCheck className="w-4 h-4 text-primary" />
+                            <span className="font-semibold text-lg" data-testid="text-evidence-extracted">{draftStats.evidenceWithExtraction}/{draftStats.totalEvidence}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Evidence Extracted</span>
+                        </div>
+                      </div>
+
+                      {draftStats.suggestedClaims > 0 && (
+                        <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                          <p className="text-sm text-amber-800 dark:text-amber-200">
+                            You have {draftStats.suggestedClaims} claims pending review. Review them in your evidence files.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {getVisibleModules({ hasChildren: primaryCase.hasChildren || false }).map((moduleKey) => {
                     const MODULE_ICONS: Record<ModuleKey, typeof BookOpen> = {

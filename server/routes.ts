@@ -6724,6 +6724,52 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  app.get("/api/cases/:caseId/draft-readiness", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const allClaims = await storage.listCaseClaims(userId, caseId, {});
+      const acceptedClaims = allClaims.filter(c => c.status === "accepted");
+      const suggestedClaims = allClaims.filter(c => c.status === "suggested");
+      const rejectedClaims = allClaims.filter(c => c.status === "rejected");
+      const withMissingInfo = allClaims.filter(c => c.missingInfoFlag);
+      
+      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+      const evidenceWithClaims = new Set(allClaims.map(c => c.primaryEvidenceId).filter(Boolean));
+      const evidenceWithExtraction = evidenceFiles.filter(e => e.extractionStatus === "complete");
+      
+      const readinessScore = Math.min(100, Math.round(
+        (acceptedClaims.length * 10) + 
+        (evidenceWithExtraction.length * 5) - 
+        (suggestedClaims.length * 2) - 
+        (withMissingInfo.length * 3)
+      ));
+      
+      res.json({
+        stats: {
+          totalClaims: allClaims.length,
+          acceptedClaims: acceptedClaims.length,
+          suggestedClaims: suggestedClaims.length,
+          rejectedClaims: rejectedClaims.length,
+          claimsWithMissingInfo: withMissingInfo.length,
+          totalEvidence: evidenceFiles.length,
+          evidenceWithExtraction: evidenceWithExtraction.length,
+          evidenceWithClaims: evidenceWithClaims.size,
+          readinessScore: Math.max(0, readinessScore),
+        },
+      });
+    } catch (error) {
+      console.error("Draft readiness error:", error);
+      res.status(500).json({ error: "Failed to get draft readiness" });
+    }
+  });
+
   app.post("/api/cases/:caseId/claims", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
