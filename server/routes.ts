@@ -28,6 +28,8 @@ import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer"
 import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
 import { prependDisclaimerIfNeeded } from "./lexi/format";
 import { extractSourcesFromContent, normalizeUrlsInContent, normalizeAndValidateSources, type LexiSource } from "./lexi/sources";
+import { scheduleMemoryRebuild } from "./lexi/memoryDebounce";
+import { rebuildCaseMemory } from "./lexi/rebuildMemory";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
@@ -828,6 +830,12 @@ export async function registerRoutes(
       }
 
       const event = await storage.createTimelineEvent(caseId, userId, parseResult.data);
+      
+      const caseIdNum = parseInt(caseId, 10);
+      if (!isNaN(caseIdNum)) {
+        scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, caseId));
+      }
+      
       res.status(201).json({ event });
     } catch (error) {
       console.error("Create timeline event error:", error);
@@ -7186,9 +7194,17 @@ Limit to ${limit} most important claims.`;
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
       
+      const existingClaim = await storage.getCaseClaim(userId, claimId);
       const updated = await storage.updateCaseClaim(userId, claimId, parsed.data);
       if (!updated) {
         return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      if (parsed.data.status === "accepted" && existingClaim?.status !== "accepted" && updated.caseId) {
+        const caseIdNum = parseInt(updated.caseId, 10);
+        if (!isNaN(caseIdNum)) {
+          scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, updated.caseId));
+        }
       }
       
       res.json({ claim: updated });
