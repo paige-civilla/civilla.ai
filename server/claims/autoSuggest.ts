@@ -337,12 +337,12 @@ async function bootstrapIssueGroupings(userId: string, caseId: string): Promise<
       }
     }
 
-    const topTypes = [...typeCounts.entries()]
+    const topTypes = Array.from(typeCounts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
       .map(([type]) => type);
 
-    const topTags = [...tagCounts.entries()]
+    const topTags = Array.from(tagCounts.entries())
       .filter(([tag]) => tag.length > 2)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
