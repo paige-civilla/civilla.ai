@@ -42,7 +42,25 @@ import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, Edit3, ChevronDown, ChevronUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { History, Edit3, ChevronDown, ChevronUp, Eye, AlertTriangle } from "lucide-react";
+
+const DRAFT_TOPIC_BY_MODULE: Record<string, string> = {
+  evidence: "Evidence summary",
+  timeline: "Timeline narrative",
+  messages: "Communication log summary",
+  communications: "Communication log summary",
+  "pattern-analysis": "Pattern summary",
+  exhibits: "Exhibit summary",
+  "trial-prep": "Trial prep summary",
+  "parenting-plan": "Parenting plan summary",
+  default: "Statement of Facts",
+};
+
+function getDraftTopicForModule(moduleKey?: string | null): string {
+  if (!moduleKey) return DRAFT_TOPIC_BY_MODULE.default;
+  return DRAFT_TOPIC_BY_MODULE[moduleKey] || DRAFT_TOPIC_BY_MODULE.default;
+}
 
 // --- UX: Simple 1-2-3 court-filing steps (beginner-friendly) ---
 function StepStrip({ activeStep }: { activeStep: 1 | 2 | 3 }) {
@@ -110,7 +128,7 @@ export default function AppDocuments() {
   const { toast } = useToast();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [createMode, setCreateMode] = useState<"template" | "claims">("template");
+  const [createMode, setCreateMode] = useState<"template" | "claims">("claims");
   const [editingDoc, setEditingDoc] = useState<Document | null>(null);
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
   const [newDocTitle, setNewDocTitle] = useState("");
@@ -118,6 +136,24 @@ export default function AppDocuments() {
   const [compileClaimsTitle, setCompileClaimsTitle] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+
+  const [moduleKey, setModuleKey] = useState<string | null>(null);
+  const [sourceEvidenceId, setSourceEvidenceId] = useState<string | null>(null);
+  const [filterByEvidence, setFilterByEvidence] = useState(false);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mk = urlParams.get("moduleKey");
+    const sid = urlParams.get("sourceId");
+    if (mk) {
+      setModuleKey(mk);
+      setCompileClaimsTitle(getDraftTopicForModule(mk));
+    }
+    if (sid) {
+      setSourceEvidenceId(sid);
+      setFilterByEvidence(true);
+    }
+  }, []);
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -176,12 +212,14 @@ export default function AppDocuments() {
       acceptedClaimsWithCitations: number;
       acceptedClaimsMissingCitations: number;
       acceptedClaimsMissingInfoFlagged: number;
+      extractionCoverage: number;
     };
     missing: {
       claimIdsMissingCitations: string[];
       claimIdsMissingInfoFlagged: string[];
     };
     message: string;
+    readinessPercent: number;
   }
 
   const { data: preflightData, isLoading: preflightLoading, refetch: refetchPreflight } = useQuery<PreflightResponse>({
@@ -1176,7 +1214,7 @@ export default function AppDocuments() {
       <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
         setIsCreateDialogOpen(open);
         if (!open) {
-          setCreateMode("template");
+          setCreateMode("claims");
           setCompileClaimsTitle("");
           setCompileResult(null);
         }
@@ -1284,53 +1322,109 @@ export default function AppDocuments() {
                   </div>
 
                   <div className="border rounded-lg p-3 bg-muted/50">
-                    <p className="text-sm font-medium mb-2">Preflight Checklist</p>
+                    <p className="text-sm font-medium mb-3">Preflight Checklist</p>
                     {preflightLoading ? (
                       <div className="flex items-center justify-center py-4">
                         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                       </div>
                     ) : preflightData ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          {preflightData.totals.acceptedClaims > 0 ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                          )}
-                          <span>Accepted claims: {preflightData.totals.acceptedClaims}</span>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-medium">Draft Readiness</span>
+                          <Progress value={preflightData.readinessPercent || 0} className="flex-1 h-2" />
+                          <span className="text-xs text-muted-foreground">{preflightData.readinessPercent || 0}%</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          {preflightData.totals.acceptedClaimsMissingCitations === 0 ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                          )}
-                          <span>Claims missing citations: {preflightData.totals.acceptedClaimsMissingCitations}</span>
-                          {preflightData.totals.acceptedClaimsMissingCitations > 0 && preflightData.missing.claimIdsMissingCitations.length > 0 && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 text-xs ml-2"
-                              onClick={() => bulkAutoAttachMutation.mutate(preflightData.missing.claimIdsMissingCitations)}
-                              disabled={bulkAutoAttaching}
-                              data-testid="button-bulk-auto-attach"
-                            >
-                              {bulkAutoAttaching ? (
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              ) : (
-                                <LinkIcon className="w-3 h-3 mr-1" />
-                              )}
-                              Auto-attach all
-                            </Button>
-                          )}
-                        </div>
-                        {preflightData.totals.acceptedClaimsMissingInfoFlagged > 0 && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <AlertCircle className="w-4 h-4 text-amber-500" />
-                            <span>Claims flagged missing info: {preflightData.totals.acceptedClaimsMissingInfoFlagged} (warning)</span>
+                        {(preflightData.readinessPercent || 0) < 60 && (
+                          <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-800 dark:text-amber-200">
+                            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            <span>You'll get better output after reviewing suggested claims and sources.</span>
                           </div>
                         )}
-                        <p className={`text-xs mt-2 ${preflightData.canCompile ? "text-green-600" : "text-red-600"}`}>
+
+                        <div className="space-y-2 pt-2 border-t">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              {preflightData.totals.acceptedClaims >= 1 ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                              )}
+                              <span>Accepted claims: {preflightData.totals.acceptedClaims}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              {preflightData.totals.acceptedClaimsMissingCitations === 0 ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                              )}
+                              <span>Claims missing citations: {preflightData.totals.acceptedClaimsMissingCitations}</span>
+                            </div>
+                            {preflightData.totals.acceptedClaimsMissingCitations > 0 && preflightData.missing.claimIdsMissingCitations.length > 0 && (
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 text-xs"
+                                  onClick={() => {
+                                    window.open(`/app/cases/${caseId}/claims?filter=uncited`, "_blank");
+                                  }}
+                                  data-testid="button-show-uncited"
+                                >
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  Show
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 text-xs"
+                                  onClick={() => bulkAutoAttachMutation.mutate(preflightData.missing.claimIdsMissingCitations)}
+                                  disabled={bulkAutoAttaching}
+                                  data-testid="button-bulk-auto-attach"
+                                >
+                                  {bulkAutoAttaching ? (
+                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <LinkIcon className="w-3 h-3 mr-1" />
+                                  )}
+                                  Auto-attach
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+
+                          {preflightData.totals.acceptedClaimsMissingInfoFlagged > 0 && (
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-amber-500" />
+                                <span>Claims flagged missing info: {preflightData.totals.acceptedClaimsMissingInfoFlagged} (warning)</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs"
+                                onClick={() => {
+                                  window.open(`/app/cases/${caseId}/claims?filter=missing-info`, "_blank");
+                                }}
+                                data-testid="button-show-missing-info"
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                Review
+                              </Button>
+                            </div>
+                          )}
+
+                          {preflightData.totals.extractionCoverage !== undefined && preflightData.totals.extractionCoverage < 80 && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <AlertCircle className="w-4 h-4 text-amber-500" />
+                              <span>Evidence extraction coverage: {preflightData.totals.extractionCoverage}% (warning)</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className={`text-xs mt-2 pt-2 border-t ${preflightData.canCompile ? "text-green-600" : "text-red-600"}`}>
                           {preflightData.message}
                         </p>
                       </div>
