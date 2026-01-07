@@ -1,0 +1,66 @@
+REPLIT TASK: Phase 2D — Auto-run Claims + Issue Grouping when Extraction completes (evidence-first default)
+
+Goal
+When an evidence file’s extraction status becomes "complete", Civilla should automatically:
+1) generate AI Suggested Claims (with citations) for that evidence (if none exist yet)
+2) generate initial Issue Groupings for the case (optional but recommended)
+3) do this safely (debounced + idempotent + not expensive/spammy)
+
+A) Trigger claims suggestion when extraction completes
+File: server/services/evidenceJobs.ts
+Where extraction finishes successfully and you set:
+status = "complete"
+Add a call to a new helper:
+triggerClaimsSuggestionForEvidence({ userId, caseId, evidenceId })
+
+Rules:
+- Only trigger if extractedText length >= 300 chars (skip tiny docs)
+- Only trigger if there are currently 0 claims for this evidenceId
+- Debounce at 60s per case (reuse existing debounce infra if possible)
+- If the AI call fails, do NOT fail extraction — just log activity + store a failed activity log entry
+
+B) Create helper service for claims suggestion job
+Create file: server/lexi/triggerClaims.ts (or server/claims/autoSuggest.ts)
+
+Implement:
+async autoSuggestClaimsForEvidence(userId, caseId, evidenceId)
+- Verify extraction exists and status="complete"
+- Call existing endpoint logic used by:
+POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest
+BUT do it as an internal function (don’t HTTP call yourself)
+- Ensure each created claim attaches its citation pointers (already supported)
+- Record activity log event: "claims_suggested" with counts
+
+C) Add optional Issue Grouping bootstrap (lightweight)
+After new claims are created (>=3), run a lightweight grouping pass:
+- Create 3–6 default issue groupings based on tags/themes in the suggested claims
+- Link claims to issues using issue_claims table
+- If issues already exist for the case, skip this entirely (do not overwrite)
+
+D) Add a “Background AI Work” indicator (UX)
+Frontend:
+- In Evidence card row OR EvidenceViewer header, show a subtle status line:
+“Background: building suggested claims…” while the system is generating them.
+- This can be done by:
+  - adding a new evidence_ai_analyses row type “claims_suggestion” OR
+  - adding an activity log query that checks the latest "claims_suggesting" event
+Pick the simpler approach.
+
+E) Safety / cost guardrails
+- Global concurrency limit: 1 or 2 auto-suggest jobs at a time (use pLimit)
+- Never run this automatically more than once per evidence file unless user clicks “Refresh Suggestions”
+- Respect OPENAI errors:
+  - 401 invalid key: show activity log “blocked_invalid_key”
+  - 429 rate limit: auto retry once after 30s (optional), otherwise log “rate_limited”
+
+F) Report back
+After implementing, report:
+- Files changed/created
+- Exact trigger point added (line/section)
+- Idempotency logic (how you detect “already done”)
+- Concurrency setting
+- How the user sees it in UI
+- How to test:
+  1) upload new evidence
+  2) wait extraction complete
+  3) open viewer → suggested claims appear automatically
