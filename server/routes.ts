@@ -30,6 +30,7 @@ import { prependDisclaimerIfNeeded } from "./lexi/format";
 import { extractSourcesFromContent, normalizeUrlsInContent, normalizeAndValidateSources, type LexiSource } from "./lexi/sources";
 import { scheduleMemoryRebuild } from "./lexi/memoryDebounce";
 import { rebuildCaseMemory } from "./lexi/rebuildMemory";
+import { triggerCaseMemoryRebuild } from "./lexi/triggerCaseMemory";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
 import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
@@ -2821,6 +2822,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       await storage.createActivityLog(userId, caseId, "document_compiled", `Compiled ${claims.length} claims into document`, {
         documentId: document.id,
         claimCount: claims.length,
+      });
+      
+      await triggerCaseMemoryRebuild(userId, caseId, "doc_compile_claims", {
+        documentId: document.id,
+        acceptedClaimCount: claims.length,
       });
 
       res.status(201).json({
@@ -6311,6 +6317,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       archive.pipe(res);
       archive.append(markdown, { name: "PatternAnalysisSummary.md" });
       await archive.finalize();
+      
+      await triggerCaseMemoryRebuild(userId, caseId, "export_pattern_analysis", {});
     } catch (error) {
       console.error("Export pattern analysis error:", error);
       res.status(500).json({ error: "Failed to export pattern analysis" });
@@ -6669,6 +6677,12 @@ Return a JSON object with this structure:
             content: responseText,
           });
           
+          await triggerCaseMemoryRebuild(userId, caseId, "evidence_ai_analysis_complete", {
+            evidenceId,
+            analysisId: analysis.id,
+            model: "gpt-4o",
+          });
+          
           console.log(`[AI_ANALYSIS] complete { analysisId: ${analysis.id} }`);
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
@@ -6677,6 +6691,12 @@ Return a JSON object with this structure:
           await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
             status: "failed",
             error: errorMsg.slice(0, 500),
+          });
+          
+          await triggerCaseMemoryRebuild(userId, caseId, "evidence_ai_analysis_failed", {
+            evidenceId,
+            analysisId: analysis.id,
+            error: errorMsg.slice(0, 200),
           });
         }
       });
@@ -6989,6 +7009,12 @@ Limit to ${limit} most important claims.`;
       }
       
       const item = await storage.createTrialPrepShortlistItem(userId, caseId, parsed.data);
+      
+      await triggerCaseMemoryRebuild(userId, caseId, "trial_prep_created", {
+        itemId: item.id,
+        title: item.title,
+      });
+      
       res.status(201).json({ item });
     } catch (error: unknown) {
       const err = error as { code?: string; constraint?: string };
@@ -7011,9 +7037,27 @@ Limit to ${limit} most important claims.`;
         return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
       
+      const existing = await storage.getTrialPrepShortlistItem(userId, itemId);
+      const wasPinned = existing?.isPinned ?? false;
+      
       const updated = await storage.updateTrialPrepShortlistItem(userId, itemId, parsed.data);
       if (!updated) {
         return res.status(404).json({ error: "Item not found" });
+      }
+      
+      if (updated.caseId) {
+        const nowPinned = updated.isPinned ?? false;
+        let reason = "trial_prep_updated";
+        if (!wasPinned && nowPinned) {
+          reason = "trial_prep_pinned";
+        } else if (wasPinned && !nowPinned) {
+          reason = "trial_prep_unpinned";
+        }
+        
+        await triggerCaseMemoryRebuild(userId, updated.caseId, reason, {
+          itemId: updated.id,
+          title: updated.title,
+        });
       }
       
       res.json({ item: updated });
@@ -7028,9 +7072,18 @@ Limit to ${limit} most important claims.`;
       const userId = req.session.userId as string;
       const { itemId } = req.params;
       
+      const existing = await storage.getTrialPrepShortlistItem(userId, itemId);
+      
       const deleted = await storage.deleteTrialPrepShortlistItem(userId, itemId);
       if (!deleted) {
         return res.status(404).json({ error: "Item not found" });
+      }
+      
+      if (existing?.caseId) {
+        await triggerCaseMemoryRebuild(userId, existing.caseId, "trial_prep_deleted", {
+          itemId,
+          title: existing.title,
+        });
       }
       
       res.json({ success: true });
@@ -7590,6 +7643,10 @@ Top 3 selection criteria:
 
       await archive.finalize();
       const zipBuffer = await archiveComplete;
+      
+      await triggerCaseMemoryRebuild(userId, caseId, "export_trial_prep_binder", {
+        itemCount: items.length,
+      });
 
       const fileName = `trial-binder-${caseRecord.nickname || caseRecord.id}-${Date.now()}.zip`;
       res.setHeader("Content-Type", "application/zip");

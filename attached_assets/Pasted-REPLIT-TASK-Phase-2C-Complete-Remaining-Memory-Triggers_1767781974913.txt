@@ -1,0 +1,114 @@
+REPLIT TASK: Phase 2C – Complete Remaining Memory Triggers + Fix Lexi Source Links + UI Readability + Tile Color
+
+Context
+We already have:
+- memoryDebounce.ts (60s debounce)
+- rebuildMemory.ts
+- claims + timeline triggers
+- extraction logging in evidenceJobs.ts
+But Personal Lexi is NOT fully updating from all AI-important actions, and Lexi sources are generating broken/non-clickable links.
+
+Do ALL sections A–D.
+
+A) FINISH PERSONAL LEXI TRIGGERS (debounced 60s) + activity_logs entries
+Create a single helper:
+server/lexi/triggerCaseMemory.ts (NEW)
+export async function triggerCaseMemoryRebuild(
+  userId: string,
+  caseId: string,
+  reason: string,
+  metadata?: any
+) {
+  await storage.createActivityLog(userId, caseId, reason, metadata ?? {});
+  scheduleCaseMemoryRebuild(userId, caseId, reason);
+}
+
+Then wire it into these places:
+
+1) Evidence AI Analysis (run endpoint + status updates)
+- In POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run:
+  when analysis starts: activity log "evidence_ai_analysis_started"
+  when completes: triggerCaseMemoryRebuild(..., "evidence_ai_analysis_complete", { evidenceId, analysisId, model })
+  when fails: triggerCaseMemoryRebuild(..., "evidence_ai_analysis_failed", { evidenceId, analysisId, error })
+
+2) Trial Prep shortlist (create/update/delete + pin/unpin)
+- In POST /api/cases/:caseId/trial-prep-shortlist:
+  triggerCaseMemoryRebuild(..., "trial_prep_created", { itemId })
+- In PATCH /api/trial-prep-shortlist/:itemId:
+  if isPinned flips true -> "trial_prep_pinned"
+  if isPinned flips false -> "trial_prep_unpinned"
+  otherwise -> "trial_prep_updated"
+- In DELETE /api/trial-prep-shortlist/:itemId:
+  triggerCaseMemoryRebuild(..., "trial_prep_deleted", { itemId })
+
+3) Document compile + exports
+- In POST /api/cases/:caseId/documents/compile-claims:
+  triggerCaseMemoryRebuild(..., "doc_compile_claims", { docId?, acceptedClaimCount })
+- In pattern analysis export endpoint:
+  triggerCaseMemoryRebuild(..., "export_pattern_analysis", {})
+- In trial prep binder export endpoint:
+  triggerCaseMemoryRebuild(..., "export_trial_prep_binder", {})
+- In exhibits export endpoint:
+  triggerCaseMemoryRebuild(..., "export_exhibits_zip", {})
+
+B) FIX LEXI SOURCES: ensure URLs are REAL and clickable
+Problem:
+Lexi is returning “sources” that are not valid URLs or are being rendered in a way that breaks navigation.
+
+Requirements:
+1) In server Lexi response builder (where you currently attach sources/citations):
+   - Only include sources that are valid absolute URLs (https://...).
+   - If Lexi returns a “source” that isn’t a URL, drop it or convert it into a Google query link.
+
+Implement helper:
+server/lexi/normalizeSources.ts (NEW)
+- isValidHttpUrl(str)
+- toGoogleQueryUrl(text, state?) -> "https://www.google.com/search?q=" + encodeURIComponent(...)
+- normalizeSources(rawSources, state?) -> array of { title, url }
+
+Rule:
+- Prefer official domains if present (courts.state.xx.us, .gov, .us, state agency)
+- Never output “base site + not found” style links.
+
+2) Frontend rendering:
+In Lexi message rendering (LexiPanel):
+- Render sources as <a href target="_blank" rel="noreferrer"> with underline styling
+- Do NOT intercept clicks with stopPropagation or preventDefault
+- If you have a wrapper element that captures clicks, ensure links still work
+
+C) ENFORCE READABLE LEXI FORMATTING (no run-ons)
+Backend:
+In the Lexi system prompt (the structured output layer):
+- Add a hard requirement:
+  “Always respond with short paragraphs and bullets. Never output a single paragraph longer than 3 lines.”
+- Add response format skeleton:
+  1) Summary (2–4 bullets)
+  2) Details (bullets or numbered steps)
+  3) Next options inside Civilla (3 bullets)
+
+Frontend:
+If message content is plain text:
+- Convert line breaks to paragraphs (preserve \n\n)
+- Ensure markdown renderer is enabled for bullet lists
+
+D) MODULE TILE COLOR: make it “half as blue”
+In client/src/index.css:
+- update --module-tile and --module-tile-hover to a lighter value (same hue, lower saturation OR higher lightness)
+- Keep border token readable.
+
+Implementation instruction:
+- set --module-tile to a lighter version than current (#C3D5D7) so it feels “half the blue”
+- adjust --module-tile-hover to be slightly darker than the new tile for hover
+
+Report back:
+- exact new HSL values for --module-tile and --module-tile-hover
+- confirm all tiles still use tokens (no hardcoded colors)
+
+E) REPORT BACK
+After changes:
+- files changed
+- list each route that triggers triggerCaseMemoryRebuild
+- confirm activity_logs receives entries for analysis complete, trial prep pin/unpin, compile, exports
+- confirm Lexi sources are valid https URLs and open in a new tab
+- confirm Lexi responses are bullet/paragraph formatted
+- confirm new module tile color tokens

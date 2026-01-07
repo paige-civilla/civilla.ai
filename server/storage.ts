@@ -378,6 +378,7 @@ export interface IStorage {
   deleteExhibitSnippet(userId: string, snippetId: string): Promise<boolean>;
 
   listTrialPrepShortlist(userId: string, caseId: string): Promise<TrialPrepShortlist[]>;
+  getTrialPrepShortlistItem(userId: string, itemId: string): Promise<TrialPrepShortlist | undefined>;
   createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist>;
   updateTrialPrepShortlistItem(userId: string, itemId: string, payload: UpdateTrialPrepShortlist): Promise<TrialPrepShortlist | undefined>;
   deleteTrialPrepShortlistItem(userId: string, itemId: string): Promise<boolean>;
@@ -2573,6 +2574,12 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(trialPrepShortlist)
       .where(and(eq(trialPrepShortlist.userId, userId), eq(trialPrepShortlist.caseId, caseId)))
       .orderBy(asc(trialPrepShortlist.importance), desc(trialPrepShortlist.createdAt));
+  }
+
+  async getTrialPrepShortlistItem(userId: string, itemId: string): Promise<TrialPrepShortlist | undefined> {
+    const [item] = await db.select().from(trialPrepShortlist)
+      .where(and(eq(trialPrepShortlist.id, itemId), eq(trialPrepShortlist.userId, userId)));
+    return item;
   }
 
   async createTrialPrepShortlistItem(userId: string, caseId: string, payload: InsertTrialPrepShortlist): Promise<TrialPrepShortlist> {
