@@ -1,0 +1,91 @@
+REPLIT TASK: Phase 2E — Document Creator “Evidence-First” Auto-Populate + Compile UX (Compile-from-Claims becomes the default experience)
+
+Goal
+Make Document Creator behave like the Modification of Custody workflow:
+- Civilla drafts ONLY from Accepted Claims (never raw text)
+- Every factual statement must have a citation pointer
+- User sees Missing Info + Missing Citations checklist before compile
+- Output is structured, readable, and traceable
+
+A) Make “Compile from Claims” the default tab
+File: client/src/pages/AppDocuments.tsx (or wherever Document Creator modal/page lives)
+- Default selected tab = “Compile from Claims”
+- Keep “From Template” as secondary (still accessible)
+
+B) Auto-populate based on case + module context
+When user opens Document Creator from a module page:
+- Preselect a “Draft Topic” label (not legal advice):
+  Examples:
+  - Evidence page → “Evidence summary”
+  - Timeline page → “Timeline narrative”
+  - Communications page → “Communication log summary”
+  - Pattern Analysis → “Pattern summary”
+- Add this label to the compile request as `draftTopic`
+- If opened from inside a specific evidence file (EvidenceViewer):
+  - auto-filter claims to that evidenceId by default (toggleable)
+
+Implementation hint:
+- We already track moduleKey in Lexi. Mirror that for Document Creator launches:
+  - Add optional query param: ?moduleKey=evidence&sourceId=<evidenceId>
+  - Or pass props if it’s a modal launched from page UI.
+
+C) Improve Preflight Checklist (hard guardrails)
+Add a prominent Preflight panel before user can compile:
+Checks:
+1) Accepted claims count >= 3 (or >=1 for very small cases)
+2) Missing citations count == 0 (BLOCK compile if >0)
+3) Missing info flagged claims present (WARN only; does not block)
+4) Extraction coverage % (WARN only)
+Add “Fix It” actions:
+- Button: “Show uncited claims” → scroll/filter list to only uncited
+- Button: “Auto-attach sources” (already exists from Phase 2B) shown here
+- Button: “Review missing info claims” → filter to missing_info_flag=true
+
+D) Compilation output format (readable + court-neutral)
+Update the compile endpoint (or compilation formatter) to output markdown with:
+- Title (Draft Topic)
+- Short disclaimer (educational/org only)
+- Sections (headings), based on Issue Groupings if they exist:
+  For each issue grouping:
+   - Bullet list of accepted claims (1 sentence each)
+   - Each claim ends with citation bracket(s) like: [EVID: file, p. X]
+- If no issue groups exist, fallback:
+  - “Key Facts”
+  - “Key Dates”
+  - “Key Communications”
+- Final section: “Sources”
+  - Each citation pointer listed once, with:
+    - evidence filename
+    - page/timestamp
+    - quote snippet
+
+IMPORTANT:
+- Do not infer dates/intent.
+- If a claim has a date but citation lacks a page/timestamp, keep it but tag as “needs pinpoint”.
+
+E) Export Improvements (DOCX/PDF later, but immediate usability now)
+- Ensure the generated markdown is stored as a Document record
+- Name the document automatically:
+  “<Draft Topic> — <Case Title> — <YYYY-MM-DD>”
+- Allow user to rename after creation (inline like thread rename)
+
+F) Add “Draft Readiness” nudges inside Document Creator
+- Show the same readiness bar used on dashboard
+- If readiness < 60%, show a gentle warning:
+  “You’ll get better output after reviewing suggested claims and sources.”
+
+G) Testing checklist (must pass)
+1) Open Document Creator from Evidence page → defaults to Compile from Claims
+2) If uncited accepted claims exist → Compile disabled + “Auto-attach” visible
+3) After auto-attach → Compile enabled
+4) Output is sectioned, not run-on
+5) Sources links show evidence file name + page/timestamp + quote
+6) Generated doc is saved, titled correctly, and appears in Documents list
+
+H) Report back
+After implementation:
+- Files changed
+- Where “default tab” is set
+- Preflight logic + what blocks compile
+- Example of output structure (short sample)
+- Confirm saved document naming + rename UI
