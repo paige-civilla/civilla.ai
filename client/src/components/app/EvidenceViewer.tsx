@@ -84,6 +84,20 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const [claimEditForm, setClaimEditForm] = useState({ claimText: "", tags: "", missingInfoFlag: false });
   const [suggestingClaims, setSuggestingClaims] = useState(false);
 
+  const { data: backgroundStatus } = useQuery<{
+    claimsSuggestionPending: boolean;
+    globalStats: { active: number; pending: number; processed: number };
+    latestActivity: {
+      eventType: string;
+      description: string;
+      metadata: any;
+      createdAt: string;
+    } | null;
+  }>({
+    queryKey: ["/api/cases", caseId, "background-ai-status"],
+    refetchInterval: 15000,
+  });
+
   const [noteForm, setNoteForm] = useState({
     noteTitle: "",
     noteText: "",
@@ -531,6 +545,13 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
         <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-sm flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600" />
           <span className="text-amber-800 dark:text-amber-200">Text extraction processing. Page anchors still work.</span>
+        </div>
+      )}
+
+      {backgroundStatus?.claimsSuggestionPending && (
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-sm flex items-center gap-2" data-testid="status-claims-pending">
+          <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
+          <span className="text-blue-800 dark:text-blue-200">AI analyzing evidence for claims...</span>
         </div>
       )}
 

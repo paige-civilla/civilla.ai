@@ -38,6 +38,7 @@ import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtractio
 import { createLimiter } from "./utils/concurrency";
 import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
 import { searchCaseWide } from "./services/search";
+import { isAutoSuggestPending, getAutoSuggestStats } from "./claims/autoSuggest";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -1321,6 +1322,45 @@ export async function registerRoutes(
       console.error("Run extraction error:", error);
       const message = error instanceof Error ? error.message : "Failed to start extraction";
       res.status(500).json({ error: message, code: "EXTRACTION_ERROR" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/background-ai-status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const claimsSuggestionPending = isAutoSuggestPending(caseId);
+      const stats = getAutoSuggestStats();
+
+      const recentLogs = await storage.listActivityLogs(userId, 10, 0);
+      const backgroundLogs = recentLogs.filter(
+        (log) =>
+          log.caseId === caseId &&
+          (log.eventType === "claims_suggesting" || log.eventType === "claims_suggested")
+      );
+      const latestBackgroundLog = backgroundLogs[0] || null;
+
+      res.json({
+        claimsSuggestionPending,
+        globalStats: stats,
+        latestActivity: latestBackgroundLog
+          ? {
+              eventType: latestBackgroundLog.eventType,
+              description: latestBackgroundLog.description,
+              metadata: latestBackgroundLog.metadata,
+              createdAt: latestBackgroundLog.createdAt,
+            }
+          : null,
+      });
+    } catch (error) {
+      console.error("Background AI status error:", error);
+      res.status(500).json({ error: "Failed to get background AI status" });
     }
   });
 
