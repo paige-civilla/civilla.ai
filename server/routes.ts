@@ -2712,6 +2712,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const canCompile = acceptedClaimsWithCitations >= 1 && acceptedClaimsMissingCitations === 0;
 
+      const evidence = await storage.getEvidenceByCase(caseId);
+      const extractedCount = evidence.filter(e => e.extractionJobId && e.extractionStatus === "completed").length;
+      const extractionCoverage = evidence.length > 0 ? Math.round((extractedCount / evidence.length) * 100) : 0;
+
+      let readinessPercent = 0;
+      if (acceptedClaims.length > 0) {
+        const citationScore = acceptedClaimsMissingCitations === 0 ? 50 : Math.round((acceptedClaimsWithCitations / acceptedClaims.length) * 50);
+        const extractionScore = Math.round((extractionCoverage / 100) * 30);
+        const claimScore = Math.min(20, acceptedClaims.length * 2);
+        readinessPercent = Math.min(100, citationScore + extractionScore + claimScore);
+      }
+
       let message = "";
       if (acceptedClaims.length === 0) {
         message = "No accepted claims. Review and accept claims from your evidence files first.";
@@ -2731,12 +2743,14 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           acceptedClaimsWithCitations,
           acceptedClaimsMissingCitations,
           acceptedClaimsMissingInfoFlagged,
+          extractionCoverage,
         },
         missing: {
           claimIdsMissingCitations,
           claimIdsMissingInfoFlagged,
         },
         message,
+        readinessPercent,
       });
     } catch (error) {
       console.error("Compile preflight error:", error);
@@ -2798,54 +2812,83 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       };
 
       const trace: TraceEntry[] = [];
+      const sourceSet = new Set<string>();
+      
+      const claimsByType: Record<string, typeof claims> = {};
+      for (const claim of claims) {
+        const typeKey = claim.claimType || "general";
+        if (!claimsByType[typeKey]) claimsByType[typeKey] = [];
+        claimsByType[typeKey].push(claim);
+      }
+
+      const typeLabels: Record<string, string> = {
+        factual: "Factual Claims",
+        behavioral: "Behavioral Observations",
+        financial: "Financial Matters",
+        custodial: "Custody & Parenting",
+        legal: "Legal Issues",
+        general: "General Claims",
+      };
+
       let markdown = `# ${title}\n\n`;
-      markdown += `Compiled from ${claims.length} evidence-backed claims.\n\n`;
+      markdown += `*Compiled from ${claims.length} evidence-backed claims.*\n\n`;
       markdown += `---\n\n`;
 
-      for (let i = 0; i < claims.length; i++) {
-        const claim = claims[i];
-        markdown += `${i + 1}. ${claim.claimText}\n`;
+      let globalIndex = 0;
+      for (const [typeKey, typeClaims] of Object.entries(claimsByType)) {
+        const sectionLabel = typeLabels[typeKey] || typeKey.charAt(0).toUpperCase() + typeKey.slice(1);
+        markdown += `## ${sectionLabel}\n\n`;
 
-        const citationPointers = await storage.listClaimCitations(userId, claim.id);
-        const traceEntry: TraceEntry = {
-          claimId: claim.id,
-          claimText: claim.claimText,
-          citations: [],
-        };
+        for (const claim of typeClaims) {
+          globalIndex++;
+          const citationPointers = await storage.listClaimCitations(userId, claim.id);
+          const traceEntry: TraceEntry = {
+            claimId: claim.id,
+            claimText: claim.claimText,
+            citations: [],
+          };
 
-        for (const cit of citationPointers) {
-          const ptr = cit.citationPointer;
-          if (ptr) {
-            const evidenceName = ptr.evidenceFileId ? (evidenceMap.get(ptr.evidenceFileId) || "Unknown file") : "Unknown file";
-            traceEntry.citations.push({
-              citationId: cit.id,
-              evidenceId: ptr.evidenceFileId || "",
-              evidenceName,
-              pointer: {
-                pageNumber: ptr.pageNumber ?? undefined,
-                timestampSeconds: ptr.timestampSeconds ?? undefined,
-                quote: ptr.quote ?? undefined,
-              },
-            });
+          const citationBrackets: string[] = [];
+          for (const cit of citationPointers) {
+            const ptr = cit.citationPointer;
+            if (ptr) {
+              const evidenceName = ptr.evidenceFileId ? (evidenceMap.get(ptr.evidenceFileId) || "Unknown file") : "Unknown file";
+              traceEntry.citations.push({
+                citationId: cit.id,
+                evidenceId: ptr.evidenceFileId || "",
+                evidenceName,
+                pointer: {
+                  pageNumber: ptr.pageNumber ?? undefined,
+                  timestampSeconds: ptr.timestampSeconds ?? undefined,
+                  quote: ptr.quote ?? undefined,
+                },
+              });
 
-            if (ptr.quote) {
-              const truncatedQuote = ptr.quote.length > 150 ? ptr.quote.substring(0, 150) + "..." : ptr.quote;
-              markdown += `   > "${truncatedQuote}"\n`;
-            }
-            if (ptr.pageNumber) {
-              markdown += `   (Source: ${evidenceName}, page ${ptr.pageNumber})\n`;
-            } else if (ptr.timestampSeconds) {
-              const mins = Math.floor(ptr.timestampSeconds / 60);
-              const secs = ptr.timestampSeconds % 60;
-              markdown += `   (Source: ${evidenceName}, ${mins}:${secs.toString().padStart(2, "0")})\n`;
-            } else {
-              markdown += `   (Source: ${evidenceName})\n`;
+              sourceSet.add(evidenceName);
+              if (ptr.pageNumber) {
+                citationBrackets.push(`[EVID: ${evidenceName}, p.${ptr.pageNumber}]`);
+              } else if (ptr.timestampSeconds) {
+                const mins = Math.floor(ptr.timestampSeconds / 60);
+                const secs = ptr.timestampSeconds % 60;
+                citationBrackets.push(`[EVID: ${evidenceName}, ${mins}:${secs.toString().padStart(2, "0")}]`);
+              } else {
+                citationBrackets.push(`[EVID: ${evidenceName}]`);
+              }
             }
           }
-        }
 
-        trace.push(traceEntry);
-        markdown += `\n`;
+          const citationSuffix = citationBrackets.length > 0 ? ` ${citationBrackets.join(" ")}` : "";
+          markdown += `${globalIndex}. ${claim.claimText}${citationSuffix}\n\n`;
+          trace.push(traceEntry);
+        }
+      }
+
+      if (sourceSet.size > 0) {
+        markdown += `---\n\n## Sources\n\n`;
+        const sortedSources = Array.from(sourceSet).sort();
+        for (const source of sortedSources) {
+          markdown += `- ${source}\n`;
+        }
       }
 
       const document = await storage.createDocument(userId, caseId, {
