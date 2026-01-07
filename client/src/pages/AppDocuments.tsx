@@ -269,6 +269,19 @@ export default function AppDocuments() {
 
   const generatedDocuments = generatedDocsData?.documents || [];
 
+  interface TemplateAutofillResponse {
+    payload: GenerateDocumentPayload;
+    missingFields: string[];
+    factCount: number;
+    citationBackedCount: number;
+    guardrailsPassed: boolean;
+  }
+
+  const { data: templateAutofillData, refetch: refetchTemplateAutofill } = useQuery<TemplateAutofillResponse>({
+    queryKey: ["/api/cases", caseId, "template-autofill"],
+    enabled: false,
+  });
+
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false);
   const [autoFillFormData, setAutoFillFormData] = useState<Partial<UserProfile>>({});
   const [dontAskAgain, setDontAskAgain] = useState(false);
@@ -651,7 +664,7 @@ export default function AppDocuments() {
     proceedToReview(docType, userProfile?.autoFillEnabled ?? true);
   };
 
-  const proceedToReview = (docType: CourtDocType, useAutofill: boolean) => {
+  const proceedToReview = async (docType: CourtDocType, useAutofill: boolean) => {
     if (!currentCase) return;
     const template = courtDocTemplates[docType];
 
@@ -665,29 +678,47 @@ export default function AppDocuments() {
     setAutofillToggle(useAutofill);
     setDateConfirmed(false);
 
+    let factsPayload: TemplateAutofillResponse | null = null;
+    if (useAutofill) {
+      try {
+        const result = await refetchTemplateAutofill();
+        factsPayload = result.data || null;
+      } catch { /* continue without facts data */ }
+    }
+
     const payload: GenerateDocumentPayload = {
       court: {
-        district: "Seventh",
-        county: currentCase.county || "Bonneville",
-        state: currentCase.state || "Idaho",
+        district: factsPayload?.payload?.court?.district || "Seventh",
+        county: factsPayload?.payload?.court?.county || currentCase.county || "Bonneville",
+        state: factsPayload?.payload?.court?.state || currentCase.state || "Idaho",
       },
       case: {
-        caseNumber: currentCase.caseNumber || "___________",
+        caseNumber: factsPayload?.payload?.case?.caseNumber || currentCase.caseNumber || "___________",
       },
       parties: {
-        petitioner: useAutofill ? (userProfile?.petitionerName || "[Petitioner Name]") : "[Petitioner Name]",
-        respondent: useAutofill ? (userProfile?.respondentName || "[Respondent Name]") : "[Respondent Name]",
+        petitioner: useAutofill 
+          ? (factsPayload?.payload?.parties?.petitioner || userProfile?.petitionerName || "[Petitioner Name]") 
+          : "[Petitioner Name]",
+        respondent: useAutofill 
+          ? (factsPayload?.payload?.parties?.respondent || userProfile?.respondentName || "[Respondent Name]") 
+          : "[Respondent Name]",
       },
       filer: {
-        fullName: useAutofill ? (userProfile?.fullName || "[Your Full Name]") : "[Your Full Name]",
-        email: useAutofill ? (userProfile?.email || "") : "",
-        addressLine1: useAutofill ? (userProfile?.addressLine1 || "[Your Address]") : "[Your Address]",
-        addressLine2: useAutofill ? (userProfile?.addressLine2 || "") : "",
-        city: useAutofill ? (userProfile?.city || "") : "",
-        state: useAutofill ? (userProfile?.state || "") : "",
-        zip: useAutofill ? (userProfile?.zip || "") : "",
-        phone: useAutofill ? (userProfile?.phone || "") : "",
-        partyRole: useAutofill ? (userProfile?.partyRole || "petitioner") : "petitioner",
+        fullName: useAutofill 
+          ? (factsPayload?.payload?.filer?.fullName || userProfile?.fullName || "[Your Full Name]") 
+          : "[Your Full Name]",
+        email: useAutofill ? (factsPayload?.payload?.filer?.email || userProfile?.email || "") : "",
+        addressLine1: useAutofill 
+          ? (factsPayload?.payload?.filer?.addressLine1 || userProfile?.addressLine1 || "[Your Address]") 
+          : "[Your Address]",
+        addressLine2: useAutofill ? (factsPayload?.payload?.filer?.addressLine2 || userProfile?.addressLine2 || "") : "",
+        city: useAutofill ? (factsPayload?.payload?.filer?.city || userProfile?.city || "") : "",
+        state: useAutofill ? (factsPayload?.payload?.filer?.state || userProfile?.state || "") : "",
+        zip: useAutofill ? (factsPayload?.payload?.filer?.zip || userProfile?.zip || "") : "",
+        phone: useAutofill ? (factsPayload?.payload?.filer?.phone || userProfile?.phone || "") : "",
+        partyRole: useAutofill 
+          ? (factsPayload?.payload?.filer?.partyRole || userProfile?.partyRole || "petitioner") 
+          : "petitioner",
         isSelfRepresented: role === "self_represented",
         attorney: role === "attorney" ? {
           name: useAutofill ? (userProfile?.fullName || "") : "",
@@ -699,8 +730,8 @@ export default function AppDocuments() {
         } : undefined,
       },
       document: {
-        title: template.title,
-        subtitle: "",
+        title: factsPayload?.payload?.document?.title || template.title,
+        subtitle: factsPayload?.payload?.document?.subtitle || "",
       },
       date: dateStr,
     };
