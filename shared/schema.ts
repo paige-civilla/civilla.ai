@@ -1935,3 +1935,72 @@ export const activityLogs = pgTable("activity_logs", {
 }));
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+// Phase 2F: Case Facts (structured field extraction)
+export const factValueTypes = ["text", "date", "number", "bool", "name", "address", "other"] as const;
+export type FactValueType = typeof factValueTypes[number];
+
+export const factStatuses = ["suggested", "accepted", "rejected"] as const;
+export type FactStatus = typeof factStatuses[number];
+
+export const factSourceTypes = ["claim", "note", "timeline", "manual"] as const;
+export type FactSourceType = typeof factSourceTypes[number];
+
+export const caseFacts = pgTable("case_facts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  key: text("key").notNull(),
+  value: text("value"),
+  valueType: text("value_type").notNull().default("text"),
+  status: text("status").notNull().default("suggested"),
+  missingInfoFlag: boolean("missing_info_flag").notNull().default(false),
+  sourceType: text("source_type").notNull().default("manual"),
+  sourceId: varchar("source_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseKeyIdx: index("case_facts_case_key_idx").on(table.caseId, table.key),
+  caseStatusIdx: index("case_facts_case_status_idx").on(table.caseId, table.status),
+}));
+
+export const insertCaseFactSchema = z.object({
+  key: z.string().min(1).max(200),
+  value: z.string().max(2000).optional().nullable(),
+  valueType: z.enum(factValueTypes).optional().default("text"),
+  status: z.enum(factStatuses).optional().default("suggested"),
+  missingInfoFlag: z.boolean().optional().default(false),
+  sourceType: z.enum(factSourceTypes).optional().default("manual"),
+  sourceId: z.string().optional().nullable(),
+});
+
+export const updateCaseFactSchema = z.object({
+  value: z.string().max(2000).optional().nullable(),
+  valueType: z.enum(factValueTypes).optional(),
+  status: z.enum(factStatuses).optional(),
+  missingInfoFlag: z.boolean().optional(),
+});
+
+export const listCaseFactsSchema = z.object({
+  status: z.enum(factStatuses).optional(),
+  prefix: z.string().max(100).optional(),
+});
+
+export type InsertCaseFact = z.infer<typeof insertCaseFactSchema>;
+export type UpdateCaseFact = z.infer<typeof updateCaseFactSchema>;
+export type ListCaseFactsFilters = z.infer<typeof listCaseFactsSchema>;
+export type CaseFact = typeof caseFacts.$inferSelect;
+
+// Phase 2F: Fact Citations (join table linking facts to citation_pointers)
+export const factCitations = pgTable("fact_citations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  factId: varchar("fact_id").notNull().references(() => caseFacts.id),
+  citationId: varchar("citation_id").notNull().references(() => citationPointers.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  factCitationUnique: uniqueIndex("fact_citations_fact_citation_idx").on(table.factId, table.citationId),
+}));
+
+export type FactCitation = typeof factCitations.$inferSelect;
