@@ -145,9 +145,14 @@ export default function AppDocuments() {
     const urlParams = new URLSearchParams(window.location.search);
     const mk = urlParams.get("moduleKey");
     const sid = urlParams.get("sourceId");
+    const today = new Date();
+    const dateStr = today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    
     if (mk) {
       setModuleKey(mk);
-      setCompileClaimsTitle(getDraftTopicForModule(mk));
+      setCompileClaimsTitle(`${getDraftTopicForModule(mk)} - ${dateStr}`);
+    } else {
+      setCompileClaimsTitle(`Statement of Facts - ${dateStr}`);
     }
     if (sid) {
       setSourceEvidenceId(sid);
@@ -247,7 +252,9 @@ export default function AppDocuments() {
     }>;
   }
 
-  const [compileResult, setCompileResult] = useState<{ markdown: string; trace: TraceEntry[] } | null>(null);
+  const [compileResult, setCompileResult] = useState<{ markdown: string; trace: TraceEntry[]; documentId?: string; title?: string } | null>(null);
+  const [isRenamingCompiled, setIsRenamingCompiled] = useState(false);
+  const [compiledRenameTitle, setCompiledRenameTitle] = useState("");
 
   const generatedDocuments = generatedDocsData?.documents || [];
 
@@ -291,9 +298,15 @@ export default function AppDocuments() {
       const res = await apiRequest("POST", `/api/cases/${caseId}/documents/compile-claims`, data);
       return res.json();
     },
-    onSuccess: (data: { ok: boolean; markdown: string; trace: TraceEntry[] }) => {
+    onSuccess: (data: { ok: boolean; markdown: string; trace: TraceEntry[]; document?: { id: string; title: string } }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "documents"] });
-      setCompileResult({ markdown: data.markdown, trace: data.trace });
+      setCompileResult({ 
+        markdown: data.markdown, 
+        trace: data.trace, 
+        documentId: data.document?.id, 
+        title: data.document?.title 
+      });
+      setCompiledRenameTitle(data.document?.title || compileClaimsTitle);
       toast({ title: "Document compiled from claims" });
     },
     onError: (error: Error) => {
@@ -305,6 +318,24 @@ export default function AppDocuments() {
       } else {
         toast({ title: "Failed to compile document", variant: "destructive" });
       }
+    },
+  });
+
+  const renameDocMutation = useMutation({
+    mutationFn: async ({ docId, title }: { docId: string; title: string }) => {
+      const res = await apiRequest("PATCH", `/api/documents/${docId}`, { title });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "documents"] });
+      setIsRenamingCompiled(false);
+      if (compileResult) {
+        setCompileResult({ ...compileResult, title: compiledRenameTitle });
+      }
+      toast({ title: "Document renamed" });
+    },
+    onError: () => {
+      toast({ title: "Failed to rename document", variant: "destructive" });
     },
   });
 
@@ -1273,7 +1304,64 @@ export default function AppDocuments() {
                 <div className="flex flex-col gap-4">
                   <div className="border rounded-lg p-3 bg-green-50 dark:bg-green-900/20">
                     <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">Document compiled successfully</p>
-                    <p className="text-xs text-muted-foreground">The document has been saved. View it in your documents list.</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      {isRenamingCompiled ? (
+                        <>
+                          <Input
+                            value={compiledRenameTitle}
+                            onChange={(e) => setCompiledRenameTitle(e.target.value)}
+                            className="h-7 text-xs flex-1"
+                            maxLength={200}
+                            data-testid="input-rename-compiled"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              if (compileResult.documentId && compiledRenameTitle.trim()) {
+                                renameDocMutation.mutate({ docId: compileResult.documentId, title: compiledRenameTitle.trim() });
+                              }
+                            }}
+                            disabled={renameDocMutation.isPending || !compiledRenameTitle.trim()}
+                            data-testid="button-save-rename"
+                          >
+                            {renameDocMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setIsRenamingCompiled(false);
+                              setCompiledRenameTitle(compileResult.title || "");
+                            }}
+                            data-testid="button-cancel-rename"
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs text-muted-foreground">Saved as:</span>
+                          <span className="text-xs font-medium">{compileResult.title || compileClaimsTitle}</span>
+                          {compileResult.documentId && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-xs ml-1"
+                              onClick={() => {
+                                setCompiledRenameTitle(compileResult.title || compileClaimsTitle);
+                                setIsRenamingCompiled(true);
+                              }}
+                              data-testid="button-rename-compiled"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <div className="border rounded-lg p-3">
