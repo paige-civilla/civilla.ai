@@ -7976,5 +7976,136 @@ Top 3 selection criteria:
     }
   });
 
+  // Phase 2F Task D: Template Auto-Fill - get pre-filled payload from accepted facts
+  app.get("/api/cases/:caseId/template-autofill", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user!.id;
+      const { caseId } = req.params;
+      
+      const caseData = await storage.getCase(caseId, userId);
+      if (!caseData) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const profile = await storage.getUserProfile(userId);
+      const acceptedFacts = await storage.listCaseFacts(userId, caseId, { status: "accepted" });
+      
+      const factMap: Record<string, string | null> = {};
+      for (const fact of acceptedFacts) {
+        factMap[fact.key] = fact.value;
+      }
+      
+      const today = new Date().toISOString().split("T")[0];
+      
+      const payload = {
+        court: {
+          district: factMap["court.district"] || "",
+          county: factMap["court.county"] || caseData.county || "",
+          state: factMap["court.state"] || caseData.state || "",
+        },
+        case: {
+          caseNumber: factMap["case.number"] || caseData.caseNumber || "",
+        },
+        parties: {
+          petitioner: factMap["party.petitioner"] || profile?.petitionerName || "",
+          respondent: factMap["party.respondent"] || profile?.respondentName || "",
+        },
+        filer: {
+          fullName: factMap["filer.name"] || profile?.fullName || "",
+          email: factMap["filer.email"] || profile?.email || "",
+          addressLine1: profile?.addressLine1 || "",
+          addressLine2: profile?.addressLine2 || "",
+          city: profile?.city || "",
+          state: profile?.state || "",
+          zip: profile?.zip || "",
+          phone: profile?.phone || "",
+          partyRole: factMap["filer.role"] || profile?.partyRole || "",
+          isSelfRepresented: profile?.isSelfRepresented ?? true,
+          attorney: profile?.isSelfRepresented === false ? {
+            name: profile?.fullName || "",
+            firm: profile?.firmName || "",
+            barNumber: profile?.barNumber || "",
+          } : undefined,
+        },
+        document: {
+          title: factMap["document.title"] || "",
+          subtitle: factMap["document.subtitle"] || "",
+        },
+        date: today,
+      };
+      
+      const missingFields: string[] = [];
+      if (!payload.court.county) missingFields.push("court.county");
+      if (!payload.court.state) missingFields.push("court.state");
+      if (!payload.case.caseNumber) missingFields.push("case.caseNumber");
+      if (!payload.filer.fullName) missingFields.push("filer.fullName");
+      if (!payload.filer.addressLine1) missingFields.push("filer.addressLine1");
+      if (!payload.filer.partyRole) missingFields.push("filer.partyRole");
+      
+      const citationCount = acceptedFacts.reduce((acc, f) => {
+        return acc + (f.sourceType === "claim" ? 1 : 0);
+      }, 0);
+      
+      res.json({
+        payload,
+        missingFields,
+        factCount: acceptedFacts.length,
+        citationBackedCount: citationCount,
+        guardrailsPassed: citationCount > 0 || acceptedFacts.length === 0,
+      });
+    } catch (error) {
+      console.error("Template autofill error:", error);
+      res.status(500).json({ error: "Failed to generate template autofill" });
+    }
+  });
+
+  // Phase 2F: Get fact keys for a template type (placeholder mapping)
+  app.get("/api/template-fields/:templateType", requireAuth, async (req, res) => {
+    try {
+      const { templateType } = req.params;
+      
+      const commonFields = [
+        { key: "court.district", label: "Court District", required: false },
+        { key: "court.county", label: "County", required: true },
+        { key: "court.state", label: "State", required: true },
+        { key: "case.number", label: "Case Number", required: true },
+        { key: "party.petitioner", label: "Petitioner Name", required: false },
+        { key: "party.respondent", label: "Respondent Name", required: false },
+        { key: "filer.name", label: "Filer Full Name", required: true },
+        { key: "filer.email", label: "Filer Email", required: false },
+        { key: "filer.role", label: "Filer Party Role", required: true },
+        { key: "document.title", label: "Document Title", required: false },
+      ];
+      
+      const templateSpecificFields: Record<string, Array<{ key: string; label: string; required: boolean }>> = {
+        declaration: [
+          { key: "declaration.statement", label: "Declaration Statement", required: true },
+          { key: "declaration.facts", label: "Statement of Facts", required: true },
+        ],
+        affidavit: [
+          { key: "affidavit.sworn_statement", label: "Sworn Statement", required: true },
+        ],
+        motion: [
+          { key: "motion.relief_requested", label: "Relief Requested", required: true },
+          { key: "motion.grounds", label: "Grounds for Motion", required: true },
+        ],
+        response: [
+          { key: "response.to_motion", label: "Response to Motion", required: true },
+          { key: "response.arguments", label: "Arguments", required: true },
+        ],
+      };
+      
+      const fields = [
+        ...commonFields,
+        ...(templateSpecificFields[templateType] || []),
+      ];
+      
+      res.json({ templateType, fields });
+    } catch (error) {
+      console.error("Template fields error:", error);
+      res.status(500).json({ error: "Failed to get template fields" });
+    }
+  });
+
   return httpServer;
 }
