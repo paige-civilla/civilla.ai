@@ -1,0 +1,146 @@
+REPLIT TASK: Phase 2F — Evidence-first Structured Field Extraction + Template Auto-Fill (NO fabrication)
+
+Goal
+Make Document Creator behave like the Modification of Custody workflow:
+- NEVER draft directly from raw evidence text
+- First extract structured fields from evidence/claims/notes
+- Then populate templates ONLY from structured fields + accepted claims
+- Every populated fact must have a citation pointer (evidence file + page/quote)
+
+Deliverables
+1) A “Case Facts” structured store per case (with citations)
+2) An “Extract Fields” pipeline that suggests facts from:
+   - accepted claims (+ their citations)
+   - evidence notes (anchored)
+   - timeline events
+   - (optional later) communications
+3) A Template Auto-Fill step that maps facts → template placeholders
+4) UI to review/accept/reject suggested facts before auto-fill
+5) “Traceability” panel: show exactly which evidence supports each filled field
+
+A) Data Model (shared/schema.ts)
+Add:
+1) case_facts
+- id (uuid), userId, caseId
+- key (text)  // e.g., "partyA.fullName", "court.county", "child.0.dob"
+- value (text) // stored as string (no inferred formatting)
+- valueType (enum: text/date/number/bool/name/address/other)
+- status (enum: suggested/accepted/rejected)
+- missingInfoFlag (bool default false)
+- sourceType (enum: claim/note/timeline/manual)
+- sourceId (uuid nullable) // references claimId/noteId/etc (soft ref)
+- createdAt, updatedAt
+Indexes: (caseId, key), (caseId, status)
+
+2) fact_citations (join)
+- id, userId, caseId, factId, citationId
+Unique: (factId, citationId)
+
+Also add Zod schemas:
+insertCaseFactSchema, updateCaseFactSchema, listCaseFactsSchema
+
+B) Storage Layer (server/storage.ts)
+Add methods:
+- createCaseFact(userId, caseId, data)
+- listCaseFacts(userId, caseId, filters: status? keyPrefix?)
+- updateCaseFact(userId, factId, patch)
+- deleteCaseFact(userId, factId)
+- attachFactCitation(userId, factId, citationId)
+- detachFactCitation(userId, factId, citationId)
+- listFactCitations(userId, factId)
+
+C) Backend Routes (server/routes.ts) — All requireAuth + ownership checks
+1) Facts CRUD:
+GET  /api/cases/:caseId/facts?status=suggested|accepted|rejected&prefix=partyA.
+POST /api/cases/:caseId/facts
+PATCH /api/facts/:factId
+DELETE /api/facts/:factId
+
+2) Fact citations:
+POST   /api/facts/:factId/citations/:citationId
+DELETE /api/facts/:factId/citations/:citationId
+GET    /api/facts/:factId/citations
+
+3) Auto-suggest facts from existing structured sources (STRICT)
+POST /api/cases/:caseId/facts/suggest
+Body: { refresh?: boolean }
+Behavior:
+- Uses ONLY:
+  - accepted claims (and their citations)
+  - anchored evidence notes (noteId + selectionText/page)
+  - timeline events (eventDate/title/notes)
+- Output: 10–30 fact candidates with keys + values + citations
+- For each suggested fact:
+  - must include at least 1 citationId OR it is rejected/flagged with missingInfoFlag=true
+- Upsert behavior by (caseId,key,value) to avoid duplicates
+- Log activity: facts_suggesting, facts_suggested
+
+Model prompt rules:
+- Return JSON only
+- Never infer unknown dates/names/intent
+- If uncertain, set missingInfoFlag=true and keep value blank or "Unknown"
+
+D) Template Auto-Fill (server/documents/autoFill.ts + route)
+1) Define a placeholder map for your existing DOCX templates:
+Example placeholders:
+{{partyA_full_name}}, {{partyB_full_name}}, {{court_county}}, {{case_number}}, {{child_1_name}}, etc.
+
+Create helper:
+buildTemplateFillMap(caseFactsAccepted) -> Record<string,string>
+
+2) Add endpoint:
+POST /api/cases/:caseId/documents/templates/:templateKey/autofill
+Body: { title?: string }
+Response:
+- filledPreview: { placeholder, value, factKey, citations[] }[]
+- missing: { placeholder, required: boolean, suggestedFactKey?: string }[]
+NO DOCX generation yet in this endpoint — preview only.
+
+3) Update existing DOCX generation path:
+When user clicks “Generate DOCX”, it must:
+- refuse if required placeholders missing AND user chose “block”
+- include a “Sources Appendix” page OR attach a sources JSON blob to the document record
+- store the fillMap + source links used
+
+E) Frontend UI (client)
+1) Add “Case Facts” panel (in Case Settings or Documents page):
+- Tabs: Suggested / Accepted / Rejected
+- Each fact row:
+  - key (read-only)
+  - value (editable)
+  - status buttons Accept/Reject
+  - “Sources (n)” toggle showing citations + quotes
+  - “Add source” button (opens citation picker filtered by case evidence)
+
+2) Add “Suggest facts” button:
+- Calls POST /api/cases/:caseId/facts/suggest
+- Shows progress + toast
+
+3) Document Creator integration:
+Add new tab: “Auto-fill Template”
+Flow:
+- Choose template
+- Click “Build Auto-fill Preview”
+- Shows preview table:
+  Placeholder | Value | Source(s) | Missing?
+- Missing items show CTA:
+  “Create suggested fact” (pre-fills new fact key) OR “Ask Lexi (Research mode)”
+- Button: “Generate DOCX” (only after preview)
+
+F) Guardrails (MUST)
+- No fact can be marked “accepted” without at least one citation UNLESS sourceType=manual
+- Manual facts must show warning: “Add a source when possible.”
+- Auto-fill preview must visually mark fields with no sources.
+
+G) Verification checklist
+1) Upload evidence → extraction → claims suggested → accept a few claims
+2) Run POST /facts/suggest → see suggested facts created with citations
+3) Accept facts → they appear in Accepted list
+4) Auto-fill preview shows filled placeholders + citations
+5) Generate DOCX uses accepted facts only + logs sources
+
+H) Report back
+- Files changed
+- # of facts suggested in a typical run
+- Confirm no “inferred” values are created
+- Confirm required placeholder missing behavior
