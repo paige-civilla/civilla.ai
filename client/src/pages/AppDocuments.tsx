@@ -145,20 +145,21 @@ export default function AppDocuments() {
     const urlParams = new URLSearchParams(window.location.search);
     const mk = urlParams.get("moduleKey");
     const sid = urlParams.get("sourceId");
-    const today = new Date();
-    const dateStr = today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     
     if (mk) {
       setModuleKey(mk);
-      setCompileClaimsTitle(`${getDraftTopicForModule(mk)} - ${dateStr}`);
+      localStorage.setItem(`lastDraftTopic_${caseId}`, getDraftTopicForModule(mk));
     } else {
-      setCompileClaimsTitle(`Statement of Facts - ${dateStr}`);
+      const savedTopic = localStorage.getItem(`lastDraftTopic_${caseId}`);
+      if (savedTopic) {
+        setModuleKey(savedTopic);
+      }
     }
     if (sid) {
       setSourceEvidenceId(sid);
       setFilterByEvidence(true);
     }
-  }, []);
+  }, [caseId]);
 
   const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -166,6 +167,14 @@ export default function AppDocuments() {
   });
 
   const currentCase = caseData?.case;
+
+  useEffect(() => {
+    if (!currentCase) return;
+    const today = new Date().toISOString().split("T")[0];
+    const topicPart = moduleKey ? getDraftTopicForModule(moduleKey) : (localStorage.getItem(`lastDraftTopic_${caseId}`) || "Compiled Summary");
+    const casePart = (currentCase.title || "Case").substring(0, 40);
+    setCompileClaimsTitle(`${topicPart} — ${casePart} — ${today}`.substring(0, 120));
+  }, [currentCase, moduleKey, caseId]);
 
   const { data: templatesData } = useQuery<{ templates: DocumentTemplate[] }>({
     queryKey: ["/api/document-templates"],
@@ -255,6 +264,8 @@ export default function AppDocuments() {
   const [compileResult, setCompileResult] = useState<{ markdown: string; trace: TraceEntry[]; documentId?: string; title?: string } | null>(null);
   const [isRenamingCompiled, setIsRenamingCompiled] = useState(false);
   const [compiledRenameTitle, setCompiledRenameTitle] = useState("");
+  const [renamingDocId, setRenamingDocId] = useState<string | null>(null);
+  const [renamingDocTitle, setRenamingDocTitle] = useState("");
 
   const generatedDocuments = generatedDocsData?.documents || [];
 
@@ -294,7 +305,7 @@ export default function AppDocuments() {
   }, [docsLoading, documents]);
 
   const compileClaimsMutation = useMutation({
-    mutationFn: async (data: { title: string }) => {
+    mutationFn: async (data: { title: string; draftTopic?: string }) => {
       const res = await apiRequest("POST", `/api/cases/${caseId}/documents/compile-claims`, data);
       return res.json();
     },
@@ -1075,13 +1086,72 @@ export default function AppDocuments() {
                         <FileType className="w-5 h-5 text-primary" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3
-                          className="font-heading font-bold text-lg text-neutral-darkest truncate cursor-pointer"
-                          onClick={() => openEditor(doc)}
-                          data-testid={`text-document-title-${doc.id}`}
-                        >
-                          {doc.title}
-                        </h3>
+                        {renamingDocId === doc.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={renamingDocTitle}
+                              onChange={(e) => setRenamingDocTitle(e.target.value)}
+                              className="h-8 text-sm flex-1"
+                              maxLength={200}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && renamingDocTitle.trim()) {
+                                  renameDocMutation.mutate({ docId: doc.id, title: renamingDocTitle.trim() });
+                                  setRenamingDocId(null);
+                                } else if (e.key === "Escape") {
+                                  setRenamingDocId(null);
+                                }
+                              }}
+                              data-testid={`input-rename-document-${doc.id}`}
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => {
+                                if (renamingDocTitle.trim()) {
+                                  renameDocMutation.mutate({ docId: doc.id, title: renamingDocTitle.trim() });
+                                  setRenamingDocId(null);
+                                }
+                              }}
+                              disabled={renameDocMutation.isPending}
+                              data-testid={`button-confirm-rename-${doc.id}`}
+                            >
+                              <Check className="w-4 h-4 text-green-600" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => setRenamingDocId(null)}
+                              data-testid={`button-cancel-rename-${doc.id}`}
+                            >
+                              <X className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 group">
+                            <h3
+                              className="font-heading font-bold text-lg text-neutral-darkest truncate cursor-pointer"
+                              onClick={() => openEditor(doc)}
+                              data-testid={`text-document-title-${doc.id}`}
+                            >
+                              {doc.title}
+                            </h3>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                setRenamingDocId(doc.id);
+                                setRenamingDocTitle(doc.title);
+                              }}
+                              data-testid={`button-rename-document-${doc.id}`}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
                         <p className="font-sans text-xs text-neutral-darkest/60">
                           {getTemplateLabel(doc.templateKey)} | Updated {formatDate(doc.updatedAt)}
                         </p>
@@ -1556,7 +1626,8 @@ export default function AppDocuments() {
                     toast({ title: "Cannot compile", description: "Resolve issues in the checklist first", variant: "destructive" });
                     return;
                   }
-                  compileClaimsMutation.mutate({ title: compileClaimsTitle });
+                  const draftTopic = moduleKey ? getDraftTopicForModule(moduleKey) : (localStorage.getItem(`lastDraftTopic_${caseId}`) || "Compiled Summary");
+                  compileClaimsMutation.mutate({ title: compileClaimsTitle, draftTopic });
                 }}
                 disabled={compileClaimsMutation.isPending || !preflightData?.canCompile}
                 className="bg-primary text-primary-foreground"

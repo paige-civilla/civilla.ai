@@ -1,0 +1,57 @@
+REPLIT TASK: Phase 2E.1 — Auto-name compiled documents + inline rename UI (Document Creator polish)
+
+Goal
+When a user compiles a document from Claims, Civilla should:
+1) Auto-name the document consistently
+2) Allow quick inline rename after creation (like Lexi thread rename)
+3) Keep names readable and ordered
+
+A) Backend — Auto-name on compile (server/routes.ts)
+Find the compile endpoint:
+POST /api/cases/:caseId/documents/compile-claims
+
+Update it so it creates the Document with a default title when none is provided:
+Default title format:
+"<Draft Topic> — <Case Title> — <YYYY-MM-DD>"
+
+Rules:
+- draftTopic comes from request body (already added in Phase 2E)
+- if draftTopic missing: use "Compiled Summary"
+- case title from cases table
+- date should be server-local date in ISO YYYY-MM-DD
+- Ensure trimming and max length (e.g., 120 chars)
+
+Also return the created document id + title:
+Response should include:
+{ ok: true, document: { id, title, ... } }
+
+B) Frontend — Pass draftTopic + allow user override (client/src/pages/AppDocuments.tsx)
+1) When user compiles, include draftTopic in the request body.
+2) Add optional “Document title” input above Compile button:
+   - Pre-filled with the default auto-title (computed client-side using today’s date + case title + draft topic)
+   - User can edit it before compile
+   - If user clears it, backend still auto-names
+
+C) Frontend — Inline rename (Documents list UI)
+Where the Documents list renders (likely AppDocuments list / DocumentCard):
+- Add a small pencil icon next to document title
+- Clicking enables edit mode with an input
+- Enter saves, Escape cancels, X cancels, Check saves
+- Uses existing PATCH /api/documents/:docId route (or equivalent)
+- Optimistically update UI title
+
+D) Persist “last used draft topic”
+So the experience is smooth:
+- Save lastDraftTopic per case in localStorage (keyed by caseId)
+- Next time Document Creator opens, default to lastDraftTopic unless moduleKey overrides it
+
+E) Verify
+1) Compile from Pattern Analysis context → title auto = “Pattern summary — <Case> — 2026-01-07”
+2) Compile from Evidence context with sourceId → title uses that module topic
+3) If user types a custom title → saved as-is
+4) Rename works immediately in list view without refresh
+
+F) Report back
+- Files changed
+- Confirm default naming works server-side even if client sends no title
+- Confirm rename UI behavior (Enter/Escape)

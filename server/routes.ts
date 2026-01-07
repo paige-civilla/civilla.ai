@@ -2762,16 +2762,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
-      const { title } = req.body as { title: string };
-
-      if (!title?.trim()) {
-        return res.status(400).json({ error: "Title is required" });
-      }
+      const { title: providedTitle, draftTopic } = req.body as { title?: string; draftTopic?: string };
 
       const caseRecord = await storage.getCase(caseId, userId);
       if (!caseRecord) {
         return res.status(404).json({ error: "Case not found" });
       }
+
+      const today = new Date().toISOString().split("T")[0];
+      const topicPart = (draftTopic?.trim() || "Compiled Summary").substring(0, 40);
+      const casePart = (caseRecord.title || "Case").substring(0, 40);
+      const autoTitle = `${topicPart} — ${casePart} — ${today}`.substring(0, 120);
+      const title = providedTitle?.trim() || autoTitle;
 
       const preflight = await storage.getClaimsCompilePreflight(caseId, userId);
       const { acceptedClaims, claimCitationCounts } = preflight;
