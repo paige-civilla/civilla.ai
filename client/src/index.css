@@ -122,11 +122,11 @@
   --app-panel-border: 180 3% 12%;         /* #1E2020 */
   --app-tile-bg: 187 18% 91%;             /* #E4ECED lighter tile bg */
 
-  /* Module & interaction tokens */
-  --module-tile: 187 18% 91%;             /* #E4ECED module card surface */
-  --module-tile-border: 187 17% 37%;      /* #4F6A6E darker for distinction */
-  --module-tile-hover: 187 18% 87%;       /* slightly darker hover tint */
-  --module-tile-icon: 187 17% 37%;        /* matches border */
+  /* Module & interaction tokens (half-blue: reduced saturation for subtler tiles) */
+  --module-tile: 190 9% 92%;              /* subtle gray-blue module card surface */
+  --module-tile-border: 190 9% 45%;       /* muted border */
+  --module-tile-hover: 190 9% 88%;        /* subtle hover tint */
+  --module-tile-icon: 190 9% 45%;         /* muted icon */
   --module: 187 18% 91%;                  /* #E4ECED module surface (unified) */
   --module-border: 189 20% 46%;           /* #628286 legacy */
   --ink: 180 3% 12%;                      /* #1E2020 */
@@ -182,11 +182,11 @@
   --app-panel: 200 10% 14%;               /* dark mode solid dropdown bg */
   --app-panel-border: 200 10% 28%;
 
-  /* Dark mode interaction tokens */
-  --module-tile: 195 17% 15%;             /* #1F2A2C dark tile bg */
-  --module-tile-border: 188 14% 50%;      /* #6F8C90 visible border */
-  --module-tile-hover: 193 18% 17%;       /* #243235 subtle hover */
-  --module-tile-icon: 188 15% 73%;        /* #AFC3C6 light icon */
+  /* Dark mode interaction tokens (half-blue: reduced saturation) */
+  --module-tile: 195 8% 16%;              /* subtle dark tile bg */
+  --module-tile-border: 190 7% 50%;       /* muted visible border */
+  --module-tile-hover: 193 9% 18%;        /* subtle hover */
+  --module-tile-icon: 190 8% 73%;         /* muted light icon */
   --module: 200 10% 16%;
   --module-border: 186 22% 50%;
   --ink: 40 25% 94%;
