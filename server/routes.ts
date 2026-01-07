@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool, checkAiTableColumns } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema } from "@shared/schema";
+import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema, insertCaseFactSchema, updateCaseFactSchema, listCaseFactsSchema, type FactStatus, factStatuses } from "@shared/schema";
 import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
@@ -7741,6 +7741,238 @@ Top 3 selection criteria:
     } catch (error) {
       console.error("Trial prep export error:", error);
       res.status(500).json({ error: "Failed to export trial binder" });
+    }
+  });
+
+  // Phase 2F: Case Facts CRUD
+  app.get("/api/cases/:caseId/facts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const parsed = listCaseFactsSchema.safeParse(req.query);
+      const filters = parsed.success ? parsed.data : {};
+      const facts = await storage.listCaseFacts(userId, caseId, filters);
+      res.json({ facts });
+    } catch (error) {
+      console.error("List facts error:", error);
+      res.status(500).json({ error: "Failed to list facts" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/facts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const parsed = insertCaseFactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid fact data", details: parsed.error.flatten() });
+      }
+      const fact = await storage.createCaseFact(userId, caseId, parsed.data);
+      res.status(201).json({ fact });
+    } catch (error) {
+      console.error("Create fact error:", error);
+      res.status(500).json({ error: "Failed to create fact" });
+    }
+  });
+
+  app.patch("/api/facts/:factId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { factId } = req.params;
+      const existing = await storage.getCaseFact(userId, factId);
+      if (!existing) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+      const parsed = updateCaseFactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid update data", details: parsed.error.flatten() });
+      }
+      const updated = await storage.updateCaseFact(userId, factId, parsed.data);
+      res.json({ fact: updated });
+    } catch (error) {
+      console.error("Update fact error:", error);
+      res.status(500).json({ error: "Failed to update fact" });
+    }
+  });
+
+  app.delete("/api/facts/:factId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { factId } = req.params;
+      const existing = await storage.getCaseFact(userId, factId);
+      if (!existing) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+      await storage.deleteCaseFact(userId, factId);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Delete fact error:", error);
+      res.status(500).json({ error: "Failed to delete fact" });
+    }
+  });
+
+  // Phase 2F: Auto-suggest facts from existing data
+  app.post("/api/cases/:caseId/facts/suggest", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const { refresh } = req.body || {};
+      
+      await storage.createActivityLog(userId, caseId, "facts_suggesting", "Suggesting facts from case data", {});
+
+      const suggestedFacts: Array<{
+        key: string;
+        value: string | null;
+        valueType: string;
+        sourceType: string;
+        sourceId: string | null;
+        citationIds: string[];
+        missingInfoFlag: boolean;
+      }> = [];
+
+      const claims = await storage.listCaseClaims(userId, caseId);
+      const acceptedClaims = claims.filter(c => c.status === "accepted");
+      
+      for (const claim of acceptedClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        const citationIds = citations.map(c => c.citationId);
+        
+        let factKey = `claim.${claim.claimType || "general"}`;
+        const existingWithKey = suggestedFacts.filter(f => f.key.startsWith(factKey));
+        if (existingWithKey.length > 0) {
+          factKey = `${factKey}.${existingWithKey.length + 1}`;
+        }
+        
+        suggestedFacts.push({
+          key: factKey,
+          value: claim.claimText.substring(0, 2000),
+          valueType: "text",
+          sourceType: "claim",
+          sourceId: claim.id,
+          citationIds,
+          missingInfoFlag: citationIds.length === 0,
+        });
+      }
+
+      const notes = await storage.listEvidenceNotesFull(userId, caseId);
+      for (const note of notes) {
+        if (!note.noteText) continue;
+        const factKey = `note.${note.id.substring(0, 8)}`;
+        suggestedFacts.push({
+          key: factKey,
+          value: note.noteText.substring(0, 2000),
+          valueType: "text",
+          sourceType: "note",
+          sourceId: note.id,
+          citationIds: [],
+          missingInfoFlag: true,
+        });
+      }
+
+      const events = await storage.listTimelineEvents(caseId, userId);
+      for (const event of events.slice(0, 20)) {
+        const factKey = `timeline.${event.eventDate || event.id.substring(0, 8)}`;
+        suggestedFacts.push({
+          key: factKey,
+          value: event.title || event.notes?.substring(0, 200) || null,
+          valueType: event.eventDate ? "date" : "text",
+          sourceType: "timeline",
+          sourceId: event.id,
+          citationIds: [],
+          missingInfoFlag: true,
+        });
+      }
+
+      let createdCount = 0;
+      for (const sf of suggestedFacts) {
+        const existingFacts = await storage.listCaseFacts(userId, caseId, { prefix: sf.key });
+        const alreadyExists = existingFacts.some(f => f.key === sf.key && f.value === sf.value);
+        if (alreadyExists && !refresh) continue;
+
+        const fact = await storage.createCaseFact(userId, caseId, {
+          key: sf.key,
+          value: sf.value,
+          valueType: sf.valueType as any,
+          status: "suggested",
+          sourceType: sf.sourceType as any,
+          sourceId: sf.sourceId,
+          missingInfoFlag: sf.missingInfoFlag,
+        });
+        
+        for (const citId of sf.citationIds) {
+          await storage.attachFactCitation(userId, caseId, fact.id, citId);
+        }
+        createdCount++;
+      }
+
+      await storage.createActivityLog(userId, caseId, "facts_suggested", `Suggested ${createdCount} facts`, { count: createdCount });
+
+      const allFacts = await storage.listCaseFacts(userId, caseId, { status: "suggested" });
+      res.json({ ok: true, suggestedCount: createdCount, facts: allFacts });
+    } catch (error) {
+      console.error("Suggest facts error:", error);
+      res.status(500).json({ error: "Failed to suggest facts" });
+    }
+  });
+
+  // Phase 2F: Fact Citations
+  app.get("/api/facts/:factId/citations", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { factId } = req.params;
+      const existing = await storage.getCaseFact(userId, factId);
+      if (!existing) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+      const citations = await storage.listFactCitations(userId, factId);
+      res.json({ citations });
+    } catch (error) {
+      console.error("List fact citations error:", error);
+      res.status(500).json({ error: "Failed to list citations" });
+    }
+  });
+
+  app.post("/api/facts/:factId/citations/:citationId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { factId, citationId } = req.params;
+      const fact = await storage.getCaseFact(userId, factId);
+      if (!fact) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+      const citation = await storage.attachFactCitation(userId, fact.caseId, factId, citationId);
+      res.status(201).json({ citation });
+    } catch (error) {
+      console.error("Attach citation error:", error);
+      res.status(500).json({ error: "Failed to attach citation" });
+    }
+  });
+
+  app.delete("/api/facts/:factId/citations/:citationId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { factId, citationId } = req.params;
+      const fact = await storage.getCaseFact(userId, factId);
+      if (!fact) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+      await storage.detachFactCitation(userId, factId, citationId);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Detach citation error:", error);
+      res.status(500).json({ error: "Failed to detach citation" });
     }
   });
 
