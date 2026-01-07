@@ -49,7 +49,11 @@ const getStaticMenuLinks = () => [
 const OPEN_DELAY = 80;   // small "hover intent" delay
 const CLOSE_DELAY = 350; // grace period before closing
 
-export default function AppNavbar() {
+interface AppNavbarProps {
+  className?: string;
+}
+
+export default function AppNavbar({ className }: AppNavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -225,7 +229,7 @@ export default function AppNavbar() {
   };
 
   return (
-    <div ref={shellRef} className="civilla-nav-shell">
+    <div ref={shellRef} className={`civilla-nav-shell ${className || ""}`}>
       <nav className="bg-[#314143] border-b border-[#1E2020] w-full relative" data-testid="navbar-app">
         <div className="h-9 flex items-center justify-center px-3 sm:px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-2 sm:gap-4 w-full max-w-container">

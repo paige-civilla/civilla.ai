@@ -1,0 +1,97 @@
+REPLIT TASK: Fix zoom/scroll layout issues across modules (forms + action buttons)
+
+Problem
+When users zoom in/out or have smaller screens:
+- content boxes don’t resize correctly
+- users cannot scroll down to the primary action button (Add/Save/etc.)
+
+Goal
+All module pages must:
+- allow full vertical scrolling
+- keep primary action buttons reachable
+- behave correctly inside AppLayout without overflow traps
+
+Do ALL steps A–E.
+
+A) FIX APP LAYOUT ROOT SCROLLING (no overflow traps)
+In client/src/components/layout/AppLayout.tsx (or wherever the main shell is):
+1) Ensure the main content area uses:
+   - min-h-[100dvh] (NOT only h-screen)
+   - no overflow-hidden on the app root container
+2) Use flex layout correctly:
+   - Outer: flex flex-col min-h-[100dvh]
+   - Navbar/Header: flex-shrink-0
+   - Main content: flex-1 min-h-0 overflow-y-auto
+
+Example target structure:
+<div className="min-h-[100dvh] flex flex-col">
+  <Navbar className="flex-shrink-0" />
+  <main className="flex-1 min-h-0 overflow-y-auto">
+    {children}
+  </main>
+</div>
+
+B) STANDARDIZE PAGE WRAPPERS (remove fixed height sections)
+Across module pages (Evidence, Timeline, Documents, Deadlines, Communications, Disclosures, Trial Prep, Parenting Plan, etc.):
+- Remove any h-screen / fixed height wrappers that prevent scrolling.
+- Prefer:
+  - w-full
+  - max-w-container
+  - px + py
+  - NO fixed height unless it’s a deliberate scroll region
+
+Search and fix:
+- h-screen
+- h-[100vh]
+- overflow-hidden
+- fixed bottom buttons without padding
+
+C) FIX FLEX SCROLL BUG: add min-h-0 where needed
+Anywhere you have:
+- flex containers with a scroll child
+Add min-h-0 to the flex parent of the scrollable region.
+
+Common offenders:
+- side panels
+- split panes
+- “cards” with internal ScrollArea
+- EvidenceViewer, Lexi panel, two-column layouts
+
+D) STICKY ACTION FOOTER PATTERN (so buttons are always reachable)
+For modules with long forms:
+- Add a sticky footer inside the scroll container, so buttons stay visible.
+
+Pattern:
+<div className="flex flex-col min-h-0">
+  <div className="flex-1 min-h-0 overflow-y-auto pb-24">
+    ...form/content...
+  </div>
+
+  <div className="sticky bottom-0 bg-white/90 backdrop-blur border-t p-4">
+    <div className="flex gap-2 justify-end">
+      <Button variant="outline">Cancel</Button>
+      <Button>Save</Button>
+    </div>
+  </div>
+</div>
+
+Important:
+- add pb-24 (or equivalent) so content doesn’t hide behind sticky footer
+- in dark mode, use bg-neutral-900/90 (or theme token)
+
+E) VERIFY WITH MANUAL TEST MATRIX
+After changes, test:
+1) Browser zoom 80%, 100%, 125%, 150%
+2) Viewport heights: 700px and 900px
+3) iPhone-ish width: 375px
+Confirm for each major module:
+- you can scroll to the bottom
+- primary action button is reachable (sticky footer visible)
+- nothing is clipped
+- no weird double-scroll unless intended
+
+REPORT BACK:
+- files changed
+- where you adjusted AppLayout shell
+- which pages had overflow traps removed
+- which pages got sticky footer treatment

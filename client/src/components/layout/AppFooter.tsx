@@ -1,8 +1,12 @@
 import { Link } from "wouter";
 
-export default function AppFooter() {
+interface AppFooterProps {
+  className?: string;
+}
+
+export default function AppFooter({ className }: AppFooterProps) {
   return (
-    <footer className="bg-[#314143] border-t border-[#1E2020] py-4" data-testid="footer-app">
+    <footer className={`bg-[#314143] border-t border-[#1E2020] py-4 ${className || ""}`} data-testid="footer-app">
       <div className="px-5 md:px-16 flex flex-col md:flex-row items-center justify-between gap-3 max-w-container mx-auto">
         <p className="font-sans text-xs text-[#F2F2F2]/70">
           © {new Date().getFullYear()} <span className="italic">civilla</span>.ai — All rights reserved

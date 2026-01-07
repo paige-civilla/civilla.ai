@@ -53,14 +53,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div 
-      className={`app-shell flex flex-col h-[100dvh] ${theme === "dark" ? "dark" : ""}`} 
+      className={`app-shell flex flex-col min-h-[100dvh] ${theme === "dark" ? "dark" : ""}`} 
       data-testid="app-layout"
     >
-      <AppNavbar />
+      <AppNavbar className="flex-shrink-0" />
       <main className="flex-1 min-h-0 overflow-y-auto w-full">
         {children}
       </main>
-      <AppFooter />
+      <AppFooter className="flex-shrink-0" />
       <LexiPanel />
     </div>
   );
