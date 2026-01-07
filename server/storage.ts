@@ -164,6 +164,13 @@ import {
   type LexiFeedbackEvent,
   type CreateLexiFeedbackEvent,
   type ActivityLog,
+  caseFacts,
+  factCitations,
+  type CaseFact,
+  type InsertCaseFact,
+  type UpdateCaseFact,
+  type ListCaseFactsFilters,
+  type FactCitation,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -436,6 +443,18 @@ export interface IStorage {
 
   createLexiFeedbackEvent(userId: string, caseId: string | null, eventType: string, payload: Record<string, unknown>): Promise<LexiFeedbackEvent>;
   listLexiFeedbackEvents(userId: string, caseId: string | null, limit?: number): Promise<LexiFeedbackEvent[]>;
+
+  // Phase 2F: Case Facts
+  createCaseFact(userId: string, caseId: string, data: InsertCaseFact): Promise<CaseFact>;
+  listCaseFacts(userId: string, caseId: string, filters?: ListCaseFactsFilters): Promise<CaseFact[]>;
+  getCaseFact(userId: string, factId: string): Promise<CaseFact | undefined>;
+  updateCaseFact(userId: string, factId: string, patch: UpdateCaseFact): Promise<CaseFact | undefined>;
+  deleteCaseFact(userId: string, factId: string): Promise<boolean>;
+  
+  // Phase 2F: Fact Citations
+  attachFactCitation(userId: string, caseId: string, factId: string, citationId: string): Promise<FactCitation>;
+  detachFactCitation(userId: string, factId: string, citationId: string): Promise<boolean>;
+  listFactCitations(userId: string, factId: string): Promise<FactCitation[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3314,6 +3333,89 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(activityLogs.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  // Phase 2F: Case Facts
+  async createCaseFact(userId: string, caseId: string, data: InsertCaseFact): Promise<CaseFact> {
+    const [fact] = await db
+      .insert(caseFacts)
+      .values({ userId, caseId, ...data })
+      .returning();
+    return fact;
+  }
+
+  async listCaseFacts(userId: string, caseId: string, filters?: ListCaseFactsFilters): Promise<CaseFact[]> {
+    const conditions = [eq(caseFacts.userId, userId), eq(caseFacts.caseId, caseId)];
+    if (filters?.status) {
+      conditions.push(eq(caseFacts.status, filters.status));
+    }
+    let query = db.select().from(caseFacts).where(and(...conditions));
+    const results = await query.orderBy(caseFacts.key);
+    if (filters?.prefix) {
+      return results.filter(f => f.key.startsWith(filters.prefix!));
+    }
+    return results;
+  }
+
+  async getCaseFact(userId: string, factId: string): Promise<CaseFact | undefined> {
+    const [fact] = await db
+      .select()
+      .from(caseFacts)
+      .where(and(eq(caseFacts.userId, userId), eq(caseFacts.id, factId)));
+    return fact;
+  }
+
+  async updateCaseFact(userId: string, factId: string, patch: UpdateCaseFact): Promise<CaseFact | undefined> {
+    const [updated] = await db
+      .update(caseFacts)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(and(eq(caseFacts.userId, userId), eq(caseFacts.id, factId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteCaseFact(userId: string, factId: string): Promise<boolean> {
+    const result = await db
+      .delete(caseFacts)
+      .where(and(eq(caseFacts.userId, userId), eq(caseFacts.id, factId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Phase 2F: Fact Citations
+  async attachFactCitation(userId: string, caseId: string, factId: string, citationId: string): Promise<FactCitation> {
+    const [citation] = await db
+      .insert(factCitations)
+      .values({ userId, caseId, factId, citationId })
+      .onConflictDoNothing()
+      .returning();
+    if (!citation) {
+      const [existing] = await db
+        .select()
+        .from(factCitations)
+        .where(and(eq(factCitations.factId, factId), eq(factCitations.citationId, citationId)));
+      return existing;
+    }
+    return citation;
+  }
+
+  async detachFactCitation(userId: string, factId: string, citationId: string): Promise<boolean> {
+    const result = await db
+      .delete(factCitations)
+      .where(and(
+        eq(factCitations.userId, userId),
+        eq(factCitations.factId, factId),
+        eq(factCitations.citationId, citationId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async listFactCitations(userId: string, factId: string): Promise<FactCitation[]> {
+    return db
+      .select()
+      .from(factCitations)
+      .where(and(eq(factCitations.userId, userId), eq(factCitations.factId, factId)));
   }
 }
 
