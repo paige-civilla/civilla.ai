@@ -1,0 +1,54 @@
+REPLIT TASK: Fix “can’t scroll to the button” in module forms (bottom padding + nested scroll traps)
+
+Context
+AppLayout is now min-h-[100dvh], good.
+But testers still can’t scroll to reach the primary action button in some modules when zoomed or on smaller screens.
+
+Goal
+Ensure every module page/form has:
+- no nested scroll traps
+- enough bottom padding so the last button is always reachable
+- only ONE vertical scroll container per page (AppLayout main) unless deliberate
+
+Do ALL steps A–F.
+
+A) Add a global “safe bottom” utility class
+In client/src/index.css add:
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+}
+(This ensures the bottom of pages clears sticky UI, browser bars, and zoom quirks.)
+
+B) Apply .safe-bottom to every module page main wrapper
+In each module page (Timeline, Evidence, Documents, Communications, Deadlines, Exhibits, Trial Prep, Parenting Plan, Disclosures, Start Here, etc):
+Find the outermost page content wrapper inside <AppLayout>.
+Add safe-bottom to the wrapper that contains the full page content.
+Example:
+<section className="w-full ... safe-bottom">
+
+C) Remove accidental nested overflow scrolling on pages
+Search for these patterns in client/src/pages:
+- overflow-y-auto
+- overflow-auto
+- h-screen / h-[100vh]
+- max-h-[...]
+If a page already scrolls via AppLayout’s <main overflow-y-auto>,
+REMOVE page-level overflow-y-auto unless it’s a deliberate sub-pane (like EvidenceViewer modal).
+Goal: the page should not have its own scroll unless it’s inside a modal/split-pane.
+
+D) Ensure “Add/Save” buttons are not inside a clipped container
+On pages where the primary action is at the bottom (Create Case, New Timeline Event, Add Evidence, Create Document, Add Deadline, etc):
+- ensure the button container is inside the same main flow container with safe-bottom
+- if it’s inside a Card/ScrollArea, move it OUTSIDE that ScrollArea
+
+E) For modals/sheets: add bottom padding inside ScrollArea content
+In EvidenceViewer modal + any Sheet/Dialog that contains a long form:
+- add className="pb-24" to the scroll content area
+- or apply safe-bottom inside the modal body if it’s a full-height sheet
+
+F) Report back with exact locations
+After implementing, report:
+- files changed
+- which pages had nested overflow removed
+- which forms/buttons were moved out of ScrollArea / clipped containers
+- confirm “zoom 150% + small height” can still reach action buttons
