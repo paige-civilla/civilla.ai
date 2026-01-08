@@ -6841,6 +6841,58 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/cases/:caseId/ai/status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const evidence = await storage.listEvidence(userId, caseId);
+      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
+      
+      const analysisStatusByEvidence: Record<string, { status: string; error?: string }> = {};
+      for (const analysis of analyses) {
+        analysisStatusByEvidence[analysis.evidenceId] = {
+          status: analysis.status,
+          error: analysis.errorMessage || undefined,
+        };
+      }
+      
+      let running = 0;
+      let pending = 0;
+      let completed = 0;
+      let failed = 0;
+      
+      for (const e of evidence) {
+        const analysis = analysisStatusByEvidence[e.id];
+        if (!analysis) {
+          pending += 1;
+        } else if (analysis.status === "running" || analysis.status === "pending") {
+          running += 1;
+        } else if (analysis.status === "completed") {
+          completed += 1;
+        } else if (analysis.status === "failed") {
+          failed += 1;
+        }
+      }
+      
+      const overallStatus = running > 0 ? "running" : pending > 0 ? "pending" : failed > 0 && completed === 0 ? "failed" : "idle";
+      
+      res.json({
+        overallStatus,
+        counts: { running, pending, completed, failed, total: evidence.length },
+        evidenceStatus: analysisStatusByEvidence,
+      });
+    } catch (error) {
+      console.error("AI status error:", error);
+      res.status(500).json({ error: "Failed to get AI status" });
+    }
+  });
+
   app.patch("/api/evidence-ai-analyses/:analysisId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
@@ -8324,6 +8376,76 @@ Top 3 selection criteria:
     } catch (error) {
       console.error("Template fields error:", error);
       res.status(500).json({ error: "Failed to get template fields" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/documents/templates/:templateKey/preflight", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, templateKey } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const acceptedFacts = await storage.listAcceptedCaseFacts(userId, caseId);
+      const profile = await storage.getUserProfile(userId);
+      
+      const factMap: Record<string, string> = {};
+      for (const fact of acceptedFacts) {
+        factMap[fact.fieldKey] = fact.value;
+      }
+      
+      const requiredFields: Record<string, string[]> = {
+        declaration: ["court.county", "court.state", "case.number", "filer.name", "filer.role", "declaration.statement"],
+        affidavit: ["court.county", "court.state", "case.number", "filer.name", "filer.role", "affidavit.sworn_statement"],
+        motion: ["court.county", "court.state", "case.number", "filer.name", "motion.relief_requested"],
+        response: ["court.county", "court.state", "case.number", "filer.name", "response.to_motion"],
+        brief: ["court.county", "court.state", "case.number", "filer.name"],
+      };
+      
+      const templateRequired = requiredFields[templateKey] || requiredFields.declaration;
+      const filledFields: string[] = [];
+      const missingFields: string[] = [];
+      
+      for (const field of templateRequired) {
+        const fromFact = factMap[field];
+        let fromProfile = "";
+        
+        if (field === "court.county") fromProfile = caseRecord.county || "";
+        if (field === "court.state") fromProfile = caseRecord.state || "";
+        if (field === "case.number") fromProfile = caseRecord.caseNumber || "";
+        if (field === "filer.name") fromProfile = profile?.fullName || "";
+        if (field === "filer.role") fromProfile = profile?.partyRole || "";
+        
+        if (fromFact || fromProfile) {
+          filledFields.push(field);
+        } else {
+          missingFields.push(field);
+        }
+      }
+      
+      const citationBackedFacts = acceptedFacts.filter(f => f.sourceType === "claim");
+      const hasAnyCitations = citationBackedFacts.length > 0;
+      
+      const allRequiredFilled = missingFields.length === 0;
+      const isReady = allRequiredFilled && hasAnyCitations;
+      
+      res.json({
+        templateKey,
+        isReady,
+        filledFieldsCount: filledFields.length,
+        requiredFieldsCount: templateRequired.length,
+        missingFields,
+        filledFields,
+        citationBackedCount: citationBackedFacts.length,
+        guardrailsPassed: hasAnyCitations,
+        readinessScore: Math.round((filledFields.length / templateRequired.length) * 100),
+      });
+    } catch (error) {
+      console.error("Template preflight error:", error);
+      res.status(500).json({ error: "Failed to run preflight check" });
     }
   });
 
