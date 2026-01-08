@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import AppLayout from "@/components/layout/AppLayout";
@@ -37,6 +38,8 @@ interface LexiUserPrefs {
   verbosity: number | null;
   citationStrictness: string | null;
   defaultMode: string | null;
+  streamingEnabled: boolean | null;
+  fasterMode: boolean | null;
 }
 
 export default function AppAccountSettings() {
@@ -70,6 +73,8 @@ export default function AppAccountSettings() {
     verbosity: 3,
     citationStrictness: "default",
     defaultMode: "research",
+    streamingEnabled: true,
+    fasterMode: false,
   });
 
   useEffect(() => {
@@ -94,6 +99,8 @@ export default function AppAccountSettings() {
         verbosity: lexiPrefsData.prefs.verbosity ?? 3,
         citationStrictness: lexiPrefsData.prefs.citationStrictness || "default",
         defaultMode: lexiPrefsData.prefs.defaultMode || "research",
+        streamingEnabled: lexiPrefsData.prefs.streamingEnabled ?? true,
+        fasterMode: lexiPrefsData.prefs.fasterMode ?? false,
       });
     }
   }, [lexiPrefsData]);
@@ -495,6 +502,34 @@ export default function AppAccountSettings() {
                       <SelectItem value="analysis">Analysis (evidence review)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-t border-neutral-light">
+                  <div>
+                    <Label className="text-neutral-darkest">Streaming Responses</Label>
+                    <p className="font-sans text-sm text-neutral-darkest/60">
+                      Show responses word-by-word as they are generated
+                    </p>
+                  </div>
+                  <Switch
+                    checked={lexiPrefs.streamingEnabled}
+                    onCheckedChange={(checked) => setLexiPrefs({ ...lexiPrefs, streamingEnabled: checked })}
+                    data-testid="switch-lexi-streaming"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-t border-neutral-light">
+                  <div>
+                    <Label className="text-neutral-darkest">Faster Mode</Label>
+                    <p className="font-sans text-sm text-neutral-darkest/60">
+                      Prioritize speed with shorter, more direct answers
+                    </p>
+                  </div>
+                  <Switch
+                    checked={lexiPrefs.fasterMode}
+                    onCheckedChange={(checked) => setLexiPrefs({ ...lexiPrefs, fasterMode: checked })}
+                    data-testid="switch-lexi-faster"
+                  />
                 </div>
 
                 <div className="flex justify-end pt-2">
