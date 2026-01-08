@@ -1,0 +1,103 @@
+REPLIT TASK: If mobile scroll is still broken, fix the two most common root causes:
+(1) A parent wrapper is trapping scroll with overflow-hidden / fixed height
+(2) A full-screen overlay/backdrop is intercepting touches
+
+Do ALL steps below.
+
+A) Find and remove scroll-trapping wrappers (AppLayout + any page shell)
+
+Search the repo for these patterns and FIX them:
+- "overflow-hidden"
+- "h-screen"
+- "h-[100vh]"
+- "h-[100dvh]" (when combined with overflow-hidden)
+- "position: fixed" on the main app wrapper
+
+Target files likely:
+- client/src/components/layout/AppLayout.tsx
+- client/src/components/layout/AppShell.tsx (if exists)
+- client/src/App.tsx (root wrappers)
+- client/src/index.css (global body/html rules)
+
+1) AppLayout root must NOT block scrolling.
+Ensure the main structure is:
+
+- Outer: min-h-[100dvh] flex flex-col (NO overflow-hidden)
+- Navbar: flex-shrink-0
+- Main: flex-1 min-h-0 overflow-y-auto
+- Footer: flex-shrink-0
+
+Example (adjust to your component names):
+<div className="min-h-[100dvh] flex flex-col">
+  <AppNavbar className="flex-shrink-0" />
+  <main className="flex-1 min-h-0 overflow-y-auto">
+    {children}
+  </main>
+  <AppFooter className="flex-shrink-0" />
+</div>
+
+2) Remove any global CSS that blocks scroll:
+In index.css (or global css), REMOVE/avoid:
+html, body { height: 100%; overflow: hidden; }
+body { position: fixed; }
+
+If you need a safe baseline, set:
+html, body { height: 100%; }
+body { overflow-x: hidden; overflow-y: auto; }
+
+B) Kill/neutralize touch-blocking overlays/backdrops
+
+Search for any dropdown/backdrop overlay code in:
+- client/src/components/layout/AppNavbar.tsx
+- client/src/components/layout/Navbar.tsx (marketing)
+- any component named: Overlay, Backdrop, Sheet, Dialog, Drawer, Popover
+
+If you see something like:
+<div className="fixed inset-0 ..." />
+or a backdrop behind the menu:
+
+Option 1 (preferred for “background should scroll”):
+- REMOVE the backdrop entirely.
+
+Option 2 (if you must keep it visually, but don’t want it to block scroll):
+- Make it NOT intercept touches:
+className should include: "pointer-events-none"
+- And ensure it’s below the menu panel (lower z-index).
+
+Example:
+<div className="fixed inset-0 bg-black/20 pointer-events-none z-40" />
+<div className="absolute ... z-50 mobile-dropdown-panel">...</div>
+
+Also remove any touch handlers on backdrop such as:
+onTouchMove / onWheel / preventDefault
+They can break page scrolling on iOS.
+
+C) Fix iOS nested scroll “dead zone” on the menu panel
+
+In client/src/index.css ensure the dropdown panel has:
+.mobile-dropdown-panel {
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+And ensure its immediate flex parents include:
+min-h-0
+
+D) Quick sanity checks after changes
+
+Mobile tests:
+1) Open dropdown:
+   - dropdown scrolls
+   - page behind scrolls too (independent)
+2) Close dropdown:
+   - page scroll still works
+3) Try iOS Safari:
+   - no “stuck” scroll
+   - no “dead” area where drag doesn’t scroll
+
+E) Report back (in Replit summary)
+- Where overflow-hidden / h-screen was removed or changed
+- Whether a backdrop existed and was removed or made pointer-events-none
+- Confirm AppLayout uses min-h + overflow-y-auto on main content
