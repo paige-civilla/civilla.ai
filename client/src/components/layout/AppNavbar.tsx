@@ -172,13 +172,6 @@ export default function AppNavbar({ className }: AppNavbarProps) {
       });
     });
     
-    links.push({ 
-      label: "Case Settings", 
-      href: hasCase ? `/app/case-settings/${caseId}` : "#", 
-      icon: Settings,
-      disabled: !hasCase,
-    });
-    
     return links;
   })();
 
@@ -188,6 +181,35 @@ export default function AppNavbar({ className }: AppNavbarProps) {
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
+      }
+    }
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -350,13 +372,33 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                     <button
                       type="button"
                       onClick={() => {
+                        if (!selectedCaseId) return;
+                        setIsMenuOpen(false);
+                        setLocation(`/app/case-settings/${selectedCaseId}`);
+                      }}
+                      disabled={!selectedCaseId}
+                      title={!selectedCaseId ? "Create a case first" : undefined}
+                      className={[
+                        "flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm transition-colors border border-transparent",
+                        !selectedCaseId 
+                          ? "text-[#243032]/40 cursor-not-allowed" 
+                          : "text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white"
+                      ].join(" ")}
+                      data-testid="menu-link-case-settings"
+                    >
+                      <Settings className={`h-5 w-5 flex-shrink-0 ${!selectedCaseId ? "opacity-40" : ""}`} />
+                      <span>Case Settings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
                         setIsMenuOpen(false);
                         setLocation("/app/account");
                       }}
                       className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors border border-transparent"
                       data-testid="menu-link-account-settings"
                     >
-                      <Settings className="h-5 w-5 flex-shrink-0" />
+                      <User className="h-5 w-5 flex-shrink-0" />
                       <span>Account Settings</span>
                     </button>
                     <button
