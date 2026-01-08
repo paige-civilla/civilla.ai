@@ -760,18 +760,14 @@ blockquote, dd, dt, figcaption {
 }
 
 /* =========================================================
-   Mobile Menu Scroll Utilities
-   - Provides smooth scrolling inside dropdown menus
-   - Prevents scroll chaining into the page (iOS Safari fix)
+   Mobile Dropdown Panel (iOS-safe, independent scroll)
+   - Panel scrolls independently
+   - Page behind can also scroll
+   - No scroll lock on body
    ========================================================= */
-.mobile-menu-panel {
+.mobile-dropdown-panel {
   max-height: calc(100dvh - 72px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-}
-
-.body-scroll-lock {
-  overflow: hidden;
-  touch-action: none;
 }

@@ -1,0 +1,94 @@
+REPLIT TASK: Mobile navbar dropdown + page scroll independently (fix broken menu scroll)
+
+Problem
+Mobile:
+1) When the navbar dropdown opens, you can scroll the menu but NOT the page behind it (page is scroll-locked).
+2) Sometimes the dropdown itself cannot scroll anymore.
+We want BOTH scroll areas to work independently:
+- dropdown list scrolls
+- page behind can still scroll
+No scroll lock. No iOS “stuck scroll”.
+
+Goal (Option B)
+- Remove any body scroll locking.
+- Make dropdown panel itself scrollable with a max height.
+- Prevent “scroll chaining” from freezing scroll.
+- Ensure parent containers don’t block scrolling.
+
+A) REMOVE body scroll lock everywhere
+Search repo for ANY of these and remove/disable them:
+- document.body.style.overflow = "hidden"
+- document.documentElement.style.overflow = "hidden"
+- document.body.classList.add("overflow-hidden")
+- body-scroll-lock classes
+- touchmove preventDefault listeners
+
+Files likely:
+- client/src/components/layout/AppNavbar.tsx
+- client/src/components/layout/Navbar.tsx (marketing site navbar) or similar
+
+If there’s a useEffect that locks scroll when menu open, DELETE it.
+
+B) Add global CSS for a scrollable dropdown panel (iOS-safe)
+In client/src/index.css add:
+
+.mobile-dropdown-panel {
+  max-height: calc(100dvh - 72px); /* adjust if navbar height differs */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; /* prevents scroll chaining glitches */
+}
+
+C) Ensure the dropdown panel uses that class + correct positioning
+In AppNavbar.tsx and the marketing Navbar component:
+- Find the element that wraps the dropdown menu items (the panel).
+- Add className including: "mobile-dropdown-panel"
+- Ensure it is positioned without trapping the whole page:
+  Use "absolute" under the navbar (preferred) OR "fixed" but NOT with a backdrop that captures all touches.
+
+Example:
+<div className="absolute left-0 right-0 top-full z-50 bg-white border-t mobile-dropdown-panel">
+  ...menu items...
+</div>
+
+IMPORTANT:
+- If you have an overlay backdrop that covers the whole screen, REMOVE it or make it pointer-events-none,
+  because it will block scrolling the page behind.
+
+D) Fix “menu can’t scroll anymore” (common flex bug)
+If the dropdown panel is inside a flex parent, add min-h-0 to the parent.
+
+Example structure:
+<div className="relative">
+  <button ... />
+  {open && (
+    <div className="absolute left-0 right-0 top-full z-50 bg-white border-t">
+      <div className="mobile-dropdown-panel min-h-0">
+        ...links...
+      </div>
+    </div>
+  )}
+</div>
+
+Also search for any parent wrapper with:
+- overflow-hidden
+- h-screen / h-[100vh] without allowing overflow
+Remove those or convert to min-h.
+
+E) Do NOT stopPropagation on touchmove
+Remove any:
+onTouchMove={(e) => e.stopPropagation()}
+This can break iOS scrolling depending on the structure.
+
+F) Verify behavior
+On iPhone Safari + Android Chrome:
+- Open menu: menu list scrolls (if longer than screen)
+- Background page ALSO scrolls behind it (independent)
+- Menu remains clickable and doesn’t “dead-zone”
+- Close menu: everything behaves normally
+- No jitter / freezing
+
+G) Report back
+- Which files had scroll locking and were cleaned up
+- Confirm dropdown panel has max-height + overflow-y-auto via .mobile-dropdown-panel
+- Confirm no overlay is blocking page scroll behind

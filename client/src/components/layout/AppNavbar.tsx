@@ -182,35 +182,6 @@ export default function AppNavbar({ className }: AppNavbarProps) {
     setIsMenuOpen(false);
   }, [location]);
 
-  // Lock body scroll when mobile menu is open (prevents scroll chaining on iOS Safari)
-  useEffect(() => {
-    if (isMenuOpen) {
-      const scrollY = window.scrollY;
-      document.body.classList.add('body-scroll-lock');
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-    } else {
-      const scrollY = document.body.style.top;
-      document.body.classList.remove('body-scroll-lock');
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
-      }
-    }
-    return () => {
-      document.body.classList.remove('body-scroll-lock');
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-    };
-  }, [isMenuOpen]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (
@@ -310,22 +281,16 @@ export default function AppNavbar({ className }: AppNavbarProps) {
 
         {isMenuOpen && (
           <>
-            {/* Mobile overlay backdrop */}
-            <div 
-              className="fixed inset-0 bg-black/20 z-[9998] md:hidden"
-              onClick={() => setIsMenuOpen(false)}
-              aria-hidden="true"
-            />
             <div 
               ref={menuRef}
-              className="fixed md:absolute left-0 right-0 top-[var(--civilla-nav-h,36px)] md:top-full md:mt-2 z-[9999] mobile-menu-panel md:max-h-[75vh]"
+              className="absolute left-0 right-0 top-full mt-2 z-[9999]"
               data-testid="dropdown-menu-app"
               onMouseEnter={scheduleOpen}
               onMouseLeave={scheduleClose}
             >
               <div className="mx-auto max-w-6xl px-3 py-2 md:py-0">
                 <div
-                  className="bg-[hsl(var(--module-tile))] opacity-100 z-[60] border border-[hsl(var(--module-tile-border))] rounded-xl shadow-lg p-4"
+                  className="bg-[hsl(var(--module-tile))] opacity-100 z-[60] border border-[hsl(var(--module-tile-border))] rounded-xl shadow-lg p-4 mobile-dropdown-panel min-h-0"
                   role="menu"
                   aria-label="App menu"
                 >
