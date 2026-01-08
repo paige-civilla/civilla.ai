@@ -1170,10 +1170,15 @@ export async function initDbTables(): Promise<void> {
       verbosity INTEGER NOT NULL DEFAULT 3,
       citation_strictness TEXT NOT NULL DEFAULT 'when_available',
       default_mode TEXT NOT NULL DEFAULT 'organize',
+      streaming_enabled BOOLEAN NOT NULL DEFAULT true,
+      faster_mode BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, []);
+  `, [
+    `ALTER TABLE lexi_user_prefs ADD COLUMN IF NOT EXISTS streaming_enabled BOOLEAN NOT NULL DEFAULT true`,
+    `ALTER TABLE lexi_user_prefs ADD COLUMN IF NOT EXISTS faster_mode BOOLEAN NOT NULL DEFAULT false`
+  ]);
 
   await initTable("lexi_case_memory", `
     CREATE TABLE IF NOT EXISTS lexi_case_memory (

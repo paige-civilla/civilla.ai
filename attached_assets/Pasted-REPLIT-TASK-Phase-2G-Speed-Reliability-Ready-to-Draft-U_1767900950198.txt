@@ -1,0 +1,144 @@
+REPLIT TASK: Phase 2G — Speed + Reliability + “Ready to Draft” UX (Streaming + Background Jobs)
+
+Goal
+Make the AI layer feel instant + dependable:
+- Lexi responses stream (no long “thinking then nothing”)
+- Extraction/claims/facts run in background with visible progress
+- Document Creator has a single “Ready to Draft” checklist per template
+
+Deliverables
+A) Streaming Lexi (Server + Client)
+B) Background job status unified across AI subsystems
+C) “Ready to Draft” panel (per template) with blocking rules + quick fixes
+D) Better error surfaces (invalid key, rate limit, missing OCR, etc.)
+E) Performance knobs (model choice + timeouts) WITHOUT breaking UPL
+
+A) STREAMING LEXI (SSE)
+1) Server: Add a streaming endpoint
+Create: POST /api/lexi/chat/stream  (requireAuth)
+- Input: { threadId, message, mode, moduleKey, caseId? }
+- Output: Server-Sent Events (text/event-stream)
+  Events:
+   - event: token     data: { delta: "..." }
+   - event: sources   data: { sources: [{title,url}] }
+   - event: done      data: { ok: true }
+   - event: error     data: { code, message }
+
+Implementation rules:
+- Use OpenAI streaming in server (same model as /api/lexi/chat)
+- As tokens arrive, forward to SSE as `token`
+- On completion, persist the full assistant message to DB exactly once
+
+2) Client: LexiPanel streaming UI
+Update client/src/components/lexi/LexiPanel.tsx
+- Use EventSource-like fetch streaming (ReadableStream)
+- Render assistant message live as it streams
+- If stream errors, show friendly error and keep the user’s message in thread
+
+Important:
+- Keep existing /api/lexi/chat as fallback (non-stream)
+- Add “Streaming: On/Off” toggle in Lexi Preferences (default On)
+
+B) UNIFIED BACKGROUND AI STATUS (ONE PLACE TO LOOK)
+Create backend endpoint:
+GET /api/cases/:caseId/ai/status  (requireAuth)
+Return:
+{
+  ok: true,
+  extraction: { queued, processing, complete, failed },
+  claims: { pending, lastRunAt, lastStatus },
+  facts: { pending, lastRunAt, lastStatus },
+  analyses: { queued, processing, complete, failed },
+  lastActivities: [{ type, status, createdAt }]
+}
+
+Wire it to existing tables:
+- evidence_extractions
+- evidence_ai_analyses
+- activity_logs
+- background-ai-status (if already present, consolidate into this route and deprecate the old)
+
+C) “READY TO DRAFT” CHECKLIST (PER TEMPLATE)
+1) Backend: preflight per template
+POST /api/cases/:caseId/documents/templates/:templateKey/preflight
+Return:
+{
+  ok: true,
+  readinessPercent,
+  blockers: [
+    { code, message, fixAction }
+  ],
+  warnings: [
+    { code, message }
+  ],
+  stats: {
+    acceptedClaims,
+    uncitedClaims,
+    acceptedFacts,
+    uncitedFacts,
+    extractionCoverage
+  },
+  quickFixes: {
+    canAutoAttachCitations: boolean,
+    canSuggestFacts: boolean,
+    canRunAnalyses: boolean
+  }
+}
+
+Blockers should include:
+- NO_ACCEPTED_CLAIMS (for claims compile)
+- NO_ACCEPTED_FACTS (for template autofill)
+- UNCITED_ACCEPTED_CLAIMS (block if strict)
+- MISSING_REQUIRED_PLACEHOLDERS (template)
+- EXTRACTION_TOO_LOW (<X%)
+
+2) Frontend: single panel in Document Creator
+Add a “Ready to Draft” card at top:
+- Progress bar
+- Blockers (red) with buttons:
+   - “Run extraction” (if needed)
+   - “Run AI analysis”
+   - “Suggest claims”
+   - “Suggest facts”
+   - “Auto-attach sources”
+- Warnings (yellow) non-blocking
+- “Generate” stays disabled until blockers cleared
+
+D) ERROR HANDLING THAT USERS CAN UNDERSTAND
+Standardize AI errors everywhere (Lexi, extraction OCR, analysis, claims, facts):
+- OPENAI_KEY_MISSING
+- OPENAI_KEY_INVALID
+- OPENAI_RATE_LIMIT
+- OCR_NOT_CONFIGURED
+- VISION_KEY_INVALID
+- DB_MIGRATION_MISSING_COLUMN (should be eliminated but keep message)
+- UNKNOWN
+
+Client messages should be actionable:
+- “Lexi isn’t configured yet. Add OPENAI_API_KEY in Secrets.”
+- “OCR isn’t configured. Add GOOGLE_CLOUD_VISION_API_KEY.”
+- “Rate limit hit. Try again in a minute.”
+
+E) PERFORMANCE KNOBS (SAFE DEFAULTS)
+1) Lexi:
+- Default model: keep current stable model (whatever is wired)
+- Add optional “Faster mode” in Lexi prefs:
+   - shorter max tokens
+   - lower reasoning depth (if supported)
+   - tighter system prompt
+- Add server timeout guard (e.g., 30s) with retry suggestion
+
+2) Batch jobs:
+- Global concurrency:
+   - extraction: 2
+   - analysis: 2
+   - claims/facts: 1–2
+- Add jittered retries for 429 (e.g., 15–45s)
+
+F) REPORT BACK
+After implementing:
+- Files changed
+- Confirm SSE works end-to-end
+- Confirm /ai/status returns correct counts
+- Confirm template preflight blocks generate correctly
+- Confirm user-facing error messages appear (no raw stack traces)

@@ -1835,6 +1835,8 @@ export const lexiUserPrefs = pgTable("lexi_user_prefs", {
   verbosity: integer("verbosity").notNull().default(3),
   citationStrictness: text("citation_strictness").notNull().default("when_available"),
   defaultMode: text("default_mode").notNull().default("organize"),
+  streamingEnabled: boolean("streaming_enabled").notNull().default(true),
+  fasterMode: boolean("faster_mode").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -1844,6 +1846,8 @@ export const upsertLexiUserPrefsSchema = z.object({
   verbosity: z.number().int().min(1).max(5).optional(),
   citationStrictness: z.enum(["always", "when_available"]).optional(),
   defaultMode: z.enum(["organize", "research"]).optional(),
+  streamingEnabled: z.boolean().optional(),
+  fasterMode: z.boolean().optional(),
 });
 
 export type UpsertLexiUserPrefs = z.infer<typeof upsertLexiUserPrefsSchema>;

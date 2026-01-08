@@ -5151,6 +5151,224 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.post("/api/lexi/chat/stream", requireAuth, async (req, res) => {
+    const userId = req.session.userId!;
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const sendSSE = (event: string, data: object) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      const parsed = lexiChatRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        sendSSE("error", { code: "INVALID_REQUEST", message: "Invalid request format" });
+        return res.end();
+      }
+
+      const { threadId, message, stateOverride, stylePreset, fastMode } = parsed.data;
+      const effectiveCaseId = parsed.data.caseId || null;
+
+      let caseRecord = null;
+      if (effectiveCaseId) {
+        caseRecord = await storage.getCase(effectiveCaseId, userId);
+        if (!caseRecord) {
+          sendSSE("error", { code: "CASE_NOT_FOUND", message: "Case not found" });
+          return res.end();
+        }
+      }
+
+      const thread = await storage.getLexiThread(userId, threadId);
+      if (!thread || thread.caseId !== effectiveCaseId) {
+        sendSSE("error", { code: "THREAD_NOT_FOUND", message: "Thread not found" });
+        return res.end();
+      }
+
+      const intent: LexiIntent = classifyIntent(message);
+      const disclaimerShown = thread.disclaimerShown;
+
+      if (isDisallowed(message)) {
+        await storage.createLexiMessage(
+          userId, effectiveCaseId, threadId, "user", message, 
+          { disallowed: true }, null, { intent, refused: true }
+        );
+        
+        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, DISALLOWED_RESPONSE);
+        if (wasAdded) await storage.markLexiThreadDisclaimerShown(userId, threadId);
+        
+        for (const chunk of responseContent.split(" ")) {
+          sendSSE("token", { delta: chunk + " " });
+        }
+        
+        await storage.createLexiMessage(
+          userId, effectiveCaseId, threadId, "assistant", responseContent, 
+          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+        );
+        
+        sendSSE("done", { ok: true });
+        return res.end();
+      }
+
+      const uplTemplate = detectUPLRequest(message);
+      if (uplTemplate) {
+        await storage.createLexiMessage(
+          userId, effectiveCaseId, threadId, "user", message, 
+          { upl_detected: true }, null, { intent, refused: true }
+        );
+        
+        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, SAFETY_TEMPLATES[uplTemplate]);
+        if (wasAdded) await storage.markLexiThreadDisclaimerShown(userId, threadId);
+        
+        for (const chunk of responseContent.split(" ")) {
+          sendSSE("token", { delta: chunk + " " });
+        }
+        
+        await storage.createLexiMessage(
+          userId, effectiveCaseId, threadId, "assistant", responseContent, 
+          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+        );
+        
+        sendSSE("done", { ok: true });
+        return res.end();
+      }
+
+      if (!openai) {
+        sendSSE("error", { code: "OPENAI_KEY_MISSING", message: "Lexi isn't configured yet. Add OPENAI_API_KEY in Secrets." });
+        return res.end();
+      }
+
+      await storage.createLexiMessage(
+        userId, effectiveCaseId, threadId, "user", message, 
+        null, null, { intent }
+      );
+
+      const existingMessages = await storage.listLexiMessages(userId, threadId);
+      const baseSystemPrompt = buildLexiSystemPrompt({
+        state: stateOverride || caseRecord?.state || undefined,
+        county: caseRecord?.county || undefined,
+        caseType: caseRecord?.caseType || undefined,
+      });
+
+      const personalization = await getLexiPersonalization(userId, effectiveCaseId);
+      const personalizationBlock = buildPersonalizationPrompt(personalization);
+
+      let caseContextBlock = "";
+      if (effectiveCaseId) {
+        const lexiContext = await buildLexiContext({ userId, caseId: effectiveCaseId });
+        if (lexiContext) {
+          caseContextBlock = `\n\n${formatContextForPrompt(lexiContext)}\n`;
+        }
+      }
+
+      const formattingPolicies: Record<string, string> = {
+        bullets: `FORMATTING POLICY (MUST FOLLOW):
+- Use short paragraphs (max 2-3 sentences each).
+- Prefer headings + bullet points.
+- Never output a single paragraph longer than 5 lines.
+- Always end with a "Next options" section (2-4 bullets) that are SAFE actions.`,
+        steps: `FORMATTING POLICY (MUST FOLLOW):
+- Start with a brief summary (1-2 sentences).
+- Then "Steps:" as a numbered list (1-8 steps max).
+- Keep each step to 1-2 sentences.
+- End with "Next options" (2-4 safe action bullets).`,
+        short: `FORMATTING POLICY (MUST FOLLOW):
+- Respond in 5 bullets max.
+- No extra sections unless asked.
+- Be direct. No long explanations.`,
+        detailed: `FORMATTING POLICY (MUST FOLLOW):
+- Start with a brief summary (1-2 sentences).
+- Use headings: "Key points", "Examples", "Next steps".
+- Use bullets heavily.
+- Keep paragraphs short (2-3 sentences max).`,
+      };
+
+      const activeStyle = stylePreset || "bullets";
+      const formattingPolicy = formattingPolicies[activeStyle] || formattingPolicies.bullets;
+      const systemPrompt = `${baseSystemPrompt}${personalizationBlock}${caseContextBlock}\n\n${formattingPolicy}`;
+
+      const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
+        { role: "system", content: systemPrompt },
+      ];
+
+      const messageLimit = fastMode ? 10 : 20;
+      for (const msg of existingMessages.slice(-messageLimit)) {
+        if (msg.role === "user" || msg.role === "assistant") {
+          chatHistory.push({ role: msg.role, content: msg.content });
+        }
+      }
+
+      const temperature = fastMode ? 0.2 : 0.3;
+      const maxTokens = fastMode ? 450 : 1024;
+
+      const stream = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        messages: chatHistory,
+        temperature,
+        max_completion_tokens: maxTokens,
+        stream: true,
+      });
+
+      let fullContent = "";
+      const timeout = setTimeout(() => {
+        sendSSE("error", { code: "TIMEOUT", message: "Response took too long. Try again in a moment." });
+        res.end();
+      }, 30000);
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content || "";
+        if (delta) {
+          fullContent += delta;
+          sendSSE("token", { delta });
+        }
+      }
+
+      clearTimeout(timeout);
+
+      let assistantContent = fullContent || "I apologize, but I was unable to generate a response. Please try again.";
+      assistantContent = normalizeUrlsInContent(assistantContent);
+      
+      const { sources, hasSources } = extractSourcesFromContent(assistantContent);
+      let validatedSources: LexiSource[] = [];
+      if (hasSources && sources.length > 0) {
+        validatedSources = await normalizeAndValidateSources(sources);
+      }
+      
+      const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
+      if (wasAdded) {
+        await storage.markLexiThreadDisclaimerShown(userId, threadId);
+      }
+      
+      await storage.createLexiMessage(
+        userId, effectiveCaseId, threadId, "assistant", finalContent, 
+        null, "gpt-4.1", { intent, refused: false, hadSources: hasSources, sources: validatedSources }
+      );
+
+      if (hasSources && validatedSources.length > 0) {
+        sendSSE("sources", { sources: validatedSources });
+      }
+
+      sendSSE("done", { ok: true });
+      res.end();
+    } catch (err: any) {
+      const status = err?.status || err?.response?.status;
+      const code = err?.code || err?.error?.code;
+
+      if (status === 401 || code === "invalid_api_key") {
+        sendSSE("error", { code: "OPENAI_KEY_INVALID", message: "Lexi cannot authenticate to OpenAI. Update OPENAI_API_KEY in Secrets." });
+      } else if (status === 429) {
+        sendSSE("error", { code: "OPENAI_RATE_LIMIT", message: "Rate limit hit. Try again in a minute." });
+      } else {
+        console.error("Lexi stream error:", err);
+        sendSSE("error", { code: "UNKNOWN", message: "Something went wrong. Please try again." });
+      }
+      res.end();
+    }
+  });
+
   app.get("/api/lexi/prefs", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
@@ -5165,12 +5383,14 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.put("/api/lexi/prefs", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
-      const { responseStyle, verbosity, citationStrictness, defaultMode } = req.body;
+      const { responseStyle, verbosity, citationStrictness, defaultMode, streamingEnabled, fasterMode } = req.body;
       const prefs = await storage.upsertLexiUserPrefs(userId, {
         responseStyle: responseStyle ?? undefined,
         verbosity: verbosity ?? undefined,
         citationStrictness: citationStrictness ?? undefined,
         defaultMode: defaultMode ?? undefined,
+        streamingEnabled: streamingEnabled ?? undefined,
+        fasterMode: fasterMode ?? undefined,
       });
       res.json({ prefs });
     } catch (err) {
