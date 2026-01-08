@@ -758,3 +758,20 @@ blockquote, dd, dt, figcaption {
 .app-shell .calendar-surface {
   background: hsl(var(--calendar-surface)) !important;
 }
+
+/* =========================================================
+   Mobile Menu Scroll Utilities
+   - Provides smooth scrolling inside dropdown menus
+   - Prevents scroll chaining into the page (iOS Safari fix)
+   ========================================================= */
+.mobile-menu-panel {
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.body-scroll-lock {
+  overflow: hidden;
+  touch-action: none;
+}

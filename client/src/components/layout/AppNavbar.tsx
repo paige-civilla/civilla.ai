@@ -182,32 +182,32 @@ export default function AppNavbar({ className }: AppNavbarProps) {
     setIsMenuOpen(false);
   }, [location]);
 
-  // Lock body scroll when mobile menu is open
+  // Lock body scroll when mobile menu is open (prevents scroll chaining on iOS Safari)
   useEffect(() => {
     if (isMenuOpen) {
       const scrollY = window.scrollY;
+      document.body.classList.add('body-scroll-lock');
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.left = '0';
       document.body.style.right = '0';
-      document.body.style.overflow = 'hidden';
     } else {
       const scrollY = document.body.style.top;
+      document.body.classList.remove('body-scroll-lock');
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.left = '';
       document.body.style.right = '';
-      document.body.style.overflow = '';
       if (scrollY) {
         window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
       }
     }
     return () => {
+      document.body.classList.remove('body-scroll-lock');
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.left = '';
       document.body.style.right = '';
-      document.body.style.overflow = '';
     };
   }, [isMenuOpen]);
 
@@ -318,7 +318,7 @@ export default function AppNavbar({ className }: AppNavbarProps) {
             />
             <div 
               ref={menuRef}
-              className="fixed md:absolute left-0 right-0 top-[var(--civilla-nav-h,36px)] md:top-full md:mt-2 z-[9999] max-h-[calc(100vh-var(--civilla-nav-h,36px))] overflow-y-auto"
+              className="fixed md:absolute left-0 right-0 top-[var(--civilla-nav-h,36px)] md:top-full md:mt-2 z-[9999] mobile-menu-panel md:max-h-[75vh]"
               data-testid="dropdown-menu-app"
               onMouseEnter={scheduleOpen}
               onMouseLeave={scheduleClose}

@@ -103,6 +103,36 @@ export default function Navbar() {
     setIsAccountOpen(false);
   }, []);
 
+  // Lock body scroll when mobile menu is open (prevents scroll chaining on iOS Safari)
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMenuOpen && isMobile) {
+      const scrollY = window.scrollY;
+      document.body.classList.add('body-scroll-lock');
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.classList.remove('body-scroll-lock');
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
+      }
+    }
+    return () => {
+      document.body.classList.remove('body-scroll-lock');
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+    };
+  }, [isMenuOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -314,7 +344,7 @@ export default function Navbar() {
         ref={menuRef} 
         role="menu"
         style={{ top: mainMenuPos.top, right: mainMenuPos.right }}
-        className="fixed w-[min(900px,calc(100vw-24px))] bg-popover border border-popover-border rounded-2xl shadow-xl p-6 md:p-8 max-h-[75vh] overflow-auto z-[9999]" 
+        className="fixed w-[min(900px,calc(100vw-24px))] bg-popover border border-popover-border rounded-2xl shadow-xl p-6 md:p-8 mobile-menu-panel md:max-h-[75vh] z-[9999]" 
         onMouseEnter={handleMenuMouseEnter}
         onMouseLeave={handleMenuMouseLeave}
         data-testid="dropdown-menu"
