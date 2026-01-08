@@ -5170,7 +5170,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.end();
       }
 
-      const { threadId, message, stateOverride, stylePreset, fastMode } = parsed.data;
+      const { threadId: providedThreadId, message, stateOverride, stylePreset, fastMode } = parsed.data;
       const effectiveCaseId = parsed.data.caseId || null;
 
       let caseRecord = null;
@@ -5182,10 +5182,21 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         }
       }
 
-      const thread = await storage.getLexiThread(userId, threadId);
-      if (!thread || thread.caseId !== effectiveCaseId) {
-        sendSSE("error", { code: "THREAD_NOT_FOUND", message: "Thread not found" });
-        return res.end();
+      let thread;
+      let threadId = providedThreadId;
+      
+      if (providedThreadId) {
+        thread = await storage.getLexiThread(userId, providedThreadId);
+        if (!thread || thread.caseId !== effectiveCaseId) {
+          sendSSE("error", { code: "THREAD_NOT_FOUND", message: "Thread not found" });
+          return res.end();
+        }
+      } else {
+        const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+        const title = `New conversation - ${timestamp}`;
+        thread = await storage.createLexiThread(userId, effectiveCaseId, title);
+        threadId = thread.id;
+        sendSSE("thread_created", { threadId: thread.id, title: thread.title });
       }
 
       const intent: LexiIntent = classifyIntent(message);
@@ -5304,6 +5315,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const temperature = fastMode ? 0.2 : 0.3;
       const maxTokens = fastMode ? 450 : 1024;
 
+      let clientDisconnected = false;
+      req.on("close", () => {
+        clientDisconnected = true;
+      });
+
       const stream = await openai.chat.completions.create({
         model: "gpt-4.1",
         messages: chatHistory,
@@ -5314,11 +5330,17 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       let fullContent = "";
       const timeout = setTimeout(() => {
-        sendSSE("error", { code: "TIMEOUT", message: "Response took too long. Try again in a moment." });
-        res.end();
+        if (!clientDisconnected) {
+          sendSSE("error", { code: "TIMEOUT", message: "Response took too long. Try again in a moment." });
+          res.end();
+        }
       }, 30000);
 
       for await (const chunk of stream) {
+        if (clientDisconnected) {
+          console.log("[LexiStream] Client disconnected, aborting stream");
+          break;
+        }
         const delta = chunk.choices[0]?.delta?.content || "";
         if (delta) {
           fullContent += delta;
@@ -5327,6 +5349,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       clearTimeout(timeout);
+
+      if (clientDisconnected) {
+        console.log("[LexiStream] Not persisting partial response due to client disconnect");
+        return res.end();
+      }
 
       let assistantContent = fullContent || "I apologize, but I was unable to generate a response. Please try again.";
       assistantContent = normalizeUrlsInContent(assistantContent);
@@ -5339,11 +5366,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       
       const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
       if (wasAdded) {
-        await storage.markLexiThreadDisclaimerShown(userId, threadId);
+        await storage.markLexiThreadDisclaimerShown(userId, threadId!);
       }
       
-      await storage.createLexiMessage(
-        userId, effectiveCaseId, threadId, "assistant", finalContent, 
+      const assistantMessage = await storage.createLexiMessage(
+        userId, effectiveCaseId, threadId!, "assistant", finalContent, 
         null, "gpt-4.1", { intent, refused: false, hadSources: hasSources, sources: validatedSources }
       );
 
@@ -5351,7 +5378,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         sendSSE("sources", { sources: validatedSources });
       }
 
-      sendSSE("done", { ok: true });
+      sendSSE("done", { ok: true, threadId, messageId: assistantMessage.id });
       res.end();
     } catch (err: any) {
       const status = err?.status || err?.response?.status;

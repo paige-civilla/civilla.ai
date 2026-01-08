@@ -414,20 +414,34 @@ export default function LexiPanel() {
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
         
+        let currentEvent = "";
+        let newThreadId: string | null = null;
+        
         for (const line of lines) {
           if (line.startsWith("event: ")) {
-            const eventType = line.slice(7).trim();
+            currentEvent = line.slice(7).trim();
             continue;
           }
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
+              
+              if (currentEvent === "thread_created" && data.threadId) {
+                newThreadId = data.threadId;
+                setActiveThreadId(data.threadId);
+                const key = caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"];
+                queryClient.invalidateQueries({ queryKey: key });
+              }
+              
               if (data.delta) {
                 accumulatedContent += data.delta;
                 setStreamingContent(accumulatedContent);
               }
               if (data.sources) {
                 setStreamingSources(data.sources);
+              }
+              if (data.threadId && currentEvent === "done") {
+                newThreadId = data.threadId;
               }
               if (data.code && data.message) {
                 toast({
@@ -441,6 +455,8 @@ export default function LexiPanel() {
         }
       }
       
+      const threadKey = caseId ? ["/api/cases", caseId, "lexi", "threads"] : ["/api/lexi/threads"];
+      queryClient.invalidateQueries({ queryKey: threadKey });
       queryClient.invalidateQueries({ queryKey: ["/api/lexi/threads", activeThreadId, "messages"] });
       setCurrentModuleKey(undefined);
     } catch (err: any) {

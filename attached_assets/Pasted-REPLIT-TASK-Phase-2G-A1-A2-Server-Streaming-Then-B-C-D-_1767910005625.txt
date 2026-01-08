@@ -1,0 +1,115 @@
+REPLIT TASK: Phase 2G — A1/A2 Server Streaming + Then B/C/D Foundations
+
+Context
+Client streaming UI is done (LexiPanel can parse SSE and display tokens/sources).
+But streaming will not work reliably until the server provides a real SSE endpoint that:
+1) streams tokens
+2) emits sources
+3) writes ONE final assistant message to DB
+4) returns clean errors (no raw stack traces)
+
+PART 1 — A1/A2: Build the SSE streaming endpoint for Lexi
+
+A) Add endpoint (requireAuth)
+Create:
+POST /api/lexi/chat/stream
+
+Body:
+{
+  threadId?: string,
+  caseId?: string | null,
+  message: string,
+  mode?: "research" | "organization" | "analysis",
+  moduleKey?: string | null
+}
+
+Rules:
+- If threadId missing, auto-create a thread first (general or case-scoped)
+- If caseId missing/null, use GENERAL thread mode (no FK issues)
+- Must enforce ownership: thread belongs to user; case belongs to user (when provided)
+
+B) SSE response format
+Return Content-Type: text/event-stream
+
+Emit events exactly like the client expects:
+- event: token   data: {"delta":"..."}
+- event: sources data: {"sources":[{"title":"...","url":"https://..."}]}
+- event: done    data: {"ok":true,"threadId":"...","messageId":"..."}
+- event: error   data: {"code":"OPENAI_KEY_INVALID","message":"..."}
+
+Implementation details:
+- Use OpenAI streaming in server (same provider/model as non-stream /api/lexi/chat)
+- Accumulate all deltas into finalContent string
+- On completion:
+  - persist assistant message once to lexi_messages
+  - persist sources in message metadata (or separate column if you have one)
+- Always flush headers immediately, and keep connection alive:
+  - res.writeHead(200, { "Content-Type":"text/event-stream", "Cache-Control":"no-cache", "Connection":"keep-alive" })
+  - res.flushHeaders?.()
+
+C) Robust close handling
+If client disconnects:
+- stop the stream cleanly
+- do NOT write partial assistant message
+- optionally log activity: lexi_stream_aborted
+
+D) Standardize OpenAI errors
+If OpenAI returns:
+- 401 -> OPENAI_KEY_INVALID
+- 429 -> OPENAI_RATE_LIMIT
+- missing key -> OPENAI_KEY_MISSING
+Return SSE event:error with those codes + a user-friendly message.
+
+E) Keep /api/lexi/chat non-stream as fallback
+No breaking changes to existing endpoint.
+
+PART 2 — Fix the “general thread” FK issue permanently (if still present)
+If lexi_threads.case_id has a foreign key to cases.id:
+- Do NOT use "__general__" unless a matching cases row exists.
+Preferred fix:
+- Allow case_id to be NULL for general threads (recommended).
+Implement migration ensureLexiThreadsColumns() to:
+  - ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL (if needed)
+  - If FK exists and blocks NULL, adjust FK to allow NULL (FK already allows NULL in Postgres)
+Then update createLexiThread logic:
+- when “general” thread: caseId = null
+
+PART 3 — B: Unified AI status endpoint (minimal v1)
+Add:
+GET /api/cases/:caseId/ai/status (requireAuth)
+
+Return:
+{
+  ok: true,
+  extraction: { queued, processing, complete, failed },
+  analyses:  { queued, processing, complete, failed },
+  claims:    { pendingCount, lastStatus, lastRunAt },
+  memory:    { lastRebuildAt },
+  activities: [{ type, status, createdAt }].slice(0,10)
+}
+
+Use existing tables:
+- evidence_extractions.status
+- evidence_ai_analyses.status
+- activity_logs
+- any “claims auto-suggest” activity events you’re already writing
+
+PART 4 — D: Human-friendly error surface in LexiPanel
+Update client LexiPanel error mapping so SSE event:error shows:
+- “Lexi isn’t configured yet. Add OPENAI_API_KEY in Replit Secrets.”
+- “Lexi is rate-limited. Try again in a minute.”
+- “Lexi can’t authenticate to OpenAI. Re-check the key.”
+
+Also: do NOT auto-delete the thread on error.
+
+PART 5 — REPORT BACK
+After implementation, confirm:
+- POST /api/lexi/chat/stream streams tokens (you can see live typing)
+- A successful stream persists assistant message to DB
+- A forced invalid key triggers SSE error with OPENAI_KEY_INVALID
+- General thread creation works with caseId=null (no FK errors)
+- /api/cases/:caseId/ai/status returns counts (not empty)
+List files changed.
+
+NOTE
+Do not add webhooks or background workers yet — just SSE + status endpoint + FK-safe general threads.
