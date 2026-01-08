@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { LexiThread, LexiMessage } from "@shared/schema";
+import type { LexiThread, LexiMessage, LexiUserPrefs } from "@shared/schema";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const OPEN_KEY = "civilla_lexi_open_v1";
 const STYLE_KEY = "civilla_lexi_style_v1";
 const FAST_KEY = "civilla_lexi_fast_v1";
+const STREAMING_KEY = "civilla_lexi_streaming_v1";
 
 type StylePreset = "bullets" | "steps" | "short" | "detailed";
 
@@ -207,11 +208,38 @@ export default function LexiPanel() {
     } catch {}
     return window.innerWidth < 768;
   });
+  const [streamingEnabled, setStreamingEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(STREAMING_KEY);
+      if (saved !== null) return saved === "true";
+    } catch {}
+    return true;
+  });
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [streamingSources, setStreamingSources] = useState<LexiSource[]>([]);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const title = "Lexi";
   const caseId = extractCaseId(location);
   const { toast } = useToast();
+
+  const { data: lexiPrefsData } = useQuery<{ prefs: LexiUserPrefs | null }>({
+    queryKey: ["/api/lexi/prefs"],
+    enabled: open,
+  });
+
+  useEffect(() => {
+    if (lexiPrefsData?.prefs) {
+      if (typeof lexiPrefsData.prefs.streamingEnabled === "boolean") {
+        setStreamingEnabled(lexiPrefsData.prefs.streamingEnabled);
+      }
+      if (typeof lexiPrefsData.prefs.fasterMode === "boolean") {
+        setFastMode(lexiPrefsData.prefs.fasterMode);
+      }
+    }
+  }, [lexiPrefsData]);
 
   const { data: disclaimerData } = useQuery<{ disclaimer: string; welcome: string }>({
     queryKey: ["/api/lexi/disclaimer"],
@@ -342,6 +370,95 @@ export default function LexiPanel() {
     try { localStorage.setItem(FAST_KEY, String(value)); } catch {}
   };
 
+  const sendStreamingMessage = useCallback(async (payload: { text: string; mode?: "help" | "chat" | "research"; moduleKey?: string }) => {
+    if (!activeThreadId) return;
+    
+    setIsStreaming(true);
+    setStreamingContent("");
+    setStreamingSources([]);
+    
+    const abortController = new AbortController();
+    streamAbortRef.current = abortController;
+    
+    try {
+      const response = await fetch("/api/lexi/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        signal: abortController.signal,
+        body: JSON.stringify({
+          caseId,
+          threadId: activeThreadId,
+          message: payload.text,
+          mode: payload.mode,
+          moduleKey: payload.moduleKey,
+          stylePreset,
+          fastMode,
+        }),
+      });
+      
+      if (!response.ok || !response.body) {
+        throw new Error("Stream failed");
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulatedContent = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            const eventType = line.slice(7).trim();
+            continue;
+          }
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.delta) {
+                accumulatedContent += data.delta;
+                setStreamingContent(accumulatedContent);
+              }
+              if (data.sources) {
+                setStreamingSources(data.sources);
+              }
+              if (data.code && data.message) {
+                toast({
+                  title: "Lexi Error",
+                  description: data.message,
+                  variant: "destructive",
+                });
+              }
+            } catch {}
+          }
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/lexi/threads", activeThreadId, "messages"] });
+      setCurrentModuleKey(undefined);
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        toast({
+          title: "Error",
+          description: "Failed to get response from Lexi. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsStreaming(false);
+      setStreamingContent("");
+      setStreamingSources([]);
+      streamAbortRef.current = null;
+    }
+  }, [activeThreadId, caseId, stylePreset, fastMode, toast]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(OPEN_KEY);
@@ -361,7 +478,7 @@ export default function LexiPanel() {
 
   useEffect(() => {
     if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [open, messages.length]);
+  }, [open, messages.length, streamingContent]);
 
   useEffect(() => {
     const handleOpenHelp = () => {
@@ -395,12 +512,16 @@ export default function LexiPanel() {
   }, [activeThreadId]);
 
   useEffect(() => {
-    if (pendingAsk && activeThreadId && !sendMessageMutation.isPending) {
-      sendMessageMutation.mutate(pendingAsk);
+    if (pendingAsk && activeThreadId && !sendMessageMutation.isPending && !isStreaming) {
+      if (streamingEnabled) {
+        sendStreamingMessage(pendingAsk);
+      } else {
+        sendMessageMutation.mutate(pendingAsk);
+      }
       setInput("");
       setPendingAsk(null);
     }
-  }, [pendingAsk, activeThreadId, sendMessageMutation]);
+  }, [pendingAsk, activeThreadId, sendMessageMutation, isStreaming, streamingEnabled, sendStreamingMessage]);
 
   useEffect(() => {
     if (threads.length > 0 && !activeThreadId) {
@@ -410,7 +531,7 @@ export default function LexiPanel() {
 
   async function send() {
     const text = input.trim();
-    if (!text || sendMessageMutation.isPending) return;
+    if (!text || sendMessageMutation.isPending || isStreaming) return;
 
     if (!activeThreadId) {
       const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -421,11 +542,15 @@ export default function LexiPanel() {
     }
 
     setInput("");
-    sendMessageMutation.mutate({ text, moduleKey: currentModuleKey });
+    if (streamingEnabled) {
+      sendStreamingMessage({ text, moduleKey: currentModuleKey });
+    } else {
+      sendMessageMutation.mutate({ text, moduleKey: currentModuleKey });
+    }
   }
 
   async function handleSuggestedQuestion(question: string) {
-    if (sendMessageMutation.isPending || createThreadMutation.isPending) return;
+    if (sendMessageMutation.isPending || createThreadMutation.isPending || isStreaming) return;
 
     if (!activeThreadId) {
       const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -434,7 +559,11 @@ export default function LexiPanel() {
       return;
     }
 
-    sendMessageMutation.mutate({ text: question });
+    if (streamingEnabled) {
+      sendStreamingMessage({ text: question });
+    } else {
+      sendMessageMutation.mutate({ text: question });
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -842,6 +971,19 @@ export default function LexiPanel() {
                       <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Thinking...
+                      </div>
+                    )}
+                    {isStreaming && streamingContent && (
+                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
+                        <LexiMessageBody content={streamingContent} />
+                        {streamingSources.length > 0 && <LexiSourcesList sources={streamingSources} />}
+                        <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-0.5 align-text-bottom" />
+                      </div>
+                    )}
+                    {isStreaming && !streamingContent && (
+                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Connecting...
                       </div>
                     )}
                     <div ref={endRef} />
