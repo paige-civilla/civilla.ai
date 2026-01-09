@@ -2008,3 +2008,68 @@ export const factCitations = pgTable("fact_citations", {
 }));
 
 export type FactCitation = typeof factCitations.$inferSelect;
+
+// Phase 3A: Cross-Module Link Tables
+export const timelineEventLinkTypes = ["evidence", "claim", "snippet"] as const;
+export type TimelineEventLinkType = typeof timelineEventLinkTypes[number];
+
+export const timelineEventLinks = pgTable("timeline_event_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  eventId: varchar("event_id").notNull().references(() => timelineEvents.id),
+  linkType: text("link_type").notNull(),
+  evidenceId: varchar("evidence_id"),
+  claimId: varchar("claim_id"),
+  snippetId: varchar("snippet_id"),
+  note: text("note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("timeline_event_links_case_idx").on(table.caseId),
+  eventIdx: index("timeline_event_links_event_idx").on(table.eventId),
+  uniqueLink: uniqueIndex("timeline_event_links_unique_idx").on(
+    table.eventId, table.linkType, table.evidenceId, table.claimId, table.snippetId
+  ),
+}));
+
+export const insertTimelineEventLinkSchema = z.object({
+  linkType: z.enum(timelineEventLinkTypes),
+  evidenceId: z.string().optional().nullable(),
+  claimId: z.string().optional().nullable(),
+  snippetId: z.string().optional().nullable(),
+  note: z.string().max(1000).optional().nullable(),
+});
+
+export type InsertTimelineEventLink = z.infer<typeof insertTimelineEventLinkSchema>;
+export type TimelineEventLink = typeof timelineEventLinks.$inferSelect;
+
+export const claimLinkTypes = ["timeline", "trial_prep", "snippet"] as const;
+export type ClaimLinkType = typeof claimLinkTypes[number];
+
+export const claimLinks = pgTable("claim_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  claimId: varchar("claim_id").notNull().references(() => caseClaims.id),
+  linkType: text("link_type").notNull(),
+  eventId: varchar("event_id"),
+  trialPrepId: varchar("trial_prep_id"),
+  snippetId: varchar("snippet_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("claim_links_case_idx").on(table.caseId),
+  claimIdx: index("claim_links_claim_idx").on(table.claimId),
+  uniqueLink: uniqueIndex("claim_links_unique_idx").on(
+    table.claimId, table.linkType, table.eventId, table.trialPrepId, table.snippetId
+  ),
+}));
+
+export const insertClaimLinkSchema = z.object({
+  linkType: z.enum(claimLinkTypes),
+  eventId: z.string().optional().nullable(),
+  trialPrepId: z.string().optional().nullable(),
+  snippetId: z.string().optional().nullable(),
+});
+
+export type InsertClaimLink = z.infer<typeof insertClaimLinkSchema>;
+export type ClaimLink = typeof claimLinks.$inferSelect;

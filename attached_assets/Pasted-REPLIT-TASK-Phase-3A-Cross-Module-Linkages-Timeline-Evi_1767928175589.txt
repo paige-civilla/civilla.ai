@@ -1,0 +1,213 @@
+REPLIT TASK: Phase 3A — Cross-Module Linkages (Timeline ↔ Evidence ↔ Claims ↔ Trial Prep ↔ Exhibits)
+
+Goal
+Make Civilla behave like the Modification workflow: EVERYTHING that appears in Timeline/Pattern/Docs can be traced back to structured data (claims + citations) and/or an evidence file/snippet. This phase adds the linking “glue” so modules interconnect.
+
+========================
+A) DATABASE: ADD LINK TABLES (idempotent migrations)
+========================
+1) shared/schema.ts — add these tables:
+
+A1) timeline_event_links
+Links a timeline event to either:
+- an evidence file, OR
+- a claim, OR
+- an exhibit snippet
+
+Columns:
+- id (uuid pk)
+- userId (uuid, not null)
+- caseId (uuid, not null, index)
+- eventId (uuid, not null, fk -> timeline_events.id, index)
+- linkType (enum: "evidence" | "claim" | "snippet")
+- evidenceId (uuid, nullable)
+- claimId (uuid, nullable)
+- snippetId (uuid, nullable)
+- note (text, nullable)
+- createdAt (timestamp default now)
+
+Constraints:
+- Exactly ONE of evidenceId/claimId/snippetId must be non-null (enforce in API validation; DB check constraint optional)
+- Unique index on (eventId, linkType, evidenceId, claimId, snippetId) to prevent duplicates
+
+A2) claim_links
+Links a claim to things outside citations:
+- timeline event
+- trial prep item
+- exhibit snippet
+
+Columns:
+- id (uuid pk)
+- userId
+- caseId (index)
+- claimId (uuid, fk -> case_claims.id, index)
+- linkType (enum: "timeline" | "trial_prep" | "snippet")
+- eventId (uuid, nullable)
+- trialPrepId (uuid, nullable)
+- snippetId (uuid, nullable)
+- createdAt
+
+Unique index on (claimId, linkType, eventId, trialPrepId, snippetId)
+
+2) server/db.ts
+- Add ensureTimelineEventLinksTable()
+- Add ensureClaimLinksTable()
+- Register both in ensureSchemaMigrations()
+- Add verification logs (present: true/false) for table existence OR a known column check.
+
+========================
+B) STORAGE LAYER: CRUD HELPERS
+========================
+server/storage.ts
+
+Add interface + implementation methods:
+
+Timeline links:
+- createTimelineEventLink(userId, caseId, eventId, payload)
+- listTimelineEventLinks(userId, caseId, eventId)
+- deleteTimelineEventLink(userId, linkId)
+
+Claim links:
+- createClaimLink(userId, caseId, claimId, payload)
+- listClaimLinks(userId, caseId, claimId)
+- deleteClaimLink(userId, linkId)
+
+IMPORTANT: ownership validation in each method:
+- confirm eventId belongs to caseId (and userId)
+- confirm claimId belongs to caseId (and userId)
+- confirm evidenceId/snippetId/trialPrepId belongs to caseId (and userId) when present
+
+========================
+C) API ROUTES
+========================
+server/routes.ts — add routes (requireAuth everywhere)
+
+C1) Timeline event links
+- GET  /api/cases/:caseId/timeline/events/:eventId/links
+- POST /api/cases/:caseId/timeline/events/:eventId/links
+  body:
+  {
+    "linkType": "evidence" | "claim" | "snippet",
+    "evidenceId"?: string,
+    "claimId"?: string,
+    "snippetId"?: string,
+    "note"?: string
+  }
+  Validate: exactly one target id is provided that matches linkType.
+
+- DELETE /api/timeline/event-links/:linkId
+
+Response for GET should return hydrated labels to show in UI:
+For each link, include:
+- linkId, linkType, note, createdAt
+- if evidence: evidence { id, originalName }
+- if claim: claim { id, text, status }
+- if snippet: snippet { id, title }
+
+C2) Claim links
+- GET  /api/cases/:caseId/claims/:claimId/links
+- POST /api/cases/:caseId/claims/:claimId/links
+  body:
+  {
+    "linkType": "timeline" | "trial_prep" | "snippet",
+    "eventId"?: string,
+    "trialPrepId"?: string,
+    "snippetId"?: string
+  }
+  Validate exactly one target id matches linkType.
+
+- DELETE /api/claim-links/:linkId
+
+========================
+D) FRONTEND — MINIMAL UI HOOKS (fast, usable, not pretty yet)
+========================
+
+D1) Timeline: show linked items per event (read + add/remove)
+File: client/src/pages/AppTimeline.tsx
+
+For each rendered timeline event card:
+- Add a small “Links” row (paperclip icon)
+- Show chips for:
+  Evidence (filename)
+  Claim (first 60 chars)
+  Snippet (title)
+
+Add “+ Link” button opens a small dialog:
+- Tabs: Evidence | Claims | Snippets
+- Simple search input that filters available items (client side)
+- Select item + optional note -> POST link
+- Each chip has an “x” remove -> DELETE link
+
+Data sources:
+- Evidence list: existing evidence query in timeline page OR add a lightweight query to /api/cases/:caseId/evidence
+- Claims list: /api/cases/:caseId/claims?status=accepted (and maybe suggested)
+- Snippets list: /api/cases/:caseId/exhibit-snippets (already exists)
+
+Also on mount, support deep link highlight already exists; don’t break it.
+
+D2) EvidenceViewer: one-click “Link to timeline event”
+File: client/src/components/evidence/EvidenceViewer.tsx (or wherever claims UI lives)
+
+In Accepted Claims list:
+- Add action button: “Link to Timeline”
+- Clicking opens a picker dialog listing recent timeline events (latest 20) + search by title
+- On select: POST /api/cases/:caseId/claims/:claimId/links with linkType=timeline + eventId
+- After linking, show a small “Linked: {event.title}” indicator under the claim (fetched from GET claim links)
+
+In Evidence file header actions:
+- Add button “Link File to Timeline”
+- Same picker -> POST timeline event link with linkType=evidence + evidenceId
+
+D3) Trial Prep: link back to claims
+File: client/src/pages/AppTrialPrep.tsx
+
+When viewing a shortlist item:
+- Add “Related Claims” collapsible section:
+  - If sourceType is "claim" already, show that claim
+  - Else allow linking: “Link Claim” -> picker of accepted claims -> POST claim link with linkType=trial_prep + trialPrepId
+- Show linked claims as chips, remove supported
+
+D4) Exhibits: link snippet ↔ claim
+File: client/src/pages/AppExhibits.tsx (or ExhibitListCard component)
+
+When rendering a snippet row:
+- Add “Link Claim” action -> picker of accepted claims -> POST /api/cases/:caseId/claims/:claimId/links linkType=snippet + snippetId
+- Also show “Claims linked to this snippet” if any (optional in this phase; OK to only do claim->snippet direction)
+
+========================
+E) DOCUMENT CREATOR (tiny upgrade in this phase)
+========================
+File: client/src/pages/AppDocuments.tsx and server compile endpoint
+
+Enhancement:
+When compiling from claims, optionally group by Issue Groupings AND show linked timeline events under each claim.
+
+Server change (compile-claims endpoint response):
+For each included claim, include:
+- claimLinks: timeline event titles (and IDs)
+Use storage.listClaimLinks to fetch timeline links.
+
+Frontend:
+In preview, show:
+- Claim text
+- Citations
+- “Linked timeline events: …” (if any)
+
+========================
+F) VALIDATION / SAFETY
+========================
+- Do NOT generate new facts. Only link existing structured items.
+- Ownership checks required everywhere.
+- Add unit-ish defensive checks: if link target doesn’t belong to the same caseId, return 404.
+
+========================
+G) REPORT BACK
+========================
+After implementation, reply with:
+1) Files changed
+2) New tables + indexes added
+3) Example payloads for each new endpoint
+4) Confirm: can link (a) evidence file to timeline, (b) claim to timeline, (c) claim to trial prep, (d) claim to snippet
+5) Quick manual test steps
+
+Deliverable checkpoint name: “Phase 3A: Cross-Module Link System (links everywhere)”

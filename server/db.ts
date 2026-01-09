@@ -1256,6 +1256,44 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS fact_citations_fact_citation_idx ON fact_citations(fact_id, citation_id)`
   ]);
 
+  // Phase 3A: Cross-Module Link Tables
+  await initTable("timeline_event_links", `
+    CREATE TABLE IF NOT EXISTS timeline_event_links (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      event_id VARCHAR(255) NOT NULL REFERENCES timeline_events(id),
+      link_type TEXT NOT NULL,
+      evidence_id VARCHAR(255),
+      claim_id VARCHAR(255),
+      snippet_id VARCHAR(255),
+      note TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS timeline_event_links_case_idx ON timeline_event_links(case_id)`,
+    `CREATE INDEX IF NOT EXISTS timeline_event_links_event_idx ON timeline_event_links(event_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS timeline_event_links_unique_idx ON timeline_event_links(event_id, link_type, COALESCE(evidence_id, ''), COALESCE(claim_id, ''), COALESCE(snippet_id, ''))`
+  ]);
+
+  await initTable("claim_links", `
+    CREATE TABLE IF NOT EXISTS claim_links (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      claim_id VARCHAR(255) NOT NULL REFERENCES case_claims(id),
+      link_type TEXT NOT NULL,
+      event_id VARCHAR(255),
+      trial_prep_id VARCHAR(255),
+      snippet_id VARCHAR(255),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS claim_links_case_idx ON claim_links(case_id)`,
+    `CREATE INDEX IF NOT EXISTS claim_links_claim_idx ON claim_links(claim_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS claim_links_unique_idx ON claim_links(claim_id, link_type, COALESCE(event_id, ''), COALESCE(trial_prep_id, ''), COALESCE(snippet_id, ''))`
+  ]);
+
   await ensureSchemaMigrations();
   
   console.log("Database table initialization complete");
