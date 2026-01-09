@@ -86,7 +86,10 @@ export async function retry<T>(
       
       onFailedAttempt?.(error, attempt + 1);
       
-      const delay = Math.min(minTimeout * Math.pow(factor, attempt), maxTimeout);
+      // Exponential backoff with jitter (±25% randomization)
+      const baseDelay = Math.min(minTimeout * Math.pow(factor, attempt), maxTimeout);
+      const jitter = baseDelay * 0.25 * (Math.random() * 2 - 1); // -25% to +25%
+      const delay = Math.max(minTimeout, baseDelay + jitter);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

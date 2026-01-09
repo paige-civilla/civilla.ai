@@ -579,6 +579,32 @@ export default function AppDocuments() {
   const [attorneyFirmName, setAttorneyFirmName] = useState("");
   const [autofillToggle, setAutofillToggle] = useState(true);
 
+  interface TemplatePreflightResponse {
+    templateKey: string;
+    isReady: boolean;
+    filledFieldsCount: number;
+    requiredFieldsCount: number;
+    missingFields: string[];
+    filledFields: string[];
+    citationBackedCount: number;
+    guardrailsPassed: boolean;
+    readinessScore: number;
+  }
+
+  const { data: templatePreflightData, isLoading: templatePreflightLoading } = useQuery<TemplatePreflightResponse>({
+    queryKey: ["/api/cases", caseId, "documents/templates", selectedCourtDocType, "preflight"],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/documents/templates/${selectedCourtDocType}/preflight`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Failed to fetch preflight");
+      return res.json();
+    },
+    enabled: !!caseId && !!selectedCourtDocType && isCourtDocDialogOpen,
+  });
+
   type CourtDocType = "declaration" | "affidavit" | "motion" | "memorandum" | "certificate_of_service";
 
   const courtDocTemplates: Record<CourtDocType, { title: string; body: string[] }> = {
@@ -1770,6 +1796,51 @@ export default function AppDocuments() {
                 </SelectContent>
               </Select>
             </div>
+
+            {selectedCourtDocType && (
+              <div className="border rounded-lg p-3 bg-muted/50" data-testid="card-ready-to-draft">
+                <p className="text-sm font-medium mb-2">Ready to Draft</p>
+                {templatePreflightLoading ? (
+                  <div className="flex items-center justify-center py-3">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : templatePreflightData ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">Readiness</span>
+                      <Progress value={templatePreflightData.readinessScore} className="flex-1 h-2" />
+                      <span className="text-xs text-muted-foreground">{templatePreflightData.readinessScore}%</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      {templatePreflightData.filledFieldsCount === templatePreflightData.requiredFieldsCount ? (
+                        <Check className="w-3.5 h-3.5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                      )}
+                      <span>Fields: {templatePreflightData.filledFieldsCount}/{templatePreflightData.requiredFieldsCount} filled</span>
+                    </div>
+                    {templatePreflightData.missingFields.length > 0 && (
+                      <div className="text-xs text-muted-foreground pl-5">
+                        Missing: {templatePreflightData.missingFields.map(f => f.split('.').pop()).join(', ')}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs">
+                      {templatePreflightData.guardrailsPassed ? (
+                        <Check className="w-3.5 h-3.5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                      )}
+                      <span>Citation-backed facts: {templatePreflightData.citationBackedCount}</span>
+                    </div>
+                    {!templatePreflightData.guardrailsPassed && (
+                      <p className="text-xs text-amber-600 mt-1">Add evidence citations to improve your document.</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Unable to check readiness</p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button

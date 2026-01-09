@@ -1,0 +1,156 @@
+REPLIT TASK LIST (3 items): E1 (Lexi faster mode + timeout guards), C2 (Ready-to-Draft card in Document Creator), E2 (Batch jobs concurrency + jitter retries)
+
+Do all 3 in order. Include a short “Files changed + how to test” at the end.
+
+========================================================
+E1) Lexi: Verify “Faster mode” actually changes model + add timeout guards
+========================================================
+
+Goal:
+- Faster mode must reliably use a faster/cheaper model (or lower reasoning) AND never “hang” silently.
+- If OpenAI is slow, the user sees a clear timeout message + the request is safely aborted.
+
+1) Backend: centralize model selection
+Find where Lexi calls OpenAI (likely server/routes.ts or server/services/lexi*.ts).
+Create a helper like:
+
+- chooseLexiModel({ fastMode, intent })
+  - fastMode=true => choose a fast model (ex: "gpt-4o-mini" OR your chosen fast default)
+  - fastMode=false => choose your normal model (ex: "gpt-4o" or whatever you’re using)
+
+IMPORTANT: Log ONLY the model name, not any secrets.
+
+2) Backend: add request timeout + abort
+Wrap the OpenAI call with an AbortController timeout guard:
+- HARD timeout: 25s (fastMode) / 45s (normal)
+- If timeout triggers:
+  - return HTTP 504 with JSON: { error: "Lexi timed out. Try again.", code: "LEXI_TIMEOUT" }
+
+3) Frontend: show timeout-specific message
+In LexiPanel.tsx (or wherever errors are handled):
+- If response code is 504 or error code LEXI_TIMEOUT:
+  - show toast + inline error: “Lexi took too long. Try again (or turn on Faster mode).”
+- Ensure the UI does NOT drop the message silently.
+
+4) Verify the toggle is wired end-to-end
+Confirm the request payload includes fastMode (or prefs fastMode) to the backend:
+- If you store prefs in DB, ensure Lexi call reads it.
+- If you store in localStorage, ensure it’s sent with the message request.
+
+Add a tiny dev log (DEV ONLY):
+console.log("[Lexi] fastMode:", fastMode, "model:", model)
+
+========================================================
+C2) Document Creator: “Ready to Draft” card (frontend)
+========================================================
+
+Goal:
+In Document Creator, show a clear readiness card that mirrors your preflight:
+- readinessPercent
+- extractionCoverage
+- uncitedClaims count
+- missingInfoClaims count
+- “Fix it” actions (jump to filtered list / auto-attach)
+
+1) Confirm backend preflight response includes:
+- readinessPercent (0-100)
+- extractionCoverage (0-100)
+- uncitedClaimsCount
+- missingInfoClaimsCount
+- acceptedClaimsCount
+
+If any are missing, add them to the existing preflight endpoint response.
+
+2) Frontend UI placement
+In AppDocuments.tsx (Document Creator modal/dialog):
+Add a card near the top of the “Compile from Claims” workflow:
+Title: “Ready to Draft”
+Body:
+- Progress bar for readinessPercent
+- Two small stat rows:
+  - “Extraction coverage: X%”
+  - “Claims with missing sources: N”
+  - “Claims flagged missing info: N”
+CTA buttons:
+- “Show uncited claims” (opens filtered claims view)
+- “Auto-attach sources” (calls the bulk auto-attach you already added)
+- If readinessPercent < 60% show a gentle warning callout
+
+Make sure it works in both mobile + desktop.
+
+========================================================
+E2) Batch Jobs: Global concurrency limits + jittered retries
+========================================================
+
+Goal:
+All background AI jobs (claims auto-suggest, extraction OCR jobs, AI analyses runs, memory rebuild triggers) must share:
+- a single global concurrency limiter
+- jittered retries for 429/5xx
+- no duplicate processing
+- clear activity logs
+
+1) Create a shared limiter + retry utility
+Add new files:
+- server/services/jobLimiter.ts
+  - export const AI_LIMIT = pLimit(2) (or 1–2 depending on cost)
+  - export const OCR_LIMIT = pLimit(2)
+- server/services/retry.ts
+  - retryWithJitter(fn, { retries, baseMs, maxMs })
+  - On 429 / transient 5xx => retry with exponential backoff + jitter
+  - Example: base 1200ms, jitter 0-400ms, max 30000ms
+  - For 401 invalid key => do NOT retry (fail immediately)
+
+2) Apply limiter + retry everywhere
+Find all “background AI” entry points and wrap them:
+- Claims auto-suggest after extraction
+- Run AI analysis endpoint (and any background analysis triggers)
+- Pattern analysis export generation (if it calls AI)
+- Memory rebuild (if it calls AI—if it’s pure aggregation, no need)
+- Any OCR calls (Vision) use OCR_LIMIT
+
+Pattern:
+AI_LIMIT(() => retryWithJitter(() => openaiCall(), { retries: 3 ... }))
+
+3) Ensure idempotency is enforced (don’t double-run)
+For each job type:
+- Check DB status before running (queued/processing/complete/failed)
+- If processing exists, bail out
+- If complete exists and refresh not requested, bail out
+
+4) Activity log improvements
+When a job:
+- starts => activity log “*_started”
+- succeeds => “*_completed”
+- 429 rate limit => “*_rate_limited”
+- fails => “*_failed” with safe error message
+Never log secrets.
+
+========================================================
+How to test (MUST DO)
+========================================================
+
+E1 (Lexi):
+- Turn Faster mode ON in Account Settings
+- Send message: confirm response works and model logged (dev)
+- Temporarily simulate slow OpenAI (set a super low timeout or add artificial delay) and confirm:
+  - UI shows “timed out” message (not silent)
+
+C2 (Doc Creator):
+- Open Document Creator => see “Ready to Draft” card
+- Confirm counts match backend
+- Click “Auto-attach sources” => counts update
+
+E2 (Batch jobs):
+- Upload 5 evidence files quickly
+- Confirm jobs queue and only 2 run concurrently
+- Simulate 429 (if possible) or reduce rate limit => confirm jittered retry + activity logs
+
+========================================================
+Deliverable
+========================================================
+After implementing, paste a summary:
+
+- Files changed (list)
+- Concurrency numbers (AI_LIMIT/OCR_LIMIT)
+- Timeout seconds for Lexi
+- Confirm Ready-to-Draft card shows correct stats
