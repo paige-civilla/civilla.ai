@@ -166,11 +166,17 @@ import {
   type ActivityLog,
   caseFacts,
   factCitations,
+  timelineEventLinks,
+  claimLinks,
   type CaseFact,
   type InsertCaseFact,
   type UpdateCaseFact,
   type ListCaseFactsFilters,
   type FactCitation,
+  type TimelineEventLink,
+  type InsertTimelineEventLink,
+  type ClaimLink,
+  type InsertClaimLink,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -455,6 +461,15 @@ export interface IStorage {
   attachFactCitation(userId: string, caseId: string, factId: string, citationId: string): Promise<FactCitation>;
   detachFactCitation(userId: string, factId: string, citationId: string): Promise<boolean>;
   listFactCitations(userId: string, factId: string): Promise<FactCitation[]>;
+
+  // Phase 3A: Cross-Module Links
+  createTimelineEventLink(userId: string, caseId: string, eventId: string, payload: InsertTimelineEventLink): Promise<TimelineEventLink>;
+  listTimelineEventLinks(userId: string, caseId: string, eventId: string): Promise<TimelineEventLink[]>;
+  deleteTimelineEventLink(userId: string, linkId: string): Promise<boolean>;
+  
+  createClaimLink(userId: string, caseId: string, claimId: string, payload: InsertClaimLink): Promise<ClaimLink>;
+  listClaimLinks(userId: string, caseId: string, claimId: string): Promise<ClaimLink[]>;
+  deleteClaimLink(userId: string, linkId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3416,6 +3431,153 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(factCitations)
       .where(and(eq(factCitations.userId, userId), eq(factCitations.factId, factId)));
+  }
+
+  // Phase 3A: Cross-Module Links - Timeline Event Links
+  async createTimelineEventLink(userId: string, caseId: string, eventId: string, payload: InsertTimelineEventLink): Promise<TimelineEventLink> {
+    const event = await this.getTimelineEvent(eventId, userId);
+    if (!event || event.caseId !== caseId) {
+      throw new Error("Timeline event not found or doesn't belong to this case");
+    }
+    
+    if (payload.evidenceId) {
+      const evidence = await this.getEvidenceFile(payload.evidenceId, userId);
+      if (!evidence || evidence.caseId !== caseId) {
+        throw new Error("Evidence file not found or doesn't belong to this case");
+      }
+    }
+    if (payload.claimId) {
+      const claim = await this.getCaseClaim(userId, payload.claimId);
+      if (!claim || claim.caseId !== caseId) {
+        throw new Error("Claim not found or doesn't belong to this case");
+      }
+    }
+    if (payload.snippetId) {
+      const snippet = await this.getExhibitSnippet(userId, payload.snippetId);
+      if (!snippet || snippet.caseId !== caseId) {
+        throw new Error("Snippet not found or doesn't belong to this case");
+      }
+    }
+    
+    const [link] = await db
+      .insert(timelineEventLinks)
+      .values({
+        userId,
+        caseId,
+        eventId,
+        linkType: payload.linkType,
+        evidenceId: payload.evidenceId || null,
+        claimId: payload.claimId || null,
+        snippetId: payload.snippetId || null,
+        note: payload.note || null,
+      })
+      .onConflictDoNothing()
+      .returning();
+    
+    if (!link) {
+      const [existing] = await db
+        .select()
+        .from(timelineEventLinks)
+        .where(and(
+          eq(timelineEventLinks.eventId, eventId),
+          eq(timelineEventLinks.linkType, payload.linkType)
+        ));
+      return existing;
+    }
+    return link;
+  }
+
+  async listTimelineEventLinks(userId: string, caseId: string, eventId: string): Promise<TimelineEventLink[]> {
+    return db
+      .select()
+      .from(timelineEventLinks)
+      .where(and(
+        eq(timelineEventLinks.userId, userId),
+        eq(timelineEventLinks.caseId, caseId),
+        eq(timelineEventLinks.eventId, eventId)
+      ))
+      .orderBy(desc(timelineEventLinks.createdAt));
+  }
+
+  async deleteTimelineEventLink(userId: string, linkId: string): Promise<boolean> {
+    const result = await db
+      .delete(timelineEventLinks)
+      .where(and(eq(timelineEventLinks.userId, userId), eq(timelineEventLinks.id, linkId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Phase 3A: Cross-Module Links - Claim Links
+  async createClaimLink(userId: string, caseId: string, claimId: string, payload: InsertClaimLink): Promise<ClaimLink> {
+    const claim = await this.getCaseClaim(userId, claimId);
+    if (!claim || claim.caseId !== caseId) {
+      throw new Error("Claim not found or doesn't belong to this case");
+    }
+    
+    if (payload.eventId) {
+      const event = await this.getTimelineEvent(payload.eventId, userId);
+      if (!event || event.caseId !== caseId) {
+        throw new Error("Timeline event not found or doesn't belong to this case");
+      }
+    }
+    if (payload.trialPrepId) {
+      const item = await this.getTrialPrepShortlistItem(userId, payload.trialPrepId);
+      if (!item || item.caseId !== caseId) {
+        throw new Error("Trial prep item not found or doesn't belong to this case");
+      }
+    }
+    if (payload.snippetId) {
+      const snippet = await this.getExhibitSnippet(userId, payload.snippetId);
+      if (!snippet || snippet.caseId !== caseId) {
+        throw new Error("Snippet not found or doesn't belong to this case");
+      }
+    }
+    
+    const [link] = await db
+      .insert(claimLinks)
+      .values({
+        userId,
+        caseId,
+        claimId,
+        linkType: payload.linkType,
+        eventId: payload.eventId || null,
+        trialPrepId: payload.trialPrepId || null,
+        snippetId: payload.snippetId || null,
+      })
+      .onConflictDoNothing()
+      .returning();
+    
+    if (!link) {
+      const [existing] = await db
+        .select()
+        .from(claimLinks)
+        .where(and(
+          eq(claimLinks.claimId, claimId),
+          eq(claimLinks.linkType, payload.linkType)
+        ));
+      return existing;
+    }
+    return link;
+  }
+
+  async listClaimLinks(userId: string, caseId: string, claimId: string): Promise<ClaimLink[]> {
+    return db
+      .select()
+      .from(claimLinks)
+      .where(and(
+        eq(claimLinks.userId, userId),
+        eq(claimLinks.caseId, caseId),
+        eq(claimLinks.claimId, claimId)
+      ))
+      .orderBy(desc(claimLinks.createdAt));
+  }
+
+  async deleteClaimLink(userId: string, linkId: string): Promise<boolean> {
+    const result = await db
+      .delete(claimLinks)
+      .where(and(eq(claimLinks.userId, userId), eq(claimLinks.id, linkId)))
+      .returning();
+    return result.length > 0;
   }
 }
 
