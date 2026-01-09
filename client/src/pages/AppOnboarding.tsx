@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollablePolicyModal } from "@/components/onboarding/ScrollablePolicyModal";
-import { NotSureButton } from "@/components/onboarding/NotSureButton";
+import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_TO_SAY_VALUE, isUnknownOrPreferNot } from "@/components/onboarding/UnknownControls";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -230,31 +230,36 @@ export default function AppOnboarding() {
     }
   };
 
-  const deferField = (field: string, isProfileField: boolean = true) => {
+  const deferField = (field: string, isProfileField: boolean = true, status: string = UNKNOWN_VALUE) => {
     setDeferredFields(prev => ({ ...prev, [field]: true }));
     if (isProfileField) {
       setData(prev => ({
         ...prev,
-        profile: { ...prev.profile, [field]: "" }
+        profile: { ...prev.profile, [field]: status }
       }));
     } else {
       setData(prev => ({
         ...prev,
-        case: { ...prev.case, [field]: "" }
+        case: { ...prev.case, [field]: status }
       }));
     }
     setErrors(prev => ({ ...prev, [field]: "" }));
   };
 
+  const isFieldDeferred = (value: string): boolean => {
+    return value === UNKNOWN_VALUE || value === PREFER_NOT_TO_SAY_VALUE;
+  };
+
   const hasDeferredFieldsInStep = (stepNum: number): boolean => {
     if (stepNum === 1) {
-      return !!(deferredFields.phone || deferredFields.firmName || deferredFields.barNumber);
+      return isFieldDeferred(data.profile.phone) || isFieldDeferred(data.profile.firmName) || isFieldDeferred(data.profile.barNumber);
     }
     if (stepNum === 2) {
-      return !!(deferredFields.addressLine2 || deferredFields.city || deferredFields.state || deferredFields.zip);
+      return isFieldDeferred(data.profile.addressLine2) || isFieldDeferred(data.profile.city) || 
+             isFieldDeferred(data.profile.state) || isFieldDeferred(data.profile.zip);
     }
     if (stepNum === 3) {
-      return !!deferredFields.caseNumber;
+      return isFieldDeferred(data.case.caseNumber);
     }
     return false;
   };
@@ -305,7 +310,7 @@ export default function AppOnboarding() {
       if (!data.case.title.trim()) newErrors.title = "Case title is required";
       if (!data.case.state.trim()) newErrors.caseState = "State is required";
       if (!data.case.county.trim()) newErrors.county = "County is required";
-      if (!data.case.caseNumber.trim() && !deferredFields.caseNumber) newErrors.caseNumber = "Case number is required";
+      if (!data.case.caseNumber.trim() && !isFieldDeferred(data.case.caseNumber)) newErrors.caseNumber = "Case number is required";
       if (!data.profile.petitionerName.trim()) newErrors.petitionerName = "Petitioner name is required";
       if (!data.profile.respondentName.trim()) newErrors.respondentName = "Respondent name is required";
     }
@@ -315,8 +320,12 @@ export default function AppOnboarding() {
         newErrors.children = "Please add at least one child";
       }
       data.children.forEach((child, idx) => {
-        if (!child.firstName.trim()) newErrors[`child_${idx}_firstName`] = "First name required";
-        if (!child.dateOfBirth) newErrors[`child_${idx}_dob`] = "Date of birth required";
+        if (!child.firstName.trim() && !isFieldDeferred(child.firstName)) {
+          newErrors[`child_${idx}_firstName`] = "First name required";
+        }
+        if (!child.dateOfBirth && !isFieldDeferred(child.dateOfBirth)) {
+          newErrors[`child_${idx}_dob`] = "Date of birth required";
+        }
       });
     }
 
@@ -343,7 +352,7 @@ export default function AppOnboarding() {
       return !!data.profile.addressLine1.trim();
     }
     if (step === 3) {
-      const caseNumberOk = !!data.case.caseNumber.trim() || deferredFields.caseNumber;
+      const caseNumberOk = !!data.case.caseNumber.trim() || isFieldDeferred(data.case.caseNumber);
       return !!data.case.title.trim() && !!data.case.state.trim() && 
              !!data.case.county.trim() && caseNumberOk &&
              !!data.profile.petitionerName.trim() && !!data.profile.respondentName.trim();
@@ -351,7 +360,10 @@ export default function AppOnboarding() {
     if (step === 4) {
       if (!data.case.hasChildren) return true;
       if (data.children.length === 0) return false;
-      return data.children.every(c => c.firstName.trim() && c.dateOfBirth);
+      return data.children.every(c => 
+        (c.firstName.trim() || isFieldDeferred(c.firstName)) && 
+        (c.dateOfBirth || isFieldDeferred(c.dateOfBirth))
+      );
     }
     if (step === 5) {
       return true;
@@ -539,15 +551,15 @@ export default function AppOnboarding() {
                       <Label htmlFor="phone">Phone</Label>
                       <Input
                         id="phone"
-                        value={data.profile.phone}
+                        value={isFieldDeferred(data.profile.phone) ? "" : data.profile.phone}
                         onChange={e => updateProfile("phone", e.target.value)}
                         placeholder="(555) 555-5555"
-                        disabled={deferredFields.phone}
+                        disabled={isFieldDeferred(data.profile.phone)}
                         data-testid="input-phone"
                       />
-                      <NotSureButton 
-                        onClick={() => deferField("phone")} 
-                        isDeferred={deferredFields.phone}
+                      <UnknownControls 
+                        value={data.profile.phone}
+                        onChange={(v) => updateProfile("phone", v)}
                       />
                     </div>
 
@@ -602,30 +614,30 @@ export default function AppOnboarding() {
                           <Label htmlFor="firmName">Law Firm Name</Label>
                           <Input
                             id="firmName"
-                            value={data.profile.firmName}
+                            value={isFieldDeferred(data.profile.firmName) ? "" : data.profile.firmName}
                             onChange={e => updateProfile("firmName", e.target.value)}
                             placeholder="Firm name"
-                            disabled={deferredFields.firmName}
+                            disabled={isFieldDeferred(data.profile.firmName)}
                             data-testid="input-firm-name"
                           />
-                          <NotSureButton 
-                            onClick={() => deferField("firmName")} 
-                            isDeferred={deferredFields.firmName}
+                          <UnknownControls 
+                            value={data.profile.firmName}
+                            onChange={(v) => updateProfile("firmName", v)}
                           />
                         </div>
                         <div>
                           <Label htmlFor="barNumber">Bar Number</Label>
                           <Input
                             id="barNumber"
-                            value={data.profile.barNumber}
+                            value={isFieldDeferred(data.profile.barNumber) ? "" : data.profile.barNumber}
                             onChange={e => updateProfile("barNumber", e.target.value)}
                             placeholder="Bar number"
-                            disabled={deferredFields.barNumber}
+                            disabled={isFieldDeferred(data.profile.barNumber)}
                             data-testid="input-bar-number"
                           />
-                          <NotSureButton 
-                            onClick={() => deferField("barNumber")} 
-                            isDeferred={deferredFields.barNumber}
+                          <UnknownControls 
+                            value={data.profile.barNumber}
+                            onChange={(v) => updateProfile("barNumber", v)}
                           />
                         </div>
                       </>
@@ -662,16 +674,16 @@ export default function AppOnboarding() {
                       <Label htmlFor="addressLine2">Apt, Suite, Unit (Optional)</Label>
                       <Input
                         id="addressLine2"
-                        value={data.profile.addressLine2}
+                        value={isFieldDeferred(data.profile.addressLine2) ? "" : data.profile.addressLine2}
                         onChange={e => updateProfile("addressLine2", e.target.value)}
                         placeholder="Apt 4B"
-                        disabled={deferredFields.addressLine2}
+                        disabled={isFieldDeferred(data.profile.addressLine2)}
                         data-testid="input-address-line2"
                       />
-                      <NotSureButton 
-                        label="Don't have this"
-                        onClick={() => deferField("addressLine2")} 
-                        isDeferred={deferredFields.addressLine2}
+                      <UnknownControls 
+                        value={data.profile.addressLine2}
+                        onChange={(v) => updateProfile("addressLine2", v)}
+                        labels={{ unknown: "Don't have this" }}
                       />
                     </div>
 
@@ -679,15 +691,15 @@ export default function AppOnboarding() {
                       <Label htmlFor="city">City</Label>
                       <Input
                         id="city"
-                        value={data.profile.city}
+                        value={isFieldDeferred(data.profile.city) ? "" : data.profile.city}
                         onChange={e => updateProfile("city", e.target.value)}
                         placeholder="City"
-                        disabled={deferredFields.city}
+                        disabled={isFieldDeferred(data.profile.city)}
                         data-testid="input-city"
                       />
-                      <NotSureButton 
-                        onClick={() => deferField("city")} 
-                        isDeferred={deferredFields.city}
+                      <UnknownControls 
+                        value={data.profile.city}
+                        onChange={(v) => updateProfile("city", v)}
                       />
                     </div>
 
@@ -695,15 +707,15 @@ export default function AppOnboarding() {
                       <Label htmlFor="profileState">State</Label>
                       <Input
                         id="profileState"
-                        value={data.profile.state}
+                        value={isFieldDeferred(data.profile.state) ? "" : data.profile.state}
                         onChange={e => updateProfile("state", e.target.value)}
                         placeholder="State"
-                        disabled={deferredFields.state}
+                        disabled={isFieldDeferred(data.profile.state)}
                         data-testid="input-profile-state"
                       />
-                      <NotSureButton 
-                        onClick={() => deferField("state")} 
-                        isDeferred={deferredFields.state}
+                      <UnknownControls 
+                        value={data.profile.state}
+                        onChange={(v) => updateProfile("state", v)}
                       />
                     </div>
 
@@ -711,15 +723,15 @@ export default function AppOnboarding() {
                       <Label htmlFor="zip">ZIP Code</Label>
                       <Input
                         id="zip"
-                        value={data.profile.zip}
+                        value={isFieldDeferred(data.profile.zip) ? "" : data.profile.zip}
                         onChange={e => updateProfile("zip", e.target.value)}
                         placeholder="12345"
-                        disabled={deferredFields.zip}
+                        disabled={isFieldDeferred(data.profile.zip)}
                         data-testid="input-zip"
                       />
-                      <NotSureButton 
-                        onClick={() => deferField("zip")} 
-                        isDeferred={deferredFields.zip}
+                      <UnknownControls 
+                        value={data.profile.zip}
+                        onChange={(v) => updateProfile("zip", v)}
                       />
                     </div>
                   </div>
@@ -815,20 +827,20 @@ export default function AppOnboarding() {
                     </div>
 
                     <div>
-                      <Label htmlFor="caseNumber">Case Number {deferredFields.caseNumber ? "" : "*"}</Label>
+                      <Label htmlFor="caseNumber">Case Number {isFieldDeferred(data.case.caseNumber) ? "" : "*"}</Label>
                       <Input
                         id="caseNumber"
-                        value={data.case.caseNumber}
+                        value={isFieldDeferred(data.case.caseNumber) ? "" : data.case.caseNumber}
                         onChange={e => updateCase("caseNumber", e.target.value)}
                         placeholder="e.g., CV-2024-12345"
                         className={errors.caseNumber ? "border-destructive" : ""}
-                        disabled={deferredFields.caseNumber}
+                        disabled={isFieldDeferred(data.case.caseNumber)}
                         data-testid="input-case-number"
                       />
                       {errors.caseNumber && <p className="text-sm text-destructive mt-1">{errors.caseNumber}</p>}
-                      <NotSureButton 
-                        onClick={() => deferField("caseNumber", false)} 
-                        isDeferred={deferredFields.caseNumber}
+                      <UnknownControls 
+                        value={data.case.caseNumber}
+                        onChange={(v) => updateCase("caseNumber", v)}
                       />
                     </div>
 
@@ -846,6 +858,8 @@ export default function AppOnboarding() {
                         <option value="custody">Custody</option>
                         <option value="support">Child Support</option>
                         <option value="other">Other</option>
+                        <option value="unknown">I don't know yet</option>
+                        <option value="prefer_not_to_say">Prefer not to say</option>
                       </select>
                     </div>
 
@@ -926,37 +940,52 @@ export default function AppOnboarding() {
                         <div>
                           <Label>First Name *</Label>
                           <Input
-                            value={child.firstName}
+                            value={isFieldDeferred(child.firstName) ? "" : child.firstName}
                             onChange={e => updateChild(idx, "firstName", e.target.value)}
                             placeholder="First name"
                             className={errors[`child_${idx}_firstName`] ? "border-destructive" : ""}
+                            disabled={isFieldDeferred(child.firstName)}
                             data-testid={`input-child-first-name-${idx}`}
                           />
                           {errors[`child_${idx}_firstName`] && (
                             <p className="text-sm text-destructive mt-1">{errors[`child_${idx}_firstName`]}</p>
                           )}
+                          <UnknownControls 
+                            value={child.firstName}
+                            onChange={(v) => updateChild(idx, "firstName", v)}
+                          />
                         </div>
                         <div>
                           <Label>Last Name</Label>
                           <Input
-                            value={child.lastName}
+                            value={isFieldDeferred(child.lastName) ? "" : child.lastName}
                             onChange={e => updateChild(idx, "lastName", e.target.value)}
                             placeholder="Last name"
+                            disabled={isFieldDeferred(child.lastName)}
                             data-testid={`input-child-last-name-${idx}`}
+                          />
+                          <UnknownControls 
+                            value={child.lastName}
+                            onChange={(v) => updateChild(idx, "lastName", v)}
                           />
                         </div>
                         <div>
                           <Label>Date of Birth *</Label>
                           <Input
                             type="date"
-                            value={child.dateOfBirth}
+                            value={isFieldDeferred(child.dateOfBirth) ? "" : child.dateOfBirth}
                             onChange={e => updateChild(idx, "dateOfBirth", e.target.value)}
                             className={errors[`child_${idx}_dob`] ? "border-destructive" : ""}
+                            disabled={isFieldDeferred(child.dateOfBirth)}
                             data-testid={`input-child-dob-${idx}`}
                           />
                           {errors[`child_${idx}_dob`] && (
                             <p className="text-sm text-destructive mt-1">{errors[`child_${idx}_dob`]}</p>
                           )}
+                          <UnknownControls 
+                            value={child.dateOfBirth}
+                            onChange={(v) => updateChild(idx, "dateOfBirth", v)}
+                          />
                         </div>
                       </div>
                     </div>
