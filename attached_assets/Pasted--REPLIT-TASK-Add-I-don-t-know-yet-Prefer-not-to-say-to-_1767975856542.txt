@@ -1,0 +1,193 @@
+/* REPLIT TASK: Add “I don’t know yet” + “Prefer not to say” to EVERY onboarding field
+   UX goal:
+   1) Inline quick-tap buttons under each field
+   2) ALSO include the same options inside Select dropdowns
+
+   Implementation approach:
+   - Standardize two sentinel values across onboarding:
+       "unknown" and "prefer_not"
+   - Add a tiny reusable component: <FieldQuickOptions />
+   - Add helper: addUnknownOptionsToSelect() for SelectContent
+   - Apply to every onboarding step field (inputs + selects)
+*/
+
+/* =========================
+   1) Create NEW file:
+   client/src/components/onboarding/FieldQuickOptions.tsx
+   ========================= */
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+
+export const UNKNOWN_VALUE = "unknown";
+export const PREFER_NOT_VALUE = "prefer_not";
+
+type Props = {
+  disabled?: boolean;
+  onPick: (val: string) => void;
+  className?: string;
+  labels?: {
+    unknown?: string;
+    preferNot?: string;
+  };
+};
+
+export function FieldQuickOptions({
+  disabled,
+  onPick,
+  className,
+  labels,
+}: Props) {
+  const unknownLabel = labels?.unknown ?? "I don’t know yet";
+  const preferNotLabel = labels?.preferNot ?? "Prefer not to say";
+
+  return (
+    <div className={className ?? "mt-2 flex flex-wrap gap-2"}>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={disabled}
+        onClick={() => onPick(UNKNOWN_VALUE)}
+      >
+        {unknownLabel}
+      </Button>
+
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={disabled}
+        onClick={() => onPick(PREFER_NOT_VALUE)}
+      >
+        {preferNotLabel}
+      </Button>
+    </div>
+  );
+}
+
+/* =========================
+   2) Create NEW helper:
+   client/src/components/onboarding/selectUnknownOptions.tsx
+   ========================= */
+
+import React from "react";
+import { SelectItem } from "@/components/ui/select";
+import { UNKNOWN_VALUE, PREFER_NOT_VALUE } from "./FieldQuickOptions";
+
+export function UnknownSelectOptions({
+  unknownLabel = "I don’t know yet",
+  preferNotLabel = "Prefer not to say",
+}: {
+  unknownLabel?: string;
+  preferNotLabel?: string;
+}) {
+  return (
+    <>
+      <SelectItem value={UNKNOWN_VALUE}>{unknownLabel}</SelectItem>
+      <SelectItem value={PREFER_NOT_VALUE}>{preferNotLabel}</SelectItem>
+    </>
+  );
+}
+
+/* =========================
+   3) Apply to onboarding fields
+   (Do this in each onboarding step page/component where fields render)
+
+   Pattern A: INPUT / TEXTAREA fields
+   - After the Input/Textarea, add FieldQuickOptions that sets the same state
+   ========================= */
+
+/*** EXAMPLE (repeat for every Input/Textarea field) ***/
+// BEFORE
+// <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+
+// AFTER
+import { FieldQuickOptions } from "@/components/onboarding/FieldQuickOptions";
+
+<Input
+  value={firstName}
+  onChange={(e) => setFirstName(e.target.value)}
+/>
+
+<FieldQuickOptions
+  onPick={(val) => setFirstName(val)}
+/>
+
+/* =========================
+   Pattern B: SELECT fields
+   - Add UnknownSelectOptions inside <SelectContent>
+   - Also add FieldQuickOptions under the Select (quick taps)
+   ========================= */
+
+/*** EXAMPLE (repeat for every Select) ***/
+import { FieldQuickOptions } from "@/components/onboarding/FieldQuickOptions";
+import { UnknownSelectOptions } from "@/components/onboarding/selectUnknownOptions";
+
+<Select value={state} onValueChange={setState}>
+  <SelectTrigger>
+    <SelectValue placeholder="Select a state" />
+  </SelectTrigger>
+
+  <SelectContent>
+    {/* Add these 2 options at the TOP so mobile users see them immediately */}
+    <UnknownSelectOptions />
+    {/* existing items below */}
+    {US_STATES.map((s) => (
+      <SelectItem key={s} value={s}>
+        {s}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+<FieldQuickOptions onPick={(val) => setState(val)} />
+
+/* =========================
+   4) Safety: Make sure validation accepts these values
+   If any onboarding validation rejects “unknown” / “prefer_not”,
+   update that validation to allow them.
+
+   Common places to update:
+   - client/src/pages/Onboarding*.tsx (zod schemas / form validation)
+   - shared/schema.ts (if enums restrict values)
+   - server routes that persist onboarding data
+
+   QUICK FIX PATTERN (Zod example):
+   ========================= */
+
+// BEFORE: z.string().min(1)
+// AFTER:
+import { UNKNOWN_VALUE, PREFER_NOT_VALUE } from "@/components/onboarding/FieldQuickOptions";
+const allowUnknown = (schema: any) =>
+  schema.or(z.literal(UNKNOWN_VALUE)).or(z.literal(PREFER_NOT_VALUE));
+
+/* Example:
+   const firstNameSchema = allowUnknown(z.string().min(1, "Required"));
+*/
+
+/* =========================
+   5) Optional: Treat sentinel values as “unset” in UI display later
+   Anywhere you display onboarding data, render:
+   - "unknown" => "I don’t know yet"
+   - "prefer_not" => "Prefer not to say"
+   ========================= */
+
+export function prettyAnswer(val?: string | null) {
+  if (!val) return "";
+  if (val === "unknown") return "I don’t know yet";
+  if (val === "prefer_not") return "Prefer not to say";
+  return val;
+}
+
+/* =========================
+   6) Replit instructions (exact steps)
+
+   1) Create the two new files above.
+   2) In EVERY onboarding step component:
+      - For each Input/Textarea: add <FieldQuickOptions onPick={(v)=>setX(v)} />
+      - For each Select: add <UnknownSelectOptions /> inside SelectContent AND add FieldQuickOptions below.
+   3) Run search for: "<SelectContent>" and ensure UnknownSelectOptions is added.
+   4) Run search for Zod/validation that uses .min(1) and update to allow sentinel values.
+   5) Test on mobile: pick “I don’t know yet” from dropdown AND from buttons.
+*/
