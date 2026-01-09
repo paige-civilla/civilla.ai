@@ -5102,13 +5102,35 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const temperature = fastMode ? 0.2 : 0.3;
       const maxTokens = fastMode ? 450 : 1024;
+      const model = "gpt-4.1";
+      const timeoutMs = fastMode ? 25000 : 45000;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4.1",
-        messages: chatHistory,
-        temperature,
-        max_completion_tokens: maxTokens,
-      });
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Lexi] fastMode:", fastMode, "model:", model, "timeout:", timeoutMs);
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      let completion;
+      try {
+        completion = await openai.chat.completions.create({
+          model,
+          messages: chatHistory,
+          temperature,
+          max_completion_tokens: maxTokens,
+        }, { signal: controller.signal });
+      } catch (abortErr: any) {
+        clearTimeout(timeoutId);
+        if (abortErr.name === "AbortError" || controller.signal.aborted) {
+          return res.status(504).json({ 
+            error: "Lexi timed out. Try again.", 
+            code: "LEXI_TIMEOUT" 
+          });
+        }
+        throw abortErr;
+      }
+      clearTimeout(timeoutId);
 
       let assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
       
@@ -5314,27 +5336,35 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const temperature = fastMode ? 0.2 : 0.3;
       const maxTokens = fastMode ? 450 : 1024;
+      const model = "gpt-4.1";
+      const timeoutMs = fastMode ? 25000 : 45000;
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("[LexiStream] fastMode:", fastMode, "model:", model, "timeout:", timeoutMs);
+      }
 
       let clientDisconnected = false;
       req.on("close", () => {
         clientDisconnected = true;
       });
 
+      const controller = new AbortController();
       const stream = await openai.chat.completions.create({
-        model: "gpt-4.1",
+        model,
         messages: chatHistory,
         temperature,
         max_completion_tokens: maxTokens,
         stream: true,
-      });
+      }, { signal: controller.signal });
 
       let fullContent = "";
       const timeout = setTimeout(() => {
         if (!clientDisconnected) {
-          sendSSE("error", { code: "TIMEOUT", message: "Response took too long. Try again in a moment." });
+          controller.abort();
+          sendSSE("error", { code: "LEXI_TIMEOUT", message: "Lexi took too long. Try again (or turn on Faster mode)." });
           res.end();
         }
-      }, 30000);
+      }, timeoutMs);
 
       for await (const chunk of stream) {
         if (clientDisconnected) {

@@ -444,9 +444,12 @@ export default function LexiPanel() {
                 newThreadId = data.threadId;
               }
               if (data.code && data.message) {
+                const isTimeout = data.code === "LEXI_TIMEOUT" || data.code === "TIMEOUT";
                 toast({
-                  title: "Lexi Error",
-                  description: data.message,
+                  title: isTimeout ? "Lexi Timed Out" : "Lexi Error",
+                  description: isTimeout 
+                    ? "Lexi took too long. Try again (or turn on Faster mode in settings)." 
+                    : data.message,
                   variant: "destructive",
                 });
               }
