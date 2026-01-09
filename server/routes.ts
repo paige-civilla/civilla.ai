@@ -7922,6 +7922,230 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  // Phase 3A: Cross-Module Links - Timeline Event Links
+  app.get("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, eventId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const event = await storage.getTimelineEvent(eventId, userId);
+      if (!event || event.caseId !== caseId) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      
+      const links = await storage.listTimelineEventLinks(userId, caseId, eventId);
+      
+      const hydratedLinks = await Promise.all(links.map(async (link) => {
+        const base = {
+          linkId: link.id,
+          linkType: link.linkType,
+          note: link.note,
+          createdAt: link.createdAt,
+        };
+        
+        if (link.linkType === "evidence" && link.evidenceId) {
+          const evidence = await storage.getEvidenceFile(link.evidenceId, userId);
+          return { ...base, evidence: evidence ? { id: evidence.id, originalName: evidence.originalName } : null };
+        }
+        if (link.linkType === "claim" && link.claimId) {
+          const claim = await storage.getCaseClaim(userId, link.claimId);
+          return { ...base, claim: claim ? { id: claim.id, text: claim.claimText, status: claim.status } : null };
+        }
+        if (link.linkType === "snippet" && link.snippetId) {
+          const snippet = await storage.getExhibitSnippet(userId, link.snippetId);
+          return { ...base, snippet: snippet ? { id: snippet.id, title: snippet.title } : null };
+        }
+        return base;
+      }));
+      
+      res.json({ links: hydratedLinks });
+    } catch (error) {
+      console.error("List timeline event links error:", error);
+      res.status(500).json({ error: "Failed to list links" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, eventId } = req.params;
+      const { linkType, evidenceId, claimId, snippetId, note } = req.body;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      if (!linkType || !["evidence", "claim", "snippet"].includes(linkType)) {
+        return res.status(400).json({ error: "Invalid linkType" });
+      }
+      
+      const targetCount = [evidenceId, claimId, snippetId].filter(Boolean).length;
+      if (targetCount !== 1) {
+        return res.status(400).json({ error: "Exactly one of evidenceId, claimId, or snippetId must be provided" });
+      }
+      
+      if (linkType === "evidence" && !evidenceId) {
+        return res.status(400).json({ error: "evidenceId required for evidence link" });
+      }
+      if (linkType === "claim" && !claimId) {
+        return res.status(400).json({ error: "claimId required for claim link" });
+      }
+      if (linkType === "snippet" && !snippetId) {
+        return res.status(400).json({ error: "snippetId required for snippet link" });
+      }
+      
+      const link = await storage.createTimelineEventLink(userId, caseId, eventId, {
+        linkType,
+        evidenceId: evidenceId || null,
+        claimId: claimId || null,
+        snippetId: snippetId || null,
+        note: note || null,
+      });
+      
+      res.json({ link });
+    } catch (error: any) {
+      console.error("Create timeline event link error:", error);
+      if (error.message?.includes("not found") || error.message?.includes("doesn't belong")) {
+        return res.status(404).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to create link" });
+    }
+  });
+
+  app.delete("/api/timeline/event-links/:linkId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { linkId } = req.params;
+      
+      const deleted = await storage.deleteTimelineEventLink(userId, linkId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete timeline event link error:", error);
+      res.status(500).json({ error: "Failed to delete link" });
+    }
+  });
+
+  // Phase 3A: Cross-Module Links - Claim Links
+  app.get("/api/cases/:caseId/claims/:claimId/links", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, claimId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const claim = await storage.getCaseClaim(userId, claimId);
+      if (!claim || claim.caseId !== caseId) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      const links = await storage.listClaimLinks(userId, caseId, claimId);
+      
+      const hydratedLinks = await Promise.all(links.map(async (link) => {
+        const base = {
+          linkId: link.id,
+          linkType: link.linkType,
+          createdAt: link.createdAt,
+        };
+        
+        if (link.linkType === "timeline" && link.eventId) {
+          const event = await storage.getTimelineEvent(link.eventId, userId);
+          return { ...base, event: event ? { id: event.id, title: event.title, eventDate: event.eventDate } : null };
+        }
+        if (link.linkType === "trial_prep" && link.trialPrepId) {
+          const item = await storage.getTrialPrepShortlistItem(userId, link.trialPrepId);
+          return { ...base, trialPrepItem: item ? { id: item.id, title: item.title, binderSection: item.binderSection } : null };
+        }
+        if (link.linkType === "snippet" && link.snippetId) {
+          const snippet = await storage.getExhibitSnippet(userId, link.snippetId);
+          return { ...base, snippet: snippet ? { id: snippet.id, title: snippet.title } : null };
+        }
+        return base;
+      }));
+      
+      res.json({ links: hydratedLinks });
+    } catch (error) {
+      console.error("List claim links error:", error);
+      res.status(500).json({ error: "Failed to list links" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/claims/:claimId/links", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, claimId } = req.params;
+      const { linkType, eventId, trialPrepId, snippetId } = req.body;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      if (!linkType || !["timeline", "trial_prep", "snippet"].includes(linkType)) {
+        return res.status(400).json({ error: "Invalid linkType" });
+      }
+      
+      const targetCount = [eventId, trialPrepId, snippetId].filter(Boolean).length;
+      if (targetCount !== 1) {
+        return res.status(400).json({ error: "Exactly one of eventId, trialPrepId, or snippetId must be provided" });
+      }
+      
+      if (linkType === "timeline" && !eventId) {
+        return res.status(400).json({ error: "eventId required for timeline link" });
+      }
+      if (linkType === "trial_prep" && !trialPrepId) {
+        return res.status(400).json({ error: "trialPrepId required for trial_prep link" });
+      }
+      if (linkType === "snippet" && !snippetId) {
+        return res.status(400).json({ error: "snippetId required for snippet link" });
+      }
+      
+      const link = await storage.createClaimLink(userId, caseId, claimId, {
+        linkType,
+        eventId: eventId || null,
+        trialPrepId: trialPrepId || null,
+        snippetId: snippetId || null,
+      });
+      
+      res.json({ link });
+    } catch (error: any) {
+      console.error("Create claim link error:", error);
+      if (error.message?.includes("not found") || error.message?.includes("doesn't belong")) {
+        return res.status(404).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to create link" });
+    }
+  });
+
+  app.delete("/api/claim-links/:linkId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { linkId } = req.params;
+      
+      const deleted = await storage.deleteClaimLink(userId, linkId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Link not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete claim link error:", error);
+      res.status(500).json({ error: "Failed to delete link" });
+    }
+  });
+
   app.get("/api/cases/:caseId/draft-readiness", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

@@ -386,6 +386,7 @@ export interface IStorage {
   deleteEvidenceAiAnalysis(userId: string, analysisId: string): Promise<boolean>;
 
   listExhibitSnippets(userId: string, caseId: string, exhibitListId?: string): Promise<ExhibitSnippet[]>;
+  getExhibitSnippet(userId: string, snippetId: string): Promise<ExhibitSnippet | undefined>;
   createExhibitSnippet(userId: string, caseId: string, payload: InsertExhibitSnippet): Promise<ExhibitSnippet>;
   updateExhibitSnippet(userId: string, snippetId: string, payload: UpdateExhibitSnippet): Promise<ExhibitSnippet | undefined>;
   deleteExhibitSnippet(userId: string, snippetId: string): Promise<boolean>;
@@ -2570,6 +2571,12 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(exhibitSnippets)
       .where(and(eq(exhibitSnippets.userId, userId), eq(exhibitSnippets.caseId, caseId)))
       .orderBy(asc(exhibitSnippets.sortOrder), asc(exhibitSnippets.createdAt));
+  }
+
+  async getExhibitSnippet(userId: string, snippetId: string): Promise<ExhibitSnippet | undefined> {
+    const [snippet] = await db.select().from(exhibitSnippets)
+      .where(and(eq(exhibitSnippets.userId, userId), eq(exhibitSnippets.id, snippetId)));
+    return snippet;
   }
 
   async createExhibitSnippet(userId: string, caseId: string, payload: InsertExhibitSnippet): Promise<ExhibitSnippet> {
