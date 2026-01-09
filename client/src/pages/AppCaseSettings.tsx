@@ -618,6 +618,8 @@ export default function AppCaseSettings() {
                   <SelectValue placeholder="Select case type" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="unknown">I don't know yet</SelectItem>
+                  <SelectItem value="prefer_not">Prefer not to say</SelectItem>
                   {CASE_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
@@ -634,6 +636,8 @@ export default function AppCaseSettings() {
                   <SelectValue placeholder="Select state" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="unknown">I don't know yet</SelectItem>
+                  <SelectItem value="prefer_not">Prefer not to say</SelectItem>
                   {US_STATES.map((state) => (
                     <SelectItem key={state} value={state}>{state}</SelectItem>
                   ))}

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollablePolicyModal } from "@/components/onboarding/ScrollablePolicyModal";
-import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_TO_SAY_VALUE, isUnknownOrPreferNot } from "@/components/onboarding/UnknownControls";
+import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_VALUE, isDeferredValue } from "@/components/onboarding/UnknownControls";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -247,7 +247,7 @@ export default function AppOnboarding() {
   };
 
   const isFieldDeferred = (value: string): boolean => {
-    return value === UNKNOWN_VALUE || value === PREFER_NOT_TO_SAY_VALUE;
+    return isDeferredValue(value);
   };
 
   const hasDeferredFieldsInStep = (stepNum: number): boolean => {
@@ -859,7 +859,7 @@ export default function AppOnboarding() {
                         <option value="support">Child Support</option>
                         <option value="other">Other</option>
                         <option value="unknown">I don't know yet</option>
-                        <option value="prefer_not_to_say">Prefer not to say</option>
+                        <option value="prefer_not">Prefer not to say</option>
                       </select>
                     </div>
 

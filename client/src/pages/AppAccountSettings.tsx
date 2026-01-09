@@ -14,7 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
 import ModuleIntro from "@/components/app/ModuleIntro";
-import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_TO_SAY_VALUE, isFieldDeferred } from "@/components/onboarding/UnknownControls";
+import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_VALUE, isFieldDeferred, isDeferredValue } from "@/components/onboarding/UnknownControls";
 
 interface UserProfile {
   fullName: string | null;
