@@ -1,0 +1,79 @@
+REPLIT TASK: Align “I don’t know yet” + “Prefer not to say” UX with spec (without breaking existing data)
+
+Goal
+- Always show TWO inline buttons under EVERY onboarding field:
+  1) “I don’t know yet”
+  2) “Prefer not to say”
+- ALSO include these same options INSIDE every Select/Dropdown
+- Standardize sentinel values to:
+  - "unknown"
+  - "prefer_not"
+- Backwards compatible: previously-saved value "prefer_not_to_say" must still work and display correctly (treated the same as "prefer_not")
+
+A) Standardize sentinel handling (backwards compatible)
+1) Create a single shared helper (client + server safe if possible):
+   - isDeferredValue(v) => true if v is "unknown" OR "prefer_not" OR "prefer_not_to_say"
+   - normalizeDeferredValue(v):
+       if v === "prefer_not_to_say" return "prefer_not"
+       else return v
+
+2) Update ANY UI display mapping to show:
+   - "unknown" => “I don’t know yet”
+   - "prefer_not" or "prefer_not_to_say" => “Prefer not to say”
+
+3) IMPORTANT: Do NOT wipe old values. If DB contains prefer_not_to_say, treat it as prefer_not.
+   Optional (nice-to-have): when user re-saves, persist the normalized "prefer_not".
+
+B) Update UnknownControls UX per spec
+Current UX hides the buttons after selection and shows a “status + clear”.
+Change it to:
+- ALWAYS show both buttons under every field (even when field already has a value)
+- If field is currently deferred, visually indicate active state (selected styling)
+- Add a small “Clear” link/button next to the buttons (optional) that resets field to "" (empty)
+- Buttons should set the field value directly:
+  - “I don’t know yet” => "unknown"
+  - “Prefer not to say” => "prefer_not"
+
+C) Apply UnknownControls to every onboarding field (verify coverage)
+- Walk every step in AppOnboarding and ensure UnknownControls is rendered under:
+  - text inputs
+  - numeric inputs
+  - date inputs
+  - textarea inputs
+  - any custom components
+- Confirm children fields also have it where relevant.
+
+D) Add sentinel values into ALL Select dropdowns
+For each <SelectContent> list, prepend:
+- <SelectItem value="unknown">I don’t know yet</SelectItem>
+- <SelectItem value="prefer_not">Prefer not to say</SelectItem>
+
+Do this for every select in onboarding, including:
+- state selector
+- case type selector
+- any yes/no selectors if using Select
+- anything else using Select
+
+E) Validation updates (frontend + backend)
+- Wherever validation checks “required” for onboarding, treat deferred values as valid.
+- Update zod schemas / server validation to accept:
+  - "unknown"
+  - "prefer_not"
+  - also accept "prefer_not_to_say" for backward compatibility
+- If there are enums, add these values to the enum or allow union with string literals.
+
+F) Account Settings + Case Settings edit flows
+- Ensure the same controls and dropdown options exist when editing those fields later.
+- If there’s a “pretty display” layer, ensure it formats deferred values consistently.
+
+G) Report back
+After implementing, provide:
+1) Files changed
+2) Search results count for:
+   - "prefer_not_to_say" (should remain only in backward-compat normalize logic, not scattered)
+   - "prefer_not" (should be used everywhere)
+3) Confirm:
+   - Buttons always visible under every field
+   - Dropdowns include both options
+   - Existing users with prefer_not_to_say still display correctly
+   - Onboarding can proceed with deferred values
