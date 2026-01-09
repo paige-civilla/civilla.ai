@@ -38,7 +38,7 @@ import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtractio
 import { createLimiter } from "./utils/concurrency";
 import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
 import { searchCaseWide } from "./services/search";
-import { isAutoSuggestPending, getAutoSuggestStats } from "./claims/autoSuggest";
+import { isAutoSuggestPending, getAutoSuggestStats, triggerClaimsSuggestionForEvidence } from "./claims/autoSuggest";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",

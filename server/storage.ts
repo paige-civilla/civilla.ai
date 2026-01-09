@@ -3745,6 +3745,17 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     return extraction || null;
   }
+
+  async listEvidenceExtractions(userId: string, caseId: string): Promise<EvidenceExtraction[]> {
+    return db
+      .select()
+      .from(evidenceExtractions)
+      .where(and(
+        eq(evidenceExtractions.userId, userId),
+        eq(evidenceExtractions.caseId, caseId)
+      ))
+      .orderBy(desc(evidenceExtractions.updatedAt));
+  }
 }
 
 export const storage = new DatabaseStorage();
