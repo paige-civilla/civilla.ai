@@ -516,13 +516,19 @@ export const caseChildren = pgTable("case_children", {
   userId: varchar("user_id").notNull().references(() => users.id),
   caseId: varchar("case_id").notNull().references(() => cases.id),
   firstName: text("first_name").notNull(),
+  firstNameStatus: text("first_name_status"),
   lastName: text("last_name"),
-  dateOfBirth: text("date_of_birth").notNull(),
+  lastNameStatus: text("last_name_status"),
+  dateOfBirth: text("date_of_birth"),
+  dateOfBirthStatus: text("date_of_birth_status"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   userCaseIdx: index("case_children_user_case_idx").on(table.userId, table.caseId),
 }));
+
+export const unknownOrPreferNotSayValues = ["unknown", "prefer_not_to_say"] as const;
+export type UnknownOrPreferNotSay = (typeof unknownOrPreferNotSayValues)[number];
 
 export const insertCaseChildSchema = createInsertSchema(caseChildren)
   .pick({
@@ -532,16 +538,40 @@ export const insertCaseChildSchema = createInsertSchema(caseChildren)
     notes: true,
   })
   .extend({
-    firstName: z.string().min(1, "First name is required").max(100),
-    lastName: z.string().max(100).optional().nullable(),
-    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    firstName: z.union([
+      z.string().min(1, "First name is required").max(100),
+      z.enum(unknownOrPreferNotSayValues),
+    ]),
+    firstNameStatus: z.enum(unknownOrPreferNotSayValues).optional().nullable(),
+    lastName: z.union([
+      z.string().max(100),
+      z.enum(unknownOrPreferNotSayValues),
+    ]).optional().nullable(),
+    lastNameStatus: z.enum(unknownOrPreferNotSayValues).optional().nullable(),
+    dateOfBirth: z.union([
+      z.string().min(1),
+      z.enum(unknownOrPreferNotSayValues),
+    ]).optional().nullable(),
+    dateOfBirthStatus: z.enum(unknownOrPreferNotSayValues).optional().nullable(),
     notes: z.string().max(2000).optional().nullable(),
   });
 
 export const updateCaseChildSchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(100).optional(),
-  lastName: z.string().max(100).optional().nullable(),
-  dateOfBirth: z.string().min(1).optional(),
+  firstName: z.union([
+    z.string().min(1, "First name is required").max(100),
+    z.enum(unknownOrPreferNotSayValues),
+  ]).optional(),
+  firstNameStatus: z.enum(unknownOrPreferNotSayValues).optional().nullable(),
+  lastName: z.union([
+    z.string().max(100),
+    z.enum(unknownOrPreferNotSayValues),
+  ]).optional().nullable(),
+  lastNameStatus: z.enum(unknownOrPreferNotSayValues).optional().nullable(),
+  dateOfBirth: z.union([
+    z.string().min(1),
+    z.enum(unknownOrPreferNotSayValues),
+  ]).optional().nullable(),
+  dateOfBirthStatus: z.enum(unknownOrPreferNotSayValues).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
 });
 

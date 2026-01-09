@@ -479,13 +479,20 @@ export async function initDbTables(): Promise<void> {
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
       case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
       first_name TEXT NOT NULL,
+      first_name_status TEXT,
       last_name TEXT,
-      date_of_birth TEXT NOT NULL,
+      last_name_status TEXT,
+      date_of_birth TEXT,
+      date_of_birth_status TEXT,
       notes TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS idx_case_children_user_case ON case_children(user_id, case_id)`
+    `CREATE INDEX IF NOT EXISTS idx_case_children_user_case ON case_children(user_id, case_id)`,
+    `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS first_name_status TEXT`,
+    `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS last_name_status TEXT`,
+    `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS date_of_birth_status TEXT`,
+    `ALTER TABLE case_children ALTER COLUMN date_of_birth DROP NOT NULL`
   ]);
 
   await initTable("tasks", `
