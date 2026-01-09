@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_TO_SAY_VALUE, isFieldDeferred } from "@/components/onboarding/UnknownControls";
 
 interface UserProfile {
   fullName: string | null;
@@ -290,11 +291,17 @@ export default function AppAccountSettings() {
                     <Label htmlFor="phone" className="text-neutral-darkest">Phone</Label>
                     <Input
                       id="phone"
-                      value={formData.phone}
+                      value={isFieldDeferred(formData.phone) ? "" : formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="(555) 123-4567"
                       className="mt-1"
+                      disabled={isFieldDeferred(formData.phone)}
                       data-testid="input-phone"
+                    />
+                    <UnknownControls
+                      value={formData.phone}
+                      onChange={(v) => setFormData({ ...formData, phone: v })}
+                      showHelperText={false}
                     />
                   </div>
                 </div>
@@ -317,22 +324,35 @@ export default function AppAccountSettings() {
                       <Label htmlFor="addressLine2" className="text-neutral-darkest">Apt, Suite, etc. (optional)</Label>
                       <Input
                         id="addressLine2"
-                        value={formData.addressLine2}
+                        value={isFieldDeferred(formData.addressLine2) ? "" : formData.addressLine2}
                         onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
                         placeholder="Apt 4B"
                         className="mt-1"
+                        disabled={isFieldDeferred(formData.addressLine2)}
                         data-testid="input-address2"
+                      />
+                      <UnknownControls
+                        value={formData.addressLine2}
+                        onChange={(v) => setFormData({ ...formData, addressLine2: v })}
+                        showHelperText={false}
+                        labels={{ unknown: "Don't have this" }}
                       />
                     </div>
                     <div>
                       <Label htmlFor="city" className="text-neutral-darkest">City</Label>
                       <Input
                         id="city"
-                        value={formData.city}
+                        value={isFieldDeferred(formData.city) ? "" : formData.city}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                         placeholder="City"
                         className="mt-1"
+                        disabled={isFieldDeferred(formData.city)}
                         data-testid="input-city"
+                      />
+                      <UnknownControls
+                        value={formData.city}
+                        onChange={(v) => setFormData({ ...formData, city: v })}
+                        showHelperText={false}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -340,22 +360,34 @@ export default function AppAccountSettings() {
                         <Label htmlFor="state" className="text-neutral-darkest">State</Label>
                         <Input
                           id="state"
-                          value={formData.state}
+                          value={isFieldDeferred(formData.state) ? "" : formData.state}
                           onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                           placeholder="State"
                           className="mt-1"
+                          disabled={isFieldDeferred(formData.state)}
                           data-testid="input-state"
+                        />
+                        <UnknownControls
+                          value={formData.state}
+                          onChange={(v) => setFormData({ ...formData, state: v })}
+                          showHelperText={false}
                         />
                       </div>
                       <div>
                         <Label htmlFor="zip" className="text-neutral-darkest">ZIP</Label>
                         <Input
                           id="zip"
-                          value={formData.zip}
+                          value={isFieldDeferred(formData.zip) ? "" : formData.zip}
                           onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
                           placeholder="12345"
                           className="mt-1"
+                          disabled={isFieldDeferred(formData.zip)}
                           data-testid="input-zip"
+                        />
+                        <UnknownControls
+                          value={formData.zip}
+                          onChange={(v) => setFormData({ ...formData, zip: v })}
+                          showHelperText={false}
                         />
                       </div>
                     </div>

@@ -33,6 +33,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Case, CaseChild } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import { UnknownControls, isFieldDeferred } from "@/components/onboarding/UnknownControls";
 
 interface UserProfile {
   fullName: string | null;
@@ -223,7 +224,7 @@ export default function AppCaseSettings() {
     setChildForm({
       firstName: child.firstName,
       lastName: child.lastName || "",
-      dateOfBirth: child.dateOfBirth,
+      dateOfBirth: child.dateOfBirth || "",
       notes: child.notes || "",
     });
     setChildDialogOpen(true);
@@ -504,7 +505,7 @@ export default function AppCaseSettings() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {children.map((child) => {
-                    const age = calculateAge(child.dateOfBirth);
+                    const age = child.dateOfBirth ? calculateAge(child.dateOfBirth) : null;
                     return (
                       <Card key={child.id} className="bg-white" data-testid={`card-child-${child.id}`}>
                         <CardContent className="p-5">
@@ -514,7 +515,7 @@ export default function AppCaseSettings() {
                                 {child.firstName} {child.lastName || ""}
                               </h3>
                               <p className="font-sans text-sm text-neutral-darkest/60 mt-1">
-                                Born: {formatDob(child.dateOfBirth)}
+                                Born: {child.dateOfBirth ? formatDob(child.dateOfBirth) : "Not specified"}
                                 {age !== null && ` (${age} years old)`}
                               </p>
                               {child.notes && (
@@ -594,11 +595,17 @@ export default function AppCaseSettings() {
               <Label htmlFor="case-number">Case Number</Label>
               <Input
                 id="case-number"
-                value={caseForm.caseNumber}
+                value={isFieldDeferred(caseForm.caseNumber) ? "" : caseForm.caseNumber}
                 onChange={(e) => setCaseForm({ ...caseForm, caseNumber: e.target.value })}
                 placeholder="e.g., 2024-FL-12345"
                 maxLength={80}
+                disabled={isFieldDeferred(caseForm.caseNumber)}
                 data-testid="input-case-number"
+              />
+              <UnknownControls
+                value={caseForm.caseNumber}
+                onChange={(v) => setCaseForm({ ...caseForm, caseNumber: v })}
+                showHelperText={false}
               />
             </div>
             <div className="space-y-2">

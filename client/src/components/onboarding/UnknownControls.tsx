@@ -96,6 +96,8 @@ export function isUnknownOrPreferNot(value: string | null | undefined): boolean 
   return value === UNKNOWN_VALUE || value === PREFER_NOT_TO_SAY_VALUE;
 }
 
+export const isFieldDeferred = isUnknownOrPreferNot;
+
 export function getStatusBadge(value: string | null | undefined): string | null {
   if (value === UNKNOWN_VALUE) return "Unknown";
   if (value === PREFER_NOT_TO_SAY_VALUE) return "Not provided";
