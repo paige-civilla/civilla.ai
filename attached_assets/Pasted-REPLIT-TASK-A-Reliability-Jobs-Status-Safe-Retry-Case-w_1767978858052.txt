@@ -1,0 +1,166 @@
+REPLIT TASK: A) Reliability / Jobs Status + Safe Retry (Case-wide)
+
+Goal
+Create a single, trustworthy “AI & Processing Status” panel per case so we can see:
+- what’s queued / running / failed / complete
+- last errors (human readable)
+- and retry failed work safely (without duplicating jobs)
+
+This should cover 4 job families:
+1) Evidence text extraction
+2) Evidence AI analyses
+3) Claim auto-suggest (claims_suggesting / claims_suggested)
+4) Pattern analysis export / trial binder export (only if you already log them as activity; otherwise ignore)
+
+----------------------------------------
+PART 1 — Backend: Aggregate Status Endpoint
+----------------------------------------
+
+1) Create/extend endpoint:
+GET /api/cases/:caseId/ai-jobs/status
+- requireAuth
+- validate: user owns case
+- returns a single JSON payload with counts + “recent failures”
+
+Response shape:
+{
+  ok: true,
+  caseId,
+  extraction: {
+    total,
+    queued,
+    processing,
+    complete,
+    failed,
+    recentFailures: [{ evidenceId, evidenceName, error, updatedAt }]
+  },
+  analyses: {
+    total,
+    pending,   // queued/processing
+    complete,
+    failed,
+    recentFailures: [{ analysisId, evidenceId, evidenceName, error, updatedAt }]
+  },
+  claims: {
+    suggestedTotal,
+    pending,   // from activity logs or job table if you have one
+    lastRunAt,
+    lastError
+  },
+  updatedAt: new Date().toISOString()
+}
+
+Where to pull from:
+- evidence_extractions (status, error, updated_at, evidence_id)
+- evidence_ai_analyses (status, error, updated_at, evidence_id)
+- activity_logs (events like claims_suggesting / claims_suggested / claims_suggest_failed)
+- evidence_files for names (original_name)
+
+Implementation notes:
+- Do NOT do expensive joins per row; prefer:
+  - one query to count by status for each table
+  - one query to fetch last ~5 failed records per category
+- Treat “queued” and “processing” as “pending” for UI.
+- Use consistent status normalization across tables:
+  - extraction.status: queued|processing|complete|failed
+  - analyses.status: queued|processing|complete|failed (or pending|complete|failed — normalize)
+
+Add this near other case-scoped endpoints in server/routes.ts, and implement helper functions in server/services/aiJobsStatus.ts (new file) so the route stays clean.
+
+----------------------------------------
+PART 2 — Backend: Safe Retry Endpoints
+----------------------------------------
+
+2) Add endpoints:
+
+A) POST /api/cases/:caseId/evidence/:evidenceId/extraction/retry
+- requireAuth
+- validate ownership case + evidence
+- allowed only if extraction.status === "failed"
+- action:
+  - set extraction.status = "queued"
+  - clear extraction.error
+  - set queued_at = now (if exists)
+  - enqueueEvidenceExtraction(evidenceId) (your existing queue)
+- respond { ok: true }
+
+B) POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry
+- requireAuth
+- validate ownership
+- allowed only if last analysis status is "failed" OR no analyses exist
+- action:
+  - call your existing “run analysis” endpoint logic (the one you added)
+  - pass refresh:true to ensure it creates a new run or re-runs
+- respond { ok: true }
+
+C) POST /api/cases/:caseId/claims/retry
+- requireAuth
+- validate ownership
+- action:
+  - trigger the case-wide claims autosuggest scheduler (same logic you use after extraction completion)
+  - must be debounced (respect your 60s debounce)
+- respond { ok: true }
+
+IMPORTANT:
+- These are “safe retries” and should NOT allow infinite spam.
+- Reuse your global concurrency limiter (pLimit(2)) and any jitter backoff utilities.
+
+----------------------------------------
+PART 3 — Frontend: Case Dashboard Status Card
+----------------------------------------
+
+3) Add a small card on the Case Dashboard (AppDashboard.tsx) titled:
+“AI & Processing Status”
+
+Display:
+- Evidence Extraction: X complete / Y pending / Z failed (show counts)
+- AI Analysis: X complete / Y pending / Z failed
+- Claims Suggestions: pending? last run time? last error?
+
+Buttons:
+- “View details” (expands within the card)
+In expanded details:
+- show recentFailures lists (max 5 each) with:
+  - evidence filename
+  - short error text (truncate)
+  - “Retry” button inline per item (calls the retry endpoints above)
+- Also include “Retry all failed” buttons per category:
+  - Retry all failed extractions (calls retry for each failed evidence extraction, but throttle sequentially on client)
+  - Retry all failed analyses
+
+UX notes:
+- Poll status every 10–15 seconds ONLY while there is pending work or failures.
+- Otherwise, fetch once on load.
+- Add a tiny “Last updated: time” label.
+
+----------------------------------------
+PART 4 — Make Failures Human-Readable
+----------------------------------------
+
+4) Normalize error messages returned to UI.
+If error includes:
+- invalid_api_key / 401 → show: “OpenAI key invalid or missing.”
+- rate_limit / 429 → “Rate-limited. Try again in a minute.”
+- vision 403/401 → “OCR not configured or not authorized.”
+- generic → show first 120 chars
+
+Do not expose secrets.
+
+----------------------------------------
+PART 5 — Report Back
+----------------------------------------
+
+After implementing, report:
+- files changed/created
+- example JSON response from /api/cases/:caseId/ai-jobs/status
+- confirm retry endpoints work:
+  - fail an extraction (temporarily break Vision key) → see failed → restore key → retry → goes queued→complete
+  - same for AI analysis
+
+Deliverables checklist
+✅ /api/cases/:caseId/ai-jobs/status
+✅ Extraction retry endpoint
+✅ Analysis retry endpoint
+✅ Claims retry endpoint
+✅ Dashboard card + expandable detail + retry buttons
+✅ Safe polling + human-readable errors

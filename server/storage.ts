@@ -3586,6 +3586,165 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result.length > 0;
   }
+
+  async countExtractionsByStatus(userId: string, caseId: string): Promise<{
+    total: number;
+    queued: number;
+    processing: number;
+    complete: number;
+    failed: number;
+  }> {
+    const extractions = await db
+      .select({ status: evidenceExtractions.status })
+      .from(evidenceExtractions)
+      .where(and(
+        eq(evidenceExtractions.userId, userId),
+        eq(evidenceExtractions.caseId, caseId)
+      ));
+    
+    return {
+      total: extractions.length,
+      queued: extractions.filter(e => e.status === "queued").length,
+      processing: extractions.filter(e => e.status === "processing").length,
+      complete: extractions.filter(e => e.status === "complete").length,
+      failed: extractions.filter(e => e.status === "failed").length,
+    };
+  }
+
+  async countAnalysesByStatus(userId: string, caseId: string): Promise<{
+    total: number;
+    queued: number;
+    processing: number;
+    complete: number;
+    failed: number;
+  }> {
+    const analyses = await db
+      .select({ status: evidenceAiAnalyses.status })
+      .from(evidenceAiAnalyses)
+      .where(and(
+        eq(evidenceAiAnalyses.userId, userId),
+        eq(evidenceAiAnalyses.caseId, caseId)
+      ));
+    
+    return {
+      total: analyses.length,
+      queued: analyses.filter(a => a.status === "queued" || a.status === "pending").length,
+      processing: analyses.filter(a => a.status === "processing").length,
+      complete: analyses.filter(a => a.status === "complete").length,
+      failed: analyses.filter(a => a.status === "failed").length,
+    };
+  }
+
+  async getRecentFailedExtractions(userId: string, caseId: string, limit: number): Promise<Array<{
+    id: string;
+    evidenceId: string;
+    evidenceName: string | null;
+    error: string | null;
+    updatedAt: Date;
+  }>> {
+    const results = await db
+      .select({
+        id: evidenceExtractions.id,
+        evidenceId: evidenceExtractions.evidenceId,
+        evidenceName: evidenceFiles.originalName,
+        error: evidenceExtractions.error,
+        updatedAt: evidenceExtractions.updatedAt,
+      })
+      .from(evidenceExtractions)
+      .leftJoin(evidenceFiles, eq(evidenceExtractions.evidenceId, evidenceFiles.id))
+      .where(and(
+        eq(evidenceExtractions.userId, userId),
+        eq(evidenceExtractions.caseId, caseId),
+        eq(evidenceExtractions.status, "failed")
+      ))
+      .orderBy(desc(evidenceExtractions.updatedAt))
+      .limit(limit);
+    
+    return results;
+  }
+
+  async getRecentFailedAnalyses(userId: string, caseId: string, limit: number): Promise<Array<{
+    id: string;
+    evidenceId: string;
+    evidenceName: string | null;
+    error: string | null;
+    updatedAt: Date;
+  }>> {
+    const results = await db
+      .select({
+        id: evidenceAiAnalyses.id,
+        evidenceId: evidenceAiAnalyses.evidenceId,
+        evidenceName: evidenceFiles.originalName,
+        error: evidenceAiAnalyses.error,
+        updatedAt: evidenceAiAnalyses.updatedAt,
+      })
+      .from(evidenceAiAnalyses)
+      .leftJoin(evidenceFiles, eq(evidenceAiAnalyses.evidenceId, evidenceFiles.id))
+      .where(and(
+        eq(evidenceAiAnalyses.userId, userId),
+        eq(evidenceAiAnalyses.caseId, caseId),
+        eq(evidenceAiAnalyses.status, "failed")
+      ))
+      .orderBy(desc(evidenceAiAnalyses.updatedAt))
+      .limit(limit);
+    
+    return results;
+  }
+
+  async getRecentClaimsActivityLogs(userId: string, caseId: string, limit: number): Promise<ActivityLog[]> {
+    return db
+      .select()
+      .from(activityLogs)
+      .where(and(
+        eq(activityLogs.userId, userId),
+        eq(activityLogs.caseId, caseId),
+        inArray(activityLogs.type, ["claims_suggesting", "claims_suggested", "claims_suggest_failed"])
+      ))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(limit);
+  }
+
+  async countSuggestedClaims(userId: string, caseId: string): Promise<number> {
+    const results = await db
+      .select({ id: caseClaims.id })
+      .from(caseClaims)
+      .where(and(
+        eq(caseClaims.userId, userId),
+        eq(caseClaims.caseId, caseId),
+        eq(caseClaims.status, "suggested")
+      ));
+    return results.length;
+  }
+
+  async retryExtraction(userId: string, extractionId: string): Promise<boolean> {
+    const result = await db
+      .update(evidenceExtractions)
+      .set({
+        status: "queued",
+        error: null,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(evidenceExtractions.id, extractionId),
+        eq(evidenceExtractions.userId, userId),
+        eq(evidenceExtractions.status, "failed")
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getExtractionByEvidenceId(userId: string, caseId: string, evidenceId: string): Promise<EvidenceExtraction | null> {
+    const [extraction] = await db
+      .select()
+      .from(evidenceExtractions)
+      .where(and(
+        eq(evidenceExtractions.userId, userId),
+        eq(evidenceExtractions.caseId, caseId),
+        eq(evidenceExtractions.evidenceId, evidenceId)
+      ))
+      .limit(1);
+    return extraction || null;
+  }
 }
 
 export const storage = new DatabaseStorage();

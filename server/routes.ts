@@ -1364,6 +1364,194 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { getAiJobsStatus } = await import("./services/aiJobsStatus");
+      const status = await getAiJobsStatus(userId, caseId);
+      res.json(status);
+    } catch (error) {
+      console.error("AI jobs status error:", error);
+      res.status(500).json({ error: "Failed to get AI jobs status" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/retry", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const extraction = await storage.getExtractionByEvidenceId(userId, caseId, evidenceId);
+      if (!extraction) {
+        return res.status(404).json({ error: "No extraction found for this evidence" });
+      }
+
+      if (extraction.status !== "failed") {
+        return res.status(400).json({ error: "Can only retry failed extractions" });
+      }
+
+      const retried = await storage.retryExtraction(userId, extraction.id);
+      if (!retried) {
+        return res.status(400).json({ error: "Failed to queue retry" });
+      }
+
+      if (file.storageKey) {
+        enqueueEvidenceExtraction({
+          userId,
+          caseId,
+          evidenceId,
+          storageKey: file.storageKey,
+          mimeType: file.mimeType,
+          originalFilename: file.originalName,
+        });
+      }
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Retry extraction error:", error);
+      res.status(500).json({ error: "Failed to retry extraction" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
+      const latestAnalysis = analyses[0];
+      
+      if (latestAnalysis && latestAnalysis.status !== "failed") {
+        return res.status(400).json({ error: "Can only retry failed analyses or run new ones" });
+      }
+
+      const extraction = await storage.getExtractionByEvidenceId(userId, caseId, evidenceId);
+      if (!extraction || extraction.status !== "complete" || !extraction.extractedText) {
+        return res.status(400).json({ error: "Extraction must be complete before running analysis" });
+      }
+
+      const analysis = await storage.createEvidenceAiAnalysis(userId, caseId, {
+        evidenceId,
+        analysisType: "summary_findings",
+        content: "",
+        status: "processing",
+        model: "gpt-4o",
+      });
+
+      res.json({ ok: true, analysisId: analysis.id });
+
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const textToAnalyze = extraction.extractedText.slice(0, 15000);
+
+      const systemPrompt = `You are a legal document analysis assistant for family court cases. Analyze the provided document text and extract key information. Be factual and objective. Do not provide legal advice.
+
+Return a JSON object with this structure:
+{
+  "summary": "Brief 2-3 sentence summary of the document",
+  "documentType": "e.g., Court Order, Financial Statement, etc.",
+  "keyDates": ["Array of important dates mentioned"],
+  "keyParties": ["Array of people mentioned"],
+  "keyFindings": ["Array of 3-5 most important facts or claims"]
+}`;
+
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Analyze this document:\n\n${textToAnalyze}` }
+          ],
+          temperature: 0.3,
+          max_tokens: 1500,
+          response_format: { type: "json_object" },
+        });
+
+        const content = completion.choices[0]?.message?.content || "{}";
+        const parsed = JSON.parse(content);
+
+        await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+          status: "complete",
+          content,
+          summary: parsed.summary || null,
+          findings: parsed,
+          error: null,
+        });
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error";
+        await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+          status: "failed",
+          error: errorMsg.slice(0, 500),
+        });
+      }
+    } catch (error) {
+      console.error("Retry AI analysis error:", error);
+      res.status(500).json({ error: "Failed to retry analysis" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/claims/retry", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      if (isAutoSuggestPending(caseId)) {
+        return res.json({ ok: true, message: "Claims suggestion already pending" });
+      }
+
+      const extractions = await storage.listEvidenceExtractions(userId, caseId);
+      const completeExtraction = extractions.find(e => e.status === "complete" && e.extractedText);
+      
+      if (!completeExtraction) {
+        return res.status(400).json({ error: "No completed extractions available for claims suggestion" });
+      }
+
+      triggerClaimsSuggestionForEvidence({
+        userId,
+        caseId,
+        evidenceId: completeExtraction.evidenceId,
+        extractedText: completeExtraction.extractedText!,
+      });
+
+      res.json({ ok: true, message: "Claims suggestion scheduled" });
+    } catch (error) {
+      console.error("Retry claims error:", error);
+      res.status(500).json({ error: "Failed to retry claims suggestion" });
+    }
+  });
+
   app.get("/api/cases/:caseId/evidence-notes", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
