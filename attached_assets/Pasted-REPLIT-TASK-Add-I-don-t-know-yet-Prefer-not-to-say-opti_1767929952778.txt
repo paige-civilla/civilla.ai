@@ -1,0 +1,167 @@
+REPLIT TASK: Add “I don’t know yet” + “Prefer not to say” options to ALL onboarding fields + make them editable later
+
+GOAL
+1) Every onboarding field should allow:
+   - “I don’t know yet” (unknown)
+   - “Prefer not to say” (prefer_not_to_say)
+2) Store these values safely without breaking validation.
+3) Users can update everything later in:
+   - Account Settings (user-level fields)
+   - Case Settings (case-level fields)
+
+----------------------------------------
+A) STANDARDIZE VALUES (DO THIS FIRST)
+----------------------------------------
+Use these exact string constants everywhere:
+
+unknown
+prefer_not_to_say
+
+Do not use null for these choices unless field is optional already. These two strings make it explicit and easier to filter later.
+
+----------------------------------------
+B) ADD A SMALL UI HELPER COMPONENT
+----------------------------------------
+Create a shared helper that can be added to ANY field:
+
+File: client/src/components/onboarding/UnknownControls.tsx (NEW)
+
+Requirements:
+- Renders two tiny buttons aligned to the right under the input:
+  [I don’t know yet] [Prefer not to say]
+- Clicking one sets the value to "unknown" or "prefer_not_to_say"
+- Also show a small helper text: “You can update this later in Settings.”
+- Buttons should be subtle (outline/ghost), small size, not huge.
+
+Component API:
+<UnknownControls
+  value={value}
+  onChange={(v) => setValue(v)}
+  labels={{
+    unknown: "I don’t know yet",
+    preferNot: "Prefer not to say",
+  }}
+/>
+
+Behavior:
+- If value is already unknown/prefer_not_to_say, visually indicate it (selected state or muted highlight)
+- If user starts typing a real value, it replaces the sentinel value normally.
+
+----------------------------------------
+C) APPLY TO ALL ONBOARDING FIELDS
+----------------------------------------
+Find onboarding step components (likely in one of these):
+- client/src/pages/AppOnboarding.tsx
+- client/src/components/onboarding/steps/*
+- client/src/pages/Onboarding/*
+
+For EACH field:
+- After the field UI, add:
+  <UnknownControls value={fieldValue} onChange={setFieldValue} />
+
+Include ALL field types:
+1) Text inputs (name, city, etc.)
+2) Selects (state, case type, etc.)
+3) Date pickers
+4) Phone/email inputs
+5) Children-related fields
+
+Special rules by field type:
+
+C1) Select fields:
+- Add two SelectItem options at the bottom:
+  - value="unknown" label="I don’t know yet"
+  - value="prefer_not_to_say" label="Prefer not to say"
+
+C2) Date fields:
+- Keep the date picker unchanged
+- Add UnknownControls below it
+- If user chooses unknown/prefer_not_to_say, clear the date picker UI but store the sentinel string in state (see schema notes below)
+
+C3) Numeric fields:
+- Same pattern:
+  store sentinel strings, not 0, to avoid incorrect meaning.
+
+----------------------------------------
+D) BACKEND / SCHEMA: ACCEPT THESE VALUES
+----------------------------------------
+We must ensure saving onboarding does not fail validation.
+
+1) shared/schema.ts
+For any Zod schema fields used in onboarding payloads:
+- Change validation to allow:
+  z.string().min(1) OR literal("unknown") OR literal("prefer_not_to_say")
+Example pattern:
+z.union([z.string().min(1), z.literal("unknown"), z.literal("prefer_not_to_say")])
+
+2) For fields that are currently typed as Date or number:
+Option A (recommended for speed):
+- Store them as TEXT in DB (or keep existing column if already text)
+- Validate in frontend when real value is provided
+- If already stored as date/number, do this:
+  - Keep DB column as-is
+  - Add parallel “*_raw” text field for onboarding only (more work) OR
+  - Treat unknown/prefer_not_to_say as NULL and keep a separate “*_status” column (more work)
+
+Fastest safe approach:
+- On save, if value is "unknown" or "prefer_not_to_say", send null for date/number fields AND also store a companion status field.
+
+So:
+D2) If any onboarding fields are date/number in DB today:
+- Add companion columns:
+  - <field>_status TEXT nullable
+  values: null | "unknown" | "prefer_not_to_say"
+
+Example:
+hearing_date DATE
+hearing_date_status TEXT
+
+Then:
+- If user picks unknown/prefer_not_to_say:
+  hearing_date = null
+  hearing_date_status = "unknown" | "prefer_not_to_say"
+- If user picks real date:
+  hearing_date = actual date
+  hearing_date_status = null
+
+3) server/db.ts
+- Add ensure migrations for any *_status columns added.
+
+4) server/routes.ts
+- When saving onboarding payloads, map sentinel strings to:
+  - string fields: store sentinel directly
+  - date/number fields: store null + status flag
+
+----------------------------------------
+E) SETTINGS EDITABILITY (REQUIRED)
+----------------------------------------
+1) Account Settings must show all user-level onboarding fields and allow editing:
+- If stored value is unknown/prefer_not_to_say, show it as a selectable “status”
+- Allow clearing status and entering real value
+
+2) Case Settings must show case-level onboarding fields similarly.
+
+If some settings UI already exists:
+- Add a small badge next to any field that is unknown/prefer_not_to_say:
+  “Not provided yet”
+- Clicking edit opens the normal input.
+
+----------------------------------------
+F) QA / TEST STEPS
+----------------------------------------
+1) New user onboarding:
+- Every field shows UnknownControls or includes unknown options in selects
+- Can complete onboarding with all fields marked unknown
+2) Save succeeds (no 400s)
+3) Account Settings shows the fields and allows changing unknown → real value
+4) Case Settings shows case-level values and allows changing
+5) Re-opening onboarding should display chosen statuses correctly
+
+----------------------------------------
+G) REPORT BACK
+----------------------------------------
+After implementation:
+- List files changed
+- Confirm which fields are user-level vs case-level
+- Confirm any new *_status columns added
+- Confirm no validation errors in logs
