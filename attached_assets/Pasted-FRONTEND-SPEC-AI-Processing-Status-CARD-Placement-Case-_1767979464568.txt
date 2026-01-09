@@ -1,0 +1,166 @@
+FRONTEND SPEC: “AI & Processing Status” CARD
+
+Placement
+	•	Case Dashboard, near the top
+	•	Position below the Case Overview / Draft Readiness card
+	•	Width: full column (same width as Draft Readiness)
+
+⸻
+
+Card Title
+
+AI & Processing Status
+
+Subtext (small, muted):
+
+“Live status of evidence processing and AI tasks for this case”
+
+⸻
+
+Default (Collapsed) View
+
+Show 3 horizontal rows, each with:
+	•	Status label
+	•	Counts
+	•	Overall state indicator dot
+
+1) Evidence Extraction
+
+Label: Evidence Text Extraction
+
+Display:
+	•	✓ X complete
+	•	• Y pending
+	•	✕ Z failed (only show if > 0)
+
+Indicator:
+	•	Green dot → all complete
+	•	Blue dot → pending > 0
+	•	Red dot → failed > 0
+
+2) AI Analysis
+
+Label: Evidence AI Analysis
+
+Same structure as extraction.
+
+3) Claims Suggestions
+
+Label: Claim Suggestions
+
+Display:
+	•	If pending → Running…
+	•	If complete → Last run: Jan 7, 2026 at 3:14 PM
+	•	If failed → Last error: <short error>
+
+Indicator:
+	•	Blue → pending
+	•	Green → completed successfully
+	•	Red → last run failed
+
+⸻
+
+Expand / Collapse Control
+	•	Button on bottom right of card:
+	•	“View details” → expands
+	•	“Hide details” → collapses
+	•	Chevron icon rotates
+
+⸻
+
+Expanded View (Details)
+
+Section A — Recent Failures
+
+Only show sections that have failures.
+
+Evidence Extraction Failures
+Header:
+Failed Extractions
+
+For each (max 5):
+	•	Evidence filename (bold)
+	•	Error message (muted, humanized)
+	•	Timestamp (small, muted)
+	•	Inline buttons:
+	•	Retry
+	•	Disabled spinner while retrying
+
+Also include:
+	•	Retry all failed extractions (secondary button)
+	•	Client loops failures sequentially (no parallel spam)
+
+⸻
+
+AI Analysis Failures
+Same structure as extractions.
+
+Buttons:
+	•	Retry (per item)
+	•	Retry all failed analyses
+
+⸻
+
+Section B — Claims Suggestions
+
+Header:
+Claim Suggestions
+
+Show:
+	•	Status text:
+	•	“Pending”
+	•	“Completed”
+	•	“Failed”
+	•	Last run timestamp
+	•	Last error (if any)
+
+Button:
+	•	Retry claim suggestions
+	•	Disabled if currently pending
+	•	Tooltip: “Re-run claim analysis for this case”
+
+⸻
+
+Footer
+
+Small text, right-aligned:
+
+Last updated: <time>
+
+⸻
+
+Polling Rules (IMPORTANT)
+	•	Poll /api/cases/:caseId/ai-jobs/status every 12 seconds ONLY IF:
+	•	Any pending jobs exist OR
+	•	Any failures exist
+	•	Otherwise:
+	•	Fetch once on page load
+	•	No background polling
+
+⸻
+
+UX / Safety Rules
+	•	Retry buttons must:
+	•	Disable while request is in flight
+	•	Show spinner
+	•	Errors must use humanized messages only
+	•	Never expose raw stack traces
+	•	Never retry automatically without user action
+
+⸻
+
+Visual Tone
+	•	Calm, operational, non-alarming
+	•	This is a control panel, not an error alert
+	•	Use same visual language as Draft Readiness
+
+⸻
+
+Acceptance Checklist
+
+When done, verify:
+	•	❏ Fail a job → card shows red count
+	•	❏ Retry → status flips to pending
+	•	❏ Completion → counts update automatically
+	•	❏ No polling when idle
+	•	❏ Mobile view stacks cleanly (no horizontal overflow)

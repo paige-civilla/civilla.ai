@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Case, CalendarCategory } from "@shared/schema";
 import { CASE_FLOW, getVisibleModules, modulePath, moduleLabel, moduleDescription, type ModuleKey } from "@/lib/caseFlow";
 import { BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar as CalendarIcon, CheckSquare as CheckSquareIcon, Contact, Users, Calculator, Scale, HelpCircle, Heart } from "lucide-react";
+import AiProcessingStatusCard from "@/components/dashboard/AiProcessingStatusCard";
 
 type UpcomingEvent = {
   kind: "deadline" | "todo" | "calendar" | "communication";
@@ -471,6 +472,8 @@ export default function AppDashboard() {
                     </CardContent>
                   </Card>
                 )}
+
+                <AiProcessingStatusCard caseId={caseId!} />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {getVisibleModules({ hasChildren: primaryCase.hasChildren || false }).map((moduleKey) => {
