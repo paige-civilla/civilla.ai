@@ -7884,12 +7884,12 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     try {
       const caseRecord = await storage.getCase(caseId, userId);
       if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        return res.status(404).json({ error: "Case not found", code: "CASE_NOT_FOUND" });
       }
       
       const evidence = await storage.getEvidenceFile(evidenceId, userId);
       if (!evidence || evidence.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence not found" });
+        return res.status(404).json({ error: "Evidence not found", code: "EVIDENCE_NOT_FOUND" });
       }
       
       const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
@@ -7902,11 +7902,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
       
       if (!extraction.extractedText || extraction.extractedText.trim().length === 0) {
-        return res.status(400).json({ error: "No extracted text available for analysis" });
+        return res.status(400).json({ error: "No extracted text available for analysis", code: "NO_EXTRACTED_TEXT" });
       }
       
       if (!process.env.OPENAI_API_KEY) {
-        return res.status(503).json({ error: "AI analysis unavailable - OPENAI_API_KEY not configured" });
+        return res.status(503).json({ error: "AI analysis unavailable - OPENAI_API_KEY not configured", code: "OPENAI_KEY_MISSING" });
       }
       
       const existingAnalyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
@@ -8001,7 +8001,8 @@ Return a JSON object with this structure:
       });
     } catch (error) {
       console.error("Run AI analysis error:", error);
-      res.status(500).json({ error: "Failed to start analysis" });
+      const code = (error as any)?.code || "ANALYSIS_ERROR";
+      res.status(500).json({ error: "Failed to start analysis", code });
     }
   });
 
@@ -8015,16 +8016,16 @@ Return a JSON object with this structure:
     try {
       const caseRecord = await storage.getCase(caseId, userId);
       if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        return res.status(404).json({ error: "Case not found", code: "CASE_NOT_FOUND" });
       }
       
       const evidence = await storage.getEvidenceFile(evidenceId, userId);
       if (!evidence || evidence.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence not found" });
+        return res.status(404).json({ error: "Evidence not found", code: "EVIDENCE_NOT_FOUND" });
       }
       
       if (!process.env.OPENAI_API_KEY) {
-        return res.status(502).json({ error: "Lexi cannot authenticate to OpenAI." });
+        return res.status(502).json({ error: "Lexi cannot authenticate to OpenAI.", code: "OPENAI_KEY_MISSING" });
       }
       
       const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
