@@ -49,6 +49,7 @@ import AppAdminDashboard from "@/pages/AppAdminDashboard";
 import AppAdminPolicy from "@/pages/AppAdminPolicy";
 import AppGrantDashboard from "@/pages/AppGrantDashboard";
 import AppGrantDashboardPrint from "@/pages/AppGrantDashboardPrint";
+import AppCourtForms from "@/pages/AppCourtForms";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -102,6 +103,7 @@ function Router() {
       <Route path="/app/trial-prep/:caseId" component={AppTrialPrep} />
       <Route path="/app/trial-prep/:caseId/print" component={AppTrialPrepPrint} />
       <Route path="/app/parenting-plan/:caseId" component={AppParentingPlan} />
+      <Route path="/app/court-forms/:caseId" component={AppCourtForms} />
       <Route path="/app/dashboard">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route path="/app/case">{() => <CaseRedirect targetPath="case" />}</Route>
       <Route path="/app/documents">{() => <CaseRedirect targetPath="documents" />}</Route>
@@ -120,6 +122,7 @@ function Router() {
       <Route path="/app/disclosures">{() => <CaseRedirect targetPath="disclosures" />}</Route>
       <Route path="/app/trial-prep">{() => <CaseRedirect targetPath="trial-prep" />}</Route>
       <Route path="/app/parenting-plan">{() => <CaseRedirect targetPath="parenting-plan" />}</Route>
+      <Route path="/app/court-forms">{() => <CaseRedirect targetPath="court-forms" />}</Route>
       <Route path="/app">{() => <CaseRedirect targetPath="dashboard" />}</Route>
       <Route component={NotFound} />
     </Switch>
