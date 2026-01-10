@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Clock, CheckSquare, Calendar, FileCheck, AlertCircle, TrendingUp } from "lucide-react";
+import { Plus, Clock, CheckSquare, Calendar, FileCheck, AlertCircle, TrendingUp, X, Sparkles, FileText, ArrowRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CaseMonthCalendar from "@/components/calendar/CaseMonthCalendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,6 +93,8 @@ export default function AppDashboard() {
   const [createCategoryMode, setCreateCategoryMode] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("#7BA3A8");
+  const [dismissedPhaseBanner, setDismissedPhaseBanner] = useState<string | null>(null);
+  const [previousPhase, setPreviousPhase] = useState<CasePhase | null>(null);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -317,6 +319,65 @@ export default function AppDashboard() {
     }
   }, [isLoading, primaryCase, caseId, setLocation]);
 
+  useEffect(() => {
+    if (casePhase && previousPhase && casePhase !== previousPhase && caseId) {
+      const bannerKey = `phase-banner-${caseId}-${casePhase}`;
+      const alreadyDismissed = sessionStorage.getItem(bannerKey);
+      if (!alreadyDismissed) {
+        setDismissedPhaseBanner(null);
+      }
+    }
+    if (casePhase && casePhase !== previousPhase) {
+      setPreviousPhase(casePhase);
+    }
+  }, [casePhase, previousPhase, caseId]);
+
+  const showPhaseBanner = useMemo(() => {
+    if (!caseId || !casePhase) return false;
+    const bannerKey = `phase-banner-${caseId}-${casePhase}`;
+    const alreadyDismissed = sessionStorage.getItem(bannerKey);
+    if (alreadyDismissed) return false;
+    if (dismissedPhaseBanner === casePhase) return false;
+    return true;
+  }, [caseId, casePhase, dismissedPhaseBanner]);
+
+  const handleDismissPhaseBanner = () => {
+    if (caseId && casePhase) {
+      const bannerKey = `phase-banner-${caseId}-${casePhase}`;
+      sessionStorage.setItem(bannerKey, "true");
+      setDismissedPhaseBanner(casePhase);
+    }
+  };
+
+  const getPhaseBannerContent = (phase: CasePhase) => {
+    switch (phase) {
+      case "collecting":
+        return {
+          title: "Phase: Collecting Evidence",
+          message: "Upload your documents, images, and recordings. Lexi will help you extract key facts and claims.",
+          icon: FileText,
+          color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+          iconColor: "text-blue-600 dark:text-blue-400",
+        };
+      case "reviewing":
+        return {
+          title: "Phase: Reviewing Claims",
+          message: "You have claims to review! Accept or reject suggested claims and attach sources to strengthen your case.",
+          icon: Sparkles,
+          color: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
+          iconColor: "text-amber-600 dark:text-amber-400",
+        };
+      case "draft-ready":
+        return {
+          title: "Phase: Ready for Draft",
+          message: "Your case has enough accepted claims with sources. You can now compile them into a document.",
+          icon: FileCheck,
+          color: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+          iconColor: "text-green-600 dark:text-green-400",
+        };
+    }
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -338,6 +399,37 @@ export default function AppDashboard() {
           <div className="mb-4">
             <PhaseStatusBar phase={casePhase} />
           </div>
+
+          {showPhaseBanner && casePhase && (() => {
+            const bannerContent = getPhaseBannerContent(casePhase);
+            const BannerIcon = bannerContent.icon;
+            return (
+              <div className={`w-full mb-4 p-4 rounded-lg border ${bannerContent.color} flex items-start gap-3`} data-testid="phase-transition-banner">
+                <BannerIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${bannerContent.iconColor}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{bannerContent.title}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{bannerContent.message}</p>
+                  {casePhase === "reviewing" && (
+                    <Link href={`/app/cases/${caseId}/evidence`}>
+                      <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" data-testid="button-banner-evidence">
+                        Review Evidence <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </Link>
+                  )}
+                  {casePhase === "draft-ready" && (
+                    <Link href={`/app/cases/${caseId}/documents`}>
+                      <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" data-testid="button-banner-documents">
+                        Go to Documents <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+                <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={handleDismissPhaseBanner} data-testid="button-dismiss-phase-banner">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            );
+          })()}
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
             <div className="min-w-0 flex-1">
