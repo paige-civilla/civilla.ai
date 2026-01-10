@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, inArray, lt, gte, sql, isNull } from "drizzle-orm";
+import { eq, and, or, desc, asc, inArray, lt, gte, sql, isNull, ilike } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -481,6 +481,7 @@ export interface IStorage {
   updateLexiCaseMemoryMarkdown(userId: string, caseId: string, memoryMarkdown: string): Promise<void>;
   createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata?: Record<string, unknown>, options?: { moduleKey?: string | null; entityType?: string | null; entityId?: string | null }): Promise<ActivityLog>;
   listActivityLogs(userId: string, limit?: number, offset?: number): Promise<ActivityLog[]>;
+  listActivityLogsFiltered(userId: string, opts: { limit: number; cursor?: string; afterDate?: Date; searchTerm?: string }): Promise<ActivityLog[]>;
   getUserActivityOverview(userId: string, days: number): Promise<UserActivityOverview>;
   getCaseActivityOverview(userId: string, caseId: string, days: number): Promise<CaseActivityOverview>;
 
@@ -3456,6 +3457,37 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(activityLogs.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  async listActivityLogsFiltered(userId: string, opts: { limit: number; cursor?: string; afterDate?: Date; searchTerm?: string }): Promise<ActivityLog[]> {
+    const conditions = [eq(activityLogs.userId, userId)];
+
+    if (opts.afterDate) {
+      conditions.push(gte(activityLogs.createdAt, opts.afterDate));
+    }
+
+    if (opts.searchTerm && opts.searchTerm.trim()) {
+      conditions.push(
+        or(
+          ilike(activityLogs.type, `%${opts.searchTerm}%`),
+          ilike(activityLogs.summary, `%${opts.searchTerm}%`)
+        )!
+      );
+    }
+
+    if (opts.cursor) {
+      const cursorLog = await db.select().from(activityLogs).where(eq(activityLogs.id, opts.cursor)).limit(1);
+      if (cursorLog.length > 0) {
+        conditions.push(lt(activityLogs.createdAt, cursorLog[0].createdAt));
+      }
+    }
+
+    return db
+      .select()
+      .from(activityLogs)
+      .where(and(...conditions))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(opts.limit);
   }
 
   async getUserActivityOverview(userId: string, days: number): Promise<UserActivityOverview> {

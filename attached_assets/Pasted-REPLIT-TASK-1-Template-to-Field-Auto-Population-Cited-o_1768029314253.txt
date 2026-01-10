@@ -1,0 +1,91 @@
+REPLIT TASK 1: Template-to-Field Auto-Population (Cited-only, no fabrication)
+
+GOAL
+When a user chooses a document template, auto-suggest what content belongs in each section, using ONLY:
+- Accepted claims
+- Claims that have >=1 citation pointer attached
+- Optional: issue groupings (to organize)
+
+ABSOLUTE RULES
+- Never generate factual statements not tied to an accepted claim with citations.
+- If a section has no cited claims, leave it blank and show “Missing evidence” guidance.
+- No legal advice. No “you should file”. No outcome predictions.
+
+BACKEND
+A) Add new endpoint:
+POST /api/cases/:caseId/documents/autofill
+Body:
+{
+  templateKey: string,
+  issueId?: string,
+  scope?: "all" | "issue",
+  include?: { claims?: boolean, timeline?: boolean }, (default claims=true)
+  maxSections?: number (default 12)
+}
+
+Response:
+{
+  ok: true,
+  templateKey,
+  sections: [
+    {
+      sectionKey,
+      title,
+      contentMarkdown,
+      usedClaimIds: string[],
+      usedCitationIds: string[],
+      missingEvidence: boolean,
+      missingReason?: string
+    }
+  ],
+  sources: [
+    { evidenceId, fileName, citations: [{citationId, pageNumber?, quoteSnippet}] }
+  ]
+}
+
+B) Implementation details:
+1) Load template definition from a new server/templates library (see below).
+2) Fetch accepted claims for case, include citations via join claim_citations → citation_pointers.
+3) If scope="issue", filter claims to those linked to issue_id via issue_claims.
+4) For each template section:
+   - Select the top 3-8 most relevant claims (use tags + claim.type + keyword overlap with section prompt).
+   - Render section content as bullet points, each bullet = one claim text.
+   - Add inline citations: [EVID: <filename>, p.<n>] using citation pointer data
+   - If claim has multiple citations, use up to 2, prefer ones with page numbers / longer quote.
+5) Return structured output; do NOT create a full narrative paragraph unless the template explicitly requires it.
+6) Add activity log event: document_autofill_generated with counts only (claimsUsed, citationsUsed, templateKey).
+
+C) Create a shared template registry (server/templates/templates.ts):
+- Each template has:
+  { key, label, description, sections: [{sectionKey, title, guidance, keywords[]}] }
+- Start with 10–15 templates (narrative docs, not jurisdiction forms):
+  - Declaration (facts only)
+  - Affidavit outline (facts only)
+  - Motion cover sheet (structure only)
+  - Proposed order outline (structure only)
+  - Exhibit list index
+  - Trial brief outline (facts only)
+  - Custody declaration addendum (facts only)
+  - Communications summary
+  - Parenting plan narrative addendum (structure only)
+  - Discovery summary
+
+FRONTEND
+D) Add “Auto-Fill from Evidence” button inside Document Creator:
+- Only enabled if readinessPercent >= 60 AND accepted+cited claims >= minimum (ex: 5)
+- Clicking calls /documents/autofill and fills a preview panel per section
+- Each section shows:
+  - content
+  - “Claims used” badge count
+  - “Missing evidence” warning if empty
+  - “Open sources” to show citations
+- User can edit final output manually, but we keep the “traceability panel” visible
+
+E) Safety UX
+- If user edits text, show “Edited by you” tag (not AI) and do NOT auto-attach citations to edited lines.
+- Keep compile guardrails: compiling remains blocked if there are uncited accepted claims used.
+
+DONE WHEN
+- Auto-fill generates sectioned content for a template using only cited claims
+- Empty sections explain what’s missing and link user to Evidence→Claims
+- No fabricated facts; all bullets trace back to claims+citation pointers

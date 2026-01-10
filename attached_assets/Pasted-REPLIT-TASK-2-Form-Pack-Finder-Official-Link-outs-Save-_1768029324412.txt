@@ -1,0 +1,63 @@
+REPLIT TASK 2: Form Pack Finder (Official Link-outs + Save-to-Case)
+
+GOAL
+Add a “Find My Court Forms / Packets” feature that:
+- Lets users pick State + County (optional) + case type
+- Returns ONLY official sources (preferred .gov / .us / court domains)
+- Saves selected links to the user’s case as “resources” (no scraping user data)
+
+BACKEND
+A) Add table:
+case_resources
+- id, user_id, case_id
+- title, resource_type ("forms" | "calculator" | "instructions" | "filing" | "court")
+- url (absolute https)
+- jurisdiction_state, jurisdiction_county (nullable)
+- tags JSONB (optional)
+- created_at
+
+B) Add endpoints:
+GET /api/cases/:caseId/resources
+POST /api/cases/:caseId/resources  { title, url, resourceType, tags? }
+DELETE /api/resources/:resourceId
+
+C) Add endpoint:
+POST /api/cases/:caseId/form-packs/search
+Body: { state, county?, caseType? }
+Returns:
+{
+  ok: true,
+  results: [
+    { title, url, sourceLabel, jurisdiction: {state, county?}, confidence: "high"|"medium" }
+  ],
+  policy: { officialOnly: true }
+}
+
+D) How search works (privacy-safe):
+- Use Lexi “Research mode” but restrict results:
+  - Must be https
+  - Must be official domains: courts, state judiciary, county clerk, .gov, .us
+  - If not official, drop it.
+- Always return 5–10 results max.
+- Store the returned sources_json into case_rule_terms (module_key="form-packs") for caching by state/county.
+
+FRONTEND
+E) Add new module on sidebar under “Start Here” or “Extras”:
+- “Court Forms & Packets”
+- UI:
+  - State dropdown (prefill from case)
+  - County input (optional)
+  - Case type dropdown (custody/divorce/support/protection order/etc)
+  - Button: “Find Official Forms”
+  - Results list with “Save to Case” button for each
+  - “Saved Resources” section (editable title, delete)
+
+COMPLIANCE
+F) Copy/Disclaimers:
+- “These are official links. Civilla doesn’t provide legal advice.”
+- “Forms vary by county; verify on your court’s site.”
+
+DONE WHEN
+- Users can find official form packets and save them to their case
+- No non-official domains appear in results
+- Saved links show inside case resources list

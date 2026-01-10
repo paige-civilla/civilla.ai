@@ -5774,10 +5774,27 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.get("/api/activity-logs", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
-      const limit = parseInt((req.query.limit as string) || "50", 10);
-      const offset = parseInt((req.query.offset as string) || "0", 10);
-      const logs = await storage.listActivityLogs(userId, limit, offset);
-      res.json({ logs });
+      const limit = Math.min(parseInt((req.query.limit as string) || "50", 10), 100);
+      const cursor = req.query.cursor as string | undefined;
+      const range = parseInt((req.query.range as string) || "30", 10);
+      const q = (req.query.q as string) || "";
+
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - range);
+
+      const logs = await storage.listActivityLogsFiltered(userId, {
+        limit,
+        cursor,
+        afterDate: cutoff,
+        searchTerm: q,
+      });
+
+      const nextCursor = logs.length === limit ? logs[logs.length - 1]?.id : undefined;
+
+      res.json({
+        items: logs,
+        nextCursor,
+      });
     } catch (err) {
       console.error("List activity logs error:", err);
       res.status(500).json({ error: "Failed to fetch activity logs" });
@@ -9504,6 +9521,116 @@ Top 3 selection criteria:
     } catch (error) {
       console.error("Template preflight error:", error);
       res.status(500).json({ error: "Failed to run preflight check" });
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────
+  // Phase Status API (Modification Flow Gates)
+  // ───────────────────────────────────────────────────────────────
+
+  app.get("/api/cases/:caseId/phase-status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+      const evidenceCount = evidenceFiles.length;
+
+      let extractionCompleteCount = 0;
+      let extractionPendingCount = 0;
+      for (const file of evidenceFiles) {
+        const extractions = await storage.listEvidenceExtractions(userId, file.id);
+        if (extractions.some(e => e.status === "complete")) {
+          extractionCompleteCount++;
+        } else if (extractions.some(e => e.status === "pending" || e.status === "processing")) {
+          extractionPendingCount++;
+        }
+      }
+
+      const suggestedClaims = await storage.listCaseClaims(userId, caseId, { status: "suggested" });
+      const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+
+      let acceptedClaimsMissingCitationsCount = 0;
+      for (const claim of acceptedClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length === 0) {
+          acceptedClaimsMissingCitationsCount++;
+        }
+      }
+
+      const issueGroupings = await storage.listIssueGroupings(userId, caseId);
+      const issueGroupingsCount = issueGroupings.length;
+
+      const acceptedWithCitations = acceptedClaims.length - acceptedClaimsMissingCitationsCount;
+      const readinessPercent = acceptedClaims.length > 0
+        ? Math.round((acceptedWithCitations / acceptedClaims.length) * 100)
+        : 0;
+
+      let phaseNumber = 1;
+      const blockers: string[] = [];
+      const warnings: string[] = [];
+      const recommendedActions: Array<{ label: string; href: string; actionKey: string }> = [];
+
+      if (evidenceCount === 0) {
+        phaseNumber = 1;
+        blockers.push("No evidence uploaded");
+        recommendedActions.push({ label: "Upload Evidence", href: `/app/cases/${caseId}/evidence`, actionKey: "upload_evidence" });
+      } else if (extractionCompleteCount === 0) {
+        phaseNumber = 2;
+        if (extractionPendingCount > 0) {
+          warnings.push(`${extractionPendingCount} file(s) still processing`);
+        } else {
+          blockers.push("No extractions complete");
+          recommendedActions.push({ label: "Run Extraction", href: `/app/cases/${caseId}/evidence`, actionKey: "run_extraction" });
+        }
+      } else if (acceptedClaims.length === 0) {
+        phaseNumber = 3;
+        if (suggestedClaims.length > 0) {
+          blockers.push(`${suggestedClaims.length} suggested claims need review`);
+          recommendedActions.push({ label: "Review Suggested Claims", href: `/app/cases/${caseId}/evidence`, actionKey: "review_claims" });
+        } else {
+          blockers.push("No claims extracted yet");
+          recommendedActions.push({ label: "Run Extraction", href: `/app/cases/${caseId}/evidence`, actionKey: "run_extraction" });
+        }
+      } else if (acceptedClaimsMissingCitationsCount > 0) {
+        phaseNumber = 4;
+        blockers.push(`${acceptedClaimsMissingCitationsCount} accepted claim(s) missing citations`);
+        recommendedActions.push({ label: "Auto-attach Missing Sources", href: `/app/cases/${caseId}/evidence`, actionKey: "auto_attach" });
+        if (issueGroupingsCount === 0) {
+          warnings.push("No issue groupings created (optional)");
+        }
+      } else {
+        phaseNumber = 5;
+        if (issueGroupingsCount === 0) {
+          warnings.push("No issue groupings created (optional for drafting)");
+        }
+        recommendedActions.push({ label: "Compile Draft", href: `/app/cases/${caseId}/documents`, actionKey: "compile_draft" });
+      }
+
+      res.json({
+        phaseNumber,
+        checks: {
+          evidenceCount,
+          extractionCompleteCount,
+          extractionPendingCount,
+          suggestedClaimsCount: suggestedClaims.length,
+          acceptedClaimsCount: acceptedClaims.length,
+          acceptedClaimsMissingCitationsCount,
+          issueGroupingsCount,
+          readinessPercent,
+        },
+        blockers,
+        warnings,
+        recommendedActions,
+      });
+    } catch (error) {
+      console.error("Phase status error:", error);
+      res.status(500).json({ error: "Failed to get phase status" });
     }
   });
 
