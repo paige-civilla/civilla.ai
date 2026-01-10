@@ -1,0 +1,142 @@
+/**
+ * CHANGE REQUEST — Forms & Official Sources should NOT be a dashboard module.
+ * It should live ONLY in the App Navbar dropdown menu (top nav), as a utility page.
+ *
+ * Goal:
+ * - Add a "Forms & Official Sources" link inside the app navbar dropdown
+ * - Do NOT add a module tile to the dashboard
+ * - Keep the same backend + link verification so Lexi sources are REAL working links
+ */
+
+/* =========================================================
+   A) BACKEND (same feature, no dashboard module dependency)
+   ========================================================= */
+
+1) Create server/services/linkVerifier.ts (NEW)
+- export async function verifyUrl(url: string): Promise<{ ok: boolean; finalUrl?: string; status?: number }>
+Requirements:
+- HEAD first; if blocked, fallback to GET
+- Follow redirects
+- ok=true only for 200–399
+- timeout 6 seconds
+- return finalUrl after redirects
+
+2) Create server/services/formsFinder.ts (NEW)
+- export async function buildFormsSources(stateName: string)
+  => { summary: string; sources: Array<{ title, url, finalUrl?, kind, isOfficial, lastVerifiedAt }> }
+
+Rules:
+- Prefer official domains (*.gov, *.us, state judiciary/courts)
+- If using AI to discover sources:
+  - EVERY candidate URL must pass verifyUrl()
+  - drop any that fail
+  - max 8 links
+  - dedupe by finalUrl
+- If <3 verified official links:
+  - include ONE Google search URL (verified) like:
+    https://www.google.com/search?q=<STATE>+family+court+forms+site%3A.gov
+  - mark isOfficial=false, kind="self_help"
+- Summary: education-only (no “you should file X”)
+
+3) Add routes in server/routes.ts (MODIFY)
+
+GET /api/cases/:caseId/forms/sources?state=Idaho
+- requireAuth
+- returns cached from case_rule_terms if present
+- response: { ok:true, cached:true|false, summary?, sources?, lastCheckedAt? }
+
+POST /api/cases/:caseId/forms/sources
+Body: { state: string, refresh?: boolean }
+- requireAuth
+- buildFormsSources(state)
+- cache into case_rule_terms:
+  module_key="forms"
+  term_key=`forms_${stateSlug}`
+  sources_json=verified sources
+  summary=summary
+  last_checked_at=now
+- response: { ok:true, cached:false, summary, sources }
+
+GET /api/sources/verify?url=<encoded>
+- requireAuth
+- returns { ok, finalUrl, status } (no secrets)
+
+4) Fix Lexi “sources” globally (IMPORTANT)
+Wherever Lexi constructs sources arrays:
+- Convert anything that is not an absolute http(s) URL into a Google search URL
+- Run verifyUrl on candidates
+- Drop failed
+- Limit to 5
+=> This stops “looks like a link but 404” sources
+
+NOTE: Do NOT add any modules.ts entry. No dashboard tile.
+
+
+/* =========================================================
+   B) FRONTEND — Add a NAVBAR MENU ITEM + Utility Page Route
+   ========================================================= */
+
+1) Create client/src/pages/AppFormsSources.tsx (NEW)
+Route-driven utility page (not a module tile):
+- Header: "Forms & Official Sources"
+- State dropdown (prefill from selected case’s state if available)
+- Primary button: "Find Verified Links"
+- Secondary: "Refresh"
+- Cards grouped by kind:
+  - Court Forms
+  - Court Rules
+  - Self-Help / Instructions
+  - Calculators (official only)
+Each link:
+- uses finalUrl if present, else url
+- opens new tab
+- shows "Verified" badge
+- shows "Official" badge if isOfficial
+
+Add a persistent disclaimer block (not dismissible):
+"This page provides links to official public resources. Civilla is not a law firm and does not provide legal advice."
+
+2) Add route in client/src/App.tsx
+- Add:
+  <Route path="/app/resources/forms/:caseId" component={AppFormsSources} />
+  <Route path="/app/resources/forms">{() => <CaseRedirect targetPath="resources/forms" />}</Route>
+(Use your existing CaseRedirect pattern so it works even if user enters without a caseId.)
+
+3) Add to App Navbar dropdown ONLY (client/src/components/layout/AppNavbar.tsx)
+- Inside the dropdown menu list, add a new item:
+  Label: "Forms & Official Sources"
+  href:
+    if selectedCaseId exists -> `/app/resources/forms/${selectedCaseId}`
+    else -> `/app/resources/forms`
+- Styling should match other dropdown items and be scrollable on mobile.
+
+4) (Optional but recommended) Deep-link Lexi to this page
+When Lexi answers with “official forms / worksheet / court packet”:
+- show a small button in Lexi UI: “Open Forms & Official Sources”
+- navigates to `/app/resources/forms/${caseId}`
+
+
+/* =========================================================
+   C) PRIVACY-SAFE LOGGING
+   ========================================================= */
+
+- Log "forms_sources_generated" on successful POST
+- Log "forms_link_clicked" when clicking a link
+Metadata:
+- state
+- kind
+- isOfficial
+- domain ONLY (no full URL path)
+NO user content, no evidence text.
+
+
+/* =========================================================
+   D) UPL + PRIVACY GUARDRAILS
+   ========================================================= */
+- No “you should file X” language
+- No outcome predictions
+- No reading user evidence content for this feature
+- Only link-outs + education descriptions
+- Ensure privacy policy language includes:
+  "We collect feature usage analytics (like state distribution and feature clicks). We do not access your uploaded evidence content unless you explicitly grant permission for support."
+*/

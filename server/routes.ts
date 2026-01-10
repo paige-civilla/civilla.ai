@@ -9074,6 +9074,248 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  // Resource Field Maps - Task 3 (Phase 2)
+  // GET field maps for a resource
+  app.get("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, resourceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const resource = await storage.getCaseResource(userId, resourceId);
+      if (!resource) {
+        return res.status(404).json({ error: "Resource not found" });
+      }
+
+      const fieldMaps = await storage.listResourceFieldMaps(userId, resourceId);
+      res.json({ fieldMaps });
+    } catch (error) {
+      console.error("List field maps error:", error);
+      res.status(500).json({ error: "Failed to list field maps" });
+    }
+  });
+
+  // POST create field map for a resource
+  app.post("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, resourceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const resource = await storage.getCaseResource(userId, resourceId);
+      if (!resource) {
+        return res.status(404).json({ error: "Resource not found" });
+      }
+
+      const { insertResourceFieldMapSchema } = await import("@shared/schema");
+      const parsed = insertResourceFieldMapSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid field map data", details: parsed.error.errors });
+      }
+
+      const fieldMap = await storage.createResourceFieldMap(userId, caseId, resourceId, parsed.data);
+      res.status(201).json({ fieldMap });
+    } catch (error) {
+      console.error("Create field map error:", error);
+      res.status(500).json({ error: "Failed to create field map" });
+    }
+  });
+
+  // POST bulk create field maps with claim suggestions
+  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/bulk", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, resourceId } = req.params;
+      const { fields } = req.body as { fields: Array<{ fieldLabel: string; fieldDescription?: string }> };
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const resource = await storage.getCaseResource(userId, resourceId);
+      if (!resource) {
+        return res.status(404).json({ error: "Resource not found" });
+      }
+
+      if (!fields || !Array.isArray(fields) || fields.length === 0) {
+        return res.status(400).json({ error: "Fields array is required" });
+      }
+
+      // Get all accepted claims for suggestion matching
+      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+
+      // Match fields to claims using keyword overlap
+      const fieldsWithSuggestions = fields.map((field, idx) => {
+        const fieldWords = field.fieldLabel.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+        const descWords = (field.fieldDescription || "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+        const allFieldWords = [...fieldWords, ...descWords];
+
+        // Score each claim by keyword overlap
+        const scoredClaims = claims.map((claim: { id: string; claimText: string }) => {
+          const claimWords = claim.claimText.toLowerCase().split(/\s+/);
+          let score = 0;
+          for (const word of allFieldWords) {
+            if (claimWords.some((cw: string) => cw.includes(word) || word.includes(cw))) {
+              score++;
+            }
+          }
+          return { claimId: claim.id, score };
+        }).filter((c: { score: number }) => c.score > 0).sort((a: { score: number }, b: { score: number }) => b.score - a.score);
+
+        const suggestedClaimIds = scoredClaims.slice(0, 5).map((c: { claimId: string }) => c.claimId);
+
+        return {
+          fieldLabel: field.fieldLabel,
+          fieldDescription: field.fieldDescription,
+          sortOrder: idx,
+          suggestedClaimIds,
+        };
+      });
+
+      const fieldMaps = await storage.bulkCreateResourceFieldMaps(userId, caseId, resourceId, fieldsWithSuggestions.map(f => ({
+        fieldLabel: f.fieldLabel,
+        fieldDescription: f.fieldDescription || null,
+        sortOrder: f.sortOrder,
+        isCompleted: false,
+      })));
+
+      // Update suggested claim IDs for each field map
+      const updatedFieldMaps = await Promise.all(fieldMaps.map(async (fm, idx) => {
+        if (fieldsWithSuggestions[idx].suggestedClaimIds.length > 0) {
+          const { db } = await import("./db");
+          const { resourceFieldMaps } = await import("@shared/schema");
+          const { eq } = await import("drizzle-orm");
+          await db.update(resourceFieldMaps)
+            .set({ suggestedClaimIds: fieldsWithSuggestions[idx].suggestedClaimIds })
+            .where(eq(resourceFieldMaps.id, fm.id));
+          return { ...fm, suggestedClaimIds: fieldsWithSuggestions[idx].suggestedClaimIds };
+        }
+        return fm;
+      }));
+
+      await storage.createActivityLog(userId, caseId, "field_maps_created", `Created ${fieldMaps.length} field maps for resource`, {
+        resourceId,
+        fieldCount: fieldMaps.length,
+      });
+
+      res.status(201).json({ fieldMaps: updatedFieldMaps });
+    } catch (error) {
+      console.error("Bulk create field maps error:", error);
+      res.status(500).json({ error: "Failed to create field maps" });
+    }
+  });
+
+  // PATCH update field map
+  app.patch("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, fieldMapId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { updateResourceFieldMapSchema } = await import("@shared/schema");
+      const parsed = updateResourceFieldMapSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid update data", details: parsed.error.errors });
+      }
+
+      const fieldMap = await storage.updateResourceFieldMap(userId, fieldMapId, parsed.data);
+      if (!fieldMap) {
+        return res.status(404).json({ error: "Field map not found" });
+      }
+
+      res.json({ fieldMap });
+    } catch (error) {
+      console.error("Update field map error:", error);
+      res.status(500).json({ error: "Failed to update field map" });
+    }
+  });
+
+  // DELETE field map
+  app.delete("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, fieldMapId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const deleted = await storage.deleteResourceFieldMap(userId, fieldMapId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Field map not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete field map error:", error);
+      res.status(500).json({ error: "Failed to delete field map" });
+    }
+  });
+
+  // POST suggest claims for a field based on keyword matching
+  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/suggest", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { fieldLabel, fieldDescription } = req.body as { fieldLabel: string; fieldDescription?: string };
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      if (!fieldLabel) {
+        return res.status(400).json({ error: "Field label is required" });
+      }
+
+      // Get accepted claims
+      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+
+      // Match by keyword overlap
+      const fieldWords = fieldLabel.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+      const descWords = (fieldDescription || "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+      const allFieldWords = [...fieldWords, ...descWords];
+
+      type ClaimType = { id: string; claimText: string; claimType: string };
+      const scoredClaims = claims.map((claim: ClaimType) => {
+        const claimWords = claim.claimText.toLowerCase().split(/\s+/);
+        let score = 0;
+        for (const word of allFieldWords) {
+          if (claimWords.some((cw: string) => cw.includes(word) || word.includes(cw))) {
+            score++;
+          }
+        }
+        return { claim, score };
+      }).filter((c: { score: number }) => c.score > 0).sort((a: { score: number }, b: { score: number }) => b.score - a.score);
+
+      const suggestions = scoredClaims.slice(0, 5).map((c: { claim: ClaimType; score: number }) => ({
+        claimId: c.claim.id,
+        claimText: c.claim.claimText,
+        claimType: c.claim.claimType,
+        score: c.score,
+      }));
+
+      res.json({ suggestions });
+    } catch (error) {
+      console.error("Suggest claims error:", error);
+      res.status(500).json({ error: "Failed to suggest claims" });
+    }
+  });
+
   // Form Pack Search - search official court form directories
   // Only returns results from official domains (.gov, .us, state courts)
   const OFFICIAL_DOMAIN_PATTERNS = [
