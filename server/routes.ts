@@ -9507,5 +9507,280 @@ Top 3 selection criteria:
     }
   });
 
+  // ───────────────────────────────────────────────────────────────
+  // Court Templates API
+  // ───────────────────────────────────────────────────────────────
+
+  app.get("/api/court-templates", requireAuth, async (_req, res) => {
+    try {
+      const { COURT_TEMPLATE_LIST } = await import("@shared/courtTemplates");
+      res.json({ templates: COURT_TEMPLATE_LIST });
+    } catch (error) {
+      console.error("Get court templates error:", error);
+      res.status(500).json({ error: "Failed to get court templates" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/court-templates/preflight", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const templateKey = req.query.templateKey as string;
+
+      if (!templateKey) {
+        return res.status(400).json({ error: "templateKey query param required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { COURT_TEMPLATES } = await import("@shared/courtTemplates");
+      const template = COURT_TEMPLATES[templateKey as keyof typeof COURT_TEMPLATES];
+      if (!template) {
+        return res.status(400).json({ error: "Invalid template key" });
+      }
+
+      const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+      
+      const claimsMissingCitations: Array<{ id: string; claimText: string }> = [];
+      const claimsWithMissingInfo: Array<{ id: string; claimText: string }> = [];
+      let claimsWithCitationsCount = 0;
+
+      for (const claim of acceptedClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length === 0) {
+          claimsMissingCitations.push({ id: claim.id, claimText: claim.claimText });
+        } else {
+          claimsWithCitationsCount++;
+        }
+        if (claim.missingInfoFlag) {
+          claimsWithMissingInfo.push({ id: claim.id, claimText: claim.claimText });
+        }
+      }
+
+      const warnings: string[] = [];
+      const errors: string[] = [];
+
+      if (claimsMissingCitations.length > 0) {
+        errors.push(`${claimsMissingCitations.length} claim(s) missing citations`);
+      }
+      if (claimsWithMissingInfo.length > 0 && !template.allowMissingInfoClaims) {
+        errors.push(`${claimsWithMissingInfo.length} claim(s) flagged as missing info`);
+      } else if (claimsWithMissingInfo.length > 0) {
+        warnings.push(`${claimsWithMissingInfo.length} claim(s) flagged as missing info (allowed but review recommended)`);
+      }
+      if (acceptedClaims.length === 0) {
+        errors.push("No accepted claims available");
+      }
+
+      const canCompile = errors.length === 0 && acceptedClaims.length > 0;
+
+      res.json({
+        canCompile,
+        acceptedClaimsCount: acceptedClaims.length,
+        claimsWithCitationsCount,
+        claimsMissingCitations,
+        claimsWithMissingInfo,
+        warnings,
+        errors,
+      });
+    } catch (error) {
+      console.error("Court template preflight error:", error);
+      res.status(500).json({ error: "Failed to run preflight check" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/court-templates/compile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { templateKey, title } = req.body;
+
+      if (!templateKey || !title) {
+        return res.status(400).json({ error: "templateKey and title required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { COURT_TEMPLATES } = await import("@shared/courtTemplates");
+      type CompiledCourtDocument = import("@shared/courtTemplates").CompiledCourtDocument;
+      const template = COURT_TEMPLATES[templateKey as keyof typeof COURT_TEMPLATES];
+      if (!template) {
+        return res.status(400).json({ error: "Invalid template key" });
+      }
+
+      const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+      
+      const claimsWithCitations: Array<{
+        claim: typeof acceptedClaims[0];
+        citations: Awaited<ReturnType<typeof storage.listClaimCitations>>;
+      }> = [];
+
+      for (const claim of acceptedClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length === 0) {
+          return res.status(400).json({
+            error: "Cannot compile: claim missing citations",
+            claimId: claim.id,
+            claimText: claim.claimText.substring(0, 100),
+          });
+        }
+        if (claim.missingInfoFlag && !template.allowMissingInfoClaims) {
+          return res.status(400).json({
+            error: "Cannot compile: claim flagged as missing info",
+            claimId: claim.id,
+            claimText: claim.claimText.substring(0, 100),
+          });
+        }
+        claimsWithCitations.push({ claim, citations });
+      }
+
+      if (claimsWithCitations.length === 0) {
+        return res.status(400).json({ error: "No accepted claims available to compile" });
+      }
+
+      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
+
+      const exhibitLabels = new Map<string, string>();
+      let exhibitCounter = 0;
+      const getExhibitLabel = (evidenceId: string): string => {
+        if (!exhibitLabels.has(evidenceId)) {
+          exhibitCounter++;
+          const label = String.fromCharCode(64 + exhibitCounter);
+          exhibitLabels.set(evidenceId, `Exhibit ${label}`);
+        }
+        return exhibitLabels.get(evidenceId)!;
+      };
+
+      const formatCitation = (citation: Awaited<ReturnType<typeof storage.listClaimCitations>>[0]): string => {
+        const evidence = evidenceMap.get(citation.evidenceFileId);
+        const exhibitLabel = getExhibitLabel(citation.evidenceFileId);
+        let ref = exhibitLabel;
+        if (citation.pageNumber) {
+          ref += `, p. ${citation.pageNumber}`;
+        }
+        return `[${ref}]`;
+      };
+
+      const groupClaimsByType = (claims: typeof claimsWithCitations) => {
+        const groups: Record<string, typeof claimsWithCitations> = {};
+        for (const item of claims) {
+          const type = item.claim.claimType || "fact";
+          if (!groups[type]) groups[type] = [];
+          groups[type].push(item);
+        }
+        return groups;
+      };
+
+      const claimsByType = groupClaimsByType(claimsWithCitations);
+
+      let markdown = `# ${title}\n\n`;
+      markdown += `${template.introTemplate}\n\n`;
+
+      const compiledSections: CompiledCourtDocument["sections"] = [];
+      let paragraphNumber = 0;
+
+      for (const section of template.sections) {
+        const sectionClaims: typeof claimsWithCitations = [];
+        
+        if (section.claimTypes && section.claimTypes.length > 0) {
+          for (const type of section.claimTypes) {
+            if (claimsByType[type]) {
+              sectionClaims.push(...claimsByType[type]);
+            }
+          }
+        } else if (section.key === "intro" || section.key === "conclusion") {
+          continue;
+        } else {
+          sectionClaims.push(...claimsWithCitations);
+        }
+
+        if (sectionClaims.length === 0 && section.key !== "intro" && section.key !== "conclusion") {
+          continue;
+        }
+
+        markdown += `## ${section.title}\n\n`;
+
+        const sectionClaimsCompiled: CompiledCourtDocument["sections"][0]["claims"] = [];
+
+        for (const { claim, citations } of sectionClaims) {
+          paragraphNumber++;
+          const citationRefs = citations.map(formatCitation);
+          const claimLine = `${paragraphNumber}. ${claim.claimText} ${citationRefs.join(" ")}\n\n`;
+          markdown += claimLine;
+
+          sectionClaimsCompiled.push({
+            claimId: claim.id,
+            paragraphNumber,
+            text: claim.claimText,
+            citations: citationRefs,
+          });
+        }
+
+        compiledSections.push({
+          key: section.key,
+          title: section.title,
+          claims: sectionClaimsCompiled,
+        });
+      }
+
+      if (template.footerTemplate) {
+        markdown += `---\n\n${template.footerTemplate}\n\n`;
+      }
+
+      markdown += `## Sources\n\n`;
+      const sources: CompiledCourtDocument["sources"] = [];
+
+      for (const [evidenceId, exhibitLabel] of exhibitLabels.entries()) {
+        const evidence = evidenceMap.get(evidenceId);
+        if (evidence) {
+          const pagesReferenced: number[] = [];
+          for (const { citations } of claimsWithCitations) {
+            for (const cit of citations) {
+              if (cit.evidenceFileId === evidenceId && cit.pageNumber) {
+                if (!pagesReferenced.includes(cit.pageNumber)) {
+                  pagesReferenced.push(cit.pageNumber);
+                }
+              }
+            }
+          }
+          pagesReferenced.sort((a, b) => a - b);
+
+          const pageRef = pagesReferenced.length > 0 
+            ? ` (pp. ${pagesReferenced.join(", ")})`
+            : "";
+          markdown += `- **${exhibitLabel}**: ${evidence.fileName}${pageRef}\n`;
+
+          sources.push({
+            evidenceFileId: evidenceId,
+            fileName: evidence.fileName,
+            exhibitLabel,
+            pagesReferenced,
+          });
+        }
+      }
+
+      const compiledDocument: CompiledCourtDocument = {
+        templateKey: templateKey as CompiledCourtDocument["templateKey"],
+        title,
+        markdown,
+        sections: compiledSections,
+        sources,
+        compiledAt: new Date().toISOString(),
+      };
+
+      res.json({ document: compiledDocument });
+    } catch (error) {
+      console.error("Court template compile error:", error);
+      res.status(500).json({ error: "Failed to compile document" });
+    }
+  });
+
   return httpServer;
 }

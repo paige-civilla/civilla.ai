@@ -46,6 +46,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { History, Edit3, ChevronDown, ChevronUp, Eye, AlertTriangle, ListOrdered } from "lucide-react";
 import OutlineBuilder from "@/components/app/OutlineBuilder";
+import CourtTemplates from "@/components/app/CourtTemplates";
 
 const DRAFT_TOPIC_BY_MODULE: Record<string, string> = {
   evidence: "Evidence summary",
@@ -610,7 +611,7 @@ export default function AppDocuments() {
   const [isCourtDocDialogOpen, setIsCourtDocDialogOpen] = useState(false);
   const [selectedCourtDocType, setSelectedCourtDocType] = useState("");
   
-  type DocStep = "draft" | "outline" | "review" | "filing";
+  type DocStep = "draft" | "outline" | "court" | "review" | "filing";
   const [docStep, setDocStep] = useState<DocStep>("draft");
   
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -1113,14 +1114,14 @@ export default function AppDocuments() {
           )}
 
           <Tabs value={docStep} onValueChange={(v) => setDocStep(v as DocStep)} className="w-full">
-            <TabsList className="w-full grid grid-cols-1 md:grid-cols-4 gap-2 bg-transparent p-0 h-auto">
+            <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 gap-2 bg-transparent p-0 h-auto">
               <TabsTrigger
                 value="draft"
                 className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-primary data-[state=active]:bg-primary/5"
                 data-testid="tab-step-1-draft"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">1</span>
-                Step 1: Draft
+                Draft
               </TabsTrigger>
 
               <TabsTrigger
@@ -1129,7 +1130,16 @@ export default function AppDocuments() {
                 data-testid="tab-step-outline"
               >
                 <ListOrdered className="w-4 h-4 mr-2" />
-                Outline Builder
+                Outline
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="court"
+                className="justify-start rounded-lg border border-neutral-light bg-white data-[state=active]:border-primary data-[state=active]:bg-primary/5"
+                data-testid="tab-step-court"
+              >
+                <Scale className="w-4 h-4 mr-2" />
+                Court Templates
               </TabsTrigger>
 
               <TabsTrigger
@@ -1138,7 +1148,7 @@ export default function AppDocuments() {
                 data-testid="tab-step-2-review"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">2</span>
-                Step 2: Review
+                Review
               </TabsTrigger>
 
               <TabsTrigger
@@ -1147,7 +1157,7 @@ export default function AppDocuments() {
                 data-testid="tab-step-3-filing"
               >
                 <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">3</span>
-                Step 3: Filing
+                Filing
               </TabsTrigger>
             </TabsList>
 
@@ -1329,6 +1339,10 @@ export default function AppDocuments() {
 
             <TabsContent value="outline" className="mt-6">
               <OutlineBuilder caseId={caseId} />
+            </TabsContent>
+
+            <TabsContent value="court" className="mt-6">
+              <CourtTemplates caseId={caseId} />
             </TabsContent>
 
             <TabsContent value="review" className="mt-6">

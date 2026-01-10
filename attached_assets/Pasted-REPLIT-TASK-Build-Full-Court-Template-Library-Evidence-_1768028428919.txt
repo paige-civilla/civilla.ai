@@ -1,0 +1,169 @@
+REPLIT TASK: Build Full Court-Template Library (Evidence-First, Claims+Citations Only)
+
+GOAL
+Ship a complete library of court-formatted templates that are ready-to-use.
+All templates MUST compile ONLY from:
+- accepted case_claims (status="accepted")
+- claim_citations -> citation_pointers (>=1 per claim included)
+Optionally allowed (if already structured in DB):
+- timeline_events (with eventDate)
+- exhibit_snippets (already evidence-anchored)
+- trial_prep_shortlist (pinned items only, as optional appendices)
+
+HARD RULES (Mod-Custody Behavioral Model)
+- Never draft from raw user text.
+- Never invent facts, dates, intent, diagnoses, motives.
+- Every factual sentence must be traceable to citations.
+- No legal advice, no strategy, no “you should file…”, no outcome prediction.
+
+────────────────────────────────────────
+1) TEMPLATE LIBRARY (V1 COMPLETE SET)
+────────────────────────────────────────
+Implement these templates as options under “Court Templates”:
+
+A. Fact Declarations / Statements
+1) Declaration (Facts Only)
+2) Declaration – Custody/Parenting Time Facts
+3) Declaration – Discovery/Disclosure Compliance (facts only)
+4) Statement of Facts (Chronological)
+5) Statement of Facts (Issue-Grouped)
+
+B. Procedural / Case Management (Neutral)
+6) Case Status Summary (for your own prep; NOT a filing label)
+7) Discovery & Disclosure Tracker Summary (dates, what exchanged; factual)
+8) Deadline & Hearing Summary (from deadlines/timeline; factual)
+
+C. Evidence / Exhibits
+9) Exhibit Index (master list)
+10) Exhibit Packet Cover Page (title/subtitle only)
+11) Evidence Summary by Exhibit (1–3 bullet facts per exhibit with citations)
+12) Trial Binder Section Divider Pages (auto-generated headings)
+
+D. Communication & Incident Logs
+13) Communication Log Summary (channel/date/subject; factual)
+14) Incident Log (one row per accepted claim tagged “incident”)
+
+E. Parenting Plan / Child-related (Neutral, non-advisory)
+15) Parenting Plan Outline (structured headings + “TBD” placeholders)
+16) Parenting Issues Checklist (factual “open items” derived from missing_info_flag)
+
+F. Pattern / Themes (Already exists; formalize as templates)
+17) Pattern Analysis Summary (export-ready, citation-backed)
+18) Themes & Examples Appendix (top themes with cited examples)
+
+G. Courtroom Prep (non-advice, factual-only)
+19) Witness List (names/roles/contact + “what they can speak to” derived from claims, no coaching)
+20) Exhibit-to-Claim Map (which exhibits support which claims)
+
+NOTE:
+If any template could be construed as “telling them what to file”, label it clearly as:
+“Educational / Organization Only” and keep it factual.
+
+────────────────────────────────────────
+2) ARCHITECTURE (MAKE IT SCALABLE)
+────────────────────────────────────────
+A) Create a Template Registry
+Create a single registry file (e.g. server/templates/registry.ts) that defines each template:
+- templateKey
+- displayName
+- description (educational/organizational)
+- allowedSources: ["claims", "timeline", "snippets", "trialPrep"]
+- requiredClaimTags (optional)
+- requiredClaimTypes (optional)
+- sectionBlueprint: array of sections with rules
+
+B) One Compiler Engine
+Create server/templates/compileTemplate.ts that:
+- Loads accepted claims for case
+- Filters by template rules (tags/types)
+- Loads citations and blocks compile if any included claim has 0 citations
+- Builds markdown with:
+  - Court-style title block
+  - Sections
+  - Numbered paragraphs
+  - Inline citations
+  - Sources appendix
+
+C) Standard Citation Format
+Use consistent inline format:
+[Source: {evidenceFileName}, p.{page}] OR [Source: {evidenceFileName}, t={timestamp}s]
+If page/timestamp missing, still include citation pointer id and “verify location”.
+
+D) Output Types
+Support:
+- Markdown preview
+- DOCX export (optional next step)
+- PDF export (optional next step)
+Start with markdown + existing export pattern.
+
+────────────────────────────────────────
+3) API ENDPOINTS
+────────────────────────────────────────
+A) List templates
+GET /api/templates
+Returns registry list for UI.
+
+B) Compile template
+POST /api/cases/:caseId/documents/compile-template
+Body:
+{
+  templateKey: string,
+  title?: string,
+  options?: {
+    includeTimeline?: boolean,
+    includeSnippets?: boolean,
+    includePinnedTrialPrep?: boolean
+  }
+}
+Returns:
+{ ok: true, markdown, sources, stats }
+
+C) Preflight
+GET /api/cases/:caseId/templates/preflight?templateKey=...
+Returns:
+- acceptedClaimsCount
+- includedClaimsCount
+- uncitedIncludedClaimsCount (blocks)
+- missingInfoIncludedClaimsCount (warn)
+- extractionCoveragePercent
+- templateReady boolean + reasons
+
+────────────────────────────────────────
+4) FRONTEND UI
+────────────────────────────────────────
+A) Document Creator
+Add “Court Templates” tab with:
+- Template dropdown (searchable)
+- Short description + “Educational / Organization” badge
+- Preflight card:
+  - Ready/Blocked reasons
+  - “Auto-attach missing sources” button (existing Phase 2B)
+  - Warnings for missing_info_flag
+- Compile button
+- Preview pane
+- Save as Document (existing document save flow)
+- Rename before save/export
+
+B) Deep link support
+When compiling from a page (evidence/pattern/etc), allow ?templateKey=...
+Auto-select template and prefill title.
+
+────────────────────────────────────────
+5) PRIVACY + SAFETY
+────────────────────────────────────────
+- No user content displayed in admin/grants dashboards.
+- Templates never expose other users’ data.
+- If missing citations: block compile with a clear message and a “Fix Sources” CTA.
+
+────────────────────────────────────────
+6) ACCEPTANCE TESTS
+────────────────────────────────────────
+- A template compile fails if included claim has 0 citations.
+- A template compile includes only accepted claims.
+- Inline citations present for every paragraph.
+- Output is readable: headings, spacing, bullet lists where appropriate.
+- No “you should” language in output.
+
+DELIVERABLE
+Implement the full registry + compiler + endpoints + UI support so new templates are just registry entries, not new code paths.
+Do NOT add more template types without approval.

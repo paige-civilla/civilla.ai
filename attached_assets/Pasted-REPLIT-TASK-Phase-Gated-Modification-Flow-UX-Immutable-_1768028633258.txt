@@ -1,0 +1,127 @@
+REPLIT TASK: Phase-Gated “Modification Flow” UX + Immutable Activity Logs Viewer
+
+GOAL
+Make the app consistently follow the Mod-of-Custody workflow:
+1) Evidence → 2) Extraction → 3) Claims (accepted + cited) → 4) Issues → 5) Draft
+…and provide a privacy-safe, non-deletable audit trail users can view in Account Settings.
+
+────────────────────────────────────────
+A) PHASE GATE UX (GLOBAL)
+────────────────────────────────────────
+1) Define the 5 phases (case-scoped):
+- PHASE_1 = Evidence Upload
+- PHASE_2 = Extraction Complete
+- PHASE_3 = Claims Reviewed (accepted claims exist)
+- PHASE_4 = Issues Organized (>=1 issue grouping OR optional skip)
+- PHASE_5 = Ready to Draft (accepted+cited claims >= minimum)
+
+2) Add a single “Phase Banner” component shown on ALL module pages (top of content):
+- Shows current phase + progress (1–5)
+- Shows what’s missing (e.g., “3 claims missing citations”)
+- Shows 1–2 primary CTAs:
+  - “Upload Evidence”
+  - “Run Extraction”
+  - “Review Suggested Claims”
+  - “Auto-attach Missing Sources”
+  - “Compile Draft”
+
+3) Rules:
+- Do NOT block navigation entirely (people explore), BUT:
+  - Disable “Compile” actions if phase < 5
+  - Show “Jump Ahead” warning when opening Documents before phase 3+
+  - Keep “Jump Ahead” allowed with a warning modal:
+    “You can explore templates, but drafting is locked until claims are accepted and cited.”
+
+4) Backend support (new endpoint):
+GET /api/cases/:caseId/phase-status
+Returns:
+{
+  phaseNumber: 1-5,
+  checks: {
+    evidenceCount,
+    extractionCompleteCount,
+    suggestedClaimsCount,
+    acceptedClaimsCount,
+    acceptedClaimsMissingCitationsCount,
+    issueGroupingsCount,
+    readinessPercent
+  },
+  blockers: string[],
+  warnings: string[],
+  recommendedActions: [{ label, href, actionKey }]
+}
+
+Use existing tables:
+- evidence_files, evidence_extractions
+- case_claims, claim_citations
+- issue_groupings
+- draft-readiness endpoint already exists (reuse it)
+
+────────────────────────────────────────
+B) IMMUTABLE ACTIVITY LOGS (USER-VIEWABLE)
+────────────────────────────────────────
+You already have activity_logs table + list endpoint. Now:
+1) Ensure logs are non-deletable:
+- DO NOT create any DELETE endpoint.
+- Ensure server does not expose delete routes.
+
+2) Expand logging coverage (privacy-safe, no evidence text):
+Log events (caseId nullable):
+- lexi_thread_created, lexi_message_sent, lexi_response_received (store token counts if available)
+- evidence_uploaded, extraction_queued, extraction_complete, extraction_failed
+- ai_analysis_started, ai_analysis_complete, ai_analysis_failed
+- claims_suggested, claim_accepted, claim_rejected, citations_auto_attached
+- issue_created, claim_added_to_issue
+- document_compiled_template, document_compiled_claims, document_exported
+- pattern_exported, binder_exported
+- admin_metrics_viewed (admin only), grant_metrics_viewed (grant viewer only)
+
+Store only:
+- eventType
+- caseId
+- sourceType/sourceId (ids only)
+- metadata JSON with counts/timestamps/status codes (NO user content)
+
+3) Add Account Settings “Activity Logs” section:
+- Search box (filters by eventType text)
+- Date range filter (last 7/30/90)
+- Paginated list (50 per page)
+- Each row shows: date/time, event label, case title (if caseId), and a short metadata summary
+- Add a small note:
+  “These logs can’t be deleted to protect integrity and security.”
+
+Add endpoints:
+GET /api/activity-logs?range=7|30|90&cursor=...&q=...
+Return:
+{ items: ActivityLog[], nextCursor?: string }
+
+────────────────────────────────────────
+C) ADD “GO TO WHERE IT’S MISSING” LINKS
+────────────────────────────────────────
+In Phase Banner and in Activity Logs rows:
+- Clicking a recommendation takes user to the exact module screen:
+  - Evidence module (upload)
+  - EvidenceViewer (review claims)
+  - Document Creator (compile) only when ready
+Use existing deep-link/highlight helpers.
+
+────────────────────────────────────────
+D) ACCEPTANCE TESTS
+────────────────────────────────────────
+1) New case, no evidence:
+- Phase banner shows Phase 1 + CTA “Upload Evidence”
+2) Evidence uploaded, extraction queued:
+- Phase 2 banner shows extraction status, CTA “Retry” on failure
+3) Extraction complete, no accepted claims:
+- Phase 3 banner shows “Review suggested claims”
+4) Accepted claims but missing citations:
+- Phase 5 blocked, CTA “Auto-attach missing sources”
+5) Ready to draft:
+- Compile unlocked + banner says “Ready to Draft”
+6) Activity logs appear and cannot be deleted.
+
+DELIVERABLE
+- Add /api/cases/:caseId/phase-status
+- Add PhaseBanner component used across modules
+- Add Activity Logs viewer in Account Settings with filters + pagination
+- Expand server-side logging coverage with privacy-safe metadata only
