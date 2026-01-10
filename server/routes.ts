@@ -8676,6 +8676,247 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  // Phase 3: Draft Outlines API
+  app.get("/api/cases/:caseId/draft-outlines", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const outlines = await storage.listDraftOutlines(userId, caseId);
+      res.json({ outlines });
+    } catch (error) {
+      console.error("List draft outlines error:", error);
+      res.status(500).json({ error: "Failed to list outlines" });
+    }
+  });
+
+  app.get("/api/draft-outlines/:outlineId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId } = req.params;
+      
+      const outline = await storage.getDraftOutline(userId, outlineId);
+      if (!outline) {
+        return res.status(404).json({ error: "Outline not found" });
+      }
+      
+      const claims = await storage.listDraftOutlineClaims(userId, outlineId);
+      res.json({ outline, claims });
+    } catch (error) {
+      console.error("Get draft outline error:", error);
+      res.status(500).json({ error: "Failed to get outline" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/draft-outlines", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const { insertDraftOutlineSchema } = await import("@shared/schema");
+      const parsed = insertDraftOutlineSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid outline data", details: parsed.error.errors });
+      }
+      
+      const outline = await storage.createDraftOutline(userId, caseId, parsed.data);
+      res.status(201).json({ outline });
+    } catch (error) {
+      console.error("Create draft outline error:", error);
+      res.status(500).json({ error: "Failed to create outline" });
+    }
+  });
+
+  app.patch("/api/draft-outlines/:outlineId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId } = req.params;
+      
+      const existing = await storage.getDraftOutline(userId, outlineId);
+      if (!existing) {
+        return res.status(404).json({ error: "Outline not found" });
+      }
+      
+      const { updateDraftOutlineSchema } = await import("@shared/schema");
+      const parsed = updateDraftOutlineSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid update data", details: parsed.error.errors });
+      }
+      
+      const outline = await storage.updateDraftOutline(userId, outlineId, parsed.data);
+      res.json({ outline });
+    } catch (error) {
+      console.error("Update draft outline error:", error);
+      res.status(500).json({ error: "Failed to update outline" });
+    }
+  });
+
+  app.delete("/api/draft-outlines/:outlineId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId } = req.params;
+      
+      const deleted = await storage.deleteDraftOutline(userId, outlineId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Outline not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete draft outline error:", error);
+      res.status(500).json({ error: "Failed to delete outline" });
+    }
+  });
+
+  // Draft Outline Claims (assign claims to sections)
+  app.post("/api/draft-outlines/:outlineId/claims", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId } = req.params;
+      
+      const outline = await storage.getDraftOutline(userId, outlineId);
+      if (!outline) {
+        return res.status(404).json({ error: "Outline not found" });
+      }
+      
+      const { insertDraftOutlineClaimSchema } = await import("@shared/schema");
+      const parsed = insertDraftOutlineClaimSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid claim assignment data", details: parsed.error.errors });
+      }
+      
+      const claim = await storage.addClaimToOutline(userId, outline.caseId, outlineId, parsed.data);
+      res.status(201).json({ claim });
+    } catch (error: any) {
+      if (error.code === "23505") {
+        return res.status(409).json({ error: "Claim already assigned to this outline" });
+      }
+      console.error("Add claim to outline error:", error);
+      res.status(500).json({ error: "Failed to add claim to outline" });
+    }
+  });
+
+  app.delete("/api/draft-outlines/:outlineId/claims/:claimId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId, claimId } = req.params;
+      
+      const deleted = await storage.removeClaimFromOutline(userId, outlineId, claimId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Claim assignment not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove claim from outline error:", error);
+      res.status(500).json({ error: "Failed to remove claim from outline" });
+    }
+  });
+
+  app.patch("/api/draft-outlines/:outlineId/claims/bulk", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId } = req.params;
+      
+      const outline = await storage.getDraftOutline(userId, outlineId);
+      if (!outline) {
+        return res.status(404).json({ error: "Outline not found" });
+      }
+      
+      const { bulkUpdateDraftOutlineClaimsSchema } = await import("@shared/schema");
+      const parsed = bulkUpdateDraftOutlineClaimsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid bulk update data", details: parsed.error.errors });
+      }
+      
+      await storage.bulkUpdateOutlineClaims(userId, outlineId, parsed.data);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Bulk update outline claims error:", error);
+      res.status(500).json({ error: "Failed to update claim assignments" });
+    }
+  });
+
+  // Compile outline - validates claims have citations before compiling
+  app.post("/api/draft-outlines/:outlineId/compile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { outlineId } = req.params;
+      
+      const outline = await storage.getDraftOutline(userId, outlineId);
+      if (!outline) {
+        return res.status(404).json({ error: "Outline not found" });
+      }
+      
+      const outlineClaims = await storage.listDraftOutlineClaims(userId, outlineId);
+      if (outlineClaims.length === 0) {
+        return res.status(400).json({ 
+          error: "No claims assigned to this outline",
+          blockers: [{ type: "no_claims", message: "Add at least one claim to the outline before compiling" }]
+        });
+      }
+      
+      // Check for uncited claims
+      const claimIds = outlineClaims.map(oc => oc.claimId);
+      const claims = await Promise.all(claimIds.map(id => storage.getCaseClaim(userId, id)));
+      const validClaims = claims.filter(c => c !== undefined);
+      
+      const blockers: Array<{ type: string; claimId: string; text: string }> = [];
+      for (const claim of validClaims) {
+        if (!claim) continue;
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length === 0) {
+          blockers.push({
+            type: "uncited_claim",
+            claimId: claim.id,
+            text: claim.claimText,
+          });
+        }
+      }
+      
+      if (blockers.length > 0) {
+        return res.status(400).json({
+          error: "Some claims need supporting evidence",
+          blockers,
+          message: `${blockers.length} claim(s) need at least one citation before compiling`
+        });
+      }
+      
+      // Lock all claims used in this compile
+      for (const claim of validClaims) {
+        if (!claim) continue;
+        const existingDocIds = Array.isArray(claim.usedInDocIds) ? claim.usedInDocIds : [];
+        if (!existingDocIds.includes(outlineId)) {
+          await storage.updateCaseClaim(userId, claim.id, {
+            usedInDocIds: [...existingDocIds, outlineId],
+            isLocked: true,
+            lockedAt: new Date().toISOString(),
+            lockedReason: "Used in compiled document",
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Outline compiled successfully",
+        claimsLocked: validClaims.length
+      });
+    } catch (error) {
+      console.error("Compile outline error:", error);
+      res.status(500).json({ error: "Failed to compile outline" });
+    }
+  });
+
   app.get("/api/cases/:caseId/draft-readiness", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
