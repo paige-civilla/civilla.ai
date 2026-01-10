@@ -57,8 +57,13 @@ function extractCaseId(path: string): string | null {
 type LexiIntent = "research" | "organize" | "educate";
 
 interface LexiSource {
-  title: string;
+  label?: string;
+  title?: string;
   url: string;
+  kind?: "official" | "secondary";
+  verified?: boolean;
+  matchedOn?: "keyword" | "quote" | "title";
+  matchSnippet?: string;
   jurisdiction?: string;
   reachable?: boolean;
   accessedAt?: string;
@@ -75,25 +80,43 @@ interface MessageMetadata {
 function LexiSourcesList({ sources }: { sources: LexiSource[] }) {
   if (!sources || sources.length === 0) return null;
 
+  const isOnlyFallback = sources.length === 1 && sources[0].label === "Search official sources";
+
   return (
     <div className="mt-3 pt-3 border-t border-neutral-light">
-      <p className="text-xs font-medium text-neutral-darkest/60 mb-2">Sources:</p>
-      <ul className="space-y-1">
+      <p className="text-xs font-medium text-neutral-darkest/60 mb-2">
+        {isOnlyFallback ? "Sources:" : "Verified Sources:"}
+      </p>
+      {isOnlyFallback && (
+        <p className="text-xs text-neutral-darkest/50 mb-2">
+          No direct official source could be verified automatically. Use the search link to locate the official page.
+        </p>
+      )}
+      <ul className="space-y-2">
         {sources.map((source, idx) => (
-          <li key={idx} className="text-xs flex items-start gap-1" data-testid={`source-item-${idx}`}>
-            <span className="text-neutral-darkest/40 shrink-0">{idx + 1}.</span>
-            <a
-              href={source.url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-[hsl(var(--module-tile-border))] hover:underline break-words"
-              data-testid={`source-link-${idx}`}
-            >
-              {source.title || source.url}
-            </a>
-            {source.jurisdiction && (
-              <span className="text-neutral-darkest/40 shrink-0">({source.jurisdiction})</span>
-            )}
+          <li key={idx} className="text-xs" data-testid={`source-item-${idx}`}>
+            <div className="flex items-start gap-1">
+              <span className="text-neutral-darkest/40 shrink-0">{idx + 1}.</span>
+              <div className="flex-1 min-w-0">
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-[hsl(var(--module-tile-border))] hover:underline break-words"
+                  data-testid={`source-link-${idx}`}
+                >
+                  {source.label || source.title || source.url}
+                </a>
+                {source.kind === "official" && (
+                  <span className="ml-1 text-green-600 text-[10px]">(official)</span>
+                )}
+                {source.matchSnippet && !isOnlyFallback && (
+                  <p className="text-neutral-darkest/50 text-[10px] mt-0.5 italic line-clamp-2">
+                    "{source.matchSnippet}"
+                  </p>
+                )}
+              </div>
+            </div>
           </li>
         ))}
       </ul>

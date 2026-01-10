@@ -27,7 +27,8 @@ import { SAFETY_TEMPLATES, detectUPLRequest, shouldBlockMessage } from "./lexi/s
 import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer";
 import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
 import { prependDisclaimerIfNeeded } from "./lexi/format";
-import { extractSourcesFromContent, normalizeUrlsInContent, normalizeAndValidateSources, type LexiSource } from "./lexi/sources";
+import { extractSourcesFromContent, normalizeUrlsInContent, type LexiSource } from "./lexi/sources";
+import { verifySources, extractKeyTermsFromText, extractTopicFromContext, type VerifiedSource } from "./lexi/sourceVerifier";
 import { scheduleMemoryRebuild } from "./lexi/memoryDebounce";
 import { rebuildCaseMemory } from "./lexi/rebuildMemory";
 import { triggerCaseMemoryRebuild } from "./lexi/triggerCaseMemory";
@@ -5341,9 +5342,17 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       
       const { sources, hasSources } = extractSourcesFromContent(assistantContent);
       
-      let validatedSources: LexiSource[] = [];
+      let verifiedSources: VerifiedSource[] = [];
       if (hasSources && sources.length > 0) {
-        validatedSources = await normalizeAndValidateSources(sources);
+        const candidateUrls = sources.map((s) => s.url).filter(Boolean);
+        const queryTopic = extractTopicFromContext(message, thread.title || undefined, undefined);
+        const keyTerms = extractKeyTermsFromText(assistantContent, caseRecord?.state || undefined);
+        
+        verifiedSources = await verifySources({
+          queryTopic,
+          keyTerms,
+          candidates: candidateUrls,
+        });
       }
       
       const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
@@ -5353,10 +5362,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       
       const assistantMsg = await storage.createLexiMessage(
         userId, effectiveCaseId, threadId, "assistant", finalContent, 
-        null, "gpt-4.1", { intent, refused: false, hadSources: hasSources, sources: validatedSources }
+        null, "gpt-4.1", { intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources }
       );
 
-      res.json({ assistantMessage: assistantMsg, intent, refused: false, hadSources: hasSources, sources: validatedSources });
+      res.json({ assistantMessage: assistantMsg, intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources });
     } catch (err: any) {
       const status = err?.status || err?.response?.status;
       const code = err?.code || err?.error?.code;
@@ -5592,9 +5601,17 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       assistantContent = normalizeUrlsInContent(assistantContent);
       
       const { sources, hasSources } = extractSourcesFromContent(assistantContent);
-      let validatedSources: LexiSource[] = [];
+      let verifiedSources: VerifiedSource[] = [];
       if (hasSources && sources.length > 0) {
-        validatedSources = await normalizeAndValidateSources(sources);
+        const candidateUrls = sources.map((s) => s.url).filter(Boolean);
+        const queryTopic = extractTopicFromContext(message, thread?.title || undefined, undefined);
+        const keyTerms = extractKeyTermsFromText(assistantContent, caseRecord?.state || undefined);
+        
+        verifiedSources = await verifySources({
+          queryTopic,
+          keyTerms,
+          candidates: candidateUrls,
+        });
       }
       
       const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
@@ -5604,11 +5621,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       
       const assistantMessage = await storage.createLexiMessage(
         userId, effectiveCaseId, threadId!, "assistant", finalContent, 
-        null, "gpt-4.1", { intent, refused: false, hadSources: hasSources, sources: validatedSources }
+        null, "gpt-4.1", { intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources }
       );
 
-      if (hasSources && validatedSources.length > 0) {
-        sendSSE("sources", { sources: validatedSources });
+      if (verifiedSources.length > 0) {
+        sendSSE("sources", { sources: verifiedSources });
       }
 
       sendSSE("done", { ok: true, threadId, messageId: assistantMessage.id });
