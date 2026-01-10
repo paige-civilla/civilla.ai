@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { EvidenceFile, EvidenceNoteFull, ExhibitList, CaseClaim, CitationPointer } from "@shared/schema";
+import LinkToTimelineButton from "./LinkToTimelineButton";
 
 interface EvidenceViewerProps {
   caseId: string;
@@ -891,17 +892,28 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
                               </Button>
                             )}
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 text-xs"
-                            onClick={() => addClaimToTrialPrepMutation.mutate(claim)}
-                            disabled={addClaimToTrialPrepMutation.isPending}
-                            data-testid={`button-trial-prep-claim-${claim.id}`}
-                          >
-                            <Scale className="w-3 h-3 mr-1" />
-                            Add to Trial Prep
-                          </Button>
+                          <div className="flex flex-wrap gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs"
+                              onClick={() => addClaimToTrialPrepMutation.mutate(claim)}
+                              disabled={addClaimToTrialPrepMutation.isPending}
+                              data-testid={`button-trial-prep-claim-${claim.id}`}
+                            >
+                              <Scale className="w-3 h-3 mr-1" />
+                              Trial Prep
+                            </Button>
+                            <LinkToTimelineButton
+                              caseId={caseId}
+                              linkType="claim"
+                              targetId={claim.id}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs"
+                              label="Timeline"
+                            />
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
@@ -970,6 +982,16 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
               Text
             </Button>
           )}
+
+          <LinkToTimelineButton
+            caseId={caseId}
+            linkType="evidence"
+            targetId={evidence.id}
+            size="sm"
+            variant="outline"
+            className="hidden md:flex"
+            label="Link to Timeline"
+          />
 
           <Button size="sm" variant="outline" asChild data-testid="button-open-original">
             <a href={fileUrl} target="_blank" rel="noopener noreferrer">
