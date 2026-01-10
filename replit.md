@@ -22,6 +22,7 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
+- 2025-01-10: Added Module Usage Analytics - activity_logs tracks moduleKey/entityType/entityId, recordActivity() helper, /api/analytics/* endpoints, useModuleView hook for auto-tracking, Usage Insights card in Account Settings
 - 2025-01-05: Added Evidence Notes feature - page-based annotations for viewing/organizing evidence without file uploads (schema, storage, API routes, full UI with CRUD)
 - 2025-01-01: Added 15-minute inactivity auto-logout via useIdleLogout hook in AppLayout
 - 2025-01-01: Enhanced Documents UX - Added StepStrip component with visual 1-2-3 workflow, step numbers in headings, improved button labels
