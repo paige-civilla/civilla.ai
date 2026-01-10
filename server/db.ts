@@ -1375,6 +1375,33 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS draft_outlines_case_idx ON draft_outlines(case_id)`
   ]);
 
+  await initTable("case_resources", `
+    CREATE TABLE IF NOT EXISTS case_resources (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      resource_type TEXT NOT NULL DEFAULT 'form',
+      title TEXT NOT NULL,
+      description TEXT,
+      url TEXT NOT NULL,
+      domain TEXT,
+      state VARCHAR(50),
+      county VARCHAR(100),
+      form_number VARCHAR(100),
+      category VARCHAR(200),
+      tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+      notes TEXT,
+      is_saved BOOLEAN NOT NULL DEFAULT true,
+      last_accessed_at TIMESTAMP,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS case_resources_user_idx ON case_resources(user_id)`,
+    `CREATE INDEX IF NOT EXISTS case_resources_case_idx ON case_resources(case_id)`,
+    `CREATE INDEX IF NOT EXISTS case_resources_state_idx ON case_resources(state)`
+  ]);
+
   await initTable("draft_outline_claims", `
     CREATE TABLE IF NOT EXISTS draft_outline_claims (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,

@@ -1,0 +1,167 @@
+REPLIT TASK: Implement “Template-to-Field Auto-Population” (Evidence-First, Citation-Locked)
+
+Goal
+Make Document Creator behave like the Modification-of-Custody workflow:
+- Users pick a template
+- Civilla auto-suggests what to insert into each template section
+- ONLY uses accepted claims that have citations (no sources = cannot insert)
+- Shows “missing info” gaps per section (non-blocking unless user tries to compile)
+
+Do NOT create a new module. This lives inside the existing Document Creator flow.
+
+========================================================
+A) BACKEND — Add Template Auto-Populate Endpoint
+========================================================
+
+1) Add a new endpoint in server/routes.ts:
+
+GET /api/cases/:caseId/documents/template-autofill?templateKey=<key>
+
+Response shape:
+{
+  ok: true,
+  template: { key, title, sections: [{ id, title, description?, required? }] },
+  candidates: {
+    [sectionId: string]: Array<{
+      claimId: string,
+      claimText: string,
+      claimType: string,
+      tags: string[],
+      citationCount: number,
+      citationsPreview: Array<{
+        evidenceFileId: string,
+        evidenceFileName: string,
+        pageNumber?: number|null,
+        timestampSeconds?: number|null,
+        quoteSnippet: string
+      }>
+    }>
+  },
+  gaps: Array<{
+    sectionId: string,
+    sectionTitle: string,
+    reason: "NO_MATCHING_CLAIMS" | "MATCHES_EXIST_BUT_UNCITED" | "MISSING_INFO_FLAGGED",
+    details: string
+  }>
+}
+
+2) How to build the response:
+- Load the template definition from existing template library (whatever you’re using now).
+- Fetch ACCEPTED claims for the case:
+  storage.listCaseClaims(userId, caseId, { status: "accepted" })
+- For each claim, fetch citation pointers count + small previews:
+  storage.listClaimCitations(userId, claimId)
+  - Only include claim as a candidate if citations.length > 0
+  - citationsPreview: take up to 2 citations per claim (quoteSnippet <= 140 chars)
+
+3) Matching logic (simple & safe; no extra AI needed):
+- For each template section:
+  - Score claims by:
+    +20 if claimType matches section intent (e.g. “facts” → fact/context)
+    +10 if any tag matches section keywords
+    +5 if text contains section keywords (case-insensitive)
+  - Sort by score desc; return top 6 candidates per section
+- Keywords can come from a small dictionary in code:
+  Example mapping:
+    - "Jurisdiction / Parties" -> ["court","county","state","petitioner","respondent","party"]
+    - "Background / Procedural History" -> ["petition","motion","hearing","order","served","filed"]
+    - "Facts" -> ["date","event","occurred","said","did","message","email","text"]
+    - "Relief Requested" (WARNING: keep neutral) -> ["request","ask","seeking"] BUT DO NOT draft advice; just allow inserting claims that describe what user states they want if it’s in accepted claims
+  IMPORTANT: If you’re unsure, keep matching conservative and rely on tags/types.
+
+4) Gaps logic:
+- If section has 0 candidates:
+  - If there are accepted claims with missingInfoFlag true and they would have matched by keywords, set reason=MISSING_INFO_FLAGGED
+  - Else reason=NO_MATCHING_CLAIMS
+- Also detect “uncited accepted claims exist”:
+  - If there are accepted claims but many have 0 citations, add a global gap item:
+    reason=MATCHES_EXIST_BUT_UNCITED with details: “Some accepted claims have no sources; attach citations to use them.”
+
+5) Auth/ownership requirements:
+- requireAuth
+- confirm user owns caseId
+- do NOT return any raw evidence text beyond short citation snippet that already exists in citation_pointers.quoteSnippet
+
+========================================================
+B) FRONTEND — Document Creator UI: Auto-Fill Per Section
+========================================================
+
+File: client/src/pages/AppDocuments.tsx (or wherever Document Creator lives)
+
+1) Add a “Auto-Fill” panel inside the existing template drafting view:
+- When user selects a template, call:
+  GET /api/cases/:caseId/documents/template-autofill?templateKey=...
+- Store results in state: autoFillData
+
+2) UI layout (simple and clean):
+For each template section:
+- Section header row:
+  - Title
+  - Badge: “0 suggestions” or “3 suggestions”
+  - If gaps include this section, show an amber warning icon + “Missing info”
+- Under it: “Suggested inserts” chips/cards (max 6):
+  Each candidate card shows:
+  - claimText (2 lines max)
+  - “Sources: N”
+  - mini citation preview (file name + p.# + short quote)
+  Actions:
+  - Primary button: “Insert”
+    -> inserts a formatted block into the draft under that section
+  - Secondary: “View sources”
+    -> expand to show citationsPreview list
+
+3) Enforce citation lock on UI:
+- If candidate.citationCount === 0, do not render it (backend already filters)
+- If user tries to compile and any section is empty AND section.required=true:
+  - show non-blocking modal:
+    “This section is empty. Civilla can’t fill it without cited facts. Continue anyway?”
+  - BUT you can also keep compile allowed if your current product allows partial drafts.
+  (Your call: recommended = allow compile but warn.)
+
+4) How insertion should work:
+- Your draft editor likely has markdown/textarea content.
+- When clicking “Insert”, append under that section heading:
+  - Bullet list item with claim text
+  - Inline citation bracket(s) using your existing pattern:
+    [EVID: filename, p.X] or [EVID: filename, t=00:01:23]
+- Insert only once per claim per section:
+  - track insertedClaimIdsBySection in state to prevent duplicates
+
+5) Add “Auto-Populate All Sections” button (top of template view)
+- Walk sections in order
+- For each, if empty, insert the top 1 candidate
+- After run, show toast: “Auto-populated 5 sections from cited claims.”
+
+6) Add “Fix Missing Sources” call-to-action
+- If gaps contain MATCHES_EXIST_BUT_UNCITED:
+  - Show a button: “Auto-attach missing sources”
+  - Wire it to your existing bulk auto-attach action (Phase 2B) then refresh auto-fill results.
+
+========================================================
+C) SAFETY / UPL GUARDRAILS (must include)
+========================================================
+
+1) Add a one-time acceptance gate (per document compile session):
+- Before first “Compile/Export” from template mode, show a modal:
+  Title: “Important”
+  Text: “Civilla helps organize and draft using your provided facts. It is not legal advice.”
+  Buttons: “I Understand” (continue), “Cancel”
+- Store the acceptance in local state for that open session (don’t spam per click).
+
+2) Do NOT generate:
+- Legal strategy
+- What they “should” file
+- Predictions
+This feature only moves cited facts into template structure.
+
+========================================================
+D) REPORT BACK (in Replit summary after implementation)
+========================================================
+- Files changed
+- Endpoint added + example response
+- How matching works
+- How citations are enforced (no citation = no insert)
+- What the user sees (Auto-Populate button, per-section suggestions, gap warnings)
+- Confirm the “not legal advice” acceptance gate appears once per compile session
+
+Start with the backend endpoint + minimal UI wiring, then refine matching and the Auto-Populate All button.

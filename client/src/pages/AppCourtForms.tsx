@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { FileText, Search, ExternalLink, Bookmark, BookmarkCheck, Trash2, Pencil, Loader2, Plus, Globe, Building2, Scale, FolderOpen, X, Check, FileQuestion } from "lucide-react";
+import { FileText, Search, ExternalLink, Bookmark, BookmarkCheck, Trash2, Pencil, Loader2, Plus, Globe, Building2, Scale, FolderOpen, X, Check, FileQuestion, ListChecks } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,12 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useModuleView } from "@/hooks/useModuleView";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, CaseResource } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import PhaseBanner from "@/components/app/PhaseBanner";
+import ResourceFieldMapPanel from "@/components/app/ResourceFieldMapPanel";
 
 const US_STATES = [
   { code: "CA", name: "California" },
@@ -120,6 +122,9 @@ export default function AppCourtForms() {
   const [editNotes, setEditNotes] = useState("");
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const [fieldMapResource, setFieldMapResource] = useState<CaseResource | null>(null);
+  const [fieldMapOpen, setFieldMapOpen] = useState(false);
 
   const caseQuery = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
@@ -543,22 +548,48 @@ export default function AppCourtForms() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEditResource(resource)}
-                        data-testid={`button-edit-${resource.id}`}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDeleteResource(resource.id)}
-                        data-testid={`button-delete-${resource.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setFieldMapResource(resource);
+                              setFieldMapOpen(true);
+                            }}
+                            data-testid={`button-field-map-${resource.id}`}
+                          >
+                            <ListChecks className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Map Fields</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleEditResource(resource)}
+                            data-testid={`button-edit-${resource.id}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit Notes</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteResource(resource.id)}
+                            data-testid={`button-delete-${resource.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 ))}
@@ -720,6 +751,19 @@ export default function AppCourtForms() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {fieldMapResource && (
+          <ResourceFieldMapPanel
+            caseId={caseId}
+            resourceId={fieldMapResource.id}
+            resourceTitle={fieldMapResource.title}
+            open={fieldMapOpen}
+            onOpenChange={(open) => {
+              setFieldMapOpen(open);
+              if (!open) setFieldMapResource(null);
+            }}
+          />
+        )}
       </div>
     </AppLayout>
   );
