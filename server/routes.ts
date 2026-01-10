@@ -8958,6 +8958,122 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  // ───────────────────────────────────────────────────────────────
+  // Task 2: Case Resources (Form Pack Finder)
+  // ───────────────────────────────────────────────────────────────
+  app.get("/api/cases/:caseId/resources", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { state, resourceType } = req.query as { state?: string; resourceType?: string };
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const filters: { state?: string; resourceType?: string } = {};
+      if (state) filters.state = state;
+      if (resourceType) filters.resourceType = resourceType;
+
+      const resources = await storage.listCaseResources(userId, caseId, filters);
+      res.json({ resources });
+    } catch (error) {
+      console.error("List case resources error:", error);
+      res.status(500).json({ error: "Failed to list resources" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/resources", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { insertCaseResourceSchema } = await import("@shared/schema");
+      const parsed = insertCaseResourceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid resource data", details: parsed.error.errors });
+      }
+
+      const resource = await storage.createCaseResource(userId, caseId, parsed.data);
+      await storage.createActivityLog(userId, caseId, "resource_saved", `Saved resource: ${resource.title}`, {
+        resourceId: resource.id,
+        resourceType: resource.resourceType,
+        domain: resource.domain,
+      });
+
+      res.status(201).json({ resource });
+    } catch (error) {
+      console.error("Create case resource error:", error);
+      res.status(500).json({ error: "Failed to create resource" });
+    }
+  });
+
+  app.patch("/api/cases/:caseId/resources/:resourceId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, resourceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { updateCaseResourceSchema } = await import("@shared/schema");
+      const parsed = updateCaseResourceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid update data", details: parsed.error.errors });
+      }
+
+      const resource = await storage.updateCaseResource(userId, resourceId, parsed.data);
+      if (!resource) {
+        return res.status(404).json({ error: "Resource not found" });
+      }
+
+      res.json({ resource });
+    } catch (error) {
+      console.error("Update case resource error:", error);
+      res.status(500).json({ error: "Failed to update resource" });
+    }
+  });
+
+  app.delete("/api/cases/:caseId/resources/:resourceId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId, resourceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const existing = await storage.getCaseResource(userId, resourceId);
+      if (!existing) {
+        return res.status(404).json({ error: "Resource not found" });
+      }
+
+      const deleted = await storage.deleteCaseResource(userId, resourceId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Resource not found" });
+      }
+
+      await storage.createActivityLog(userId, caseId, "resource_deleted", `Deleted resource: ${existing.title}`, {
+        resourceId,
+        resourceType: existing.resourceType,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete case resource error:", error);
+      res.status(500).json({ error: "Failed to delete resource" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep/export", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
