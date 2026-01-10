@@ -9074,6 +9074,167 @@ Limit to ${limit} most important claims.`;
     }
   });
 
+  // Form Pack Search - search official court form directories
+  // Only returns results from official domains (.gov, .us, state courts)
+  const OFFICIAL_DOMAIN_PATTERNS = [
+    /\.gov$/i,
+    /\.us$/i,
+    /courts?\./i,
+    /judiciary\./i,
+    /uscourts\.gov$/i,
+  ];
+
+  const isOfficialDomain = (domain: string): boolean => {
+    return OFFICIAL_DOMAIN_PATTERNS.some(pattern => pattern.test(domain));
+  };
+
+  // Pre-defined state court form directories for quick lookup
+  const STATE_COURT_RESOURCES: Record<string, Array<{ title: string; url: string; description: string; category: string }>> = {
+    CA: [
+      { title: "California Courts - Self-Help Forms", url: "https://www.courts.ca.gov/forms.htm", description: "Official California Judicial Council forms", category: "general" },
+      { title: "CA Family Law Forms", url: "https://www.courts.ca.gov/forms.htm?filter=FL", description: "Family law forms including custody, support, and dissolution", category: "family" },
+      { title: "CA Domestic Violence Forms", url: "https://www.courts.ca.gov/forms.htm?filter=DV", description: "Restraining order and domestic violence forms", category: "dv" },
+    ],
+    TX: [
+      { title: "Texas Courts - Self-Help Forms", url: "https://www.txcourts.gov/programs-services/self-help/", description: "Texas state court self-representation resources", category: "general" },
+      { title: "TX Family Law Forms", url: "https://www.txcourts.gov/programs-services/self-help/self-help-forms/", description: "Texas family law self-help forms", category: "family" },
+    ],
+    NY: [
+      { title: "New York Courts - DIY Forms", url: "https://nycourts.gov/courthelp/diy/index.shtml", description: "New York unified court system forms", category: "general" },
+      { title: "NY Family Court Forms", url: "https://nycourts.gov/courthelp/GoingToCourt/familyCourtForms.shtml", description: "New York Family Court forms", category: "family" },
+    ],
+    FL: [
+      { title: "Florida Courts - Self-Help", url: "https://www.flcourts.gov/Resources-Services/Court-Improvement/Family-Courts/Family-Law-Self-Help-Information", description: "Florida state courts self-help center", category: "general" },
+      { title: "FL Family Law Forms", url: "https://www.flcourts.gov/Resources-Services/Court-Improvement/Family-Courts/Family-Law-Self-Help-Information/Family-Law-Forms", description: "Florida Supreme Court approved family law forms", category: "family" },
+    ],
+    IL: [
+      { title: "Illinois Courts - Self-Help", url: "https://www.illinoiscourts.gov/resources/forms/", description: "Illinois court forms repository", category: "general" },
+    ],
+    PA: [
+      { title: "Pennsylvania Courts - Forms", url: "https://www.pacourts.us/forms/", description: "Pennsylvania unified judicial system forms", category: "general" },
+    ],
+    OH: [
+      { title: "Ohio Courts - Forms", url: "https://www.supremecourt.ohio.gov/JCS/domesticViolence/default.aspx", description: "Ohio Supreme Court approved forms", category: "general" },
+    ],
+    GA: [
+      { title: "Georgia Courts - Self-Help", url: "https://georgiacourts.gov/resources/court-forms/", description: "Georgia judicial branch forms", category: "general" },
+    ],
+    NC: [
+      { title: "North Carolina Courts - Forms", url: "https://www.nccourts.gov/documents/forms", description: "North Carolina judicial branch forms", category: "general" },
+    ],
+    MI: [
+      { title: "Michigan Courts - Forms", url: "https://www.courts.michigan.gov/administration/scao/forms/", description: "Michigan SCAO approved forms", category: "general" },
+    ],
+  };
+
+  const FEDERAL_RESOURCES = [
+    { title: "US Courts - Forms", url: "https://www.uscourts.gov/forms", description: "Federal judiciary forms", category: "federal" },
+    { title: "PACER - Court Records", url: "https://www.pacer.uscourts.gov/", description: "Public Access to Court Electronic Records", category: "federal" },
+  ];
+
+  app.post("/api/cases/:caseId/form-packs/search", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { state, county, category, query } = req.body as {
+        state?: string;
+        county?: string;
+        category?: string;
+        query?: string;
+      };
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const results: Array<{
+        title: string;
+        url: string;
+        description: string;
+        category: string;
+        domain: string;
+        isOfficial: boolean;
+        state?: string;
+      }> = [];
+
+      // Add federal resources first
+      for (const resource of FEDERAL_RESOURCES) {
+        const domain = new URL(resource.url).hostname;
+        results.push({
+          ...resource,
+          domain,
+          isOfficial: true,
+        });
+      }
+
+      // Add state-specific resources
+      if (state && STATE_COURT_RESOURCES[state]) {
+        for (const resource of STATE_COURT_RESOURCES[state]) {
+          if (category && resource.category !== category && resource.category !== "general") {
+            continue;
+          }
+          const domain = new URL(resource.url).hostname;
+          results.push({
+            ...resource,
+            domain,
+            isOfficial: true,
+            state,
+          });
+        }
+      }
+
+      // Filter by category if specified
+      let filtered = results;
+      if (category) {
+        filtered = results.filter(r => r.category === category || r.category === "general" || r.category === "federal");
+      }
+
+      // Filter by query if specified
+      if (query) {
+        const q = query.toLowerCase();
+        filtered = filtered.filter(r =>
+          r.title.toLowerCase().includes(q) ||
+          r.description.toLowerCase().includes(q) ||
+          r.category.toLowerCase().includes(q)
+        );
+      }
+
+      await storage.createActivityLog(userId, caseId, "form_pack_search", `Searched form packs for ${state || "all states"}`, {
+        state,
+        county,
+        category,
+        query,
+        resultsCount: filtered.length,
+      });
+
+      res.json({
+        results: filtered,
+        meta: {
+          state,
+          county,
+          category,
+          totalResults: filtered.length,
+          officialDomainsOnly: true,
+        },
+      });
+    } catch (error) {
+      console.error("Form pack search error:", error);
+      res.status(500).json({ error: "Failed to search form packs" });
+    }
+  });
+
+  // Get available states for form pack search
+  app.get("/api/form-packs/states", requireAuth, async (req, res) => {
+    try {
+      const states = Object.keys(STATE_COURT_RESOURCES).sort();
+      res.json({ states });
+    } catch (error) {
+      console.error("Get form pack states error:", error);
+      res.status(500).json({ error: "Failed to get states" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep/export", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
