@@ -177,6 +177,14 @@ import {
   type InsertTimelineEventLink,
   type ClaimLink,
   type InsertClaimLink,
+  draftOutlines,
+  draftOutlineClaims,
+  type DraftOutline,
+  type InsertDraftOutline,
+  type UpdateDraftOutline,
+  type DraftOutlineClaim,
+  type InsertDraftOutlineClaim,
+  type BulkUpdateDraftOutlineClaims,
 } from "@shared/schema";
 
 export interface ModuleUsageCount {
@@ -502,6 +510,19 @@ export interface IStorage {
   
   // Reverse lookup: find timeline events linked TO a claim
   getTimelineEventsLinkedToClaim(userId: string, caseId: string, claimId: string): Promise<Array<{ eventId: string; eventDate: string; eventTitle: string; linkId: string }>>;
+
+  // Draft Outlines
+  listDraftOutlines(userId: string, caseId: string): Promise<DraftOutline[]>;
+  getDraftOutline(userId: string, outlineId: string): Promise<DraftOutline | undefined>;
+  createDraftOutline(userId: string, caseId: string, data: InsertDraftOutline): Promise<DraftOutline>;
+  updateDraftOutline(userId: string, outlineId: string, data: UpdateDraftOutline): Promise<DraftOutline | undefined>;
+  deleteDraftOutline(userId: string, outlineId: string): Promise<boolean>;
+  
+  // Draft Outline Claims
+  listDraftOutlineClaims(userId: string, outlineId: string): Promise<DraftOutlineClaim[]>;
+  addClaimToOutline(userId: string, caseId: string, outlineId: string, data: InsertDraftOutlineClaim): Promise<DraftOutlineClaim>;
+  removeClaimFromOutline(userId: string, outlineId: string, claimId: string): Promise<boolean>;
+  bulkUpdateOutlineClaims(userId: string, outlineId: string, data: BulkUpdateDraftOutlineClaims): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3934,6 +3955,127 @@ export class DatabaseStorage implements IStorage {
         eq(evidenceExtractions.caseId, caseId)
       ))
       .orderBy(desc(evidenceExtractions.updatedAt));
+  }
+
+  // Draft Outlines
+  async listDraftOutlines(userId: string, caseId: string): Promise<DraftOutline[]> {
+    return db
+      .select()
+      .from(draftOutlines)
+      .where(and(
+        eq(draftOutlines.userId, userId),
+        eq(draftOutlines.caseId, caseId)
+      ))
+      .orderBy(desc(draftOutlines.updatedAt));
+  }
+
+  async getDraftOutline(userId: string, outlineId: string): Promise<DraftOutline | undefined> {
+    const [outline] = await db
+      .select()
+      .from(draftOutlines)
+      .where(and(
+        eq(draftOutlines.id, outlineId),
+        eq(draftOutlines.userId, userId)
+      ))
+      .limit(1);
+    return outline;
+  }
+
+  async createDraftOutline(userId: string, caseId: string, data: InsertDraftOutline): Promise<DraftOutline> {
+    const [outline] = await db
+      .insert(draftOutlines)
+      .values({
+        userId,
+        caseId,
+        title: data.title ?? "Draft Outline",
+        templateKey: data.templateKey ?? "neutral_summary",
+        sectionsJson: [],
+      })
+      .returning();
+    return outline;
+  }
+
+  async updateDraftOutline(userId: string, outlineId: string, data: UpdateDraftOutline): Promise<DraftOutline | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.sectionsJson !== undefined) updateData.sectionsJson = data.sectionsJson;
+    
+    const [outline] = await db
+      .update(draftOutlines)
+      .set(updateData)
+      .where(and(
+        eq(draftOutlines.id, outlineId),
+        eq(draftOutlines.userId, userId)
+      ))
+      .returning();
+    return outline;
+  }
+
+  async deleteDraftOutline(userId: string, outlineId: string): Promise<boolean> {
+    const result = await db
+      .delete(draftOutlines)
+      .where(and(
+        eq(draftOutlines.id, outlineId),
+        eq(draftOutlines.userId, userId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Draft Outline Claims
+  async listDraftOutlineClaims(userId: string, outlineId: string): Promise<DraftOutlineClaim[]> {
+    return db
+      .select()
+      .from(draftOutlineClaims)
+      .where(and(
+        eq(draftOutlineClaims.userId, userId),
+        eq(draftOutlineClaims.outlineId, outlineId)
+      ))
+      .orderBy(asc(draftOutlineClaims.sortOrder));
+  }
+
+  async addClaimToOutline(userId: string, caseId: string, outlineId: string, data: InsertDraftOutlineClaim): Promise<DraftOutlineClaim> {
+    const [claim] = await db
+      .insert(draftOutlineClaims)
+      .values({
+        userId,
+        caseId,
+        outlineId,
+        sectionId: data.sectionId,
+        claimId: data.claimId,
+        sortOrder: data.sortOrder ?? 0,
+      })
+      .returning();
+    return claim;
+  }
+
+  async removeClaimFromOutline(userId: string, outlineId: string, claimId: string): Promise<boolean> {
+    const result = await db
+      .delete(draftOutlineClaims)
+      .where(and(
+        eq(draftOutlineClaims.userId, userId),
+        eq(draftOutlineClaims.outlineId, outlineId),
+        eq(draftOutlineClaims.claimId, claimId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async bulkUpdateOutlineClaims(userId: string, outlineId: string, data: BulkUpdateDraftOutlineClaims): Promise<boolean> {
+    for (const move of data.moves) {
+      await db
+        .update(draftOutlineClaims)
+        .set({
+          sectionId: move.sectionId,
+          sortOrder: move.sortOrder,
+        })
+        .where(and(
+          eq(draftOutlineClaims.userId, userId),
+          eq(draftOutlineClaims.outlineId, outlineId),
+          eq(draftOutlineClaims.claimId, move.claimId)
+        ));
+    }
+    return true;
   }
 }
 
