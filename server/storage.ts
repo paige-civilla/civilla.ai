@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, inArray, lt, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, lt, gte, sql, isNull } from "drizzle-orm";
 import { db } from "./db";
 import {
   users,
@@ -178,6 +178,30 @@ import {
   type ClaimLink,
   type InsertClaimLink,
 } from "@shared/schema";
+
+export interface ModuleUsageCount {
+  moduleKey: string;
+  count: number;
+}
+
+export interface EventTypeCount {
+  type: string;
+  count: number;
+}
+
+export interface UserActivityOverview {
+  totalEvents: number;
+  moduleUsage: ModuleUsageCount[];
+  eventTypeCounts: EventTypeCount[];
+  recentDays: number;
+}
+
+export interface CaseActivityOverview {
+  totalEvents: number;
+  moduleUsage: ModuleUsageCount[];
+  eventTypeCounts: EventTypeCount[];
+  recentDays: number;
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -447,6 +471,8 @@ export interface IStorage {
   updateLexiCaseMemoryMarkdown(userId: string, caseId: string, memoryMarkdown: string): Promise<void>;
   createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata?: Record<string, unknown>, options?: { moduleKey?: string | null; entityType?: string | null; entityId?: string | null }): Promise<ActivityLog>;
   listActivityLogs(userId: string, limit?: number, offset?: number): Promise<ActivityLog[]>;
+  getUserActivityOverview(userId: string, days: number): Promise<UserActivityOverview>;
+  getCaseActivityOverview(userId: string, caseId: string, days: number): Promise<CaseActivityOverview>;
 
   createLexiFeedbackEvent(userId: string, caseId: string | null, eventType: string, payload: Record<string, unknown>): Promise<LexiFeedbackEvent>;
   listLexiFeedbackEvents(userId: string, caseId: string | null, limit?: number): Promise<LexiFeedbackEvent[]>;
@@ -3367,6 +3393,80 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(activityLogs.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  async getUserActivityOverview(userId: string, days: number): Promise<UserActivityOverview> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+
+    const logs = await db
+      .select()
+      .from(activityLogs)
+      .where(and(eq(activityLogs.userId, userId), gte(activityLogs.createdAt, cutoff)));
+
+    const moduleUsageMap = new Map<string, number>();
+    const eventTypeMap = new Map<string, number>();
+
+    for (const log of logs) {
+      if (log.moduleKey) {
+        moduleUsageMap.set(log.moduleKey, (moduleUsageMap.get(log.moduleKey) || 0) + 1);
+      }
+      eventTypeMap.set(log.type, (eventTypeMap.get(log.type) || 0) + 1);
+    }
+
+    const moduleUsage = Array.from(moduleUsageMap.entries())
+      .map(([moduleKey, count]) => ({ moduleKey, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const eventTypeCounts = Array.from(eventTypeMap.entries())
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      totalEvents: logs.length,
+      moduleUsage,
+      eventTypeCounts,
+      recentDays: days,
+    };
+  }
+
+  async getCaseActivityOverview(userId: string, caseId: string, days: number): Promise<CaseActivityOverview> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+
+    const logs = await db
+      .select()
+      .from(activityLogs)
+      .where(and(
+        eq(activityLogs.userId, userId),
+        eq(activityLogs.caseId, caseId),
+        gte(activityLogs.createdAt, cutoff)
+      ));
+
+    const moduleUsageMap = new Map<string, number>();
+    const eventTypeMap = new Map<string, number>();
+
+    for (const log of logs) {
+      if (log.moduleKey) {
+        moduleUsageMap.set(log.moduleKey, (moduleUsageMap.get(log.moduleKey) || 0) + 1);
+      }
+      eventTypeMap.set(log.type, (eventTypeMap.get(log.type) || 0) + 1);
+    }
+
+    const moduleUsage = Array.from(moduleUsageMap.entries())
+      .map(([moduleKey, count]) => ({ moduleKey, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const eventTypeCounts = Array.from(eventTypeMap.entries())
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      totalEvents: logs.length,
+      moduleUsage,
+      eventTypeCounts,
+      recentDays: days,
+    };
   }
 
   // Phase 2F: Case Facts

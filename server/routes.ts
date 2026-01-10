@@ -5749,6 +5749,57 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.post("/api/activity/module-view", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { moduleKey, caseId } = req.body;
+      if (!moduleKey || typeof moduleKey !== "string") {
+        return res.status(400).json({ error: "moduleKey is required" });
+      }
+      await storage.createActivityLog(
+        userId,
+        caseId || null,
+        "module_view",
+        `Viewed ${moduleKey} module`,
+        {},
+        { moduleKey, entityType: null, entityId: null }
+      );
+      res.status(204).send();
+    } catch (err) {
+      console.error("Module view log error:", err);
+      res.status(500).json({ error: "Failed to log module view" });
+    }
+  });
+
+  app.get("/api/analytics/user-overview", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const days = parseInt((req.query.days as string) || "30", 10);
+      const overview = await storage.getUserActivityOverview(userId, days);
+      res.json(overview);
+    } catch (err) {
+      console.error("User analytics error:", err);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/analytics/case-overview/:caseId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      const days = parseInt((req.query.days as string) || "30", 10);
+      const overview = await storage.getCaseActivityOverview(userId, caseId, days);
+      res.json(overview);
+    } catch (err) {
+      console.error("Case analytics error:", err);
+      res.status(500).json({ error: "Failed to fetch case analytics" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep/sections", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
