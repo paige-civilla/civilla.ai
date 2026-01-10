@@ -3,6 +3,16 @@ import OpenAI from "openai";
 import { isGcvConfigured } from "../services/evidenceExtraction";
 import { AI_PATHWAYS_CHECKLIST } from "../services/aiDiagnostics";
 
+function cleanConnectionString(str: string | undefined): string | undefined {
+  if (!str) return undefined;
+  const match = str.match(/postgresql:\/\/.+/);
+  return match ? match[0].trim() : str.trim();
+}
+
+function getDbConnectionString(): string | undefined {
+  return cleanConnectionString(process.env.DATABASE_URL);
+}
+
 interface SmokeTestResult {
   area: string;
   passed: boolean;
@@ -72,7 +82,7 @@ async function testDatabaseTables(): Promise<boolean> {
 
   try {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: getDbConnectionString() });
     
     for (const table of requiredTables) {
       const result = await pool.query(
@@ -98,7 +108,7 @@ async function testDatabaseTables(): Promise<boolean> {
 async function findTestUser(): Promise<string | null> {
   try {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: getDbConnectionString() });
     const result = await pool.query(`SELECT id FROM users ORDER BY created_at DESC LIMIT 1`);
     await pool.end();
     return result.rows[0]?.id || null;
@@ -110,7 +120,7 @@ async function findTestUser(): Promise<string | null> {
 async function findTestCase(userId: string): Promise<string | null> {
   try {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: getDbConnectionString() });
     const result = await pool.query(
       `SELECT id FROM cases WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1`,
       [userId]
@@ -125,7 +135,7 @@ async function findTestCase(userId: string): Promise<string | null> {
 async function findExtractedEvidence(userId: string, caseId: string): Promise<{ id: string; text: string } | null> {
   try {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: getDbConnectionString() });
     const result = await pool.query(
       `SELECT ee.evidence_file_id, SUBSTRING(ee.extracted_text, 1, 500) as text_preview
        FROM evidence_extractions ee
@@ -166,11 +176,15 @@ async function testDraftReadiness(userId: string, caseId: string): Promise<boole
   const start = Date.now();
   try {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: getDbConnectionString() });
     
     const evidenceResult = await pool.query(
-      `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE extraction_status = 'completed') as extracted 
-       FROM evidence_files WHERE case_id = $1 AND user_id = $2`,
+      `SELECT 
+         COUNT(DISTINCT ef.id) as total, 
+         COUNT(DISTINCT ef.id) FILTER (WHERE ee.status = 'complete') as extracted 
+       FROM evidence_files ef
+       LEFT JOIN evidence_extractions ee ON ee.evidence_id = ef.id
+       WHERE ef.case_id = $1 AND ef.user_id = $2`,
       [caseId, userId]
     );
     
