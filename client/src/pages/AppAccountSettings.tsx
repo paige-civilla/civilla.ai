@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles } from "lucide-react";
+import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles, BarChart3 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -43,6 +43,13 @@ interface LexiUserPrefs {
   fasterMode: boolean | null;
 }
 
+interface UserActivityOverview {
+  totalEvents: number;
+  moduleUsage: { moduleKey: string; count: number }[];
+  eventTypeCounts: { type: string; count: number }[];
+  recentDays: number;
+}
+
 export default function AppAccountSettings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -67,6 +74,15 @@ export default function AppAccountSettings() {
 
   const { data: lexiPrefsData } = useQuery<{ prefs: LexiUserPrefs | null }>({
     queryKey: ["/api/lexi/prefs"],
+  });
+
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery<UserActivityOverview>({
+    queryKey: ["/api/analytics/user-overview"],
+    queryFn: async () => {
+      const res = await fetch("/api/analytics/user-overview?days=30", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      return res.json();
+    },
   });
 
   const [lexiPrefs, setLexiPrefs] = useState({
@@ -597,6 +613,71 @@ export default function AppAccountSettings() {
                   Coming Soon
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg font-heading font-bold text-neutral-darkest">
+                <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                </div>
+                Usage Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analyticsLoading ? (
+                <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
+                  <p className="font-sans text-neutral-darkest/60">Loading usage data...</p>
+                </div>
+              ) : analyticsData ? (
+                <div className="space-y-4">
+                  <div className="bg-[#f4f6f5] rounded-lg p-4">
+                    <p className="font-sans text-sm text-neutral-darkest/60 mb-1">Total Activity (Last 30 days)</p>
+                    <p className="font-heading font-bold text-2xl text-neutral-darkest" data-testid="text-total-events">
+                      {analyticsData.totalEvents} actions
+                    </p>
+                  </div>
+                  
+                  {analyticsData.moduleUsage.length > 0 && (
+                    <div>
+                      <p className="font-sans font-medium text-neutral-darkest mb-2">Most Used Modules</p>
+                      <div className="space-y-2">
+                        {analyticsData.moduleUsage.slice(0, 5).map((m) => (
+                          <div key={m.moduleKey} className="flex items-center justify-between bg-[#f4f6f5] rounded-lg px-3 py-2" data-testid={`module-usage-${m.moduleKey}`}>
+                            <span className="font-sans text-sm text-neutral-darkest capitalize">{m.moduleKey.replace(/-/g, " ")}</span>
+                            <span className="font-heading font-semibold text-sm text-neutral-darkest">{m.count} views</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {analyticsData.eventTypeCounts.length > 0 && (
+                    <div>
+                      <p className="font-sans font-medium text-neutral-darkest mb-2">Action Breakdown</p>
+                      <div className="space-y-2">
+                        {analyticsData.eventTypeCounts.slice(0, 5).map((e) => (
+                          <div key={e.type} className="flex items-center justify-between bg-[#f4f6f5] rounded-lg px-3 py-2" data-testid={`event-type-${e.type}`}>
+                            <span className="font-sans text-sm text-neutral-darkest capitalize">{e.type.replace(/_/g, " ")}</span>
+                            <span className="font-heading font-semibold text-sm text-neutral-darkest">{e.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {analyticsData.totalEvents === 0 && (
+                    <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
+                      <p className="font-sans text-neutral-darkest/60">No activity recorded yet. Start exploring your case to see usage insights here.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
+                  <p className="font-sans text-neutral-darkest/60">Unable to load usage data.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
