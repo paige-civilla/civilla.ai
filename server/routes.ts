@@ -10172,6 +10172,294 @@ Top 3 selection criteria:
     }
   });
 
+  // ───────────────────────────────────────────────────────────────
+  // SPEC 1 Block 1: Assistive Field Mapping (NO AUTO-FILL)
+  // Suggests which template sections each claim fits, without inserting text
+  // ───────────────────────────────────────────────────────────────
+  app.post("/api/cases/:caseId/documents/field-mapping", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { documentType } = req.body as { documentType: string };
+
+      if (!documentType) {
+        return res.status(400).json({ error: "documentType is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { TEMPLATE_REGISTRY } = await import("./templates/registry");
+      const template = TEMPLATE_REGISTRY.find(t => t.templateKey === documentType);
+      if (!template) {
+        return res.status(404).json({ error: "Template/document type not found" });
+      }
+
+      const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+
+      const claimsWithCitations: Array<{
+        claim: typeof acceptedClaims[0];
+        citationCount: number;
+      }> = [];
+
+      for (const claim of acceptedClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        claimsWithCitations.push({ claim, citationCount: citations.length });
+      }
+
+      const SECTION_KEYWORDS: Record<string, string[]> = {
+        intro: ["introduction", "declarant", "party", "petitioner", "respondent", "court", "county", "state"],
+        background: ["background", "history", "context", "prior", "relationship", "married", "children"],
+        facts: ["fact", "date", "event", "occurred", "incident", "said", "did", "message", "email", "text"],
+        chronology: ["date", "time", "when", "then", "after", "before", "during", "timeline"],
+        custody: ["custody", "child", "children", "parenting", "visitation", "schedule", "parent"],
+        parenting: ["parenting", "time", "schedule", "custody", "child", "children", "visit"],
+        financial: ["financial", "money", "income", "expense", "support", "payment", "account", "debt"],
+        communications: ["communication", "message", "email", "text", "call", "phone", "said", "wrote"],
+        medical: ["medical", "health", "doctor", "hospital", "treatment", "condition", "diagnosis"],
+        school: ["school", "education", "teacher", "grade", "class", "learning", "student"],
+        procedural: ["filed", "served", "motion", "order", "hearing", "court", "judge", "ruling"],
+        requests: ["request", "discovery", "disclosure", "interrogatory", "subpoena", "document"],
+        responses: ["response", "answer", "reply", "received", "provided"],
+        outstanding: ["outstanding", "pending", "unresolved", "incomplete", "missing"],
+        conclusion: ["conclusion", "declare", "penalty", "perjury", "true", "correct"],
+        incidents: ["incident", "conflict", "argument", "abuse", "threat", "violence"],
+        patterns: ["pattern", "repeated", "consistent", "always", "never", "regularly"],
+        themes: ["theme", "pattern", "behavior", "conduct", "characteristic"],
+        witnesses: ["witness", "testimony", "saw", "heard", "observed", "present"],
+        exhibits: ["exhibit", "document", "evidence", "attachment", "proof"],
+        relief: ["relief", "request", "ask", "seeking", "order", "grant"],
+      };
+
+      const scoreClaim = (claim: typeof acceptedClaims[0], section: typeof template.sections[0]): number => {
+        let score = 0;
+        const claimText = claim.claimText.toLowerCase();
+        const claimTags = Array.isArray(claim.tags) ? claim.tags.map(t => String(t).toLowerCase()) : [];
+        const sectionKey = section.key.toLowerCase();
+        const sectionKeywords = SECTION_KEYWORDS[sectionKey] || [];
+
+        if (section.claimTypes && section.claimTypes.includes(claim.claimType)) {
+          score += 20;
+        }
+
+        if (section.claimTags) {
+          for (const requiredTag of section.claimTags) {
+            if (claimTags.includes(requiredTag.toLowerCase())) {
+              score += 15;
+            }
+          }
+        }
+
+        for (const keyword of sectionKeywords) {
+          if (claimText.includes(keyword)) {
+            score += 5;
+          }
+          for (const tag of claimTags) {
+            if (tag.includes(keyword)) {
+              score += 3;
+            }
+          }
+        }
+
+        return score;
+      };
+
+      const mappings: Array<{
+        claimId: string;
+        suggestedSections: string[];
+        confidence: "high" | "medium";
+      }> = [];
+
+      for (const { claim, citationCount } of claimsWithCitations) {
+        if (citationCount === 0) continue;
+
+        const sectionScores: Array<{ sectionTitle: string; score: number }> = [];
+
+        for (const section of template.sections) {
+          const score = scoreClaim(claim, section);
+          if (score > 0) {
+            sectionScores.push({ sectionTitle: section.title, score });
+          }
+        }
+
+        sectionScores.sort((a, b) => b.score - a.score);
+
+        const topSections = sectionScores.slice(0, 3);
+        const suggestedSections = topSections.map(s => s.sectionTitle);
+
+        if (suggestedSections.length > 0) {
+          const topScore = topSections[0]?.score || 0;
+          const confidence: "high" | "medium" = topScore >= 20 ? "high" : "medium";
+
+          mappings.push({
+            claimId: claim.id,
+            suggestedSections,
+            confidence,
+          });
+        }
+      }
+
+      await storage.createActivityLog(userId, caseId, "field_mapping_generated", `Generated field mapping for ${documentType} with ${mappings.length} claim suggestions`, {
+        documentType,
+        claimsProcessed: claimsWithCitations.length,
+        mappingsGenerated: mappings.length,
+      });
+
+      res.json(mappings);
+    } catch (error) {
+      console.error("Field mapping error:", error);
+      res.status(500).json({ error: "Failed to generate field mapping" });
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────
+  // SPEC 1 Block 2: Contradiction & Gap Flags (Quality Check)
+  // Returns flags for conflicting dates, uncited claims, orphan evidence, incomplete claims
+  // No recommendations, no legal language, flags only
+  // ───────────────────────────────────────────────────────────────
+  app.get("/api/cases/:caseId/quality-check", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const allClaims = await storage.listCaseClaims(userId, caseId);
+      const acceptedClaims = allClaims.filter(c => c.status === "accepted");
+      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+      const citationPointers = await storage.listCitationPointersForCase(userId, caseId);
+
+      const conflictingDates: Array<{
+        type: "conflicting_dates";
+        severity: "warning";
+        claimIds: string[];
+        description: string;
+      }> = [];
+
+      const uncitedClaims: Array<{
+        type: "uncited_claim";
+        severity: "warning";
+        claimId: string;
+        claimText: string;
+        description: string;
+      }> = [];
+
+      const orphanEvidence: Array<{
+        type: "orphan_evidence";
+        severity: "info";
+        evidenceFileId: string;
+        fileName: string;
+        description: string;
+      }> = [];
+
+      const incompleteClaims: Array<{
+        type: "incomplete_claim";
+        severity: "info";
+        claimId: string;
+        claimText: string;
+        description: string;
+      }> = [];
+
+      const datePatterns = [
+        /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g,
+        /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s*(\d{4})\b/gi,
+        /\b(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\b/g,
+      ];
+
+      const claimDates: Map<string, { claimId: string; dateStr: string; context: string }[]> = new Map();
+
+      for (const claim of acceptedClaims) {
+        const text = claim.claimText;
+        for (const pattern of datePatterns) {
+          const matches = text.matchAll(pattern);
+          for (const match of matches) {
+            const dateStr = match[0];
+            const context = text.slice(Math.max(0, match.index! - 30), Math.min(text.length, match.index! + dateStr.length + 30));
+            
+            if (!claimDates.has(dateStr)) {
+              claimDates.set(dateStr, []);
+            }
+            claimDates.get(dateStr)!.push({ claimId: claim.id, dateStr, context });
+          }
+        }
+      }
+
+      for (const [dateStr, occurrences] of claimDates.entries()) {
+        if (occurrences.length > 1) {
+          const uniqueClaimIds = [...new Set(occurrences.map(o => o.claimId))];
+          if (uniqueClaimIds.length > 1) {
+            conflictingDates.push({
+              type: "conflicting_dates",
+              severity: "warning",
+              claimIds: uniqueClaimIds,
+              description: `Multiple claims reference the date "${dateStr}". Verify consistency.`,
+            });
+          }
+        }
+      }
+
+      for (const claim of acceptedClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length === 0) {
+          uncitedClaims.push({
+            type: "uncited_claim",
+            severity: "warning",
+            claimId: claim.id,
+            claimText: claim.claimText.slice(0, 100) + (claim.claimText.length > 100 ? "..." : ""),
+            description: "This accepted claim has no citations attached.",
+          });
+        }
+      }
+
+      const evidenceWithCitations = new Set(citationPointers.map(cp => cp.evidenceFileId));
+      for (const file of evidenceFiles) {
+        if (!evidenceWithCitations.has(file.id)) {
+          orphanEvidence.push({
+            type: "orphan_evidence",
+            severity: "info",
+            evidenceFileId: file.id,
+            fileName: file.originalName,
+            description: "This evidence file has no citations pointing to it.",
+          });
+        }
+      }
+
+      for (const claim of acceptedClaims) {
+        if (claim.missingInfoFlag) {
+          incompleteClaims.push({
+            type: "incomplete_claim",
+            severity: "info",
+            claimId: claim.id,
+            claimText: claim.claimText.slice(0, 100) + (claim.claimText.length > 100 ? "..." : ""),
+            description: "This claim is marked as needing additional information.",
+          });
+        }
+      }
+
+      res.json({
+        conflictingDates,
+        uncitedClaims,
+        orphanEvidence,
+        incompleteClaims,
+        summary: {
+          totalAcceptedClaims: acceptedClaims.length,
+          totalEvidenceFiles: evidenceFiles.length,
+          totalCitations: citationPointers.length,
+          warningCount: conflictingDates.length + uncitedClaims.length,
+          infoCount: orphanEvidence.length + incompleteClaims.length,
+        },
+      });
+    } catch (error) {
+      console.error("Quality check error:", error);
+      res.status(500).json({ error: "Failed to run quality check" });
+    }
+  });
+
   app.post("/api/cases/:caseId/documents/templates/:templateKey/preflight", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

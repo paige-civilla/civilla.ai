@@ -1,0 +1,174 @@
+REPLIT TASK: Phase 2F — Evidence Fact Extraction + Auto-Claims + Document Auto-Fill
+
+GOAL
+When evidence extraction completes, automatically:
+• Extract structured factual statements (facts) with citations
+• Store them separately from claims
+• Allow 1-click promotion of facts → claims
+• Allow Document Creator to auto-populate from facts (not raw text)
+• Maintain strict evidence-first + citation-required behavior
+• NO new dashboard module — all UI lives inside Evidence + Document Creator
+
+────────────────────────────────────────
+A) DATABASE (ADDITIVE, SAFE)
+────────────────────────────────────────
+Create new table: evidence_facts
+
+Fields:
+- id (uuid, pk)
+- user_id (uuid, fk)
+- case_id (uuid, fk)
+- evidence_id (uuid, fk)
+- fact_text (text, NOT NULL)
+- fact_type (enum: date, event, communication, financial, medical, custody, procedural, other)
+- confidence (int 0–100)
+- citation_id (uuid, fk → citation_pointers.id)
+- promoted_to_claim (boolean default false)
+- created_at (timestamp)
+- updated_at (timestamp)
+
+Migration:
+- Add ensureEvidenceFactsTable() to db.ts
+- Add indexes on (case_id), (evidence_id), (fact_type)
+
+────────────────────────────────────────
+B) BACKEND — FACT EXTRACTION PIPELINE
+────────────────────────────────────────
+Create service:
+server/evidence/factExtraction.ts
+
+Function:
+extractEvidenceFacts(evidenceId)
+
+Behavior:
+• Requires evidence_extractions.status === "complete"
+• Uses GPT-4o with STRICT JSON schema:
+  {
+    facts: [
+      {
+        text,
+        type,
+        confidence,
+        citationQuote,
+        pageOrTimestamp
+      }
+    ]
+  }
+
+Rules:
+• NO inferred dates
+• NO legal conclusions
+• NO recommendations
+• Every fact MUST have a citationQuote
+• Max 20 facts per evidence file
+
+For each fact:
+• Create citation_pointer
+• Create evidence_fact row linked to citation
+
+Auto-trigger:
+• Call extractEvidenceFacts() after extraction completes
+• Debounced (reuse existing debounce infra)
+• Idempotent (skip if facts already exist)
+
+Log activity:
+activity_logs:
+- evidence_fact_extraction_started
+- evidence_fact_extraction_completed
+- evidence_fact_extraction_failed
+
+────────────────────────────────────────
+C) API ENDPOINTS
+────────────────────────────────────────
+Add routes:
+
+GET /api/cases/:caseId/evidence/:evidenceId/facts
+POST /api/cases/:caseId/evidence/:evidenceId/facts/run
+POST /api/facts/:factId/promote-to-claim
+
+Promote behavior:
+• Creates a CaseClaim
+• Auto-attaches the existing citation
+• Sets promoted_to_claim = true
+
+Ownership checks required everywhere.
+
+────────────────────────────────────────
+D) FRONTEND — EVIDENCE VIEWER
+────────────────────────────────────────
+In EvidenceViewer (NO new module):
+
+Add new tab: “Facts”
+• List facts with:
+  - Fact text
+  - Type badge
+  - Confidence %
+  - Citation preview
+• Buttons:
+  - “Promote to Claim”
+  - Disabled if already promoted
+• Loading + error states
+
+Show banner:
+“Facts extracted automatically from this evidence.”
+
+────────────────────────────────────────
+E) DOCUMENT CREATOR — AUTO-FILL
+────────────────────────────────────────
+In Compile from Claims view:
+
+Add toggle:
+☑ Include Evidence Facts (recommended)
+
+Behavior:
+• Facts appear BEFORE claims
+• Facts grouped by type
+• Claims appear next
+• EVERYTHING requires citations
+• Any fact without citation = BLOCK compile
+
+Output format:
+- Section: “Factual Record (Derived from Evidence)”
+- Inline citations: [EVID: filename, p.X]
+
+────────────────────────────────────────
+F) UPL + SAFETY GUARDS
+────────────────────────────────────────
+System prompt additions:
+• Facts ≠ claims
+• Claims require human acceptance
+• No advice, strategy, predictions
+• Drafts are compilations only
+
+Document compile modal:
+User MUST check:
+☑ “I understand this is not legal advice and must be reviewed.”
+
+Block compile if unchecked.
+
+────────────────────────────────────────
+G) STATUS + HEALTH
+────────────────────────────────────────
+Extend:
+GET /api/cases/:caseId/ai-jobs/status
+
+Add:
+- facts: pending / complete / failed counts
+
+UI:
+Show “Extracting facts from evidence…” indicator.
+
+────────────────────────────────────────
+H) DONE CRITERIA
+────────────────────────────────────────
+• Upload evidence → extraction → facts appear automatically
+• Each fact is cited
+• One click → fact becomes claim
+• Document auto-fills from facts
+• No uncited content allowed
+• No new dashboard modules
+• Fully privacy-safe
+
+IMPLEMENT ALL OF THE ABOVE.
+DO NOT ADD NEW MODULES.
+DO NOT CHANGE EXISTING CLAIM LOGIC.
