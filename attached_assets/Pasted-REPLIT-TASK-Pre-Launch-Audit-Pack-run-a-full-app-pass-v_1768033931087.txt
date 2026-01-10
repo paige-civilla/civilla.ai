@@ -1,0 +1,164 @@
+REPLIT TASK: “Pre-Launch Audit Pack” — run a full app pass, verify AI pathways, and fix regressions
+
+Context
+Paige is not a developer. You must do a full audit + fix cycle in ONE coherent pass. Output a single, structured report with: what you checked, what you found, what you changed, and how to verify.
+
+Goal
+1) Audit the entire Civilla app for reliability + regressions (UI, API, DB, jobs, AI, exports).
+2) Fix anything broken that blocks end-to-end testing.
+3) Add a DEV-ONLY “audit runner” endpoint that executes automated checks and returns a JSON report.
+4) Explain—in your own words—what the app is designed to do based on the actual codebase, including the evidence-first + claims/citations workflow and UPL guardrails.
+
+Hard Rules
+- Do NOT change marketing pages except to link to them (if needed).
+- Do NOT log or expose user content (evidence text, documents, messages) in any audit outputs.
+- Do NOT weaken privacy protections or ownership checks.
+- All fixes must be additive + safe; no destructive migrations.
+- If something requires product decisions, stop and ask, otherwise fix it.
+
+Deliverables
+A) Automated Audit Runner (DEV ONLY)
+Create endpoint:
+GET /api/audit/run  (requireAuth + devOnly)
+Returns:
+{
+  ok: boolean,
+  timestamp: string,
+  version: { git?: string, build?: string },
+  checks: {
+    db: { ok, details },
+    auth: { ok, details },
+    ownership: { ok, details },
+    jobs: { ok, details },
+    ai: { ok, details },
+    links: { ok, details },
+    exports: { ok, details },
+    search: { ok, details },
+    uiRoutes: { ok, details }
+  },
+  warnings: string[],
+  failures: string[],
+  fixesApplied: { file: string, summary: string }[]
+}
+
+Implement as:
+- server/audit/runAudit.ts (NEW) → main audit orchestration
+- server/routes.ts → add endpoint in a clearly labeled DEV section
+- server/middleware/devOnly.ts (NEW) if not existing:
+  allow only NODE_ENV !== "production" OR AUDIT_ENABLED=true
+
+B) What to Audit + Fix (run all in code + manual guidance)
+1) Regression + Routing Audit (UI/UX)
+- Verify routes exist & render:
+  /app/dashboard/:caseId
+  /app/evidence/:caseId
+  /app/timeline/:caseId
+  /app/documents/:caseId
+  /app/exhibits/:caseId
+  /app/patterns/:caseId
+  /app/trial-prep/:caseId
+  /app/children/:caseId (if exists)
+  /app/child-support/:caseId
+  /app/parenting-plan/:caseId
+- Verify CaseRedirect behavior works when visiting /app/<module> without :caseId
+- Verify empty state flow (0 cases): create case works and redirects properly
+- Verify mobile nav scroll: dropdown scroll works AND page behind remains scrollable (independent scroll areas)
+- Verify zoom behavior: forms have enough bottom padding and content isn’t trapped
+
+2) DB + Migrations Audit
+- Confirm all “AI-critical” columns exist (create if missing using your ensure* migration system):
+  lexi_threads.disclaimer_shown (and any other required lexi columns)
+  evidence_extractions.status/provider/mime_type/page_count/error/queued_at/started_at/completed_at
+  evidence_ai_analyses.status/model/summary/findings/error/updated_at
+  case_rule_terms.module_key/term_key/jurisdiction_state/last_checked_at/sources_json
+  claims/citations/issues tables present and indexed
+  user_profiles.is_admin/is_grant_viewer present
+- Audit foreign keys that break “general Lexi threads”
+  If Lexi allows non-case threads, ensure thread creation does NOT violate FK constraints.
+  Fix by either:
+  - making case_id nullable for general threads, OR
+  - creating a dedicated “General” case row per user (privacy-safe), OR
+  - storing general threads with case_id NULL
+  Choose the safest, cleanest approach and implement.
+
+3) Permissions + Privacy Audit
+- For each case-scoped route: verify ownership checks exist and enforce:
+  user owns caseId
+  record belongs to caseId + userId
+- Verify admin/grant endpoints never return:
+  names/emails/addresses/children names/evidence text/doc content/messages
+- Ensure small-count bucketing (<5) remains enforced for grant dashboard
+
+4) Job Reliability Audit
+- Evidence extraction queue durability across restart:
+  stale processing → reset to queued after threshold; re-enqueue
+  prevent duplicate processing per evidenceId
+  global extraction concurrency cap enforced
+- AI analyses:
+  global concurrency cap
+  retry endpoints function and errors are humanized (no raw stack traces)
+- Claims auto-suggest:
+  debounced trigger after extraction complete
+  idempotency prevents reprocessing same evidence repeatedly
+  rate-limit retries use jittered backoff
+- Add audit checks to confirm status transitions (queued→processing→complete/failed) are consistent
+
+5) AI Connectivity Audit
+- /api/ai/health should verify:
+  OpenAI connectivity using current OPENAI_API_KEY
+  Google Vision configured (GOOGLE_CLOUD_VISION_API_KEY) if OCR is used
+  DB checks OK
+- Ensure Lexi endpoints return clear errors:
+  missing key → user-friendly
+  invalid key → user-friendly
+  timeouts → suggest Faster Mode
+- Ensure Lexi streaming/non-streaming works
+
+6) Links + Citations Audit (must fix broken links)
+- Validate Lexi “sources” output:
+  normalize to absolute https:// URLs
+  do not output fake “base site / not found”
+  prefer official domains (.gov, court sites)
+  dedupe and cap to 5
+- If a citation has no valid URL, replace with a Google search URL that actually works
+- Add an audit test that parses a sample Lexi response sources array and confirms all are clickable absolute URLs
+
+7) Search + Deep-Link Audit
+- Verify /api/search returns results with proper deep-link params
+- Verify each target page handles deep-link and highlights item, then clears query params
+- Add audit checks: search returns 3–5 results, each with href and snippet
+
+8) Exports Audit
+- Pattern analysis export downloads and includes sources appendix
+- Trial prep binder export ZIP structure correct
+- Exhibits export includes cover page + snippets + numbered evidence files
+- Document compile-from-claims exports with citation brackets and Sources section
+
+C) “Explain the App” Requirement (must be accurate)
+At the end of your report, include a section:
+“APP BEHAVIOR SUMMARY (based on code, not assumptions)”
+Explain in plain English:
+- What Civilla does overall
+- What Lexi does and where it’s used
+- Evidence-first workflow:
+  upload → extract → analyze → claims/citations → compile docs
+- Pattern analysis and trial prep workflows
+- Privacy and UPL guardrails as implemented (refusals, no outcome prediction, no legal advice)
+
+Implementation Notes
+- Create a small “audit sample case” generator ONLY in dev mode if needed:
+  creates a temp case + minimal records without user content
+  cleans up after run
+- DO NOT store any extracted text in audit logs.
+- Only store metadata (counts, statuses, booleans).
+
+Output Format Requirements
+When done, respond with a single report:
+
+1) Files changed (full list)
+2) Audit results table (each check: pass/warn/fail)
+3) Fixes applied (what + why)
+4) How Paige can verify (step-by-step in app, non-dev instructions)
+5) App Behavior Summary (your own words, grounded in code)
+
+Proceed now. Do the audit, fix anything you find, and produce the report.

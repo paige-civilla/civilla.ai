@@ -79,6 +79,24 @@ export const TEMPLATE_REGISTRY: TemplateDefinition[] = [
     footerTemplate: "I declare under penalty of perjury under the laws of the State of [STATE] that the foregoing is true and correct.\n\nExecuted on [DATE] at [CITY], [STATE].\n\n_________________________\n[DECLARANT NAME]",
   },
   {
+    templateKey: "affidavit_general",
+    displayName: "Affidavit (General)",
+    category: "declarations",
+    description: "A general sworn affidavit presenting facts under oath with evidence citations. Structure follows standard affidavit format.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "identity", title: "Identity and Competence", description: "Affiant identification and basis for knowledge", claimTypes: ["context"] },
+      { key: "sworn_facts", title: "Sworn Facts", description: "Numbered factual statements under oath", claimTypes: ["fact", "procedural", "custody", "financial"] },
+      { key: "communications", title: "Communications", description: "Documented communications relevant to the case", claimTypes: ["communication"], optional: true },
+      { key: "conclusion", title: "Jurat", description: "Standard affidavit oath language" },
+    ],
+    introTemplate: "AFFIDAVIT OF [AFFIANT NAME]\n\nSTATE OF [STATE]\nCOUNTY OF [COUNTY]\n\nBefore me, the undersigned notary public, personally appeared [AFFIANT NAME], who being duly sworn, deposes and says:",
+    footerTemplate: "Further affiant sayeth naught.\n\n_________________________\n[AFFIANT NAME]\n\nSWORN TO AND SUBSCRIBED before me this ___ day of __________, 20___.\n\n_________________________\nNotary Public\nMy Commission Expires: ___________",
+  },
+  {
     templateKey: "declaration_discovery",
     displayName: "Declaration – Discovery/Disclosure Compliance",
     category: "declarations",
@@ -136,6 +154,74 @@ export const TEMPLATE_REGISTRY: TemplateDefinition[] = [
   },
 
   // ─────────────────────────────────────────────────────────────────
+  // A2. MOTIONS (Structure Only)
+  // ─────────────────────────────────────────────────────────────────
+  {
+    templateKey: "motion_modify_custody",
+    displayName: "Motion to Modify Custody",
+    category: "declarations",
+    description: "A neutral, structure-only motion to modify custody presenting factual grounds for the requested modification. All content comes from accepted claims.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredClaimTypes: ["custody", "fact"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "caption", title: "Caption", description: "Case caption and party information", claimTypes: ["context", "procedural"] },
+      { key: "introduction", title: "Introduction", description: "Brief statement of what is being requested", claimTypes: ["procedural"] },
+      { key: "factual_background", title: "Factual Background", description: "Relevant background facts", claimTypes: ["context", "fact"] },
+      { key: "changed_circumstances", title: "Changed Circumstances", description: "Facts showing material change since last order", claimTypes: ["fact", "custody"] },
+      { key: "best_interests", title: "Best Interests of the Child", description: "Facts relevant to children's wellbeing", claimTypes: ["custody", "medical", "school"] },
+      { key: "supporting_evidence", title: "Supporting Evidence", description: "Evidence summary supporting the motion", claimTypes: ["fact", "communication"] },
+      { key: "relief_requested", title: "Relief Requested", description: "Specific modifications being requested", claimTypes: ["procedural", "custody"] },
+    ],
+    introTemplate: "MOTION TO MODIFY CUSTODY\n\n[PARTY NAME], appearing pro se/through counsel, respectfully moves this Court to modify the existing custody order and states as follows:",
+    footerTemplate: "WHEREFORE, [PARTY NAME] respectfully requests that the Court:\n1. [EVIDENCE REQUIRED: Specific relief requested]\n2. Grant such other and further relief as the Court deems just and proper.\n\nDated: [DATE]\n\n_________________________\n[PARTY NAME]\n[ADDRESS]\n[PHONE]\n[EMAIL]",
+  },
+  {
+    templateKey: "memorandum_of_facts",
+    displayName: "Memorandum of Facts",
+    category: "declarations",
+    description: "A comprehensive factual memorandum organizing all accepted claims by topic for court review. No legal argument included.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "Purpose of the memorandum", claimTypes: ["context", "procedural"] },
+      { key: "procedural_history", title: "Procedural History", description: "Case history and prior proceedings", claimTypes: ["procedural"] },
+      { key: "factual_background", title: "Factual Background", description: "Background facts and context", claimTypes: ["context", "fact"] },
+      { key: "custody_facts", title: "Custody-Related Facts", description: "Facts about custody arrangements", claimTypes: ["custody"], optional: true },
+      { key: "financial_facts", title: "Financial Facts", description: "Financial information", claimTypes: ["financial"], optional: true },
+      { key: "communication_facts", title: "Communications", description: "Documented communications", claimTypes: ["communication"], optional: true },
+      { key: "medical_school_facts", title: "Medical and Educational Facts", description: "Children's medical and school information", claimTypes: ["medical", "school"], optional: true },
+      { key: "conclusion", title: "Conclusion", description: "Summary of key facts" },
+    ],
+    introTemplate: "MEMORANDUM OF FACTS\n\nThis memorandum presents the factual record in the above-captioned matter, organized by topic. All facts are supported by documentary evidence as cited.",
+    footerTemplate: "The foregoing facts are presented for the Court's consideration and are supported by the evidence referenced herein.",
+  },
+  {
+    templateKey: "statement_of_issues",
+    displayName: "Statement of Issues",
+    category: "declarations",
+    description: "A clear statement of the factual and procedural issues before the court, organized by topic with supporting evidence citations.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "Overview of issues presented", claimTypes: ["procedural", "context"] },
+      { key: "custody_issues", title: "Custody Issues", description: "Issues related to custody arrangements", claimTypes: ["custody"], optional: true },
+      { key: "parenting_time_issues", title: "Parenting Time Issues", description: "Issues related to parenting schedules", claimTypes: ["custody", "fact"], optional: true },
+      { key: "financial_issues", title: "Financial Issues", description: "Support and financial issues", claimTypes: ["financial"], optional: true },
+      { key: "procedural_issues", title: "Procedural Issues", description: "Discovery, compliance, and procedure", claimTypes: ["procedural"], optional: true },
+      { key: "other_issues", title: "Other Issues", description: "Additional issues for resolution", claimTypes: ["fact", "communication"] },
+    ],
+    introTemplate: "STATEMENT OF ISSUES\n\nThe following issues are presented for the Court's consideration in the above-captioned matter:",
+    footerTemplate: "Each issue identified above is supported by the evidence cited herein.",
+  },
+
+  // ─────────────────────────────────────────────────────────────────
   // B. PROCEDURAL / CASE MANAGEMENT
   // ─────────────────────────────────────────────────────────────────
   {
@@ -190,6 +276,24 @@ export const TEMPLATE_REGISTRY: TemplateDefinition[] = [
     ],
     introTemplate: "EDUCATIONAL / ORGANIZATIONAL USE ONLY\n\nDeadline and Hearing Summary:",
     footerTemplate: "This summary is for organizational purposes only. Verify all dates with the court.",
+  },
+
+  {
+    templateKey: "chronological_timeline_summary",
+    displayName: "Chronological Timeline Summary",
+    category: "procedural",
+    description: "A complete chronological summary of all events from the timeline for court review. Presents facts in date order with evidence citations.",
+    educationalOnly: false,
+    allowedSources: ["claims", "timeline"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: true,
+    sections: [
+      { key: "background", title: "Background", description: "Case context and parties", claimTypes: ["context"] },
+      { key: "timeline", title: "Chronological Timeline", description: "Events in date order", sourceType: "timeline" },
+      { key: "key_events", title: "Key Events", description: "Most significant events", claimTypes: ["fact", "custody", "communication"] },
+    ],
+    introTemplate: "CHRONOLOGICAL TIMELINE SUMMARY\n\nThe following timeline presents events in chronological order as documented in the evidence:",
+    footerTemplate: "All events listed above are supported by the evidence cited. Dates are as documented in the source materials.",
   },
 
   // ─────────────────────────────────────────────────────────────────
@@ -254,6 +358,25 @@ export const TEMPLATE_REGISTRY: TemplateDefinition[] = [
     ],
     introTemplate: "",
     footerTemplate: "",
+  },
+  {
+    templateKey: "evidence_summary_court_review",
+    displayName: "Evidence Summary for Court Review",
+    category: "evidence",
+    description: "A formal evidence summary organized for court review, presenting key facts from each piece of evidence with proper citations.",
+    educationalOnly: false,
+    allowedSources: ["claims", "snippets"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "Overview of evidence presented", claimTypes: ["context", "procedural"] },
+      { key: "documentary_evidence", title: "Documentary Evidence", description: "Documents and written records", claimTypes: ["fact", "procedural"] },
+      { key: "communication_evidence", title: "Communication Evidence", description: "Emails, texts, and other communications", claimTypes: ["communication"] },
+      { key: "financial_evidence", title: "Financial Evidence", description: "Financial records and documentation", claimTypes: ["financial"], optional: true },
+      { key: "other_evidence", title: "Other Evidence", description: "Additional supporting evidence", claimTypes: ["medical", "school", "custody"] },
+    ],
+    introTemplate: "EVIDENCE SUMMARY FOR COURT REVIEW\n\nThe following evidence is submitted in support of [PARTY]'s position in the above-captioned matter. Each item is documented with specific citations to the source materials.",
+    footerTemplate: "The foregoing evidence summary is presented for the Court's consideration. All evidence is available for review in the accompanying exhibits.",
   },
 
   // ─────────────────────────────────────────────────────────────────
