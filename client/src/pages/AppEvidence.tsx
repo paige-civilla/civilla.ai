@@ -23,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 import EvidenceViewer from "@/components/app/EvidenceViewer";
+import PhaseBanner from "@/components/app/PhaseBanner";
 
 const CATEGORIES = [
   { value: "document", label: "Document" },
@@ -819,6 +820,8 @@ export default function AppEvidence() {
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
+
+          <PhaseBanner caseId={caseId} currentModule="evidence" />
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
             <div>

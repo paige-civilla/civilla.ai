@@ -47,6 +47,7 @@ import { Progress } from "@/components/ui/progress";
 import { History, Edit3, ChevronDown, ChevronUp, Eye, AlertTriangle, ListOrdered } from "lucide-react";
 import OutlineBuilder from "@/components/app/OutlineBuilder";
 import CourtTemplates from "@/components/app/CourtTemplates";
+import PhaseBanner from "@/components/app/PhaseBanner";
 
 const DRAFT_TOPIC_BY_MODULE: Record<string, string> = {
   evidence: "Evidence summary",
@@ -1085,6 +1086,8 @@ export default function AppDocuments() {
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
+
+          <PhaseBanner caseId={caseId} currentModule="documents" />
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
             <div>

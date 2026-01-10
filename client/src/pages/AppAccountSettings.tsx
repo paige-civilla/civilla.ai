@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles, BarChart3 } from "lucide-react";
+import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles, BarChart3, Clock } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_VALUE, isFieldDeferred, isDeferredValue } from "@/components/onboarding/UnknownControls";
+import ActivityLogsViewer from "@/components/app/ActivityLogsViewer";
 
 interface UserProfile {
   fullName: string | null;
@@ -680,6 +681,8 @@ export default function AppAccountSettings() {
               )}
             </CardContent>
           </Card>
+
+          <ActivityLogsViewer />
         </div>
       </div>
     </AppLayout>
