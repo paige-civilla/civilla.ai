@@ -113,6 +113,8 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
   const [claimEditForm, setClaimEditForm] = useState({ claimText: "", tags: "", missingInfoFlag: false });
   const [suggestingClaims, setSuggestingClaims] = useState(false);
+  const [factsOpen, setFactsOpen] = useState(false);
+  const [extractingFacts, setExtractingFacts] = useState(false);
   const [claimsReassuranceShown, setClaimsReassuranceShown] = useState(() => {
     const key = `claims-reassurance-shown-${caseId}`;
     return sessionStorage.getItem(key) === "true";
@@ -191,6 +193,91 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const allClaims = claimsData?.claims || [];
   const suggestedClaims = allClaims.filter(c => c.status === "suggested");
   const acceptedClaims = allClaims.filter(c => c.status === "accepted");
+
+  interface EvidenceFact {
+    id: string;
+    caseId: string;
+    evidenceId: string;
+    factText: string;
+    factType: string;
+    confidence: number;
+    citationId: string | null;
+    promotedToClaim: boolean;
+    promotedClaimId: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  const { data: factsData, isLoading: factsLoading } = useQuery<{ facts: EvidenceFact[] }>({
+    queryKey: ["/api/cases", caseId, "evidence", evidence.id, "facts"],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/evidence/${evidence.id}/facts`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch facts");
+      return res.json();
+    },
+  });
+
+  const evidenceFacts = factsData?.facts || [];
+  const pendingFacts = evidenceFacts.filter(f => !f.promotedToClaim);
+  const promotedFacts = evidenceFacts.filter(f => f.promotedToClaim);
+
+  const runFactExtractionMutation = useMutation({
+    mutationFn: async () => {
+      setExtractingFacts(true);
+      const res = await apiRequest("POST", `/api/cases/${caseId}/evidence/${evidence.id}/facts/run`, {});
+      return res;
+    },
+    onSuccess: (data: any) => {
+      setExtractingFacts(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", evidence.id, "facts"] });
+      toast({ title: "Facts extracted", description: `Found ${data.factsCreated || 0} facts` });
+    },
+    onError: (error: any) => {
+      setExtractingFacts(false);
+      toast({ title: "Failed to extract facts", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const promoteFactMutation = useMutation({
+    mutationFn: async (factId: string) => {
+      return apiRequest("POST", `/api/facts/${factId}/promote-to-claim`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", evidence.id, "facts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "claims"] });
+      toast({ title: "Fact promoted to claim" });
+    },
+    onError: () => {
+      toast({ title: "Failed to promote fact", variant: "destructive" });
+    },
+  });
+
+  const deleteFactMutation = useMutation({
+    mutationFn: async (factId: string) => {
+      return apiRequest("DELETE", `/api/facts/${factId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases", caseId, "evidence", evidence.id, "facts"] });
+      toast({ title: "Fact deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete fact", variant: "destructive" });
+    },
+  });
+
+  function getFactTypeBadgeColor(factType: string): string {
+    const colors: Record<string, string> = {
+      date: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+      event: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+      communication: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+      financial: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+      medical: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+      custody: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+      procedural: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
+      other: "bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300",
+    };
+    return colors[factType] || colors.other;
+  }
 
   const createNoteMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -1035,6 +1122,101 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
     </div>
   );
 
+  const factsPanel = (
+    <div className="border-t">
+      <Collapsible open={factsOpen} onOpenChange={setFactsOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center justify-between gap-2 p-3 w-full hover-elevate" data-testid="button-toggle-facts">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span className="font-medium text-sm">Extracted Facts</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">{pendingFacts.length} extracted</Badge>
+              {factsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="px-3 pb-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runFactExtractionMutation.mutate()}
+                disabled={extractingFacts || extractionStatus !== "complete"}
+                data-testid="button-extract-facts"
+              >
+                {extractingFacts ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3 mr-1" />
+                )}
+                Extract Facts (AI)
+              </Button>
+            </div>
+
+            {factsLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : pendingFacts.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">No facts extracted yet. Click "Extract Facts" to analyze this document.</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {pendingFacts.map((fact) => (
+                  <Card key={fact.id} className="border">
+                    <CardContent className="p-2 space-y-2">
+                      <p className="text-xs leading-relaxed">{fact.factText}</p>
+                      <div className="flex flex-wrap gap-1 items-center">
+                        <Badge className={`text-xs ${getFactTypeBadgeColor(fact.factType)}`}>
+                          {fact.factType.charAt(0).toUpperCase() + fact.factType.slice(1)}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {fact.confidence}% confidence
+                        </Badge>
+                      </div>
+                      <div className="flex gap-1 pt-1">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => promoteFactMutation.mutate(fact.id)}
+                          disabled={promoteFactMutation.isPending}
+                          data-testid={`button-promote-fact-${fact.id}`}
+                        >
+                          <Scale className="w-3 h-3 mr-1" />
+                          Promote to Claim
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteFactMutation.mutate(fact.id)}
+                          disabled={deleteFactMutation.isPending}
+                          data-testid={`button-delete-fact-${fact.id}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {promotedFacts.length > 0 && (
+              <div className="border-t pt-2">
+                <p className="text-xs text-muted-foreground mb-2">
+                  <CheckCircle className="w-3 h-3 inline mr-1 text-green-600" />
+                  {promotedFacts.length} fact{promotedFacts.length !== 1 ? "s" : ""} promoted to claims
+                </p>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col" style={{ top: "64px" }}>
       <div className="flex items-center justify-between gap-2 p-3 border-b bg-background">
@@ -1174,6 +1356,7 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
         <div className="hidden md:flex md:flex-col w-80 border-l bg-background overflow-y-auto">
           {notesPanel}
           {claimsPanel}
+          {factsPanel}
         </div>
       </div>
 
