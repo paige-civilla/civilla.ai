@@ -1,0 +1,155 @@
+REPLIT TASK: Full AI End-to-End Audit + Fix Pass (Extraction → Analysis → Claims → Docs → Lexi → Search)
+
+GOAL
+Do a complete pass through the app to ensure AI works everywhere it’s supposed to:
+- Evidence extraction never silently fails
+- AI analysis + claim suggestion pipelines run reliably
+- Document Creator compiles ONLY when requirements are met
+- Lexi works in every context (case + general) and never fails silently
+- All AI pathways have health checks, retries, clear UI errors, and activity logs
+Deliver a single “AI Readiness Report” + implement any fixes found.
+
+CONSTRAINTS
+- Do NOT redesign the marketing site.
+- Do NOT remove UPL/safety guardrails.
+- Prefer additive/idempotent fixes.
+- All failure states must be visible to the user and logged.
+
+────────────────────────────────────────
+A) INVENTORY ALL AI PATHWAYS (MAKE A CHECKLIST IN CODE + LOGS)
+────────────────────────────────────────
+1) Evidence extraction pipeline
+   - upload → queued/processing/complete/failed
+   - PDF native parse → OCR fallback
+   - /api/cases/:caseId/evidence/:evidenceId/extraction
+   - /api/cases/:caseId/evidence/:evidenceId/extraction/run + retry
+
+2) Evidence AI analysis pipeline
+   - /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run + retry
+   - status transitions + concurrency caps + jitter retries
+
+3) Claims suggestion pipeline
+   - manual suggest endpoint
+   - auto background suggest after extraction complete (debounced)
+   - citations auto-attached
+
+4) Draft readiness + preflight
+   - /api/cases/:caseId/draft-readiness
+   - Doc compile blocks if uncited claims exist
+
+5) Document compile from claims
+   - /api/cases/:caseId/documents/compile-claims
+   - acceptance gating + disclaimer acceptance
+
+6) Pattern analysis aggregation + export
+   - /api/cases/:caseId/pattern-analysis
+   - /api/cases/:caseId/pattern-analysis/export
+
+7) Trial prep binder export
+   - export endpoint (ZIP)
+
+8) Lexi chat
+   - thread create (case + general)
+   - message send (streaming + non-stream)
+   - source normalization + clickable URLs
+
+9) Quick Search
+   - /api/search returns correct deep links; click resolves to highlight correctly
+
+Create a single internal checklist constant so we can print status of each area during audit.
+
+────────────────────────────────────────
+B) ADD A SINGLE “AI SYSTEM DIAGNOSTICS” ENDPOINT + UI SURFACE
+────────────────────────────────────────
+Backend:
+- Add GET /api/ai/diagnostics (requireAuth; admin-only if preferred)
+- It must run REAL checks (not just “env var exists”):
+  1) DB column presence checks (existing /api/ai/health ok, reuse)
+  2) OpenAI connectivity check (existing)
+  3) Vision OCR key check (existing)
+  4) Storage/R2 signed URL fetch sanity check for a recent evidence file (if any)
+  5) Minimal dry-run of:
+     - create Lexi thread (general) and rollback/delete it
+     - create Lexi thread (case) if user has a case, rollback/delete it
+     - ensure extraction job queue can enqueue (no-op if no file)
+Return:
+{
+  ok: boolean,
+  checks: { ... },
+  failing: [{area, code, message, nextStep}],
+  lastActivity: [...] (last 20 activity logs)
+}
+IMPORTANT: do not expose secrets.
+
+Frontend:
+- Add a “AI Status” card to Account Settings (or Admin dashboard) showing:
+  - Green/Yellow/Red status
+  - “Run diagnostics” button
+  - Clear “what to do next” messages
+No new marketing pages.
+
+────────────────────────────────────────
+C) STANDARDIZE ERROR HANDLING ACROSS ALL AI ROUTES (NO SILENT FAILS)
+────────────────────────────────────────
+For every AI endpoint (Lexi chat, extraction run/retry, analysis run/retry, claim suggest/retry, compile-claims, pattern export, binder export):
+- Ensure response includes:
+  - { error, code, detail? }
+- Ensure server logs include a stable prefix, e.g.:
+  [AI][Extraction] ...
+  [AI][Analysis] ...
+  [AI][Claims] ...
+  [AI][Lexi] ...
+- Ensure activity_logs records:
+  - started / completed / failed
+  - error codes normalized via humanizeError()
+- Ensure frontend shows:
+  - toast + inline banner with “Retry” where applicable
+  - never disappears silently
+
+────────────────────────────────────────
+D) VERIFY + FIX EACH PIPELINE WITH A REAL TEST FLOW
+────────────────────────────────────────
+Implement a dev-only “AI Smoke Test” runner that uses existing routes (no secret printing):
+- Add script: server/scripts/aiSmokeTest.ts (run only when NODE_ENV != production)
+- It should:
+  1) Find a test user’s most recent case
+  2) Find most recent evidence file with extraction complete
+     - if none: exit with clear message
+  3) Run:
+     - GET extraction (expect complete)
+     - POST ai analysis run (expect processing→complete or cached)
+     - POST claims suggest or verify auto claims exist
+     - GET draft readiness
+     - POST compile-claims (only if uncited=0)
+     - POST Lexi thread create + send a short ping prompt and expect response
+  4) Print a clear pass/fail report (console only)
+- Ensure the test never writes PII into logs.
+
+────────────────────────────────────────
+E) DOUBLE CHECK THE KNOWN WEAK SPOTS (FIX IF FOUND)
+────────────────────────────────────────
+Specifically audit and fix if any break:
+1) Evidence extraction not running automatically after upload
+2) Extraction stuck in processing after restart (stale requeue)
+3) Analysis run button does nothing / no record created
+4) Claims auto-suggest not triggering after extraction complete
+5) Document Creator not auto-populating from claims correctly
+6) Lexi streaming path fails while non-stream path works (or vice versa)
+7) Sources returned as non-clickable or broken internal links
+8) “Unauthorized” errors caused by missing credentials: include credentials:"include" in fetch + consistent requireAuth behavior
+9) UI states where buttons become unreachable (zoom/scroll issues)
+
+Implement fixes found during this audit.
+
+────────────────────────────────────────
+F) DELIVERABLE: AI READINESS REPORT
+────────────────────────────────────────
+At the end, output a concise report in the Replit response:
+- ✅ Working areas
+- ❌ Found issues (with file + line where fixed)
+- 🔁 Retry behavior confirmed
+- 🧪 Smoke test results (pass/fail)
+- 🔐 Privacy confirmation (no user content exposed)
+- Next recommended improvements (optional)
+
+END TASK

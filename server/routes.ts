@@ -589,6 +589,7 @@ export async function registerRoutes(
             barNumber: profile.barNumber,
             onboardingDeferred: profile.onboardingDeferred || {},
             onboardingStatus: profile.onboardingStatus,
+            draftingDisclaimerAcceptedAt: profile.draftingDisclaimerAcceptedAt,
           },
         });
       } else {
@@ -609,6 +610,7 @@ export async function registerRoutes(
             barNumber: null,
             onboardingDeferred: {},
             onboardingStatus: "incomplete",
+            draftingDisclaimerAcceptedAt: null,
           },
         });
       }
@@ -647,6 +649,19 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Update profile error:", error);
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  app.post("/api/user/accept-drafting-disclaimer", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      await storage.upsertUserProfile(userId, {
+        draftingDisclaimerAcceptedAt: new Date(),
+      });
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Accept drafting disclaimer error:", error);
+      res.status(500).json({ error: "Failed to save acknowledgement" });
     }
   });
 

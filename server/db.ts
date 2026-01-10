@@ -184,6 +184,7 @@ async function ensureUserProfileColumns(): Promise<void> {
   await addColumnIfMissing("user_profiles", "start_here_seen", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing("user_profiles", "is_admin", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing("user_profiles", "is_grant_viewer", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "drafting_disclaimer_accepted_at", "TIMESTAMP");
 }
 
 async function ensureEvidenceFilesColumns(): Promise<void> {

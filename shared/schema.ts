@@ -55,6 +55,7 @@ export const userProfiles = pgTable("user_profiles", {
   startHereSeen: boolean("start_here_seen").notNull().default(false),
   isAdmin: boolean("is_admin").notNull().default(false),
   isGrantViewer: boolean("is_grant_viewer").notNull().default(false),
+  draftingDisclaimerAcceptedAt: timestamp("drafting_disclaimer_accepted_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -91,6 +92,7 @@ export const upsertUserProfileSchema = z.object({
   onboardingDeferred: z.record(z.boolean()).optional(),
   onboardingStatus: z.enum(["incomplete", "partial", "complete"]).optional(),
   startHereSeen: z.boolean().optional(),
+  draftingDisclaimerAcceptedAt: z.date().optional().nullable(),
 });
 
 export type UpsertUserProfile = z.infer<typeof upsertUserProfileSchema>;
