@@ -1,0 +1,107 @@
+REPLIT TASK: Phase Awareness – Court-Formatted Document Templates (Evidence-First)
+
+GOAL
+Add real court-style document templates that compile ONLY from accepted claims and citations.
+No drafting from raw text. No fabrication. Fully UPL-safe.
+
+SCOPE
+This builds on the existing:
+- Claims + Citations system
+- Outline Builder
+- Document Creator (Compile from Claims)
+
+DO NOT create legal advice or strategy.
+DO NOT invent facts, dates, or intent.
+
+────────────────────────────────
+TEMPLATES TO ADD (v1)
+────────────────────────────────
+
+Add these 3 document templates:
+
+1) Declaration (Facts Only)
+2) Chronological Statement of Facts
+3) Exhibit Index
+
+Each template must:
+- Pull ONLY from accepted claims
+- Require at least 1 citation per claim
+- Reference evidence instead of narrating
+- Use neutral, court-appropriate language
+
+────────────────────────────────
+BACKEND REQUIREMENTS
+────────────────────────────────
+
+A) Define template configs
+Create a template registry with:
+- templateKey
+- displayName
+- requiredClaimTypes
+- requiredCitationCount (>=1)
+- section structure
+
+B) Compilation rules
+When compiling:
+- Reject if any included claim has 0 citations
+- Reject if claim has missing_info_flag = true (warning allowed, but must be shown)
+- Group claims by type where applicable
+- Include inline citation references:
+  [Exhibit A, p. 3] or [Message Log, 02/14/2025]
+
+C) Output format
+Generate markdown with:
+- Title
+- Intro paragraph (neutral, no opinions)
+- Structured sections
+- Claims as numbered paragraphs
+- Sources section listing all cited evidence
+
+────────────────────────────────
+FRONTEND REQUIREMENTS
+────────────────────────────────
+
+A) Document Creator UI
+Add a "Court Templates" selector with:
+- Declaration
+- Statement of Facts
+- Exhibit Index
+
+B) Preflight checks (visible BEFORE compile)
+Show:
+- Accepted claims count
+- Claims missing citations (block compile)
+- Claims flagged as missing info (warning)
+- Extraction coverage %
+
+C) Preview mode
+Before export:
+- Show compiled draft
+- Highlight citation markers
+- Allow rename before save/export
+
+────────────────────────────────
+UPL & SAFETY GUARDS
+────────────────────────────────
+
+- No recommendations
+- No legal conclusions
+- No outcome predictions
+- No instructions on what to file
+- Facts only, tied to evidence
+
+If a claim cannot be compiled safely:
+- Exclude it
+- Explain why in the UI
+
+────────────────────────────────
+DONE WHEN
+────────────────────────────────
+
+- User can select a court template
+- Draft compiles ONLY from accepted claims
+- Every paragraph has a citation
+- Exported document is court-neutral
+- No raw text drafting occurs
+
+Do NOT proceed to additional templates without approval.
