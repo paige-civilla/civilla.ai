@@ -1,6 +1,12 @@
 import { Pool } from "pg";
 import { isR2Configured, listAllR2Keys, bulkDeleteFromR2 } from "../r2";
 
+function cleanConnectionString(str: string | undefined): string | undefined {
+  if (!str) return undefined;
+  const match = str.match(/postgresql:\/\/.+/);
+  return match ? match[0].trim() : str.trim();
+}
+
 const USER_GENERATED_TABLES = [
   "admin_audit_logs",
   "analytics_events",
@@ -111,7 +117,8 @@ export async function runBetaReset(options: { dryRun?: boolean; skipR2?: boolean
     console.log("");
   }
 
-  const databaseUrl = process.env.DATABASE_URL;
+  const rawDatabaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = cleanConnectionString(rawDatabaseUrl);
   if (!databaseUrl) {
     errors.push("DATABASE_URL not configured");
     return { ok: false, dryRun, tableCounts, r2KeysDeleted, errors };
