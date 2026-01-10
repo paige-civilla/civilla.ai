@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, ExhibitList, Exhibit, EvidenceFile, ExhibitEvidence, ExhibitSnippet } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
+import LinkToTimelineButton from "@/components/app/LinkToTimelineButton";
 
 function formatDate(date: string | Date): string {
   const d = new Date(date);
@@ -740,6 +741,14 @@ function ExhibitListCard({
                         )}
                       </div>
                       <div className="flex items-center gap-1">
+                        <LinkToTimelineButton
+                          caseId={caseId!}
+                          linkType="snippet"
+                          targetId={snippet.id}
+                          size="icon"
+                          variant="ghost"
+                          label=""
+                        />
                         <Button
                           size="icon"
                           variant="ghost"

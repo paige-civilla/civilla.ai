@@ -25,6 +25,7 @@ import { binderSectionValues } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
 import { getNextModule, modulePath, moduleLabel, type ModuleKey } from "@/lib/caseFlow";
+import LinkToTimelineButton from "@/components/app/LinkToTimelineButton";
 
 const SOURCE_TYPE_ICONS: Record<string, typeof FileText> = {
   evidence: FolderOpen,
@@ -376,6 +377,14 @@ export default function AppTrialPrep() {
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <LinkToTimelineButton
+            caseId={caseId!}
+            linkType="snippet"
+            targetId={item.id}
+            size="icon"
+            variant="ghost"
+            label=""
+          />
           <Button
             variant="ghost"
             size="icon"
