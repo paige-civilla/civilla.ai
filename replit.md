@@ -22,6 +22,7 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
+- 2026-01-10: Fixed Lexi Sources - All sources now clickable: valid URLs verified via HEAD request, invalid/unreachable URLs converted to Google search links. Sources sorted (official domains first), deduplicated, limited to 5. LexiPanel always renders as clickable <a> tags.
 - 2026-01-10: Phase Awareness UX - Added PhaseStatusBar to Dashboard, PhaseNotice to Documents compile tab, one-time reassurance message in Claims UI (sessionStorage-based). Three phases: collecting, reviewing, draft-ready. Phase resolved via server/services/phaseResolver.ts and returned in /api/cases/:caseId/draft-readiness endpoint.
 - 2025-01-10: Added Module Usage Analytics - activity_logs tracks moduleKey/entityType/entityId, recordActivity() helper, /api/analytics/* endpoints, useModuleView hook for auto-tracking, Usage Insights card in Account Settings
 - 2025-01-05: Added Evidence Notes feature - page-based annotations for viewing/organizing evidence without file uploads (schema, storage, API routes, full UI with CRUD)
