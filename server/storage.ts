@@ -193,6 +193,10 @@ import {
   type ResourceFieldMap,
   type InsertResourceFieldMap,
   type UpdateResourceFieldMap,
+  evidenceFacts,
+  type EvidenceFact,
+  type InsertEvidenceFact,
+  type UpdateEvidenceFact,
 } from "@shared/schema";
 
 export interface ModuleUsageCount {
@@ -507,6 +511,14 @@ export interface IStorage {
   attachFactCitation(userId: string, caseId: string, factId: string, citationId: string): Promise<FactCitation>;
   detachFactCitation(userId: string, factId: string, citationId: string): Promise<boolean>;
   listFactCitations(userId: string, factId: string): Promise<FactCitation[]>;
+
+  // Phase 2F: Evidence Facts (extracted from evidence)
+  createEvidenceFact(userId: string, caseId: string, data: InsertEvidenceFact): Promise<EvidenceFact>;
+  listEvidenceFacts(userId: string, caseId: string, filters?: { evidenceId?: string; factType?: string; promotedToClaim?: boolean }): Promise<EvidenceFact[]>;
+  getEvidenceFact(userId: string, factId: string): Promise<EvidenceFact | undefined>;
+  updateEvidenceFact(userId: string, factId: string, patch: UpdateEvidenceFact): Promise<EvidenceFact | undefined>;
+  deleteEvidenceFact(userId: string, factId: string): Promise<boolean>;
+  countEvidenceFactsByCase(userId: string, caseId: string): Promise<{ total: number; pending: number; completed: number; promoted: number }>;
 
   // Phase 3A: Cross-Module Links
   createTimelineEventLink(userId: string, caseId: string, eventId: string, payload: InsertTimelineEventLink): Promise<TimelineEventLink>;
@@ -3668,6 +3680,84 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(factCitations)
       .where(and(eq(factCitations.userId, userId), eq(factCitations.factId, factId)));
+  }
+
+  // Phase 2F: Evidence Facts (extracted from evidence)
+  async createEvidenceFact(userId: string, caseId: string, data: InsertEvidenceFact): Promise<EvidenceFact> {
+    const [fact] = await db
+      .insert(evidenceFacts)
+      .values({
+        userId,
+        caseId,
+        evidenceId: data.evidenceId,
+        factText: data.factText,
+        factType: data.factType ?? "other",
+        confidence: data.confidence ?? 0,
+        citationId: data.citationId ?? null,
+      })
+      .returning();
+    return fact;
+  }
+
+  async listEvidenceFacts(userId: string, caseId: string, filters?: { evidenceId?: string; factType?: string; promotedToClaim?: boolean }): Promise<EvidenceFact[]> {
+    const conditions = [eq(evidenceFacts.userId, userId), eq(evidenceFacts.caseId, caseId)];
+    if (filters?.evidenceId) {
+      conditions.push(eq(evidenceFacts.evidenceId, filters.evidenceId));
+    }
+    if (filters?.factType) {
+      conditions.push(eq(evidenceFacts.factType, filters.factType));
+    }
+    if (filters?.promotedToClaim !== undefined) {
+      conditions.push(eq(evidenceFacts.promotedToClaim, filters.promotedToClaim));
+    }
+    return db
+      .select()
+      .from(evidenceFacts)
+      .where(and(...conditions))
+      .orderBy(desc(evidenceFacts.createdAt));
+  }
+
+  async getEvidenceFact(userId: string, factId: string): Promise<EvidenceFact | undefined> {
+    const [fact] = await db
+      .select()
+      .from(evidenceFacts)
+      .where(and(eq(evidenceFacts.id, factId), eq(evidenceFacts.userId, userId)));
+    return fact;
+  }
+
+  async updateEvidenceFact(userId: string, factId: string, patch: UpdateEvidenceFact): Promise<EvidenceFact | undefined> {
+    const existing = await this.getEvidenceFact(userId, factId);
+    if (!existing) return undefined;
+    const [updated] = await db
+      .update(evidenceFacts)
+      .set({
+        factText: patch.factText ?? existing.factText,
+        factType: patch.factType ?? existing.factType,
+        confidence: patch.confidence ?? existing.confidence,
+        promotedToClaim: patch.promotedToClaim ?? existing.promotedToClaim,
+        promotedClaimId: patch.promotedClaimId !== undefined ? patch.promotedClaimId : existing.promotedClaimId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(evidenceFacts.id, factId), eq(evidenceFacts.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteEvidenceFact(userId: string, factId: string): Promise<boolean> {
+    const result = await db
+      .delete(evidenceFacts)
+      .where(and(eq(evidenceFacts.id, factId), eq(evidenceFacts.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async countEvidenceFactsByCase(userId: string, caseId: string): Promise<{ total: number; pending: number; completed: number; promoted: number }> {
+    const facts = await this.listEvidenceFacts(userId, caseId);
+    const total = facts.length;
+    const promoted = facts.filter(f => f.promotedToClaim).length;
+    const pending = 0;
+    const completed = total;
+    return { total, pending, completed, promoted };
   }
 
   // Phase 3A: Cross-Module Links - Timeline Event Links

@@ -1817,6 +1817,58 @@ export const claimCitations = pgTable("claim_citations", {
 
 export type ClaimCitation = typeof claimCitations.$inferSelect;
 
+// Phase 2F: Evidence Facts (structured facts extracted from evidence)
+export const evidenceFactTypes = [
+  "date",
+  "event",
+  "communication",
+  "financial",
+  "medical",
+  "custody",
+  "procedural",
+  "other",
+] as const;
+export type EvidenceFactType = typeof evidenceFactTypes[number];
+
+export const evidenceFacts = pgTable("evidence_facts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  factText: text("fact_text").notNull(),
+  factType: text("fact_type").notNull().default("other"),
+  confidence: integer("confidence").notNull().default(0),
+  citationId: varchar("citation_id").references(() => citationPointers.id),
+  promotedToClaim: boolean("promoted_to_claim").notNull().default(false),
+  promotedClaimId: varchar("promoted_claim_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  caseIdx: index("evidence_facts_case_idx").on(table.caseId),
+  evidenceIdx: index("evidence_facts_evidence_idx").on(table.evidenceId),
+  factTypeIdx: index("evidence_facts_type_idx").on(table.factType),
+}));
+
+export const insertEvidenceFactSchema = z.object({
+  evidenceId: z.string().min(1, "Evidence ID is required"),
+  factText: z.string().min(1, "Fact text is required").max(2000),
+  factType: z.enum(evidenceFactTypes).optional().default("other"),
+  confidence: z.number().int().min(0).max(100).optional().default(0),
+  citationId: z.string().optional().nullable(),
+});
+
+export const updateEvidenceFactSchema = z.object({
+  factText: z.string().min(1).max(2000).optional(),
+  factType: z.enum(evidenceFactTypes).optional(),
+  confidence: z.number().int().min(0).max(100).optional(),
+  promotedToClaim: z.boolean().optional(),
+  promotedClaimId: z.string().optional().nullable(),
+});
+
+export type InsertEvidenceFact = z.infer<typeof insertEvidenceFactSchema>;
+export type UpdateEvidenceFact = z.infer<typeof updateEvidenceFactSchema>;
+export type EvidenceFact = typeof evidenceFacts.$inferSelect;
+
 export const issueGroupings = pgTable("issue_groupings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -1989,6 +2041,10 @@ export const activityLogTypes = [
   "facts_suggested",
   "facts_suggesting",
   "document_acknowledgement",
+  "evidence_fact_extraction_started",
+  "evidence_fact_extraction_completed",
+  "evidence_fact_extraction_failed",
+  "evidence_fact_promoted",
 ] as const;
 export type ActivityLogType = typeof activityLogTypes[number];
 
