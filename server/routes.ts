@@ -9454,6 +9454,205 @@ Top 3 selection criteria:
     }
   });
 
+  // ───────────────────────────────────────────────────────────────
+  // Task 1: Template-to-Field Auto-Population (cited claims only)
+  // ───────────────────────────────────────────────────────────────
+  app.post("/api/cases/:caseId/documents/autofill", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const { templateKey, issueId, scope = "all", maxSections = 12 } = req.body as {
+        templateKey: string;
+        issueId?: string;
+        scope?: "all" | "issue";
+        maxSections?: number;
+      };
+
+      if (!templateKey) {
+        return res.status(400).json({ error: "templateKey is required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { getTemplateByKey: getNarrativeTemplate } = await import("./templates/templates");
+      const template = getNarrativeTemplate(templateKey);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      let allClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+
+      if (scope === "issue" && issueId) {
+        const issueClaims = await storage.listIssueClaims(userId, issueId);
+        const issueClaimIds = new Set(issueClaims.map(c => c.id));
+        allClaims = allClaims.filter(c => issueClaimIds.has(c.id));
+      }
+
+      const claimsWithCitations: Array<{
+        claim: typeof allClaims[0];
+        citations: Awaited<ReturnType<typeof storage.listClaimCitations>>;
+      }> = [];
+
+      for (const claim of allClaims) {
+        const citations = await storage.listClaimCitations(userId, claim.id);
+        if (citations.length > 0) {
+          claimsWithCitations.push({ claim, citations });
+        }
+      }
+
+      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+      const evidenceMap = new Map(evidenceFiles.map(f => [f.id, f]));
+
+      const scoreClaim = (claim: typeof allClaims[0], section: typeof template.sections[0]): number => {
+        let score = 0;
+        const claimText = claim.claimText.toLowerCase();
+        const claimTags = Array.isArray(claim.tags) ? claim.tags : [];
+
+        for (const keyword of section.keywords) {
+          if (claimText.includes(keyword.toLowerCase())) {
+            score += 2;
+          }
+        }
+
+        if (section.claimTypes && section.claimTypes.includes(claim.claimType)) {
+          score += 5;
+        }
+
+        for (const tag of claimTags) {
+          if (section.keywords.some(kw => (tag as string).toLowerCase().includes(kw.toLowerCase()))) {
+            score += 1;
+          }
+        }
+
+        return score;
+      };
+
+      const usedClaimIds = new Set<string>();
+      const sections: Array<{
+        sectionKey: string;
+        title: string;
+        contentMarkdown: string;
+        usedClaimIds: string[];
+        usedCitationIds: string[];
+        missingEvidence: boolean;
+        missingReason?: string;
+      }> = [];
+
+      for (const section of template.sections.slice(0, maxSections)) {
+        const scoredClaims = claimsWithCitations
+          .filter(({ claim }) => !usedClaimIds.has(claim.id))
+          .map(({ claim, citations }) => ({
+            claim,
+            citations,
+            score: scoreClaim(claim, section),
+          }))
+          .filter(({ score }) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 8);
+
+        if (scoredClaims.length === 0) {
+          sections.push({
+            sectionKey: section.sectionKey,
+            title: section.title,
+            contentMarkdown: "",
+            usedClaimIds: [],
+            usedCitationIds: [],
+            missingEvidence: true,
+            missingReason: `No accepted claims with citations match "${section.title}". Go to Evidence → Claims to review and accept claims, then attach citations.`,
+          });
+          continue;
+        }
+
+        const lines: string[] = [];
+        const sectionClaimIds: string[] = [];
+        const sectionCitationIds: string[] = [];
+
+        for (const { claim, citations } of scoredClaims) {
+          usedClaimIds.add(claim.id);
+          sectionClaimIds.push(claim.id);
+
+          const topCitations = citations
+            .sort((a, b) => {
+              const aScore = (a.pageNumber ? 2 : 0) + (a.quote?.length || 0);
+              const bScore = (b.pageNumber ? 2 : 0) + (b.quote?.length || 0);
+              return bScore - aScore;
+            })
+            .slice(0, 2);
+
+          const citationRefs = topCitations.map(cit => {
+            sectionCitationIds.push(cit.id);
+            const evidence = evidenceMap.get(cit.evidenceFileId);
+            const fileName = evidence?.originalName || "Unknown";
+            const pageRef = cit.pageNumber ? `, p.${cit.pageNumber}` : "";
+            return `[EVID: ${fileName}${pageRef}]`;
+          });
+
+          lines.push(`- ${claim.claimText} ${citationRefs.join(" ")}`);
+        }
+
+        sections.push({
+          sectionKey: section.sectionKey,
+          title: section.title,
+          contentMarkdown: lines.join("\n"),
+          usedClaimIds: sectionClaimIds,
+          usedCitationIds: sectionCitationIds,
+          missingEvidence: false,
+        });
+      }
+
+      const sourceMap = new Map<string, { evidenceId: string; fileName: string; citations: Array<{ citationId: string; pageNumber?: number; quoteSnippet?: string }> }>();
+
+      for (const section of sections) {
+        for (const citationId of section.usedCitationIds) {
+          for (const { citations } of claimsWithCitations) {
+            const cit = citations.find(c => c.id === citationId);
+            if (cit) {
+              const evidence = evidenceMap.get(cit.evidenceFileId);
+              if (!sourceMap.has(cit.evidenceFileId)) {
+                sourceMap.set(cit.evidenceFileId, {
+                  evidenceId: cit.evidenceFileId,
+                  fileName: evidence?.originalName || "Unknown",
+                  citations: [],
+                });
+              }
+              const source = sourceMap.get(cit.evidenceFileId)!;
+              if (!source.citations.some(c => c.citationId === citationId)) {
+                source.citations.push({
+                  citationId,
+                  pageNumber: cit.pageNumber ?? undefined,
+                  quoteSnippet: cit.quote?.slice(0, 100),
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const totalClaimsUsed = sections.reduce((acc, s) => acc + s.usedClaimIds.length, 0);
+      const totalCitationsUsed = sections.reduce((acc, s) => acc + s.usedCitationIds.length, 0);
+
+      await storage.createActivityLog(userId, caseId, "document_autofill_generated", `Auto-filled ${template.label} with ${totalClaimsUsed} claims and ${totalCitationsUsed} citations`, {
+        templateKey,
+        claimsUsed: totalClaimsUsed,
+        citationsUsed: totalCitationsUsed,
+        sectionsGenerated: sections.length,
+      });
+
+      res.json({
+        ok: true,
+        templateKey,
+        sections,
+        sources: Array.from(sourceMap.values()),
+      });
+    } catch (error) {
+      console.error("Document autofill error:", error);
+      res.status(500).json({ error: "Failed to generate autofill" });
+    }
+  });
+
   app.post("/api/cases/:caseId/documents/templates/:templateKey/preflight", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
