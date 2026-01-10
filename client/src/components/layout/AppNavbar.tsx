@@ -104,12 +104,13 @@ export default function AppNavbar({ className }: AppNavbarProps) {
     queryKey: ["/api/auth/me"],
   });
 
-  const { data: profileData } = useQuery<{ profile: { fullName: string | null; email: string | null; isAdmin?: boolean } }>({
+  const { data: profileData } = useQuery<{ profile: { fullName: string | null; email: string | null; isAdmin?: boolean; isGrantViewer?: boolean } }>({
     queryKey: ["/api/profile"],
     enabled: !!authData?.user,
   });
 
   const isAdmin = !!profileData?.profile?.isAdmin;
+  const isGrantViewer = !!profileData?.profile?.isGrantViewer;
 
   const { data: casesData } = useQuery<{ cases: { id: string; title: string; hasChildren?: boolean; startingPoint?: string }[] }>({
     queryKey: ["/api/cases"],
@@ -391,6 +392,20 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                       >
                         <BarChart3 className="h-5 w-5 flex-shrink-0" />
                         <span>Admin</span>
+                      </button>
+                    )}
+                    {isGrantViewer && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setLocation("/app/grants");
+                        }}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors border border-transparent"
+                        data-testid="menu-link-grants"
+                      >
+                        <BarChart3 className="h-5 w-5 flex-shrink-0" />
+                        <span>Grant Dashboard</span>
                       </button>
                     )}
                     <button

@@ -46,6 +46,7 @@ import AppTrialPrepPrint from "@/pages/AppTrialPrepPrint";
 import AppParentingPlan from "@/pages/AppParentingPlan";
 import AppStartHere from "@/pages/AppStartHere";
 import AppAdminDashboard from "@/pages/AppAdminDashboard";
+import AppGrantDashboard from "@/pages/AppGrantDashboard";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -74,6 +75,7 @@ function Router() {
       <Route path="/app/onboarding" component={AppOnboarding} />
       <Route path="/app/start-here" component={AppStartHere} />
       <Route path="/app/admin" component={AppAdminDashboard} />
+      <Route path="/app/grants" component={AppGrantDashboard} />
       <Route path="/app/account" component={AppAccountSettings} />
       <Route path="/app/cases" component={AppCases} />
       <Route path="/app/dashboard/:caseId" component={AppDashboard} />

@@ -41,6 +41,8 @@ import { searchCaseWide } from "./services/search";
 import { isAutoSuggestPending, getAutoSuggestStats, triggerClaimsSuggestionForEvidence } from "./claims/autoSuggest";
 import { requireAdmin } from "./middleware/admin";
 import { getAdminMetrics } from "./admin/adminMetrics";
+import { requireGrantViewer } from "./middleware/grantViewer";
+import { getGrantMetrics } from "./services/grantMetrics";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -5811,6 +5813,17 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (e: any) {
       console.error("Admin metrics error:", e);
       res.status(500).json({ ok: false, error: "Failed to load admin metrics" });
+    }
+  });
+
+  app.get("/api/grants/metrics", requireAuth, requireGrantViewer, async (req, res) => {
+    try {
+      const days = req.query.days ? Number(req.query.days) : 90;
+      const data = await getGrantMetrics({ days });
+      res.json(data);
+    } catch (e: any) {
+      console.error("[GrantsMetrics] failed", e);
+      res.status(500).json({ ok: false, error: "Failed to load grant metrics" });
     }
   });
 
