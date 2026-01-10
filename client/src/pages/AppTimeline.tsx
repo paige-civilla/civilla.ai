@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleView } from "@/hooks/useModuleView";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, TimelineEvent, TimelineCategory } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
@@ -63,6 +64,7 @@ export default function AppTimeline() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
   const { toast } = useToast();
+  useModuleView("timeline", caseId);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);

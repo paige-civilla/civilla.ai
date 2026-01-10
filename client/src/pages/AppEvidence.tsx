@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleView } from "@/hooks/useModuleView";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote, EvidenceProcessingJob, EvidenceOcrPage, EvidenceAnchor, EvidenceAiAnalysis, ExhibitSnippet } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
@@ -97,6 +98,7 @@ export default function AppEvidence() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
   const { toast } = useToast();
+  useModuleView("evidence", caseId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);

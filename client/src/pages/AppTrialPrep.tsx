@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleView } from "@/hooks/useModuleView";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, TrialPrepShortlist } from "@shared/schema";
 import { binderSectionValues } from "@shared/schema";
@@ -109,6 +110,7 @@ export default function AppTrialPrep() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
   const { toast } = useToast();
+  useModuleView("trial-prep", caseId);
   
   const [selectedSection, setSelectedSection] = useState<string>(binderSectionValues[0]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);

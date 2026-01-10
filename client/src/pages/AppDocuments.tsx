@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleView } from "@/hooks/useModuleView";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Case, Document, GeneratedDocument, GenerateDocumentPayload } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
@@ -126,6 +127,7 @@ export default function AppDocuments() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
   const { toast } = useToast();
+  useModuleView("documents", caseId);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [createMode, setCreateMode] = useState<"template" | "claims">("claims");

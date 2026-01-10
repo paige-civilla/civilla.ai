@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleView } from "@/hooks/useModuleView";
 import type { Case, CalendarCategory } from "@shared/schema";
 import { CASE_FLOW, getVisibleModules, modulePath, moduleLabel, moduleDescription, type ModuleKey } from "@/lib/caseFlow";
 import { BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar as CalendarIcon, CheckSquare as CheckSquareIcon, Contact, Users, Calculator, Scale, HelpCircle, Heart } from "lucide-react";
@@ -69,6 +70,7 @@ export default function AppDashboard() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
   const { toast } = useToast();
+  useModuleView("dashboard", caseId);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addItemType, setAddItemType] = useState<AddItemType | null>(null);
