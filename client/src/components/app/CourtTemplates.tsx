@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ReactMarkdown from "react-markdown";
+import AutoFillPreview from "./AutoFillPreview";
 
 interface TemplateDefinition {
   templateKey: string;
@@ -69,6 +70,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
   const [documentTitle, setDocumentTitle] = useState("");
   const [previewMarkdown, setPreviewMarkdown] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [showAutoFill, setShowAutoFill] = useState(false);
 
   const { data: templatesData } = useQuery<{ templates: TemplateDefinition[]; categories: Record<string, TemplateCategory> }>({
     queryKey: ["/api/templates"],
@@ -128,6 +130,17 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
     setSelectedTemplate(template);
     setDocumentTitle(`${template.displayName} - ${new Date().toLocaleDateString()}`);
     setPreviewMarkdown(null);
+    setShowAutoFill(false);
+  };
+
+  const handleAutoFillApply = (sections: Array<{ sectionKey: string; title: string; contentMarkdown: string }>) => {
+    const combinedContent = sections
+      .filter(s => s.contentMarkdown)
+      .map(s => `## ${s.title}\n\n${s.contentMarkdown}`)
+      .join("\n\n");
+    setPreviewMarkdown(combinedContent);
+    setIsPreviewOpen(true);
+    setShowAutoFill(false);
   };
 
   const handleCompile = () => {
@@ -342,7 +355,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
                 ) : null}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={handleCompile}
                   disabled={!preflightData?.canCompile || !documentTitle.trim() || compileMutation.isPending}
@@ -360,7 +373,27 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
                     </>
                   )}
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAutoFill(!showAutoFill)}
+                  data-testid="button-toggle-autofill"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {showAutoFill ? "Hide Auto-Fill" : "Auto-Fill from Evidence"}
+                </Button>
               </div>
+
+              {showAutoFill && (
+                <AutoFillPreview
+                  caseId={caseId}
+                  templateKey={selectedTemplate.templateKey}
+                  templateLabel={selectedTemplate.displayName}
+                  readinessPercent={preflightData?.extractionCoveragePercent || 0}
+                  citedClaimsCount={preflightData?.claimsWithCitationsCount || 0}
+                  onApply={handleAutoFillApply}
+                  onClose={() => setShowAutoFill(false)}
+                />
+              )}
             </CardContent>
           </Card>
         </div>
