@@ -1,0 +1,421 @@
+/****************************************************************************************
+REPLIT TASK: Admin Dashboard (Metrics-only, Privacy-safe) — Phase A
+
+GOAL
+- Add an /app/admin dashboard that shows ONLY aggregated, anonymized metrics.
+- No user content visible (no evidence text, no docs, no Lexi messages, no notes bodies).
+- Enforce strict admin-only access at API + UI level.
+- Include charts + counts + state distribution.
+- Use existing tables where possible (activity_logs, cases, users, etc).
+- Add an is_admin flag to user_profiles (or users) to control access.
+
+FILES TO CREATE / EDIT
+1) shared/schema.ts (or wherever user_profiles is defined) -> add isAdmin boolean
+2) server/db.ts -> ensure migration adds user_profiles.is_admin if missing
+3) server/middleware/admin.ts -> requireAdmin middleware
+4) server/admin/adminMetrics.ts -> aggregation functions
+5) server/routes.ts -> /api/admin/metrics endpoint (admin only)
+6) client/src/pages/AppAdminDashboard.tsx -> UI (cards + charts)
+7) client/src/App.tsx -> route
+8) client/src/components/layout/AppNavbar.tsx -> show Admin link ONLY if admin
+
+NOTES
+- This dashboard is “privacy red-line safe” by design: only counts + distributions.
+- If you don’t have activity_logs, keep the usage section but it’ll show 0 until events log.
+
+****************************************************************************************/
+
+/* =========================
+   1) shared/schema.ts
+   ========================= */
+// Find your user_profiles table definition and add isAdmin.
+// Example (Drizzle):
+// export const userProfiles = pgTable("user_profiles", {
+//   ...
+//   isAdmin: boolean("is_admin").notNull().default(false),
+// });
+
+/* =========================
+   2) server/db.ts
+   ========================= */
+// Add this ensure helper and call it inside ensureSchemaMigrations()
+
+async function ensureUserProfilesColumns(db: any) {
+  // helper funcs already exist in your migration system:
+  // columnExists(), addColumnIfMissing(), addIndexIfMissing()
+
+  const hasIsAdmin = await columnExists(db, "user_profiles", "is_admin");
+  if (!hasIsAdmin) {
+    await addColumnIfMissing(db, "user_profiles", "is_admin", "boolean NOT NULL DEFAULT false");
+  }
+
+  console.log("[DB MIGRATION] Verification: user_profiles.is_admin present:", true);
+}
+
+// In ensureSchemaMigrations():
+// await ensureUserProfilesColumns(db);
+
+/* =========================
+   3) server/middleware/admin.ts (NEW)
+   ========================= */
+import type { Request, Response, NextFunction } from "express";
+import { storage } from "../storage";
+
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const profile = await storage.getUserProfile?.(userId); // if you have this
+    // If you don’t, implement storage.getUserProfile(userId) that returns user_profiles row.
+
+    const isAdmin = !!profile?.isAdmin || !!profile?.is_admin;
+    if (!isAdmin) return res.status(403).json({ error: "Forbidden" });
+
+    return next();
+  } catch (e) {
+    return res.status(500).json({ error: "Admin auth failed" });
+  }
+}
+
+/* =========================
+   4) server/admin/adminMetrics.ts (NEW)
+   ========================= */
+import { db } from "../db";
+import { sql } from "drizzle-orm";
+
+type DateRange = { from?: string; to?: string };
+
+function clampRange(range: DateRange) {
+  // Accept YYYY-MM-DD; keep it simple. Default last 30 days.
+  const to = range.to ?? new Date().toISOString().slice(0, 10);
+  const from =
+    range.from ??
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return { from, to };
+}
+
+export async function getAdminMetrics(range: DateRange) {
+  const { from, to } = clampRange(range);
+
+  // NOTE: Keep strictly aggregated. Never select content columns.
+  // Users
+  const usersAgg = await db.execute(sql`
+    SELECT
+      COUNT(*)::int AS total_users
+    FROM users;
+  `);
+
+  // Cases + State distribution (cases.state)
+  const casesAgg = await db.execute(sql`
+    SELECT
+      COUNT(*)::int AS total_cases
+    FROM cases;
+  `);
+
+  const stateDist = await db.execute(sql`
+    SELECT
+      COALESCE(state, 'Unknown') AS state,
+      COUNT(*)::int AS count
+    FROM cases
+    GROUP BY COALESCE(state, 'Unknown')
+    ORDER BY count DESC
+    LIMIT 25;
+  `);
+
+  // Activity logs (usage) — uses activity_logs if present
+  // expected schema: activity_logs(event_type, created_at, metadata)
+  let usageByEvent: any[] = [];
+  try {
+    const usage = await db.execute(sql`
+      SELECT
+        event_type AS event,
+        COUNT(*)::int AS count
+      FROM activity_logs
+      WHERE created_at >= ${from}::date
+        AND created_at < (${to}::date + INTERVAL '1 day')
+      GROUP BY event_type
+      ORDER BY count DESC
+      LIMIT 25;
+    `);
+    usageByEvent = usage.rows ?? usage;
+  } catch {
+    usageByEvent = [];
+  }
+
+  // AI job failures trend (if you log failures in activity_logs)
+  let aiFailures: any[] = [];
+  try {
+    const ai = await db.execute(sql`
+      SELECT
+        DATE(created_at) AS day,
+        COUNT(*)::int AS count
+      FROM activity_logs
+      WHERE event_type IN ('claims_suggest_failed','evidence_extraction_failed','ai_analysis_failed','lexi_error')
+        AND created_at >= ${from}::date
+        AND created_at < (${to}::date + INTERVAL '1 day')
+      GROUP BY DATE(created_at)
+      ORDER BY day ASC
+      LIMIT 60;
+    `);
+    aiFailures = ai.rows ?? ai;
+  } catch {
+    aiFailures = [];
+  }
+
+  return {
+    ok: true,
+    range: { from, to },
+    users: {
+      total: (usersAgg.rows?.[0]?.total_users ?? usersAgg[0]?.total_users ?? 0) as number,
+    },
+    cases: {
+      total: (casesAgg.rows?.[0]?.total_cases ?? casesAgg[0]?.total_cases ?? 0) as number,
+      byState: stateDist.rows ?? stateDist,
+    },
+    usage: {
+      byEvent: usageByEvent,
+    },
+    ai: {
+      failuresByDay: aiFailures,
+    },
+  };
+}
+
+/* =========================
+   5) server/routes.ts
+   ========================= */
+// Add imports near top:
+import { requireAdmin } from "./middleware/admin";
+import { getAdminMetrics } from "./admin/adminMetrics";
+
+// Add route:
+app.get("/api/admin/metrics", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const from = typeof req.query.from === "string" ? req.query.from : undefined;
+    const to = typeof req.query.to === "string" ? req.query.to : undefined;
+    const data = await getAdminMetrics({ from, to });
+    res.json(data);
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: "Failed to load admin metrics" });
+  }
+});
+
+/* =========================
+   6) client/src/pages/AppAdminDashboard.tsx (NEW)
+   ========================= */
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import AppLayout from "@/components/layout/AppLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { BarChart3, Users, FolderOpen, AlertTriangle } from "lucide-react";
+
+function toISODate(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+export default function AppAdminDashboard() {
+  const [from, setFrom] = useState(toISODate(new Date(Date.now() - 30 * 86400000)));
+  const [to, setTo] = useState(toISODate(new Date()));
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["/api/admin/metrics", from, to],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to load metrics");
+      return res.json();
+    },
+  });
+
+  const topStates = useMemo(() => (data?.cases?.byState ?? []).slice(0, 10), [data]);
+
+  return (
+    <AppLayout>
+      <section className="w-full px-4 sm:px-6 md:px-10 py-6">
+        <div className="max-w-container mx-auto space-y-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="font-heading font-bold text-xl md:text-2xl text-neutral-darkest flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Admin Dashboard
+            </h1>
+            <p className="text-sm text-neutral-darkest/70">
+              Metrics-only view. No user content is shown.
+            </p>
+          </div>
+
+          <Card className="border border-[hsl(var(--module-tile-border))] bg-[hsl(var(--module-tile))]">
+            <CardHeader>
+              <CardTitle className="text-base">Date range</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Label>From</Label>
+                <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              </div>
+              <div className="flex-1">
+                <Label>To</Label>
+                <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {isLoading && (
+            <Card>
+              <CardContent className="py-10 text-sm text-neutral-darkest/70">Loading…</CardContent>
+            </Card>
+          )}
+
+          {error && (
+            <Card className="border border-red-300">
+              <CardContent className="py-6 text-sm text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Failed to load metrics.
+              </CardContent>
+            </Card>
+          )}
+
+          {data?.ok && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="border border-[hsl(var(--module-tile-border))]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Users
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">{data.users.total}</CardContent>
+                </Card>
+
+                <Card className="border border-[hsl(var(--module-tile-border))]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4" />
+                      Cases
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">{data.cases.total}</CardContent>
+                </Card>
+
+                <Card className="border border-[hsl(var(--module-tile-border))]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      Logged events (top)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-neutral-darkest/80">
+                    {(data.usage.byEvent ?? []).slice(0, 3).map((x: any) => (
+                      <div key={x.event} className="flex justify-between">
+                        <span className="truncate">{x.event}</span>
+                        <span className="font-semibold">{x.count}</span>
+                      </div>
+                    ))}
+                    {(!data.usage.byEvent || data.usage.byEvent.length === 0) && (
+                      <div className="text-neutral-darkest/60">No activity logs in this range.</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="border border-[hsl(var(--module-tile-border))]">
+                  <CardHeader>
+                    <CardTitle className="text-base">State distribution (top 10)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {topStates.map((s: any) => (
+                      <div key={s.state} className="flex items-center gap-3">
+                        <div className="w-32 text-sm truncate">{s.state}</div>
+                        <div className="flex-1 h-2 rounded bg-neutral-200 overflow-hidden">
+                          <div
+                            className="h-2 rounded"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                (s.count / Math.max(1, topStates[0]?.count ?? 1)) * 100
+                              )}%`,
+                              background: "currentColor",
+                            }}
+                          />
+                        </div>
+                        <div className="w-10 text-right text-sm font-semibold">{s.count}</div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-[hsl(var(--module-tile-border))]">
+                  <CardHeader>
+                    <CardTitle className="text-base">AI failures (by day)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-neutral-darkest/80 space-y-1">
+                    {(data.ai.failuresByDay ?? []).slice(-10).map((d: any) => (
+                      <div key={String(d.day)} className="flex justify-between">
+                        <span>{String(d.day)}</span>
+                        <span className="font-semibold">{d.count}</span>
+                      </div>
+                    ))}
+                    {(!data.ai.failuresByDay || data.ai.failuresByDay.length === 0) && (
+                      <div className="text-neutral-darkest/60">No failures in this range.</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border border-[hsl(var(--module-tile-border))]">
+                <CardHeader>
+                  <CardTitle className="text-base">Privacy rule (enforced)</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-neutral-darkest/70 space-y-2">
+                  <p>
+                    This dashboard intentionally excludes user content. You will not see uploads, messages, drafts,
+                    or evidence text here.
+                  </p>
+                  <p>
+                    Support access (if added later) must be explicit-consent, time-limited, and fully logged.
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+      </section>
+    </AppLayout>
+  );
+}
+
+/* =========================
+   7) client/src/App.tsx
+   ========================= */
+// Import and add route:
+import AppAdminDashboard from "@/pages/AppAdminDashboard";
+
+// Inside routes:
+<Route path="/app/admin" component={AppAdminDashboard} />
+
+/* =========================
+   8) client/src/components/layout/AppNavbar.tsx
+   ========================= */
+// Only show Admin link if user is admin.
+// You likely already have authData. Add a boolean from profile (isAdmin).
+
+// Example:
+// const { data: authData } = useQuery({ queryKey: ["/api/auth/me"] ... });
+// const isAdmin = !!authData?.profile?.isAdmin;
+
+// Then in menu list:
+// {isAdmin && (
+//   <Link href="/app/admin" className="...">Admin</Link>
+// )}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// IMPORTANT: HOW TO MAKE YOURSELF ADMIN (ONE-TIME)
+// Option 1 (recommended): run a SQL update in Neon / DB tool:
+// UPDATE user_profiles SET is_admin = true WHERE user_id = '<YOUR_USER_UUID>';
+// Option 2: add a temporary dev-only route to promote admin (NOT recommended for prod).
+////////////////////////////////////////////////////////////////////////////////////////

@@ -104,10 +104,12 @@ export default function AppNavbar({ className }: AppNavbarProps) {
     queryKey: ["/api/auth/me"],
   });
 
-  const { data: profileData } = useQuery<{ profile: { fullName: string | null; email: string | null } }>({
+  const { data: profileData } = useQuery<{ profile: { fullName: string | null; email: string | null; isAdmin?: boolean } }>({
     queryKey: ["/api/profile"],
     enabled: !!authData?.user,
   });
+
+  const isAdmin = !!profileData?.profile?.isAdmin;
 
   const { data: casesData } = useQuery<{ cases: { id: string; title: string; hasChildren?: boolean; startingPoint?: string }[] }>({
     queryKey: ["/api/cases"],
@@ -366,6 +368,20 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                       <User className="h-5 w-5 flex-shrink-0" />
                       <span>Account Settings</span>
                     </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setLocation("/app/admin");
+                        }}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors border border-transparent"
+                        data-testid="menu-link-admin"
+                      >
+                        <BarChart3 className="h-5 w-5 flex-shrink-0" />
+                        <span>Admin</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={async () => {

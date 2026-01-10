@@ -39,6 +39,8 @@ import { createLimiter } from "./utils/concurrency";
 import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
 import { searchCaseWide } from "./services/search";
 import { isAutoSuggestPending, getAutoSuggestStats, triggerClaimsSuggestionForEvidence } from "./claims/autoSuggest";
+import { requireAdmin } from "./middleware/admin";
+import { getAdminMetrics } from "./admin/adminMetrics";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -5797,6 +5799,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (err) {
       console.error("Case analytics error:", err);
       res.status(500).json({ error: "Failed to fetch case analytics" });
+    }
+  });
+
+  app.get("/api/admin/metrics", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const from = typeof req.query.from === "string" ? req.query.from : undefined;
+      const to = typeof req.query.to === "string" ? req.query.to : undefined;
+      const data = await getAdminMetrics({ from, to });
+      res.json(data);
+    } catch (e: any) {
+      console.error("Admin metrics error:", e);
+      res.status(500).json({ ok: false, error: "Failed to load admin metrics" });
     }
   });
 
