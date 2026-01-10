@@ -185,6 +185,10 @@ import {
   type DraftOutlineClaim,
   type InsertDraftOutlineClaim,
   type BulkUpdateDraftOutlineClaims,
+  caseResources,
+  type CaseResource,
+  type InsertCaseResource,
+  type UpdateCaseResource,
 } from "@shared/schema";
 
 export interface ModuleUsageCount {
@@ -524,6 +528,13 @@ export interface IStorage {
   addClaimToOutline(userId: string, caseId: string, outlineId: string, data: InsertDraftOutlineClaim): Promise<DraftOutlineClaim>;
   removeClaimFromOutline(userId: string, outlineId: string, claimId: string): Promise<boolean>;
   bulkUpdateOutlineClaims(userId: string, outlineId: string, data: BulkUpdateDraftOutlineClaims): Promise<boolean>;
+
+  // Task 2: Case Resources (Form Pack Finder)
+  listCaseResources(userId: string, caseId: string, filters?: { state?: string; resourceType?: string }): Promise<CaseResource[]>;
+  getCaseResource(userId: string, resourceId: string): Promise<CaseResource | undefined>;
+  createCaseResource(userId: string, caseId: string, data: InsertCaseResource): Promise<CaseResource>;
+  updateCaseResource(userId: string, resourceId: string, data: UpdateCaseResource): Promise<CaseResource | undefined>;
+  deleteCaseResource(userId: string, resourceId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4108,6 +4119,88 @@ export class DatabaseStorage implements IStorage {
         ));
     }
     return true;
+  }
+
+  // Task 2: Case Resources (Form Pack Finder)
+  async listCaseResources(userId: string, caseId: string, filters?: { state?: string; resourceType?: string }): Promise<CaseResource[]> {
+    const conditions = [
+      eq(caseResources.userId, userId),
+      eq(caseResources.caseId, caseId),
+    ];
+    if (filters?.state) conditions.push(eq(caseResources.state, filters.state));
+    if (filters?.resourceType) conditions.push(eq(caseResources.resourceType, filters.resourceType));
+    
+    return db
+      .select()
+      .from(caseResources)
+      .where(and(...conditions))
+      .orderBy(desc(caseResources.createdAt));
+  }
+
+  async getCaseResource(userId: string, resourceId: string): Promise<CaseResource | undefined> {
+    const [resource] = await db
+      .select()
+      .from(caseResources)
+      .where(and(
+        eq(caseResources.id, resourceId),
+        eq(caseResources.userId, userId)
+      ));
+    return resource;
+  }
+
+  async createCaseResource(userId: string, caseId: string, data: InsertCaseResource): Promise<CaseResource> {
+    const urlDomain = data.url ? new URL(data.url).hostname : null;
+    const [resource] = await db
+      .insert(caseResources)
+      .values({
+        userId,
+        caseId,
+        resourceType: data.resourceType ?? "form",
+        title: data.title,
+        description: data.description,
+        url: data.url,
+        domain: urlDomain,
+        state: data.state,
+        county: data.county,
+        formNumber: data.formNumber,
+        category: data.category,
+        tags: data.tags ?? [],
+        notes: data.notes,
+        isSaved: true,
+      })
+      .returning();
+    return resource;
+  }
+
+  async updateCaseResource(userId: string, resourceId: string, data: UpdateCaseResource): Promise<CaseResource | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.tags !== undefined) updateData.tags = data.tags;
+    if (data.isSaved !== undefined) updateData.isSaved = data.isSaved;
+
+    const [resource] = await db
+      .update(caseResources)
+      .set(updateData)
+      .where(and(
+        eq(caseResources.id, resourceId),
+        eq(caseResources.userId, userId)
+      ))
+      .returning();
+    return resource;
+  }
+
+  async deleteCaseResource(userId: string, resourceId: string): Promise<boolean> {
+    const result = await db
+      .delete(caseResources)
+      .where(and(
+        eq(caseResources.id, resourceId),
+        eq(caseResources.userId, userId)
+      ))
+      .returning();
+    return result.length > 0;
   }
 }
 

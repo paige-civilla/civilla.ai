@@ -2274,3 +2274,59 @@ export const bulkUpdateDraftOutlineClaimsSchema = z.object({
 export type InsertDraftOutlineClaim = z.infer<typeof insertDraftOutlineClaimSchema>;
 export type BulkUpdateDraftOutlineClaims = z.infer<typeof bulkUpdateDraftOutlineClaimsSchema>;
 export type DraftOutlineClaim = typeof draftOutlineClaims.$inferSelect;
+
+// Task 2: Case Resources (Form Pack Finder - official court forms & resource links)
+export const caseResourceTypes = ["form", "packet", "instruction", "rule", "guide"] as const;
+export type CaseResourceType = typeof caseResourceTypes[number];
+
+export const caseResources = pgTable("case_resources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  resourceType: text("resource_type").notNull().default("form"),
+  title: text("title").notNull(),
+  description: text("description"),
+  url: text("url").notNull(),
+  domain: text("domain"),
+  state: text("state"),
+  county: text("county"),
+  formNumber: text("form_number"),
+  category: text("category"),
+  tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
+  notes: text("notes"),
+  isSaved: boolean("is_saved").notNull().default(true),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("case_resources_user_idx").on(table.userId),
+  caseIdx: index("case_resources_case_idx").on(table.caseId),
+  stateIdx: index("case_resources_state_idx").on(table.state),
+}));
+
+export const insertCaseResourceSchema = z.object({
+  resourceType: z.enum(caseResourceTypes).optional().default("form"),
+  title: z.string().min(1).max(500),
+  description: z.string().max(2000).optional().nullable(),
+  url: z.string().url().max(2000),
+  domain: z.string().max(200).optional().nullable(),
+  state: z.string().max(50).optional().nullable(),
+  county: z.string().max(100).optional().nullable(),
+  formNumber: z.string().max(100).optional().nullable(),
+  category: z.string().max(200).optional().nullable(),
+  tags: z.array(z.string()).optional().default([]),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export const updateCaseResourceSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+  category: z.string().max(200).optional().nullable(),
+  tags: z.array(z.string()).optional(),
+  isSaved: z.boolean().optional(),
+});
+
+export type InsertCaseResource = z.infer<typeof insertCaseResourceSchema>;
+export type UpdateCaseResource = z.infer<typeof updateCaseResourceSchema>;
+export type CaseResource = typeof caseResources.$inferSelect;
