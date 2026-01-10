@@ -18,6 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Case, TimelineEvent, TimelineCategory } from "@shared/schema";
 import ModuleIntro from "@/components/app/ModuleIntro";
 import { LexiSuggestedQuestions } from "@/components/lexi/LexiSuggestedQuestions";
+import TimelineEventLinks from "@/components/timeline/TimelineEventLinks";
 
 const DEFAULT_COLORS = [
   "#1565C0", "#2E7D32", "#F9A825", "#6A1B9A", "#00838F",
@@ -697,6 +698,7 @@ export default function AppTimeline() {
                           </div>
                         </div>
                       )}
+                      <TimelineEventLinks caseId={caseId!} eventId={event.id} />
                     </CardContent>
                   </Card>
                 );
