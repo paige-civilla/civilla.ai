@@ -117,34 +117,97 @@ function isValidUrl(url: string): boolean {
   }
 }
 
+function toGoogleSearchUrl(text: string): string {
+  return `https://www.google.com/search?q=${encodeURIComponent(text)}`;
+}
+
+const OFFICIAL_DOMAIN_PATTERNS = [
+  /\.gov$/i,
+  /\.us$/i,
+  /courts?\./i,
+  /judiciary/i,
+  /legislature/i,
+  /uscourts\.gov/i,
+  /law\.cornell\.edu/i,
+  /justia\.com/i,
+  /findlaw\.com/i,
+  /courtlistener\.com/i,
+];
+
+function isOfficialDomain(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return OFFICIAL_DOMAIN_PATTERNS.some((p) => p.test(parsed.hostname));
+  } catch {
+    return false;
+  }
+}
+
+function deduplicateByUrl(sources: LexiSource[]): LexiSource[] {
+  const seen = new Set<string>();
+  return sources.filter((s) => {
+    const key = s.url.toLowerCase().replace(/\/+$/, "");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export async function normalizeAndValidateSources(sources: LexiSource[]): Promise<LexiSource[]> {
   const accessedAt = new Date().toISOString();
   
-  const validatedSources = await Promise.all(
+  const processed = await Promise.all(
     sources.map(async (source) => {
       const normalizedUrl = normalizeUrl(source.url);
       
-      if (!normalizedUrl || !isValidUrl(normalizedUrl)) {
-        return {
-          ...source,
-          url: source.url,
-          reachable: false,
-          accessedAt,
-        };
+      if (normalizedUrl && isValidUrl(normalizedUrl)) {
+        const reachable = await checkUrlReachable(normalizedUrl);
+        
+        if (reachable) {
+          return {
+            ...source,
+            url: normalizedUrl,
+            reachable: true,
+            accessedAt,
+          };
+        }
       }
       
-      const reachable = await checkUrlReachable(normalizedUrl);
+      const searchText = source.title || source.url || "";
+      if (!searchText || searchText.length < 4) {
+        return null;
+      }
       
       return {
-        ...source,
-        url: normalizedUrl,
-        reachable,
+        title: `Search: ${searchText.length > 50 ? searchText.substring(0, 47) + "..." : searchText}`,
+        url: toGoogleSearchUrl(searchText),
+        reachable: true,
         accessedAt,
+        type: "other" as const,
       };
     })
   );
   
-  return validatedSources;
+  const validSources = processed.filter((s): s is NonNullable<typeof s> => s !== null) as LexiSource[];
+  
+  const deduplicated = deduplicateByUrl(validSources);
+  
+  deduplicated.sort((a, b) => {
+    const aOfficial = isOfficialDomain(a.url) ? 0 : 1;
+    const bOfficial = isOfficialDomain(b.url) ? 0 : 1;
+    if (aOfficial !== bOfficial) return aOfficial - bOfficial;
+    const aIsSearch = a.title.startsWith("Search:") ? 1 : 0;
+    const bIsSearch = b.title.startsWith("Search:") ? 1 : 0;
+    return aIsSearch - bIsSearch;
+  });
+  
+  const result = deduplicated.slice(0, 5);
+  
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[LexiSources] normalized", result);
+  }
+  
+  return result;
 }
 
 export const NO_SOURCES_FOUND_MESSAGE = `I did not find an official source for that yet. To verify this information, I recommend checking:

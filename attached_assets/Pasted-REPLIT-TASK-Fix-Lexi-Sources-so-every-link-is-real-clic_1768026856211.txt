@@ -1,0 +1,79 @@
+REPLIT TASK: Fix Lexi “Sources” so every link is real, clickable, and never 404s
+
+GOAL
+Users must be able to click every Lexi source and land on a real webpage.
+If Lexi returns non-URL sources (like “Idaho court rules” or “Rule 120 PDF”), convert those into a Google search link instead of outputting broken links.
+
+REQUIREMENTS
+1) Only show sources as clickable links if they are valid absolute URLs:
+   - Must start with https:// (http:// should be upgraded to https:// if possible; otherwise drop)
+   - Must be a well-formed URL
+2) If a source is not a valid URL:
+   - Convert it into a Google search URL:
+     https://www.google.com/search?q=<encoded string>
+3) Prioritize “official” sources (best-effort ordering):
+   - Domains containing: .gov, .us, courts., judiciary., supreme, legislature, idaho.gov, etc.
+   - If multiple sources, list official ones first
+4) Deduplicate sources:
+   - Normalize by URL (strip trailing slashes, remove UTM params)
+   - Limit to max 5 sources
+5) Persist sources properly:
+   - Store normalized sources array into message metadata (or sources_json if you already use it)
+   - Frontend should render from that stored list, not from raw text parsing
+6) Frontend rendering must:
+   - Render sources as <a href target="_blank" rel="noreferrer noopener">
+   - If a source is a google search link, label it “Search: <original text>”
+   - If the list is empty, do not show a “Sources” section
+
+IMPLEMENTATION INSTRUCTIONS (DO ALL)
+
+A) Create a single normalizer helper (server-side)
+Create file: server/lexi/normalizeSources.ts
+Export function:
+  normalizeSources(input: unknown): { label: string; url: string; kind: "url" | "search" }[]
+Logic:
+  - Accept sources from anywhere (string[], object[], mixed)
+  - Extract strings and URLs
+  - Validate URL:
+      try { new URL(str) } catch => invalid
+      require protocol https:
+        - if http:, replace with https: and re-validate
+        - if missing protocol, treat as invalid
+  - If invalid -> create google search link with encoded query
+  - Deduplicate by final url
+  - Sort: official domains first
+  - Slice to 5
+
+B) Apply normalization everywhere Lexi produces “sources”
+Find Lexi chat route(s), e.g. POST /api/lexi/chat (and any streaming variant).
+Right before saving the assistant message:
+  const sources = normalizeSources(modelOutput.sources || modelOutput.citations || whatever exists)
+  Save sources into message metadata, for example:
+    metadata: { ...existing, sources }
+Return sources in API response too.
+
+C) Update the system prompt to reduce garbage sources
+In the Lexi system prompt instructions:
+  - Require sources to be returned as absolute https URLs when possible
+  - If unsure, return source as plain text (we will convert to search link)
+
+D) Update LexiPanel UI to render from metadata.sources
+In client/src/components/lexi/LexiPanel.tsx (or wherever messages render):
+  - Read sources from message.metadata.sources
+  - Render each as a clickable link
+  - Never attempt to build internal-app routes from sources
+  - Ensure clicking opens external page in new tab
+
+E) Add a tiny “source debug” safety (dev only)
+If NODE_ENV !== "production":
+  console.log("[LexiSources] normalized", sources)
+
+F) Report back after implementation
+In your Replit response, include:
+  - Files changed
+  - Example of a normalized source output (1 url + 1 search)
+  - Confirm that clicking sources opens real webpages (no base-site / not found)
+
+IMPORTANT
+Do NOT output broken state-court internal URLs unless they are real https links.
+If Lexi gives “Idaho child support worksheet,” that must become a Google search link, not a fake direct link.

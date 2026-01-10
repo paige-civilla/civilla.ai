@@ -80,25 +80,17 @@ function LexiSourcesList({ sources }: { sources: LexiSource[] }) {
       <p className="text-xs font-medium text-neutral-darkest/60 mb-2">Sources:</p>
       <ul className="space-y-1">
         {sources.map((source, idx) => (
-          <li key={idx} className="text-xs flex items-start gap-1">
+          <li key={idx} className="text-xs flex items-start gap-1" data-testid={`source-item-${idx}`}>
             <span className="text-neutral-darkest/40 shrink-0">{idx + 1}.</span>
-            {source.reachable && source.url ? (
-              <a
-                href={source.url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-[hsl(var(--module-tile-border))] hover:underline break-words"
-              >
-                {source.title || source.url}
-              </a>
-            ) : (
-              <span className="text-neutral-darkest/70">
-                {source.title || source.url}
-                {!source.reachable && source.url && (
-                  <span className="text-neutral-darkest/40 ml-1">(link unavailable)</span>
-                )}
-              </span>
-            )}
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-[hsl(var(--module-tile-border))] hover:underline break-words"
+              data-testid={`source-link-${idx}`}
+            >
+              {source.title || source.url}
+            </a>
             {source.jurisdiction && (
               <span className="text-neutral-darkest/40 shrink-0">({source.jurisdiction})</span>
             )}

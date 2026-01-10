@@ -1,0 +1,98 @@
+REPLIT TASK: Add “Verified Sources” enforcement for Lexi (links must contain the info claimed)
+
+PROBLEM
+Sources are currently clickable but NOT guaranteed to contain the information Lexi claims. Users click and get irrelevant pages / 404 / “not found”.
+
+GOAL
+Only show sources that are:
+1) Real https URLs
+2) Reachable (200 OK)
+3) Confirmed to contain the relevant information (topic/term/rule/quote)
+If a candidate source cannot be verified, DO NOT show it as a source.
+
+WHAT TO BUILD (END TO END)
+
+A) Add a server-side source verifier helper
+Create: server/lexi/sourceVerifier.ts
+
+Export:
+- async verifySources(params): Promise<VerifiedSource[]>
+
+Types:
+VerifiedSource = {
+  label: string,
+  url: string,
+  kind: "official" | "secondary",
+  verified: true,
+  matchedOn: "keyword" | "quote" | "title",
+  matchSnippet?: string
+}
+
+Inputs:
+- queryTopic: string (ex: “Idaho child support worksheet”, “IRFLP Rule 120 income shares schedule”)
+- keyTerms: string[] (ex: ["Rule 120", "income shares", "worksheet"])
+- quote?: string (optional: short 10–25 word excerpt if Lexi cites a quote)
+- candidates: string[] (urls from Lexi output)
+
+Logic:
+1) Filter candidates to https URLs (upgrade http→https if valid)
+2) For each url (max 8), do:
+   - fetch with timeout (8s), follow redirects
+   - if status not 200 => fail
+   - detect content-type:
+     - text/html: strip tags → plain text
+     - application/pdf: download and run pdf-parse (already in your project)
+   - normalize text (lowercase, collapse whitespace)
+   - pass verification if ANY of these are true:
+     a) quote exists and text contains a strong substring match (>= ~12 contiguous words)
+     b) text contains at least 2 keyTerms
+     c) title/meta contains queryTopic core words + body contains at least 1 keyTerm
+   - If pass: create VerifiedSource with a short matchSnippet (80–140 chars around match)
+3) Rank results:
+   - official domains first (.gov, .us, courts., judiciary., supreme, legislature)
+   - quote matches > keyword matches > title matches
+4) Return top 5 verified sources
+5) If zero verified sources:
+   - return ONE fallback “search” link:
+     url = https://www.google.com/search?q=<encoded(queryTopic + " site:.gov OR site:.us OR courts")>
+     label = "Search official sources"
+     kind = "secondary"
+     verified = true (because it is intentionally a search tool link, not a claim-source)
+
+B) Update Lexi response pipeline to require verification
+In POST /api/lexi/chat (and streaming path if present):
+- Take modelOutput.sources (strings)
+- Build:
+  queryTopic = (modelOutput.topic || userMessage || threadTitle || moduleKey-based topic)
+  keyTerms = (modelOutput.keyTerms || extract from response: state name + rule numbers + worksheet words)
+  quote = (if response includes a direct quote snippet, pass it; else omit)
+- Call verifySources({ queryTopic, keyTerms, quote, candidates })
+- Save verifiedSources into assistant message metadata:
+  metadata.sources = verifiedSources
+- IMPORTANT: LexiPanel must render sources ONLY from metadata.sources
+
+C) Tighten the system prompt so Lexi provides better candidates
+Update Lexi system prompt:
+- “Return 5 candidate sources as absolute https URLs, prioritize official sources.”
+- “If you cannot find a direct official source, provide a best-guess candidate; the system will verify.”
+
+D) Frontend: show “Verified Sources” with match snippet (optional)
+In LexiPanel rendering:
+- Label section “Verified Sources”
+- Each source link opens in new tab
+- Optionally show the matchSnippet under each source in small text (this is the proof)
+
+E) Add safe failure messaging
+If verification yields only fallback search link:
+- show “No direct official source could be verified automatically. Use the search link to locate the official page.”
+
+F) Add dev-only logging
+NODE_ENV !== "production":
+  console.log("[LexiSources] candidates", candidates)
+  console.log("[LexiSources] verified", verifiedSources)
+
+DELIVERABLE CONFIRMATION
+After implementing, report:
+- files changed
+- example output showing at least one verified official source with a matchSnippet
+- confirm that sources shown in UI are only verified sources (or fallback search link)
