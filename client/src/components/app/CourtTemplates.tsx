@@ -9,12 +9,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb, MapPin } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb, MapPin, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ReactMarkdown from "react-markdown";
 import AutoFillPreview from "./AutoFillPreview";
 import FieldMappingPanel from "./FieldMappingPanel";
+import FormPackFinder from "./FormPackFinder";
 
 interface TemplateDefinition {
   templateKey: string;
@@ -75,6 +76,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
   const [showAutoFill, setShowAutoFill] = useState(false);
   const [includeEvidenceFacts, setIncludeEvidenceFacts] = useState(false);
   const [showFieldMapping, setShowFieldMapping] = useState(false);
+  const [showFormFinder, setShowFormFinder] = useState(false);
 
   const { data: templatesData } = useQuery<{ templates: TemplateDefinition[]; categories: Record<string, TemplateCategory> }>({
     queryKey: ["/api/templates"],
@@ -178,6 +180,22 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
           Generate court-ready documents from your accepted claims and citations. All documents compile only from evidence-backed facts.
         </p>
       </div>
+
+      <div className="flex items-center gap-2 pb-2">
+        <Button
+          variant={showFormFinder ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowFormFinder(!showFormFinder)}
+          data-testid="button-toggle-form-finder"
+        >
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Official Court Forms
+        </Button>
+      </div>
+
+      {showFormFinder && (
+        <FormPackFinder />
+      )}
 
       {!selectedTemplate ? (
         <Accordion type="multiple" defaultValue={Object.keys(templatesByCategory)} className="space-y-2">
