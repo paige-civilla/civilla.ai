@@ -471,6 +471,9 @@ export interface IStorage {
   createClaimLink(userId: string, caseId: string, claimId: string, payload: InsertClaimLink): Promise<ClaimLink>;
   listClaimLinks(userId: string, caseId: string, claimId: string): Promise<ClaimLink[]>;
   deleteClaimLink(userId: string, linkId: string): Promise<boolean>;
+  
+  // Reverse lookup: find timeline events linked TO a claim
+  getTimelineEventsLinkedToClaim(userId: string, caseId: string, claimId: string): Promise<Array<{ eventId: string; eventDate: string; eventTitle: string; linkId: string }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3585,6 +3588,31 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(claimLinks.userId, userId), eq(claimLinks.id, linkId)))
       .returning();
     return result.length > 0;
+  }
+
+  async getTimelineEventsLinkedToClaim(userId: string, caseId: string, claimId: string): Promise<Array<{ eventId: string; eventDate: string; eventTitle: string; linkId: string }>> {
+    const links = await db
+      .select({
+        linkId: timelineEventLinks.id,
+        eventId: timelineEventLinks.eventId,
+        eventDate: timelineEvents.eventDate,
+        eventTitle: timelineEvents.title,
+      })
+      .from(timelineEventLinks)
+      .innerJoin(timelineEvents, eq(timelineEventLinks.eventId, timelineEvents.id))
+      .where(and(
+        eq(timelineEventLinks.userId, userId),
+        eq(timelineEventLinks.caseId, caseId),
+        eq(timelineEventLinks.claimId, claimId),
+        eq(timelineEventLinks.linkType, "claim")
+      ));
+    
+    return links.map(l => ({
+      eventId: l.eventId,
+      eventDate: l.eventDate,
+      eventTitle: l.eventTitle || "",
+      linkId: l.linkId,
+    }));
   }
 
   async countExtractionsByStatus(userId: string, caseId: string): Promise<{
