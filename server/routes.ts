@@ -1404,6 +1404,62 @@ export async function registerRoutes(
     }
   });
 
+  // Case readiness score endpoint
+  app.get("/api/cases/:caseId/readiness", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const caseId = req.params.caseId;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      // Get evidence stats
+      const evidenceFiles = await storage.listEvidenceFiles(caseId, userId);
+      const extractedEvidence = evidenceFiles.filter(f => f.extractionStatus === "completed");
+
+      // Get claims stats
+      const claims = await storage.listClaims(userId, caseId);
+      const acceptedClaims = claims.filter(c => c.status === "accepted");
+      const pendingClaims = claims.filter(c => c.status === "pending");
+      const totalReviewableClaims = acceptedClaims.length + pendingClaims.length;
+
+      // Get citations stats (claims with at least one citation)
+      const claimsWithCitations = await Promise.all(
+        claims.map(async (claim) => {
+          const citations = await storage.listClaimCitations(userId, caseId, claim.id);
+          return citations.length > 0;
+        })
+      );
+      const citedClaimsCount = claimsWithCitations.filter(Boolean).length;
+
+      // Get timeline events
+      const timelineEvents = await storage.listTimelineEvents(caseId, userId);
+
+      res.json({
+        evidenceExtracted: {
+          current: extractedEvidence.length,
+          total: evidenceFiles.length,
+        },
+        claimsAccepted: {
+          current: acceptedClaims.length,
+          total: totalReviewableClaims || 1,
+        },
+        citationsAttached: {
+          current: citedClaimsCount,
+          total: claims.length || 1,
+        },
+        timelineEvents: {
+          count: timelineEvents.length,
+        },
+      });
+    } catch (error) {
+      console.error("Readiness score error:", error);
+      res.status(500).json({ error: "Failed to calculate readiness" });
+    }
+  });
+
   app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/retry", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
