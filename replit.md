@@ -106,3 +106,41 @@ Optional (for real email):
 - `POST /api/auth/logout`: End session
 - `GET /api/cases`: List user's cases
 - `POST /api/cases`: Create new case (respects casesAllowed limit)
+
+## AI Infrastructure (Audit 2026-01-10)
+
+### AI Pathways Checklist
+All 9 AI pathways documented in `server/services/aiDiagnostics.ts`:
+
+1. **Evidence Extraction Pipeline**: PDF parse → OCR fallback → text extraction
+2. **Evidence AI Analysis Pipeline**: GPT-4o analysis with concurrency caps + jitter retries
+3. **Claims Suggestion Pipeline**: Manual + auto background claim generation
+4. **Draft Readiness + Preflight**: Checks if documents can compile from claims
+5. **Document Compile from Claims**: Court document generation from accepted/cited claims
+6. **Pattern Analysis**: Aggregate patterns from evidence + export
+7. **Trial Prep Binder Export**: ZIP export of trial preparation materials
+8. **Lexi Chat**: AI assistant with streaming + non-stream modes
+9. **Quick Search**: Search across case data with deep links
+
+### AI Diagnostics Endpoint
+- `GET /api/ai/diagnostics`: Comprehensive health checks with human-readable errors
+- Checks: OpenAI, Vision OCR, Database tables, R2 storage, Lexi threads
+- Returns `nextStep` guidance for any failures
+- UI: AiStatusCard component in Account Settings
+
+### AI Smoke Test Script
+- Location: `server/scripts/aiSmokeTest.ts`
+- Run: `npx tsx server/scripts/aiSmokeTest.ts`
+- Tests connectivity (OpenAI, Vision, DB) + functional (Lexi, Draft Readiness)
+- Exits with code 0 (pass) or 1 (fail)
+- Privacy-safe: No user content logged
+
+### Error Code Standardization
+All AI routes return structured error codes:
+- `OPENAI_KEY_MISSING`, `OPENAI_KEY_INVALID`, `OPENAI_RATE_LIMIT`
+- `VISION_NOT_CONFIGURED`
+- `EXTRACTION_NOT_COMPLETE`, `NO_EXTRACTED_TEXT`
+- `CASE_NOT_FOUND`, `EVIDENCE_NOT_FOUND`
+- `ANALYSIS_ERROR`, `CLAIMS_SUGGEST_FAILED`
+
+Frontend: `humanizeAiError()` function in `server/services/aiDiagnostics.ts` maps codes to user-friendly messages.
