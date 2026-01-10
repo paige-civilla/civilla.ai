@@ -228,7 +228,7 @@ export default function AppNavbar({ className }: AppNavbarProps) {
       <nav className="bg-[#314143] border-b border-[#1E2020] w-full relative" data-testid="navbar-app">
         <div className="h-9 flex items-center justify-center px-3 sm:px-5 md:px-16 py-0">
           <div className="flex items-center justify-between gap-2 sm:gap-4 w-full max-w-container">
-            <div className="flex items-center flex-shrink-0">
+            <div className="flex items-center flex-shrink-0 gap-1.5">
               <Link href="/app" className="relative h-6 w-6 sm:h-7 sm:w-7" aria-label="Civilla" data-testid="link-logo-app">
                 <img 
                   src={logoSymbol} 
@@ -236,6 +236,17 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                   className="h-full w-full object-contain"
                 />
               </Link>
+              <span
+                className="inline-flex items-center justify-center px-1.5 py-[1px] rounded-full text-[9px] font-semibold tracking-wide uppercase text-white shadow-sm select-none"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, #14b8a6 0%, #22c55e 100%)",
+                  opacity: 0.85,
+                }}
+                aria-label="Beta"
+                title="Beta: Civilla is actively being improved."
+              >
+                Beta
+              </span>
             </div>
             {authData?.user && (
               <div className="flex-1 flex justify-center max-w-xs">
