@@ -439,6 +439,8 @@ export interface IStorage {
   getCaseClaim(userId: string, claimId: string): Promise<CaseClaim | undefined>;
   updateCaseClaim(userId: string, claimId: string, patch: UpdateCaseClaim): Promise<CaseClaim | undefined>;
   deleteCaseClaim(userId: string, claimId: string): Promise<boolean>;
+  lockClaimForDocument(userId: string, claimId: string, documentId: string, reason: string): Promise<CaseClaim | undefined>;
+  unlockClaim(userId: string, claimId: string, reason?: string): Promise<CaseClaim | undefined>;
   attachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean>;
   detachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean>;
   listClaimCitations(userId: string, claimId: string): Promise<CitationPointer[]>;
@@ -3006,6 +3008,46 @@ export class DatabaseStorage implements IStorage {
       .delete(caseClaims)
       .where(and(eq(caseClaims.id, claimId), eq(caseClaims.userId, userId)));
     return (result as any).rowCount > 0;
+  }
+
+  async lockClaimForDocument(userId: string, claimId: string, documentId: string, reason: string): Promise<CaseClaim | undefined> {
+    const existing = await this.getCaseClaim(userId, claimId);
+    if (!existing) return undefined;
+    
+    const currentDocIds = Array.isArray(existing.usedInDocIds) ? existing.usedInDocIds : [];
+    const updatedDocIds = currentDocIds.includes(documentId) 
+      ? currentDocIds 
+      : [...currentDocIds, documentId];
+    
+    const [updated] = await db
+      .update(caseClaims)
+      .set({
+        usedInDocIds: updatedDocIds,
+        isLocked: true,
+        lockedAt: new Date(),
+        lockedReason: reason,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(caseClaims.id, claimId), eq(caseClaims.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async unlockClaim(userId: string, claimId: string, reason?: string): Promise<CaseClaim | undefined> {
+    const existing = await this.getCaseClaim(userId, claimId);
+    if (!existing) return undefined;
+    
+    const [updated] = await db
+      .update(caseClaims)
+      .set({
+        isLocked: false,
+        lockedAt: null,
+        lockedReason: reason || null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(caseClaims.id, claimId), eq(caseClaims.userId, userId)))
+      .returning();
+    return updated;
   }
 
   async attachClaimCitation(userId: string, claimId: string, citationId: string): Promise<boolean> {

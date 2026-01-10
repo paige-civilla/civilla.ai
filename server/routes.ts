@@ -3103,6 +3103,12 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         content: markdown,
       });
 
+      let lockedClaimCount = 0;
+      for (const claim of claims) {
+        await storage.lockClaimForDocument(userId, claim.id, document.id, "Used in compiled document");
+        lockedClaimCount++;
+      }
+
       await storage.createLexiFeedbackEvent(userId, caseId, "doc_compile_claims", {
         documentId: document.id,
         claimCount: claims.length,
@@ -3112,6 +3118,13 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         documentId: document.id,
         claimCount: claims.length,
       });
+      
+      for (const claim of claims) {
+        await storage.createActivityLog(userId, caseId, "claim_locked", `Claim locked for use in compiled document`, {
+          claimId: claim.id,
+          documentId: document.id,
+        });
+      }
       
       await triggerCaseMemoryRebuild(userId, caseId, "doc_compile_claims", {
         documentId: document.id,
@@ -3123,6 +3136,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         document,
         markdown,
         trace,
+        lockedClaimCount,
       });
     } catch (error) {
       console.error("Compile claims error:", error);
@@ -8172,6 +8186,70 @@ Limit to ${limit} most important claims.`;
     } catch (error) {
       console.error("Delete claim error:", error);
       res.status(500).json({ error: "Failed to delete claim" });
+    }
+  });
+
+  app.patch("/api/claims/:claimId/lock", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId } = req.params;
+      const { reason } = req.body || {};
+      
+      const claim = await storage.getCaseClaim(userId, claimId);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      const updated = await storage.lockClaimForDocument(userId, claimId, "", reason || "Manual lock");
+      if (!updated) {
+        return res.status(500).json({ error: "Failed to lock claim" });
+      }
+      
+      await storage.createActivityLog(userId, claim.caseId, "claim_locked", "Claim manually locked", {
+        claimId,
+        reason: reason || "Manual lock",
+      });
+      
+      res.json({ claim: updated });
+    } catch (error) {
+      console.error("Lock claim error:", error);
+      res.status(500).json({ error: "Failed to lock claim" });
+    }
+  });
+
+  app.patch("/api/claims/:claimId/unlock", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { claimId } = req.params;
+      const { confirm, reason } = req.body || {};
+      
+      if (confirm !== true) {
+        return res.status(400).json({ error: "Unlock requires confirmation. Set confirm: true in request body." });
+      }
+      
+      const claim = await storage.getCaseClaim(userId, claimId);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim not found" });
+      }
+      
+      if (!claim.isLocked) {
+        return res.status(400).json({ error: "Claim is not locked" });
+      }
+      
+      const updated = await storage.unlockClaim(userId, claimId, reason);
+      if (!updated) {
+        return res.status(500).json({ error: "Failed to unlock claim" });
+      }
+      
+      await storage.createActivityLog(userId, claim.caseId, "claim_unlocked", "Claim unlocked for editing", {
+        claimId,
+        reason: reason || "User requested unlock",
+      });
+      
+      res.json({ claim: updated });
+    } catch (error) {
+      console.error("Unlock claim error:", error);
+      res.status(500).json({ error: "Failed to unlock claim" });
     }
   });
 
