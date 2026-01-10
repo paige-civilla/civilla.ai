@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb, MapPin, ExternalLink } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb, MapPin, ExternalLink, HelpCircle } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ReactMarkdown from "react-markdown";
@@ -181,7 +182,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
         </p>
       </div>
 
-      <div className="flex items-center gap-2 pb-2">
+      <div className="flex items-center gap-2 pb-2 flex-wrap">
         <Button
           variant={showFormFinder ? "default" : "outline"}
           size="sm"
@@ -191,6 +192,12 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
           <ExternalLink className="w-4 h-4 mr-2" />
           Official Court Forms
         </Button>
+        <Link href="/how-civilla-works">
+          <Button variant="ghost" size="sm" data-testid="link-how-civilla-works">
+            <HelpCircle className="w-4 h-4 mr-2" />
+            How This Works
+          </Button>
+        </Link>
       </div>
 
       {showFormFinder && (

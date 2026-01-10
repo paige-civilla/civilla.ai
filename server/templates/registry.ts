@@ -222,6 +222,84 @@ export const TEMPLATE_REGISTRY: TemplateDefinition[] = [
   },
 
   // ─────────────────────────────────────────────────────────────────
+  // A3. RESPONSES & OBJECTIONS
+  // ─────────────────────────────────────────────────────────────────
+  {
+    templateKey: "response_to_motion",
+    displayName: "Response to Motion",
+    category: "declarations",
+    description: "A factual response to the opposing party's motion, presenting only evidence-backed facts without legal argument.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "Statement of what is being responded to", claimTypes: ["procedural", "context"] },
+      { key: "factual_response", title: "Factual Response", description: "Facts addressing the motion's claims", claimTypes: ["fact", "custody", "financial"] },
+      { key: "disputed_facts", title: "Disputed Facts", description: "Facts in dispute with evidence", claimTypes: ["fact", "communication"] },
+      { key: "supporting_evidence", title: "Supporting Evidence", description: "Evidence summary", claimTypes: ["fact", "procedural"] },
+      { key: "conclusion", title: "Conclusion", description: "Summary of response" },
+    ],
+    introTemplate: "RESPONSE TO [MOTION TYPE]\n\n[PARTY NAME], appearing pro se/through counsel, responds to [OPPOSING PARTY]'s motion and states as follows:",
+    footerTemplate: "WHEREFORE, [PARTY NAME] respectfully requests that the Court [deny/grant in part] [OPPOSING PARTY]'s motion and grant such other relief as the Court deems just and proper.\n\nDated: [DATE]\n\n_________________________\n[PARTY NAME]",
+  },
+  {
+    templateKey: "objection_to_evidence",
+    displayName: "Objection to Evidence",
+    category: "declarations",
+    description: "A factual objection to evidence or testimony, citing specific grounds and supporting documentation.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "What is being objected to", claimTypes: ["procedural"] },
+      { key: "grounds", title: "Grounds for Objection", description: "Factual basis for objection", claimTypes: ["procedural", "fact"] },
+      { key: "supporting_facts", title: "Supporting Facts", description: "Evidence supporting the objection", claimTypes: ["fact", "communication"] },
+      { key: "conclusion", title: "Conclusion", description: "Relief requested" },
+    ],
+    introTemplate: "OBJECTION TO [EVIDENCE/TESTIMONY]\n\n[PARTY NAME] objects to the following evidence/testimony and states as follows:",
+    footerTemplate: "WHEREFORE, [PARTY NAME] respectfully requests that the Court sustain this objection.\n\nDated: [DATE]\n\n_________________________\n[PARTY NAME]",
+  },
+  {
+    templateKey: "trial_brief_facts",
+    displayName: "Trial Brief (Facts Section Only)",
+    category: "declarations",
+    description: "The factual section of a trial brief presenting only evidence-backed facts organized by issue. Does not include legal argument.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "Brief overview of the case", claimTypes: ["context", "procedural"] },
+      { key: "procedural_history", title: "Procedural History", description: "Case history", claimTypes: ["procedural"] },
+      { key: "statement_of_facts", title: "Statement of Facts", description: "Comprehensive factual presentation", claimTypes: ["fact", "custody", "financial", "communication", "medical", "school"] },
+      { key: "disputed_facts", title: "Disputed Facts", description: "Facts in dispute", claimTypes: ["fact"], optional: true },
+      { key: "undisputed_facts", title: "Undisputed Facts", description: "Facts not in dispute", claimTypes: ["fact"], optional: true },
+      { key: "evidence_summary", title: "Evidence Summary", description: "Overview of supporting evidence", claimTypes: ["fact", "procedural"] },
+    ],
+    introTemplate: "TRIAL BRIEF - STATEMENT OF FACTS\n\n[PARTY NAME] submits the following statement of facts for the Court's consideration at trial:",
+    footerTemplate: "The foregoing facts are presented for the Court's consideration and are supported by the evidence cited herein.\n\nDated: [DATE]\n\n_________________________\n[PARTY NAME]",
+  },
+  {
+    templateKey: "pattern_summary_court",
+    displayName: "Pattern Summary for Court",
+    category: "declarations",
+    description: "A formal summary of documented behavioral patterns for court review, with all instances cited to evidence.",
+    educationalOnly: false,
+    allowedSources: ["claims"],
+    requiredCitationCount: 1,
+    allowMissingInfoClaims: false,
+    sections: [
+      { key: "introduction", title: "Introduction", description: "Purpose and scope of summary", claimTypes: ["context"] },
+      { key: "patterns", title: "Documented Patterns", description: "Patterns with cited examples", claimTypes: ["fact", "communication", "custody"] },
+      { key: "evidence_basis", title: "Evidence Basis", description: "Summary of supporting evidence", claimTypes: ["fact"] },
+    ],
+    introTemplate: "PATTERN SUMMARY FOR COURT REVIEW\n\nThe following summary presents documented patterns identified in the evidence:",
+    footerTemplate: "Each pattern identified above is supported by the cited evidence. The Court is respectfully directed to the exhibits for full documentation.",
+  },
+
+  // ─────────────────────────────────────────────────────────────────
   // B. PROCEDURAL / CASE MANAGEMENT
   // ─────────────────────────────────────────────────────────────────
   {

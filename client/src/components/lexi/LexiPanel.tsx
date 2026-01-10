@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react";
+import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X, HelpCircle } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -915,6 +916,17 @@ export default function LexiPanel() {
                         </button>
                       ))}
                     </div>
+                    <Link href="/how-civilla-works">
+                      <button
+                        type="button"
+                        className="mt-4 flex items-center gap-1 mx-auto text-xs text-neutral-darkest/60 hover:text-primary transition-colors"
+                        data-testid="link-how-lexi-works"
+                        onClick={() => setOpen(false)}
+                      >
+                        <HelpCircle className="w-3 h-3" />
+                        Learn how Lexi works
+                      </button>
+                    </Link>
                   </div>
                 </div>
               ) : messagesLoading ? (
