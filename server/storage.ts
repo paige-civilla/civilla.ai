@@ -445,7 +445,7 @@ export interface IStorage {
   getLexiCaseMemory(userId: string, caseId: string): Promise<LexiCaseMemory | undefined>;
   upsertLexiCaseMemory(userId: string, caseId: string, data: Partial<UpsertLexiCaseMemory>): Promise<LexiCaseMemory>;
   updateLexiCaseMemoryMarkdown(userId: string, caseId: string, memoryMarkdown: string): Promise<void>;
-  createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata?: Record<string, unknown>): Promise<ActivityLog>;
+  createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata?: Record<string, unknown>, options?: { moduleKey?: string | null; entityType?: string | null; entityId?: string | null }): Promise<ActivityLog>;
   listActivityLogs(userId: string, limit?: number, offset?: number): Promise<ActivityLog[]>;
 
   createLexiFeedbackEvent(userId: string, caseId: string | null, eventType: string, payload: Record<string, unknown>): Promise<LexiFeedbackEvent>;
@@ -3342,10 +3342,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata: Record<string, unknown> = {}): Promise<ActivityLog> {
+  async createActivityLog(userId: string, caseId: string | null, type: string, summary: string, metadata: Record<string, unknown> = {}, options?: { moduleKey?: string | null; entityType?: string | null; entityId?: string | null }): Promise<ActivityLog> {
     const [log] = await db
       .insert(activityLogs)
-      .values({ userId, caseId, type, summary, metadataJson: metadata })
+      .values({ 
+        userId, 
+        caseId, 
+        type, 
+        summary, 
+        metadataJson: metadata,
+        moduleKey: options?.moduleKey || null,
+        entityType: options?.entityType || null,
+        entityId: options?.entityId || null,
+      })
       .returning();
     return log;
   }

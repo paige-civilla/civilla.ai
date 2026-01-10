@@ -1,0 +1,192 @@
+REPLIT TASK: Add “Module Usage + Flow Analytics” (lightweight KPI-style tracking) + Admin-ready foundation
+
+Goal
+We need simple, privacy-safe tracking so we can answer:
+- Which modules are used most?
+- Where do users drop off in the flow?
+- What actions correlate with “draft readiness” and exports?
+
+We will NOT use Firebase.
+We will log *events* to Postgres (activity_logs) and create:
+1) server-side event recorder helper (single function)
+2) auto-instrumentation for key module actions (minimal, high-signal)
+3) analytics endpoints (per case + per user + global)
+4) an “Analytics” card in Account Settings (for Paige + internal testing)
+5) (Optional) a gated Admin dashboard route later (stub only)
+
+Assumption
+You already have activity_logs table + listActivityLogs endpoint from Phase 2C.
+If activity_logs exists, extend it. If not, create it now.
+
+────────────────────────────────────────────
+A) DB: Ensure activity_logs supports analytics
+File: shared/schema.ts
+────────────────────────────────────────────
+1) Find activity_logs table definition.
+Ensure it includes at least these columns (add if missing):
+- id (uuid)
+- userId (uuid)
+- caseId (uuid, nullable)
+- eventType (text)
+- moduleKey (text, nullable)
+- entityType (text, nullable)  // "evidence" | "claim" | "doc" | etc
+- entityId (uuid/text, nullable)
+- metadata (jsonb, nullable)
+- createdAt (timestamp)
+
+If you already have most, only add what’s missing.
+
+2) Add indexes (important for analytics):
+- (userId, createdAt)
+- (caseId, createdAt)
+- (eventType, createdAt)
+- (moduleKey, createdAt)
+
+Then add ensureActivityLogsColumns() + ensureActivityLogsIndexes() in server/db.ts migration system.
+
+────────────────────────────────────────────
+B) Server helper: recordActivity()
+File: server/services/activity.ts (NEW)
+────────────────────────────────────────────
+Create a single helper so we don’t duplicate logging logic:
+
+export async function recordActivity({
+  userId,
+  caseId,
+  eventType,
+  moduleKey,
+  entityType,
+  entityId,
+  metadata,
+}: {
+  userId: string;
+  caseId?: string | null;
+  eventType: string;
+  moduleKey?: string | null;
+  entityType?: string | null;
+  entityId?: string | null;
+  metadata?: any;
+}) {
+  // writes to activity_logs via storage.createActivityLog
+  // MUST be try/catch safe: logging must never break main flow
+}
+
+If storage.createActivityLog exists, use it.
+If not, add it to storage.
+
+────────────────────────────────────────────
+C) Instrument HIGH-SIGNAL events (minimal set)
+File: server/routes.ts
+────────────────────────────────────────────
+Add recordActivity() calls in these places (ONLY these for now):
+
+1) On module navigation (frontend will call a tiny endpoint)
+Add new endpoint:
+POST /api/activity/module-view
+Body: { caseId?: string, moduleKey: string }
+Require auth.
+Call recordActivity({ eventType: "module_view", moduleKey, caseId })
+
+2) Evidence pipeline:
+- When evidence upload completes: eventType="evidence_uploaded", moduleKey="evidence"
+- When extraction completes/fails: you already log — ensure it uses recordActivity too
+- When AI analysis run completes/fails: eventType="evidence_analysis_complete"/"evidence_analysis_failed"
+
+3) Claims workflow:
+- claim accepted: eventType="claim_accepted", moduleKey="claims", entityType="claim", entityId=claimId
+- claim rejected: eventType="claim_rejected"
+
+4) Documents:
+- compile from claims: eventType="doc_compiled_claims", moduleKey="documents"
+- export/download doc: eventType="doc_exported"
+
+5) Trial Prep:
+- add item: eventType="trial_prep_added"
+- pin/unpin: eventType="trial_prep_pinned"/"trial_prep_unpinned"
+
+IMPORTANT:
+All recordActivity calls must be non-blocking (await ok, but errors swallowed).
+No sensitive text in metadata. Store IDs/counts only.
+
+────────────────────────────────────────────
+D) Analytics endpoints
+File: server/routes.ts
+────────────────────────────────────────────
+Add:
+
+GET /api/analytics/overview?days=7
+Returns counts for the logged-in user across all cases:
+{
+  ok: true,
+  rangeDays: number,
+  totals: { events: number },
+  byEventType: Array<{ eventType: string, count: number }>,
+  byModule: Array<{ moduleKey: string, count: number }>,
+  lastEvents: Array<{ eventType, moduleKey, caseId, createdAt }>
+}
+
+GET /api/cases/:caseId/analytics/overview?days=7
+Same breakdown but filtered by caseId.
+
+Implementation:
+Use SQL GROUP BY on activity_logs.
+Limit lastEvents to 20.
+
+────────────────────────────────────────────
+E) Frontend: send module_view automatically
+Files:
+- client/src/components/layout/AppLayout.tsx (or wherever route changes are detected)
+OR
+- client/src/lib/caseFlow.ts navigation handler
+────────────────────────────────────────────
+On module/page change, call:
+POST /api/activity/module-view
+{ caseId, moduleKey }
+
+Rules:
+- Debounce to 2 seconds so it doesn’t spam during rapid clicks
+- Don’t fire if not logged in
+- Don’t block navigation
+
+If you don’t have a central “moduleKey”, infer it from pathname mapping:
+"/app/evidence" -> "evidence"
+"/app/documents" -> "documents"
+"/app/trial-prep" -> "trial-prep"
+etc.
+
+────────────────────────────────────────────
+F) Frontend: show simple Analytics card (Account Settings)
+File: client/src/pages/AppSettings.tsx
+────────────────────────────────────────────
+Add a card called “Usage Insights (Beta)” that shows:
+- Top 5 modules (last 7 days)
+- Top 5 actions (last 7 days)
+- “Most recent activity” list (last 10)
+
+Fetch:
+GET /api/analytics/overview?days=7
+
+Keep it minimal + readable.
+
+────────────────────────────────────────────
+G) Verify
+────────────────────────────────────────────
+1) Click between modules → module_view events appear
+2) Upload evidence → evidence_uploaded + extraction events appear
+3) Accept a claim → claim_accepted appears
+4) Compile doc → doc_compiled_claims appears
+5) Pin trial prep → trial_prep_pinned appears
+6) Analytics endpoints return counts
+
+Acceptance Criteria
+✅ No Firebase
+✅ No sensitive text stored (IDs/counts only)
+✅ Doesn’t break main flows if logging fails
+✅ Works per-case + across cases
+✅ Visible “Usage Insights (Beta)” card in settings
+
+Deliverable Output
+After implementing, respond with:
+- Files changed
+- Example JSON from /api/analytics/overview
+- Confirm events are being written

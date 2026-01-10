@@ -1223,11 +1223,20 @@ export async function initDbTables(): Promise<void> {
       case_id VARCHAR(255),
       type TEXT NOT NULL,
       summary TEXT NOT NULL,
+      module_key TEXT,
+      entity_type TEXT,
+      entity_id VARCHAR(255),
       metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
-    `CREATE INDEX IF NOT EXISTS activity_logs_user_created_idx ON activity_logs(user_id, created_at)`
+    `CREATE INDEX IF NOT EXISTS activity_logs_user_created_idx ON activity_logs(user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS activity_logs_case_created_idx ON activity_logs(case_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS activity_logs_type_created_idx ON activity_logs(type, created_at)`,
+    `CREATE INDEX IF NOT EXISTS activity_logs_module_created_idx ON activity_logs(module_key, created_at)`,
+    `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS module_key TEXT`,
+    `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS entity_type TEXT`,
+    `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS entity_id VARCHAR(255)`
   ]);
 
   await initTable("case_facts", `

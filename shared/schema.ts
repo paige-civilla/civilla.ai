@@ -1962,10 +1962,16 @@ export const activityLogs = pgTable("activity_logs", {
   caseId: varchar("case_id"),
   type: text("type").notNull(),
   summary: text("summary").notNull(),
+  moduleKey: text("module_key"),
+  entityType: text("entity_type"),
+  entityId: varchar("entity_id"),
   metadataJson: jsonb("metadata_json").notNull().default(sql`'{}'::jsonb`),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   userCreatedIdx: index("activity_logs_user_created_idx").on(table.userId, table.createdAt),
+  caseCreatedIdx: index("activity_logs_case_created_idx").on(table.caseId, table.createdAt),
+  typeCreatedIdx: index("activity_logs_type_created_idx").on(table.type, table.createdAt),
+  moduleCreatedIdx: index("activity_logs_module_created_idx").on(table.moduleKey, table.createdAt),
 }));
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
