@@ -1,0 +1,326 @@
+/****************************************************************************************
+REPLIT TASK: Implement Grant Dashboard (privacy-safe, no admin access)
+GOALS
+1) Add /app/grants dashboard for grant reporting (NO user content visibility)
+2) Add /api/grants/metrics backend endpoint returning ONLY aggregated metrics
+3) Add role flag user_profiles.is_grant_viewer (default false)
+4) Add requireGrantViewer middleware (separate from admin)
+5) Add nav link only for is_grant_viewer users
+PRIVACY RULES (HARD)
+- DO NOT return: names, emails, phone, addresses, evidence text, doc text, message text
+- ONLY aggregated counts / distributions; bucket small counts to protect privacy
+****************************************************************************************/
+
+/* =========================
+   1) DB: user_profiles flag
+   ========================= */
+
+// FILE: shared/schema.ts
+// Add isGrantViewer column to user_profiles (similar pattern to isAdmin)
+
+//
+// In userProfiles table definition add:
+//
+/*
+isGrantViewer: boolean("is_grant_viewer").notNull().default(false),
+*/
+
+// FILE: server/db.ts
+// Add a migration ensure function (similar to ensureUserProfilesColumns/ensureCasesColumns).
+// If you already have ensureUserProfilesColumns(), add:
+
+/*
+async function ensureUserProfilesColumns(db: any) {
+  await addColumnIfMissing(db, "user_profiles", "is_admin", "boolean NOT NULL DEFAULT false");
+  await addColumnIfMissing(db, "user_profiles", "is_grant_viewer", "boolean NOT NULL DEFAULT false");
+  // keep existing columns...
+}
+*/
+
+// Ensure it’s called inside ensureSchemaMigrations() (or your consolidated migration runner).
+
+/* =========================
+   2) Middleware: requireGrantViewer
+   ========================= */
+
+// FILE: server/middleware/requireGrantViewer.ts  (NEW)
+import { Request, Response, NextFunction } from "express";
+import { requireAuth } from "./requireAuth"; // adjust path if different
+import { storage } from "../storage"; // adjust path if different
+
+export async function requireGrantViewer(req: Request, res: Response, next: NextFunction) {
+  // Must be authenticated first
+  // If you already use requireAuth per route, you can omit this wrapper and just rely on session.
+  const userId = (req as any).user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const profile = await storage.getUserProfile?.(userId);
+  if (!profile?.isGrantViewer) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  next();
+}
+
+/* =========================
+   3) Backend Aggregates: grant metrics service
+   ========================= */
+
+// FILE: server/services/grantMetrics.ts (NEW)
+// IMPORTANT: Only aggregated queries. No PII. No content fields. Bucket small counts.
+import { db } from "../db"; // adjust if needed
+
+function bucketSmallCounts<T extends { count: number }>(rows: T[], min = 5) {
+  const safe: T[] = [];
+  let otherCount = 0;
+
+  for (const r of rows) {
+    if ((r.count ?? 0) < min) otherCount += r.count ?? 0;
+    else safe.push(r);
+  }
+  if (otherCount > 0) {
+    safe.push({ ...(rows[0] as any), label: "Other / <5", count: otherCount });
+  }
+  return safe;
+}
+
+export async function getGrantMetrics(params: { days?: number }) {
+  const days = Math.max(7, Math.min(365, params.days ?? 90));
+
+  // NOTE:
+  // - Replace SQL with your query helper style if you use Drizzle query builders.
+  // - Keep everything aggregated.
+  const since = `NOW() - INTERVAL '${days} days'`;
+
+  // Totals
+  const totalUsers = await db.query(`SELECT COUNT(*)::int AS count FROM users`);
+  const totalCases = await db.query(`SELECT COUNT(*)::int AS count FROM cases`);
+  const activeUsers = await db.query(`
+    SELECT COUNT(DISTINCT user_id)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+  `);
+
+  // Cases by state (distribution)
+  const casesByStateRaw = await db.query(`
+    SELECT COALESCE(state, 'Unknown') AS label, COUNT(*)::int AS count
+    FROM cases
+    GROUP BY COALESCE(state, 'Unknown')
+    ORDER BY count DESC
+    LIMIT 25
+  `);
+
+  // Module usage (privacy-safe, from activity_logs)
+  const moduleUsageRaw = await db.query(`
+    SELECT COALESCE(metadata->>'moduleKey','unknown') AS label, COUNT(*)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+      AND event_type IN ('module_view','search_click','doc_export','pattern_export','trial_binder_export')
+    GROUP BY COALESCE(metadata->>'moduleKey','unknown')
+    ORDER BY count DESC
+    LIMIT 15
+  `);
+
+  // AI reliability (counts only)
+  const aiFailures = await db.query(`
+    SELECT event_type AS label, COUNT(*)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+      AND event_type IN ('evidence_extraction_failed','claims_suggest_failed','ai_analysis_failed','lexi_error')
+    GROUP BY event_type
+    ORDER BY count DESC
+  `);
+
+  // “Access to justice / DV / high-conflict proxies” (counts only)
+  // We CANNOT inspect uploads. We can only use user-provided optional self-tags (if they exist).
+  // If you don’t have a safe self-tag field yet, return empty arrays and we add it later.
+  const selfTags = await db.query(`
+    SELECT COALESCE(tag, 'Unknown') AS label, COUNT(*)::int AS count
+    FROM user_self_tags
+    WHERE created_at >= ${since}
+    GROUP BY COALESCE(tag, 'Unknown')
+    ORDER BY count DESC
+    LIMIT 10
+  `).catch(() => ({ rows: [] }));
+
+  return {
+    ok: true,
+    windowDays: days,
+    totals: {
+      users: totalUsers.rows?.[0]?.count ?? 0,
+      cases: totalCases.rows?.[0]?.count ?? 0,
+      activeUsers: activeUsers.rows?.[0]?.count ?? 0,
+    },
+    distributions: {
+      casesByState: bucketSmallCounts(casesByStateRaw.rows ?? [], 5),
+      moduleUsage: bucketSmallCounts(moduleUsageRaw.rows ?? [], 5),
+      selfTags: bucketSmallCounts(selfTags.rows ?? [], 5),
+      aiFailures: bucketSmallCounts(aiFailures.rows ?? [], 5),
+    },
+    privacy: {
+      notes: [
+        "This dashboard contains aggregated metrics only.",
+        "No user-generated content (evidence/documents/messages) is viewable.",
+        "Small counts are bucketed to prevent re-identification.",
+      ],
+    },
+  };
+}
+
+/* =========================
+   4) Routes: /api/grants/metrics
+   ========================= */
+
+// FILE: server/routes.ts
+// Add imports:
+import { requireGrantViewer } from "./middleware/requireGrantViewer";
+import { getGrantMetrics } from "./services/grantMetrics";
+
+// Add route near admin routes:
+app.get("/api/grants/metrics", requireAuth, requireGrantViewer, async (req, res) => {
+  try {
+    const days = req.query.days ? Number(req.query.days) : 90;
+    const data = await getGrantMetrics({ days });
+    res.json(data);
+  } catch (e: any) {
+    console.error("[GrantsMetrics] failed", e);
+    res.status(500).json({ ok: false, error: "Failed to load grant metrics" });
+  }
+});
+
+/* =========================
+   5) Frontend Page: /app/grants
+   ========================= */
+
+// FILE: client/src/pages/AppGrantDashboard.tsx (NEW)
+import { useQuery } from "@tanstack/react-query";
+import AppLayout from "@/components/layout/AppLayout";
+
+export default function AppGrantDashboard() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["/api/grants/metrics", { days: 90 }],
+    queryFn: async () => {
+      const res = await fetch(`/api/grants/metrics?days=90`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+  });
+
+  return (
+    <AppLayout>
+      <div className="w-full px-4 sm:px-6 md:px-10 py-6">
+        <div className="max-w-6xl mx-auto space-y-4">
+          <div className="bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+            <h1 className="text-xl font-bold">Grant Dashboard</h1>
+            <p className="text-sm text-neutral-darkest/70 mt-1">
+              Aggregated impact and usage metrics (privacy-safe).
+            </p>
+            <div className="mt-3 text-xs text-neutral-darkest/60">
+              No user evidence, documents, or messages are accessible here.
+            </div>
+          </div>
+
+          {isLoading && (
+            <div className="bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+              Loading metrics…
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-white rounded-lg border border-red-300 p-5 text-red-700">
+              Could not load grant metrics.
+            </div>
+          )}
+
+          {data?.ok && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[hsl(var(--module-tile))] rounded-lg border border-[hsl(var(--module-tile-border))] p-4">
+                <div className="text-sm text-neutral-darkest/70">Total Users</div>
+                <div className="text-3xl font-bold">{data.totals.users}</div>
+              </div>
+              <div className="bg-[hsl(var(--module-tile))] rounded-lg border border-[hsl(var(--module-tile-border))] p-4">
+                <div className="text-sm text-neutral-darkest/70">Total Cases</div>
+                <div className="text-3xl font-bold">{data.totals.cases}</div>
+              </div>
+              <div className="bg-[hsl(var(--module-tile))] rounded-lg border border-[hsl(var(--module-tile-border))] p-4">
+                <div className="text-sm text-neutral-darkest/70">Active Users (90d)</div>
+                <div className="text-3xl font-bold">{data.totals.activeUsers}</div>
+              </div>
+
+              <div className="md:col-span-2 bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+                <h2 className="font-bold mb-3">Cases by State</h2>
+                <div className="space-y-2">
+                  {(data.distributions.casesByState ?? []).map((r: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-neutral-darkest/80">{r.label}</span>
+                      <span className="font-semibold">{r.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+                <h2 className="font-bold mb-3">Module Usage</h2>
+                <div className="space-y-2">
+                  {(data.distributions.moduleUsage ?? []).map((r: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-neutral-darkest/80">{r.label}</span>
+                      <span className="font-semibold">{r.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="md:col-span-3 bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+                <h2 className="font-bold mb-2">Privacy Safeguards</h2>
+                <ul className="list-disc pl-5 text-sm text-neutral-darkest/75 space-y-1">
+                  {(data.privacy?.notes ?? []).map((n: string, i: number) => (
+                    <li key={i}>{n}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+/* =========================
+   6) Routing: add /app/grants
+   ========================= */
+
+// FILE: client/src/App.tsx
+import AppGrantDashboard from "@/pages/AppGrantDashboard";
+
+// Add route:
+<Route path="/app/grants" component={AppGrantDashboard} />
+
+/* =========================
+   7) Navigation: show link only to grant viewers
+   ========================= */
+
+// FILE: client/src/components/layout/AppNavbar.tsx (or where nav links are built)
+// Add conditional link if auth profile includes isGrantViewer.
+// You likely already have profile data in auth query; add:
+
+/*
+if (profile?.isGrantViewer) {
+  links.push({ label: "Grant Dashboard", href: "/app/grants" });
+}
+*/
+
+// Ensure this is separate from Admin link logic.
+
+/* =========================
+   8) How to enable grant access for a user
+   ========================= */
+/*
+Run SQL in Neon (or admin DB console):
+
+UPDATE user_profiles
+SET is_grant_viewer = true
+WHERE user_id = '<USER_UUID>';
+
+This user can access /app/grants but NOT /app/admin unless is_admin is also true.
+*/
