@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ReactMarkdown from "react-markdown";
@@ -71,6 +72,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
   const [previewMarkdown, setPreviewMarkdown] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showAutoFill, setShowAutoFill] = useState(false);
+  const [includeEvidenceFacts, setIncludeEvidenceFacts] = useState(false);
 
   const { data: templatesData } = useQuery<{ templates: TemplateDefinition[]; categories: Record<string, TemplateCategory> }>({
     queryKey: ["/api/templates"],
@@ -89,10 +91,11 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
   });
 
   const compileMutation = useMutation({
-    mutationFn: async ({ templateKey, title }: { templateKey: string; title: string }) => {
+    mutationFn: async ({ templateKey, title, options }: { templateKey: string; title: string; options?: { includeEvidenceFacts?: boolean } }) => {
       const res = await apiRequest("POST", `/api/cases/${caseId}/documents/compile-template`, {
         templateKey,
         title,
+        options,
       });
       return res.json() as Promise<CompileResult>;
     },
@@ -148,6 +151,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
     compileMutation.mutate({
       templateKey: selectedTemplate.templateKey,
       title: documentTitle.trim(),
+      options: { includeEvidenceFacts },
     });
   };
 
@@ -256,6 +260,26 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
                   onChange={(e) => setDocumentTitle(e.target.value)}
                   placeholder="Enter document title..."
                   data-testid="input-document-title"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <div>
+                    <Label htmlFor="include-facts" className="text-sm font-medium cursor-pointer">
+                      Include Evidence Facts
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Add extracted facts summary to the document
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="include-facts"
+                  checked={includeEvidenceFacts}
+                  onCheckedChange={setIncludeEvidenceFacts}
+                  data-testid="switch-include-facts"
                 />
               </div>
 

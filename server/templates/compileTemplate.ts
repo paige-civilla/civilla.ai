@@ -8,6 +8,7 @@ export interface CompileOptions {
   includeTimeline?: boolean;
   includeSnippets?: boolean;
   includePinnedTrialPrep?: boolean;
+  includeEvidenceFacts?: boolean;
 }
 
 export interface ClaimWithCitations {
@@ -380,6 +381,42 @@ export async function compileTemplate(
           };
         }),
       });
+    }
+  }
+
+  if (options.includeEvidenceFacts) {
+    const allFacts = await storage.listEvidenceFactsByCase(userId, caseId);
+    const pendingFacts = allFacts.filter(f => !f.promotedToClaim);
+    
+    if (pendingFacts.length > 0) {
+      markdown += `## Extracted Facts Summary\n\n`;
+      markdown += `*The following facts were automatically extracted from evidence files and have not yet been promoted to claims. Review for accuracy.*\n\n`;
+      
+      const factsByType = new Map<string, typeof pendingFacts>();
+      for (const fact of pendingFacts) {
+        const type = fact.factType || "other";
+        if (!factsByType.has(type)) {
+          factsByType.set(type, []);
+        }
+        factsByType.get(type)!.push(fact);
+      }
+      
+      const typeOrder = ["date", "event", "communication", "financial", "medical", "custody", "procedural", "other"];
+      for (const factType of typeOrder) {
+        const facts = factsByType.get(factType);
+        if (!facts || facts.length === 0) continue;
+        
+        const typeLabel = factType.charAt(0).toUpperCase() + factType.slice(1);
+        markdown += `### ${typeLabel} Facts\n\n`;
+        
+        for (const fact of facts) {
+          const confidence = fact.confidence != null ? ` (${fact.confidence}% confidence)` : "";
+          const evidence = evidenceMap.get(fact.evidenceId);
+          const sourceRef = evidence ? ` [Source: ${evidence.originalName}]` : "";
+          markdown += `- ${fact.factText}${confidence}${sourceRef}\n`;
+        }
+        markdown += `\n`;
+      }
     }
   }
 
