@@ -26,6 +26,7 @@ import type { Case, CalendarCategory } from "@shared/schema";
 import { CASE_FLOW, getVisibleModules, modulePath, moduleLabel, moduleDescription, type ModuleKey } from "@/lib/caseFlow";
 import { BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar as CalendarIcon, CheckSquare as CheckSquareIcon, Contact, Users, Calculator, Scale, HelpCircle, Heart } from "lucide-react";
 import AiProcessingStatusCard from "@/components/dashboard/AiProcessingStatusCard";
+import PhaseStatusBar from "@/components/app/PhaseStatusBar";
 
 type UpcomingEvent = {
   kind: "deadline" | "todo" | "calendar" | "communication";
@@ -47,6 +48,8 @@ type DashboardCalendarResponse = {
 
 type AddItemType = "deadline" | "todo" | "calendar";
 
+type CasePhase = "collecting" | "reviewing" | "draft-ready";
+
 type DraftReadinessStats = {
   totalClaims: number;
   acceptedClaims: number;
@@ -57,6 +60,11 @@ type DraftReadinessStats = {
   evidenceWithExtraction: number;
   evidenceWithClaims: number;
   readinessScore: number;
+};
+
+type DraftReadinessResponse = {
+  stats: DraftReadinessStats;
+  phase: CasePhase;
 };
 
 const colorPresets = [
@@ -105,7 +113,7 @@ export default function AppDashboard() {
     enabled: !!caseId,
   });
 
-  const { data: draftReadinessData } = useQuery<{ stats: DraftReadinessStats }>({
+  const { data: draftReadinessData } = useQuery<DraftReadinessResponse>({
     queryKey: ["/api/cases", caseId, "draft-readiness"],
     queryFn: async () => {
       const res = await fetch(`/api/cases/${caseId}/draft-readiness`, { credentials: "include" });
@@ -116,6 +124,7 @@ export default function AppDashboard() {
   });
 
   const draftStats = draftReadinessData?.stats;
+  const casePhase = draftReadinessData?.phase || "collecting";
 
   const upcomingItems = dashboardData?.upcoming || [];
   const categories = dashboardData?.categories || [];
@@ -326,6 +335,10 @@ export default function AppDashboard() {
     <AppLayout>
       <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
         <div className="flex flex-col items-start max-w-container w-full">
+          <div className="mb-4">
+            <PhaseStatusBar phase={casePhase} />
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full mb-6 sm:mb-8">
             <div className="min-w-0 flex-1">
               <h1 className="font-heading font-bold text-lg sm:text-xl md:text-2xl text-neutral-darkest break-words leading-tight" data-testid="text-case-header">

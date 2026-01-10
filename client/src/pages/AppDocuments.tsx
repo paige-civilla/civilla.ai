@@ -89,6 +89,46 @@ function StepStrip({ activeStep }: { activeStep: 1 | 2 | 3 }) {
 }
 // --- end StepStrip ---
 
+type CasePhase = "collecting" | "reviewing" | "draft-ready";
+
+function PhaseNotice({ caseId }: { caseId: string }) {
+  const { data } = useQuery<{ phase: CasePhase }>({
+    queryKey: ["/api/cases", caseId, "draft-readiness"],
+    queryFn: async () => {
+      const res = await fetch(`/api/cases/${caseId}/draft-readiness`, { credentials: "include" });
+      if (!res.ok) return { phase: "collecting" as CasePhase };
+      return res.json();
+    },
+    enabled: !!caseId,
+    staleTime: 60000,
+  });
+
+  const phase = data?.phase || "collecting";
+
+  const notices: Record<CasePhase, { text: string; className: string }> = {
+    collecting: {
+      text: "Not draft-ready yet — and that's expected. Civilla drafts from reviewed, cited info. Keep collecting and reviewing claims to unlock drafting.",
+      className: "bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800",
+    },
+    reviewing: {
+      text: "Almost draft-ready. Review remaining claims to enable full drafting capability.",
+      className: "bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800",
+    },
+    "draft-ready": {
+      text: "Draft-ready. This draft is built from approved claims + linked evidence.",
+      className: "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800",
+    },
+  };
+
+  const notice = notices[phase];
+
+  return (
+    <div className={`text-xs rounded-lg px-3 py-2 mb-3 border ${notice.className}`} data-testid="text-phase-notice">
+      {notice.text}
+    </div>
+  );
+}
+
 interface DocumentTemplate {
   key: string;
   title: string;
@@ -1434,6 +1474,7 @@ export default function AppDocuments() {
             </TabsContent>
 
             <TabsContent value="claims" className="mt-4">
+              <PhaseNotice caseId={caseId} />
               {compileResult ? (
                 <div className="flex flex-col gap-4">
                   <div className="border rounded-lg p-3 bg-green-50 dark:bg-green-900/20">

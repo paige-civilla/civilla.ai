@@ -1,0 +1,92 @@
+REPLIT TASK: Implement “Phase Awareness UX” (Modification-of-Custody style) — ONE PASS, NO QUESTIONS
+
+GOAL
+Add a calm, non-annoying “Current stage” indicator across the app so users understand where they are in the Evidence → Claims → Draft flow. It should update automatically based on existing Draft Readiness stats. No popups, no spam, no blocking except where already required.
+
+WHAT TO BUILD (END STATE)
+1) Backend: /api/cases/:caseId/draft-readiness response must include a new field:
+   - phase: "collecting" | "reviewing" | "draft-ready"
+   Logic:
+   - if readinessPercent >= 80 AND acceptedClaims > 0 => "draft-ready"
+   - else if totalClaims > 0 => "reviewing"
+   - else => "collecting"
+
+2) Frontend: Show this phase in THREE places:
+   A) Dashboard (top of page, above cards):
+      - “Current stage: Collecting & organizing your case” + short subtitle
+      - “Current stage: Reviewing claims” + short subtitle
+      - “Current stage: Draft-ready” + short subtitle
+      Use a simple small text block (not a banner) and DO NOT block anything.
+
+   B) Document Creator (Compile from Claims tab):
+      Above the Compile button, show a short notice based on phase:
+      - collecting: “Not draft-ready yet — and that’s expected… Civilla drafts from reviewed, cited info.”
+      - reviewing: “Almost draft-ready… review remaining claims to enable drafting.”
+      - draft-ready: “Draft-ready… this draft is built from approved claims + linked evidence.”
+      Keep it short, readable, with paragraph breaks.
+
+   C) Evidence/Claims UI (where Suggested/Accepted Claims are shown):
+      Show ONE time per case per browser session (sessionStorage) a single-line reassurance:
+      “Suggestions are based on your evidence. Nothing is used unless you approve it.”
+      Do NOT show it every time; only once per session per case.
+
+IMPLEMENTATION INSTRUCTIONS (DO NOT ASK ME)
+Backend
+- Create file: server/services/phaseResolver.ts
+  Export:
+    type CasePhase = "collecting" | "reviewing" | "draft-ready"
+    function resolveCasePhase({ acceptedClaims, totalClaims, readinessPercent }): CasePhase (logic above)
+
+- In server/routes.ts, locate the existing GET /api/cases/:caseId/draft-readiness handler.
+  After stats are computed, compute:
+    const phase = resolveCasePhase({ acceptedClaims: stats.acceptedClaims, totalClaims: stats.totalClaims, readinessPercent: stats.readinessPercent })
+  Return JSON including phase:
+    res.json({ ...stats, phase })
+
+Frontend
+- Create file: client/src/components/app/PhaseStatusBar.tsx
+  It accepts prop phase and renders:
+    Line 1: “Current stage: …”
+    Line 2: subtitle (small, muted)
+  Copy:
+    collecting:
+      title: “Collecting & organizing your case”
+      subtitle: “Drafting becomes available after claims are reviewed.”
+    reviewing:
+      title: “Reviewing claims”
+      subtitle: “You’re almost ready to draft.”
+    draft-ready:
+      title: “Draft-ready”
+      subtitle: “Documents are generated from approved claims and linked evidence.”
+
+- Dashboard:
+  In the dashboard page component (where draft readiness is already queried), render:
+    <PhaseStatusBar phase={draftReadiness.phase} />
+  Place it at the top of the main content area.
+
+- Document Creator:
+  In client/src/pages/AppDocuments.tsx (Compile from Claims tab), add a small component or inline block:
+    If phase === "collecting": show the “Not draft-ready yet…” message
+    If phase === "reviewing": show the “Almost draft-ready…” message
+    If phase === "draft-ready": show the “Draft-ready…” message
+  Insert ABOVE the compile button.
+
+- Evidence/Claims one-time reassurance:
+  In the component that renders claims sections (EvidenceViewer / AppEvidence claims panel),
+  add:
+    const key = `claims-reassurance-shown-${caseId}`;
+    if (!sessionStorage.getItem(key)) show message and then set it immediately.
+  Only show when claims UI is visible.
+
+REQUIREMENTS
+- No new database tables.
+- No new popups or modals.
+- Keep styling consistent with existing typography + spacing.
+- Must compile and run after change.
+- Update any types if needed so TS is happy.
+
+DELIVERABLE
+After implementation, reply with:
+- files changed
+- exact copy shown in each phase
+- confirm /draft-readiness now returns phase

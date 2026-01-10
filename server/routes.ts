@@ -8592,7 +8592,13 @@ Limit to ${limit} most important claims.`;
       }
       
       const stats = await storage.getCaseDraftReadiness(userId, caseId);
-      res.json({ stats });
+      const { resolveCasePhase } = await import("./services/phaseResolver");
+      const phase = resolveCasePhase({
+        acceptedClaims: stats.acceptedClaims,
+        totalClaims: stats.totalClaims,
+        readinessPercent: stats.readinessScore,
+      });
+      res.json({ stats, phase });
     } catch (error) {
       console.error("Get draft readiness error:", error);
       res.status(500).json({ error: "Failed to get draft readiness" });

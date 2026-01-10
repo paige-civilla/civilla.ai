@@ -84,6 +84,10 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
   const [claimEditForm, setClaimEditForm] = useState({ claimText: "", tags: "", missingInfoFlag: false });
   const [suggestingClaims, setSuggestingClaims] = useState(false);
+  const [claimsReassuranceShown, setClaimsReassuranceShown] = useState(() => {
+    const key = `claims-reassurance-shown-${caseId}`;
+    return sessionStorage.getItem(key) === "true";
+  });
 
   const { data: backgroundStatus } = useQuery<{
     claimsSuggestionPending: boolean;
@@ -689,6 +693,20 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="p-3 border-t space-y-3">
+            {!claimsReassuranceShown && (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5" data-testid="text-claims-reassurance">
+                Suggestions are based on your evidence. Nothing is used unless you approve it.
+                <button
+                  className="ml-1 text-primary underline"
+                  onClick={() => {
+                    sessionStorage.setItem(`claims-reassurance-shown-${caseId}`, "true");
+                    setClaimsReassuranceShown(true);
+                  }}
+                >
+                  Got it
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
