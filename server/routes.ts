@@ -40,7 +40,7 @@ import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext
 import { searchCaseWide } from "./services/search";
 import { isAutoSuggestPending, getAutoSuggestStats, triggerClaimsSuggestionForEvidence } from "./claims/autoSuggest";
 import { requireAdmin } from "./middleware/admin";
-import { getAdminMetrics } from "./admin/adminMetrics";
+import { getAdminMetrics, getSystemHealth, searchUsers, setUserRoles, createAdminAuditLog, listAdminAuditLogs, createAnalyticsEvent } from "./admin/adminMetrics";
 import { requireGrantViewer } from "./middleware/grantViewer";
 import { getGrantMetrics } from "./services/grantMetrics";
 
@@ -5806,13 +5806,102 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
   app.get("/api/admin/metrics", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const from = typeof req.query.from === "string" ? req.query.from : undefined;
-      const to = typeof req.query.to === "string" ? req.query.to : undefined;
-      const data = await getAdminMetrics({ from, to });
+      const days = req.query.days ? Number(req.query.days) : 90;
+      const data = await getAdminMetrics({ days });
       res.json(data);
     } catch (e: any) {
       console.error("Admin metrics error:", e);
       res.status(500).json({ ok: false, error: "Failed to load admin metrics" });
+    }
+  });
+
+  app.get("/api/admin/system-health", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const data = await getSystemHealth();
+      res.json(data);
+    } catch (e: any) {
+      console.error("System health error:", e);
+      res.status(500).json({ ok: false, error: "Failed to get system health" });
+    }
+  });
+
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const q = typeof req.query.q === "string" ? req.query.q : "";
+      const limit = req.query.limit ? Math.min(Number(req.query.limit), 50) : 20;
+      const users = await searchUsers(q, limit);
+      res.json({ ok: true, users });
+    } catch (e: any) {
+      console.error("Admin user search error:", e);
+      res.status(500).json({ ok: false, error: "Failed to search users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:userId/roles", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const actorUserId = (req as any).user?.id;
+      const targetUserId = req.params.userId;
+      const { isAdmin, isGrantViewer } = req.body;
+
+      const result = await setUserRoles(targetUserId, { isAdmin, isGrantViewer });
+
+      await createAdminAuditLog(actorUserId, {
+        targetUserId,
+        action: "SET_ROLE",
+        details: { isAdmin, isGrantViewer },
+        ip: req.ip || undefined,
+        userAgent: req.get("User-Agent") || undefined,
+      });
+
+      res.json(result);
+    } catch (e: any) {
+      console.error("Admin set roles error:", e);
+      res.status(500).json({ ok: false, error: "Failed to update roles" });
+    }
+  });
+
+  app.get("/api/admin/audit", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const start = typeof req.query.start === "string" ? req.query.start : undefined;
+      const end = typeof req.query.end === "string" ? req.query.end : undefined;
+      const action = typeof req.query.action === "string" ? req.query.action : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : 100;
+
+      const logs = await listAdminAuditLogs({ start, end, action, limit });
+      res.json({ ok: true, logs });
+    } catch (e: any) {
+      console.error("Admin audit logs error:", e);
+      res.status(500).json({ ok: false, error: "Failed to get audit logs" });
+    }
+  });
+
+  app.post("/api/analytics/event", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+
+      const { eventType, caseId, moduleKey, entityType, entityId, durationMs, success, errorCode, meta } = req.body;
+
+      if (!eventType || typeof eventType !== "string") {
+        return res.status(400).json({ ok: false, error: "eventType required" });
+      }
+
+      await createAnalyticsEvent(userId, {
+        eventType,
+        caseId: caseId || null,
+        moduleKey: moduleKey || null,
+        entityType: entityType || null,
+        entityId: entityId || null,
+        durationMs: typeof durationMs === "number" ? durationMs : null,
+        success: typeof success === "boolean" ? success : null,
+        errorCode: errorCode || null,
+        meta: meta || null,
+      });
+
+      res.json({ ok: true });
+    } catch (e: any) {
+      console.error("Analytics event error:", e);
+      res.status(500).json({ ok: false, error: "Failed to record event" });
     }
   });
 

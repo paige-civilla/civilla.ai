@@ -1,0 +1,267 @@
+REPLIT TASK: Admin Dashboard “Full Suite” (privacy-safe) — Roles UI, Audit Logs, System Health, Analytics + Funnel, AI reliability + cost watch
+
+IMPORTANT PRIVACY RULES (must enforce in code)
+- Admin + Grant dashboards MUST be aggregated-only. Never return:
+  - evidence/doc/message content
+  - extracted text
+  - Lexi prompts/responses
+  - user PII (name/email/address/phone)
+- Apply small-count bucketing everywhere (<5 → “Other / <5”)
+- All admin/grant endpoints must use server-side middleware (requireAdmin / requireGrantViewer)
+
+========================================================
+1) DATABASE: Add privacy-safe analytics + audit tables
+========================================================
+
+A) shared/schema.ts
+Add 2 new tables:
+
+1) analytics_events (privacy-safe event stream)
+- id uuid pk
+- userId uuid not null
+- caseId uuid nullable
+- eventType text not null  (e.g. "module_view", "onboarding_complete", "claim_accepted", "doc_compiled", "export_zip")
+- moduleKey text nullable (e.g. "evidence", "timeline", "documents")
+- entityType text nullable (e.g. "evidence_file", "claim", "document")
+- entityId uuid nullable
+- durationMs int nullable
+- success boolean nullable
+- errorCode text nullable (NO raw error messages; use a short code)
+- meta jsonb nullable (ONLY numeric flags, counts, booleans; NO text content)
+- createdAt timestamp default now
+
+2) admin_audit_logs (immutable admin actions)
+- id uuid pk
+- actorUserId uuid not null  (admin who did it)
+- targetUserId uuid nullable (affected user)
+- action text not null (e.g. "SET_ROLE", "UNSET_ROLE", "VIEW_METRICS")
+- details jsonb nullable (e.g. {"role":"isGrantViewer","value":true})
+- ip text nullable
+- userAgent text nullable
+- createdAt timestamp default now
+
+B) server/db.ts
+Add ensure functions + table init entries (idempotent):
+- ensureAnalyticsEventsTable()
+- ensureAdminAuditLogsTable()
+
+Also add verification logs (safe):
+[DB MIGRATION] Verification: analytics_events table present: true/false
+[DB MIGRATION] Verification: admin_audit_logs table present: true/false
+
+
+========================================================
+2) STORAGE LAYER: Add analytics + audit helpers
+========================================================
+
+A) server/storage.ts (interface + implementation)
+Add methods:
+
+// analytics
+createAnalyticsEvent(userId, payload)
+listAnalyticsEvents(opts: { start, end, eventType?, moduleKey?, limit? })  // admin-only usage (aggregated later)
+
+// audit
+createAdminAuditLog(actorUserId, payload)
+listAdminAuditLogs(opts: { start, end, action?, targetUserId?, limit? })
+
+// admin user search + role update
+adminSearchUsers(query: string, limit: number) -> returns minimal fields:
+  { userId, createdAt, lastActiveAt, isAdmin, isGrantViewer }   (NO email/name unless already stored and approved; if email exists, return masked)
+adminSetUserRoles(targetUserId, patch: { isAdmin?, isGrantViewer? })
+
+
+========================================================
+3) BACKEND: Add Analytics event endpoint + Admin endpoints
+========================================================
+
+A) server/middleware/admin.ts (if not already)
+- requireAdmin middleware
+
+B) server/middleware/grantViewer.ts (already exists)
+- keep
+
+C) server/routes.ts
+Add:
+
+1) Analytics event write (AUTH required)
+POST /api/analytics/event
+Body:
+{
+  eventType: string,
+  moduleKey?: string,
+  caseId?: string,
+  entityType?: string,
+  entityId?: string,
+  durationMs?: number,
+  success?: boolean,
+  errorCode?: string,
+  meta?: object
+}
+Rules:
+- strip/deny meta keys that look like content (e.g. "text","content","message","body","prompt","response")
+- truncate meta size (max 2kb)
+- store event
+Return { ok: true }
+
+2) Admin: user search + role management
+GET /api/admin/users?q=...   (requireAdmin)
+- return minimal fields + masked email if present (e.g. p***@domain.com)
+PATCH /api/admin/users/:userId/roles  (requireAdmin)
+Body: { isAdmin?: boolean, isGrantViewer?: boolean }
+- writes admin_audit_logs entry (action="SET_ROLE"/"UNSET_ROLE")
+
+3) Admin: audit logs
+GET /api/admin/audit?start=&end=&action=&limit=100  (requireAdmin)
+- returns last 100 entries
+
+4) Admin: system health
+GET /api/admin/system-health  (requireAdmin)
+Return:
+{
+  ok: true/false,
+  ai: (reuse /api/ai/health logic),
+  vision: (reuse /api/vision/health if exists),
+  db: { migrationsOk: true, lastCheckedAt },
+  jobs: {
+    evidenceExtractions: { queued, processing, failed, complete },
+    aiAnalyses: { pending, processing, failed, complete },
+    claims: { suggested, accepted, pendingReview, missingCitations }
+  }
+}
+NO raw errors; use humanized codes.
+
+5) Admin: privacy-safe aggregated metrics (expand existing)
+GET /api/admin/metrics?start=&end=  (requireAdmin)
+Return (all aggregated + bucketed):
+- totals: users, cases, active7d, active30d
+- stateDistribution: [{ state, count }] (bucket <5)
+- moduleUsage: [{ moduleKey, count }] (bucket <5)
+- funnel: counts for key events
+- aiReliability: counts by errorCode (invalid_key, rate_limit, timeout, vision_auth)
+- performance: p50/p95 duration for lexi_response_ms, extraction_ms (from analytics_events.durationMs)
+- exports: doc_export/docx_export/trial_binder_export counts
+
+6) Grant dashboard endpoint remains separate
+- Keep /api/grants/metrics but reuse the same aggregation helpers, with stricter bucketing.
+
+
+========================================================
+4) CLIENT: Track module usage + funnel events (privacy-safe)
+========================================================
+
+A) client/src/lib/analytics.ts (NEW)
+export async function trackEvent(payload) {
+  // POST /api/analytics/event with credentials: "include"
+  // swallow errors (don’t break UX)
+}
+
+B) Hook into:
+1) App navigation (module view)
+- In AppLayout (or router wrapper), when route changes to /app/:module/... call:
+trackEvent({ eventType:"module_view", moduleKey })
+
+2) Key funnel moments
+- On onboarding completion: eventType="onboarding_complete"
+- On case created success: "case_created"
+- On evidence upload success: "evidence_uploaded"
+- On extraction complete/fail: already logged server-side; also optionally client
+- On claim accepted: "claim_accepted"
+- On doc compile claims: "doc_compiled"
+- On exports: "export_zip" / "docx_export" / "pattern_export" / "trial_binder_export"
+IMPORTANT: do NOT send document text or claim text—ONLY ids + moduleKey + success + durationMs.
+
+
+========================================================
+5) CLIENT: Admin Dashboard UI (Full)
+========================================================
+
+A) client/src/pages/AppAdminDashboard.tsx
+Build tabbed UI (4 tabs):
+
+TAB 1: Overview
+- Total Users / Total Cases / Active (7d, 30d)
+- State distribution chart + table
+- Module usage chart + table
+- Funnel chart/table (onboarding_complete → case_created → evidence_uploaded → claim_accepted → doc_compiled → export)
+
+TAB 2: System Health
+- Show /api/admin/system-health
+- AI status (OpenAI ok + errorCode)
+- Vision OCR ok
+- DB migrations ok
+- Queue counts: extractions/analyses
+- “Copy Diagnostics” button (copies sanitized JSON)
+
+TAB 3: Access Management
+- Search users (GET /api/admin/users?q=)
+- List results with toggles:
+  - Admin
+  - Grant Viewer
+- On toggle save → PATCH roles endpoint
+- Write audit log automatically (server)
+
+TAB 4: Audit Logs
+- Table: time, actorUserId, action, targetUserId, details
+- Filter by action
+- Limit 100
+
+B) Navigation
+- Add route /app/admin
+- Show link only if user isAdmin
+
+C) Privacy Notice Block (always visible)
+- “Admin dashboards show aggregated metrics only. No user content, evidence, documents, or messages are accessible.”
+
+
+========================================================
+6) CLIENT: Grant Dashboard UI (Confirm separation)
+========================================================
+- Keep /app/grants
+- Only show grant-safe metrics:
+  - totals
+  - state distribution
+  - module usage
+  - funnel (high-level)
+  - AI reliability (counts only)
+- Add “Small counts are bucketed” notice
+- NO access management, NO audit logs
+
+
+========================================================
+7) “Admin Access Policy” page + privacy form update
+========================================================
+
+A) client/src/pages/AppAdminPolicy.tsx (NEW)
+A readable policy page inside app:
+- What is tracked
+- What is never accessible
+- Role-based access
+- Audit logging is immutable
+- Small-count bucketing to prevent re-identification
+
+B) Link it:
+- In Admin Dashboard top right “Policy” link
+- In Account Settings footer “Privacy & Admin Access Policy”
+
+C) Ensure your general privacy disclosure references:
+- aggregated analytics collection
+- purpose: product improvement + grant reporting
+- no user content access by staff
+
+
+========================================================
+8) FINAL CHECKS (must pass)
+========================================================
+- Search repo: ensure no admin endpoint returns content fields
+- Ensure grant dashboard cannot access admin endpoints
+- Small-count bucketing applied to every distribution list
+- admin_audit_logs gets written on role changes and metrics views
+- analytics_events meta is validated/stripped for content keys
+
+Deliverables to report back after implementation:
+- Files changed
+- New endpoints list
+- Example responses (sanitized)
+- Confirm bucketing working
+- Confirm no PII/content exposed

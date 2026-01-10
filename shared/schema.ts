@@ -2111,3 +2111,66 @@ export const insertClaimLinkSchema = z.object({
 
 export type InsertClaimLink = z.infer<typeof insertClaimLinkSchema>;
 export type ClaimLink = typeof claimLinks.$inferSelect;
+
+// Admin Analytics + Audit Tables (privacy-safe)
+
+export const analyticsEvents = pgTable("analytics_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id"),
+  eventType: text("event_type").notNull(),
+  moduleKey: text("module_key"),
+  entityType: text("entity_type"),
+  entityId: varchar("entity_id"),
+  durationMs: integer("duration_ms"),
+  success: boolean("success"),
+  errorCode: text("error_code"),
+  meta: jsonb("meta"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("analytics_events_user_idx").on(table.userId),
+  eventTypeIdx: index("analytics_events_event_type_idx").on(table.eventType),
+  moduleKeyIdx: index("analytics_events_module_key_idx").on(table.moduleKey),
+  createdAtIdx: index("analytics_events_created_at_idx").on(table.createdAt),
+}));
+
+export const insertAnalyticsEventSchema = z.object({
+  eventType: z.string().min(1).max(100),
+  caseId: z.string().optional().nullable(),
+  moduleKey: z.string().max(50).optional().nullable(),
+  entityType: z.string().max(50).optional().nullable(),
+  entityId: z.string().optional().nullable(),
+  durationMs: z.number().int().min(0).optional().nullable(),
+  success: z.boolean().optional().nullable(),
+  errorCode: z.string().max(50).optional().nullable(),
+  meta: z.record(z.unknown()).optional().nullable(),
+});
+
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  actorUserId: varchar("actor_user_id").notNull().references(() => users.id),
+  targetUserId: varchar("target_user_id"),
+  action: text("action").notNull(),
+  details: jsonb("details"),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  actorIdx: index("admin_audit_logs_actor_idx").on(table.actorUserId),
+  actionIdx: index("admin_audit_logs_action_idx").on(table.action),
+  createdAtIdx: index("admin_audit_logs_created_at_idx").on(table.createdAt),
+}));
+
+export const insertAdminAuditLogSchema = z.object({
+  targetUserId: z.string().optional().nullable(),
+  action: z.string().min(1).max(100),
+  details: z.record(z.unknown()).optional().nullable(),
+  ip: z.string().max(100).optional().nullable(),
+  userAgent: z.string().max(500).optional().nullable(),
+});
+
+export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;

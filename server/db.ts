@@ -1312,6 +1312,50 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS claim_links_unique_idx ON claim_links(claim_id, link_type, COALESCE(event_id, ''), COALESCE(trial_prep_id, ''), COALESCE(snippet_id, ''))`
   ]);
 
+  await initTable("analytics_events", `
+    CREATE TABLE IF NOT EXISTS analytics_events (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255),
+      event_type TEXT NOT NULL,
+      module_key TEXT,
+      entity_type TEXT,
+      entity_id VARCHAR(255),
+      duration_ms INTEGER,
+      success BOOLEAN,
+      error_code TEXT,
+      meta JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS analytics_events_user_idx ON analytics_events(user_id)`,
+    `CREATE INDEX IF NOT EXISTS analytics_events_event_type_idx ON analytics_events(event_type)`,
+    `CREATE INDEX IF NOT EXISTS analytics_events_module_key_idx ON analytics_events(module_key)`,
+    `CREATE INDEX IF NOT EXISTS analytics_events_created_at_idx ON analytics_events(created_at)`
+  ]);
+
+  await initTable("admin_audit_logs", `
+    CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      actor_user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      target_user_id VARCHAR(255),
+      action TEXT NOT NULL,
+      details JSONB,
+      ip TEXT,
+      user_agent TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS admin_audit_logs_actor_idx ON admin_audit_logs(actor_user_id)`,
+    `CREATE INDEX IF NOT EXISTS admin_audit_logs_action_idx ON admin_audit_logs(action)`,
+    `CREATE INDEX IF NOT EXISTS admin_audit_logs_created_at_idx ON admin_audit_logs(created_at)`
+  ]);
+
+  const analyticsExists = await tableExists("analytics_events");
+  const auditExists = await tableExists("admin_audit_logs");
+  console.log(`[DB MIGRATION] Verification: analytics_events table present: ${analyticsExists}`);
+  console.log(`[DB MIGRATION] Verification: admin_audit_logs table present: ${auditExists}`);
+
   await ensureSchemaMigrations();
   
   console.log("Database table initialization complete");
