@@ -1,0 +1,129 @@
+REPLIT TASK: Finalize Modification-Style AI Sub-Build (No Front-End Page Changes)
+
+GOAL
+Complete the remaining sub-build items required to fully replicate the
+Modification of Custody workflow inside Civilla, using evidence-first,
+citation-locked drafting, strict UPL safeguards, and transparent AI behavior.
+Do NOT redesign or create new marketing pages. Only link to existing ones.
+
+SCOPE
+This task FINALIZES logic, guardrails, linking, and explanations.
+No new core modules. No marketing redesigns.
+
+────────────────────────────────────────
+1. TEMPLATE & FORM COVERAGE FINALIZATION
+────────────────────────────────────────
+
+• Verify ALL narrative document templates are registered and selectable:
+  - Declarations
+  - Affidavits
+  - Motions
+  - Responses
+  - Objections
+  - Trial briefs
+  - Pattern summaries
+  - Parenting plan outlines (outline-only, no recommendations)
+
+• Ensure each template:
+  - Can ONLY compile from accepted claims
+  - Blocks output if uncited claims exist
+  - Displays source evidence inline
+
+• Add a “Court Forms & Packets” section in the Document Creator dropdown that:
+  - DOES NOT generate documents
+  - Links out to existing marketing pages explaining court forms
+  - Clearly labels forms as jurisdiction-specific PDFs
+
+(No new UI pages. Only links to existing content.)
+
+────────────────────────────────────────
+2. TRANSPARENCY & LEGAL EXPLANATION HUB
+────────────────────────────────────────
+
+• Create a single internal “How Civilla Works” explainer page (non-module):
+  - Explains evidence-first drafting
+  - Explains claims → citations → documents flow
+  - Explains what AI does and does NOT do
+  - Explains why Civilla is not legal advice
+  - Explains privacy boundaries
+
+• Link to this page from:
+  - Lexi panel (“How Lexi Works”)
+  - Document Creator preflight
+  - Phase warnings
+  - Navigation dropdown (NOT dashboard)
+
+• Use existing legal/privacy copy where available.
+• Do NOT create new marketing routes.
+
+────────────────────────────────────────
+3. FINAL UPL & SAFETY CONFIRMATIONS
+────────────────────────────────────────
+
+• Ensure the following confirmations exist and are enforced:
+  - One-time acknowledgment before first document compilation
+  - Phase-based reminders (shown only when moving stages)
+  - Explicit notice that:
+    - Civilla does not give legal advice
+    - Civilla does not predict outcomes
+    - Civilla drafts only from user-provided evidence
+
+• Store acceptance timestamp per user.
+
+────────────────────────────────────────
+4. AI BEHAVIOR LOCKDOWN (FINAL PASS)
+────────────────────────────────────────
+
+• Verify Lexi cannot:
+  - Invent facts
+  - Invent dates
+  - Invent intent
+  - Compile documents from raw text
+
+• Ensure ALL AI drafting:
+  - Requires structured claims
+  - Requires citations
+  - Logs failures to activity_logs
+
+────────────────────────────────────────
+5. LINK VALIDATION (NO NEW PAGES)
+────────────────────────────────────────
+
+• Verify all “Learn more”, “How this works”, and source links:
+  - Point to real, existing pages
+  - Do not dead-end or 404
+  - Open externally when appropriate
+
+• Replace broken internal placeholders with:
+  - Existing marketing URLs
+  - Or search-based fallback links
+
+────────────────────────────────────────
+6. FINAL SUB-BUILD VERIFICATION CHECKLIST
+────────────────────────────────────────
+
+Confirm end-to-end flow:
+
+✔ Evidence uploaded → extracted → cited
+✔ Claims suggested → reviewed → accepted
+✔ Issues grouped automatically
+✔ Draft readiness calculated
+✔ Document compiled ONLY from claims
+✔ Sources visible and clickable
+✔ AI behavior transparent and limited
+✔ Privacy preserved
+✔ No legal advice given
+
+────────────────────────────────────────
+7. DO NOT TOUCH
+────────────────────────────────────────
+
+• Do NOT modify:
+  - Marketing site pages
+  - Branding
+  - Homepage layout
+  - Existing dashboard module structure
+
+Only link to existing content where needed.
+
+END TASK
