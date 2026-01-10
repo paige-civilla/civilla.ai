@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -82,6 +82,67 @@ export async function deleteFromR2(storageKey: string): Promise<void> {
   });
 
   await client.send(command);
+}
+
+export async function listAllR2Keys(): Promise<string[]> {
+  if (!isR2Configured()) {
+    return [];
+  }
+
+  const client = getS3Client();
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const command = new ListObjectsV2Command({
+      Bucket: R2_BUCKET_NAME,
+      ContinuationToken: continuationToken,
+      MaxKeys: 1000,
+    });
+
+    const response = await client.send(command);
+    
+    if (response.Contents) {
+      for (const obj of response.Contents) {
+        if (obj.Key) {
+          keys.push(obj.Key);
+        }
+      }
+    }
+
+    continuationToken = response.NextContinuationToken;
+  } while (continuationToken);
+
+  return keys;
+}
+
+export async function bulkDeleteFromR2(keys: string[]): Promise<number> {
+  if (!isR2Configured() || keys.length === 0) {
+    return 0;
+  }
+
+  const client = getS3Client();
+  let deleted = 0;
+
+  const batches: string[][] = [];
+  for (let i = 0; i < keys.length; i += 1000) {
+    batches.push(keys.slice(i, i + 1000));
+  }
+
+  for (const batch of batches) {
+    const command = new DeleteObjectsCommand({
+      Bucket: R2_BUCKET_NAME,
+      Delete: {
+        Objects: batch.map((key) => ({ Key: key })),
+        Quiet: true,
+      },
+    });
+
+    await client.send(command);
+    deleted += batch.length;
+  }
+
+  return deleted;
 }
 
 if (isR2Configured()) {
