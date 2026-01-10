@@ -1,0 +1,414 @@
+/****************************************************************************************
+REPLIT TASK: Grant Dashboard Charts + Exports (CSV + Print-to-PDF)
+ADD:
+1) More metrics (time series) to /api/grants/metrics
+2) /api/grants/metrics.csv endpoint (downloadable CSV)
+3) Print-friendly grant report page /app/grants/print for "Save as PDF"
+4) Charts in AppGrantDashboard using recharts
+PRIVACY: aggregated only, bucket small counts
+****************************************************************************************/
+
+/* =========================
+   1) Backend: expand metrics with time series
+   ========================= */
+
+// FILE: server/services/grantMetrics.ts
+// Add time-series queries and include them in return object.
+// Assumes these columns exist: users.created_at, cases.created_at, activity_logs.created_at
+// If your users table uses a different created field, update accordingly.
+
+export async function getGrantMetrics(params: { days?: number }) {
+  const days = Math.max(7, Math.min(365, params.days ?? 90));
+  const since = `NOW() - INTERVAL '${days} days'`;
+
+  const totalUsers = await db.query(`SELECT COUNT(*)::int AS count FROM users`);
+  const totalCases = await db.query(`SELECT COUNT(*)::int AS count FROM cases`);
+  const activeUsers = await db.query(`
+    SELECT COUNT(DISTINCT user_id)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+  `);
+
+  const casesByStateRaw = await db.query(`
+    SELECT COALESCE(state, 'Unknown') AS label, COUNT(*)::int AS count
+    FROM cases
+    GROUP BY COALESCE(state, 'Unknown')
+    ORDER BY count DESC
+    LIMIT 25
+  `);
+
+  const moduleUsageRaw = await db.query(`
+    SELECT COALESCE(metadata->>'moduleKey','unknown') AS label, COUNT(*)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+      AND event_type IN ('module_view','search_click','doc_export','pattern_export','trial_binder_export')
+    GROUP BY COALESCE(metadata->>'moduleKey','unknown')
+    ORDER BY count DESC
+    LIMIT 15
+  `);
+
+  const aiFailures = await db.query(`
+    SELECT event_type AS label, COUNT(*)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+      AND event_type IN ('evidence_extraction_failed','claims_suggest_failed','ai_analysis_failed','lexi_error')
+    GROUP BY event_type
+    ORDER BY count DESC
+  `);
+
+  const selfTags = await db.query(`
+    SELECT COALESCE(tag, 'Unknown') AS label, COUNT(*)::int AS count
+    FROM user_self_tags
+    WHERE created_at >= ${since}
+    GROUP BY COALESCE(tag, 'Unknown')
+    ORDER BY count DESC
+    LIMIT 10
+  `).catch(() => ({ rows: [] }));
+
+  // NEW: Time series (daily)
+  const newUsersByDay = await db.query(`
+    SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+           COUNT(*)::int AS count
+    FROM users
+    WHERE created_at >= ${since}
+    GROUP BY 1
+    ORDER BY 1
+  `).catch(() => ({ rows: [] }));
+
+  const newCasesByDay = await db.query(`
+    SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+           COUNT(*)::int AS count
+    FROM cases
+    WHERE created_at >= ${since}
+    GROUP BY 1
+    ORDER BY 1
+  `).catch(() => ({ rows: [] }));
+
+  const activeUsersByDay = await db.query(`
+    SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+           COUNT(DISTINCT user_id)::int AS count
+    FROM activity_logs
+    WHERE created_at >= ${since}
+    GROUP BY 1
+    ORDER BY 1
+  `).catch(() => ({ rows: [] }));
+
+  return {
+    ok: true,
+    windowDays: days,
+    totals: {
+      users: totalUsers.rows?.[0]?.count ?? 0,
+      cases: totalCases.rows?.[0]?.count ?? 0,
+      activeUsers: activeUsers.rows?.[0]?.count ?? 0,
+    },
+    distributions: {
+      casesByState: bucketSmallCounts(casesByStateRaw.rows ?? [], 5),
+      moduleUsage: bucketSmallCounts(moduleUsageRaw.rows ?? [], 5),
+      selfTags: bucketSmallCounts(selfTags.rows ?? [], 5),
+      aiFailures: bucketSmallCounts(aiFailures.rows ?? [], 5),
+    },
+    timeSeries: {
+      newUsersByDay: (newUsersByDay.rows ?? []).map((r: any) => ({ day: r.day, count: r.count })),
+      newCasesByDay: (newCasesByDay.rows ?? []).map((r: any) => ({ day: r.day, count: r.count })),
+      activeUsersByDay: (activeUsersByDay.rows ?? []).map((r: any) => ({ day: r.day, count: r.count })),
+    },
+    privacy: {
+      notes: [
+        "Aggregated metrics only (no user-uploaded content).",
+        "Small counts are bucketed to reduce re-identification risk.",
+        "No names, emails, messages, evidence text, or document text are accessible.",
+      ],
+    },
+  };
+}
+
+/* =========================
+   2) Backend: CSV export endpoint
+   ========================= */
+
+// FILE: server/routes.ts
+// Add route (requires auth + grant viewer)
+
+function asCsvRow(cols: (string | number | null | undefined)[]) {
+  return cols
+    .map((c) => {
+      const s = c === null || c === undefined ? "" : String(c);
+      const escaped = s.replace(/"/g, '""');
+      return `"${escaped}"`;
+    })
+    .join(",");
+}
+
+app.get("/api/grants/metrics.csv", requireAuth, requireGrantViewer, async (req, res) => {
+  try {
+    const days = req.query.days ? Number(req.query.days) : 90;
+    const data = await getGrantMetrics({ days });
+
+    const lines: string[] = [];
+    lines.push(asCsvRow(["Metric Window (days)", data.windowDays]));
+    lines.push("");
+
+    lines.push(asCsvRow(["Totals"]));
+    lines.push(asCsvRow(["Total Users", data.totals.users]));
+    lines.push(asCsvRow(["Total Cases", data.totals.cases]));
+    lines.push(asCsvRow(["Active Users (window)", data.totals.activeUsers]));
+    lines.push("");
+
+    lines.push(asCsvRow(["Cases by State"]));
+    lines.push(asCsvRow(["State", "Count"]));
+    for (const r of data.distributions.casesByState ?? []) {
+      lines.push(asCsvRow([r.label, r.count]));
+    }
+    lines.push("");
+
+    lines.push(asCsvRow(["Module Usage"]));
+    lines.push(asCsvRow(["Module", "Count"]));
+    for (const r of data.distributions.moduleUsage ?? []) {
+      lines.push(asCsvRow([r.label, r.count]));
+    }
+    lines.push("");
+
+    lines.push(asCsvRow(["Time Series - New Users / Day"]));
+    lines.push(asCsvRow(["Day", "Count"]));
+    for (const r of data.timeSeries.newUsersByDay ?? []) {
+      lines.push(asCsvRow([r.day, r.count]));
+    }
+    lines.push("");
+
+    lines.push(asCsvRow(["Time Series - New Cases / Day"]));
+    lines.push(asCsvRow(["Day", "Count"]));
+    for (const r of data.timeSeries.newCasesByDay ?? []) {
+      lines.push(asCsvRow([r.day, r.count]));
+    }
+    lines.push("");
+
+    lines.push(asCsvRow(["Time Series - Active Users / Day"]));
+    lines.push(asCsvRow(["Day", "Count"]));
+    for (const r of data.timeSeries.activeUsersByDay ?? []) {
+      lines.push(asCsvRow([r.day, r.count]));
+    }
+
+    const csv = lines.join("\n");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="civilla_grant_metrics_${days}d.csv"`);
+    res.send(csv);
+  } catch (e) {
+    console.error("[GrantsCSV] failed", e);
+    res.status(500).json({ ok: false, error: "Failed to export CSV" });
+  }
+});
+
+/* =========================
+   3) Frontend: Print-friendly report page (Save as PDF)
+   ========================= */
+
+// FILE: client/src/pages/AppGrantDashboardPrint.tsx (NEW)
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+export default function AppGrantDashboardPrint() {
+  const params = new URLSearchParams(window.location.search);
+  const days = Number(params.get("days") ?? "90");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["/api/grants/metrics", { days }],
+    queryFn: async () => {
+      const res = await fetch(`/api/grants/metrics?days=${days}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    // Optional: auto-open print dialog once loaded
+    if (data?.ok) {
+      setTimeout(() => window.print(), 400);
+    }
+  }, [data]);
+
+  if (isLoading) return <div className="p-6">Loading report…</div>;
+  if (!data?.ok) return <div className="p-6">Could not load report.</div>;
+
+  return (
+    <div className="p-8 max-w-4xl mx-auto">
+      <style>{`
+        @media print {
+          button { display:none !important; }
+          a { color: black; text-decoration: none; }
+        }
+      `}</style>
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Civilla — Grant Impact Summary</h1>
+          <div className="text-sm text-neutral-darkest/70 mt-1">
+            Reporting Window: Last {data.windowDays} days
+          </div>
+          <div className="text-xs text-neutral-darkest/60 mt-2">
+            Privacy: Aggregated metrics only. No user content is viewable.
+          </div>
+        </div>
+        <button
+          className="px-4 py-2 rounded border border-neutral-300"
+          onClick={() => window.print()}
+        >
+          Print / Save as PDF
+        </button>
+      </div>
+
+      <hr className="my-6" />
+
+      <h2 className="text-lg font-semibold">Totals</h2>
+      <ul className="mt-2 text-sm space-y-1">
+        <li>Total users: <strong>{data.totals.users}</strong></li>
+        <li>Total cases: <strong>{data.totals.cases}</strong></li>
+        <li>Active users (window): <strong>{data.totals.activeUsers}</strong></li>
+      </ul>
+
+      <hr className="my-6" />
+
+      <h2 className="text-lg font-semibold">Cases by State</h2>
+      <div className="mt-2 text-sm space-y-1">
+        {(data.distributions.casesByState ?? []).map((r: any, idx: number) => (
+          <div key={idx} className="flex justify-between">
+            <span>{r.label}</span>
+            <span className="font-semibold">{r.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <hr className="my-6" />
+
+      <h2 className="text-lg font-semibold">Module Usage (signals)</h2>
+      <div className="mt-2 text-sm space-y-1">
+        {(data.distributions.moduleUsage ?? []).map((r: any, idx: number) => (
+          <div key={idx} className="flex justify-between">
+            <span>{r.label}</span>
+            <span className="font-semibold">{r.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <hr className="my-6" />
+
+      <h2 className="text-lg font-semibold">AI Reliability (Failures)</h2>
+      <div className="mt-2 text-sm space-y-1">
+        {(data.distributions.aiFailures ?? []).map((r: any, idx: number) => (
+          <div key={idx} className="flex justify-between">
+            <span>{r.label}</span>
+            <span className="font-semibold">{r.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <hr className="my-6" />
+
+      <h2 className="text-lg font-semibold">Privacy Notes</h2>
+      <ul className="mt-2 text-sm list-disc pl-5 space-y-1">
+        {(data.privacy?.notes ?? []).map((n: string, i: number) => <li key={i}>{n}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+/* =========================
+   4) Frontend: Charts + Export buttons on main dashboard
+   ========================= */
+
+// FILE: client/src/pages/AppGrantDashboard.tsx
+// Add recharts imports at top:
+import {
+  ResponsiveContainer,
+  BarChart, Bar,
+  LineChart, Line,
+  XAxis, YAxis, Tooltip,
+  CartesianGrid
+} from "recharts";
+
+// Inside your component header area, add export buttons:
+{
+  /* Replace your header card content with an actions row */
+}
+/*
+<div className="mt-4 flex flex-wrap gap-2">
+  <a
+    className="px-3 py-2 rounded border border-[hsl(var(--module-tile-border))] bg-white text-sm"
+    href={`/api/grants/metrics.csv?days=90`}
+    target="_blank"
+    rel="noreferrer"
+  >
+    Download CSV
+  </a>
+  <a
+    className="px-3 py-2 rounded border border-[hsl(var(--module-tile-border))] bg-white text-sm"
+    href={`/app/grants/print?days=90`}
+    target="_blank"
+    rel="noreferrer"
+  >
+    Impact Summary (Save as PDF)
+  </a>
+</div>
+*/
+
+// Add chart cards below totals (use data.distributions + data.timeSeries):
+/*
+<div className="md:col-span-3 bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+  <h2 className="font-bold mb-3">Growth Over Time (Last 90 days)</h2>
+  <div className="h-72">
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart
+        data={(data.timeSeries.activeUsersByDay ?? []).map((r:any) => ({
+          day: r.day,
+          activeUsers: r.count,
+        }))}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="day" hide />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Line type="monotone" dataKey="activeUsers" dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+
+<div className="md:col-span-2 bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+  <h2 className="font-bold mb-3">Cases by State (Top)</h2>
+  <div className="h-72">
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={(data.distributions.casesByState ?? []).slice(0, 12)}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="label" interval={0} angle={-25} textAnchor="end" height={70} />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Bar dataKey="count" />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+
+<div className="bg-white rounded-lg border border-[hsl(var(--module-tile-border))] p-5">
+  <h2 className="font-bold mb-3">Module Usage (Top)</h2>
+  <div className="h-72">
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={(data.distributions.moduleUsage ?? []).slice(0, 10)}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="label" interval={0} angle={-25} textAnchor="end" height={70} />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Bar dataKey="count" />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+*/
+
+/* =========================
+   5) Routing: add print route
+   ========================= */
+
+// FILE: client/src/App.tsx
+import AppGrantDashboardPrint from "@/pages/AppGrantDashboardPrint";
+
+// Add:
+<Route path="/app/grants/print" component={AppGrantDashboardPrint} />

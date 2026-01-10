@@ -5827,6 +5827,75 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  function asCsvRow(cols: (string | number | null | undefined)[]) {
+    return cols
+      .map((c) => {
+        const s = c === null || c === undefined ? "" : String(c);
+        const escaped = s.replace(/"/g, '""');
+        return `"${escaped}"`;
+      })
+      .join(",");
+  }
+
+  app.get("/api/grants/metrics.csv", requireAuth, requireGrantViewer, async (req, res) => {
+    try {
+      const days = req.query.days ? Number(req.query.days) : 90;
+      const data = await getGrantMetrics({ days });
+
+      const lines: string[] = [];
+      lines.push(asCsvRow(["Metric Window (days)", data.windowDays]));
+      lines.push("");
+
+      lines.push(asCsvRow(["Totals"]));
+      lines.push(asCsvRow(["Total Users", data.totals.users]));
+      lines.push(asCsvRow(["Total Cases", data.totals.cases]));
+      lines.push(asCsvRow(["Active Users (window)", data.totals.activeUsers]));
+      lines.push("");
+
+      lines.push(asCsvRow(["Cases by State"]));
+      lines.push(asCsvRow(["State", "Count"]));
+      for (const r of data.distributions.casesByState ?? []) {
+        lines.push(asCsvRow([r.label, r.count]));
+      }
+      lines.push("");
+
+      lines.push(asCsvRow(["Module Usage"]));
+      lines.push(asCsvRow(["Module", "Count"]));
+      for (const r of data.distributions.moduleUsage ?? []) {
+        lines.push(asCsvRow([r.label, r.count]));
+      }
+      lines.push("");
+
+      lines.push(asCsvRow(["Time Series - New Users / Day"]));
+      lines.push(asCsvRow(["Day", "Count"]));
+      for (const r of data.timeSeries?.newUsersByDay ?? []) {
+        lines.push(asCsvRow([r.day, r.count]));
+      }
+      lines.push("");
+
+      lines.push(asCsvRow(["Time Series - New Cases / Day"]));
+      lines.push(asCsvRow(["Day", "Count"]));
+      for (const r of data.timeSeries?.newCasesByDay ?? []) {
+        lines.push(asCsvRow([r.day, r.count]));
+      }
+      lines.push("");
+
+      lines.push(asCsvRow(["Time Series - Active Users / Day"]));
+      lines.push(asCsvRow(["Day", "Count"]));
+      for (const r of data.timeSeries?.activeUsersByDay ?? []) {
+        lines.push(asCsvRow([r.day, r.count]));
+      }
+
+      const csv = lines.join("\n");
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="civilla_grant_metrics_${days}d.csv"`);
+      res.send(csv);
+    } catch (e) {
+      console.error("[GrantsCSV] failed", e);
+      res.status(500).json({ ok: false, error: "Failed to export CSV" });
+    }
+  });
+
   app.get("/api/cases/:caseId/trial-prep/sections", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

@@ -5,6 +5,11 @@ interface CountRow {
   count: number;
 }
 
+interface TimeSeriesRow {
+  day: string;
+  count: number;
+}
+
 function bucketSmallCounts(rows: CountRow[], min = 5): CountRow[] {
   const safe: CountRow[] = [];
   let otherCount = 0;
@@ -60,6 +65,33 @@ export async function getGrantMetrics(params: { days?: number }) {
     ORDER BY count DESC
   `);
 
+  const newUsersByDayRes = await pool.query(`
+    SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+           COUNT(*)::int AS count
+    FROM users
+    WHERE created_at >= NOW() - INTERVAL '${days} days'
+    GROUP BY 1
+    ORDER BY 1
+  `).catch(() => ({ rows: [] }));
+
+  const newCasesByDayRes = await pool.query(`
+    SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+           COUNT(*)::int AS count
+    FROM cases
+    WHERE created_at >= NOW() - INTERVAL '${days} days'
+    GROUP BY 1
+    ORDER BY 1
+  `).catch(() => ({ rows: [] }));
+
+  const activeUsersByDayRes = await pool.query(`
+    SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+           COUNT(DISTINCT user_id)::int AS count
+    FROM activity_logs
+    WHERE created_at >= NOW() - INTERVAL '${days} days'
+    GROUP BY 1
+    ORDER BY 1
+  `).catch(() => ({ rows: [] }));
+
   return {
     ok: true,
     windowDays: days,
@@ -73,11 +105,16 @@ export async function getGrantMetrics(params: { days?: number }) {
       moduleUsage: bucketSmallCounts(moduleUsageRes.rows ?? [], 5),
       aiFailures: bucketSmallCounts(aiFailuresRes.rows ?? [], 5),
     },
+    timeSeries: {
+      newUsersByDay: (newUsersByDayRes.rows ?? []).map((r: any): TimeSeriesRow => ({ day: r.day, count: r.count })),
+      newCasesByDay: (newCasesByDayRes.rows ?? []).map((r: any): TimeSeriesRow => ({ day: r.day, count: r.count })),
+      activeUsersByDay: (activeUsersByDayRes.rows ?? []).map((r: any): TimeSeriesRow => ({ day: r.day, count: r.count })),
+    },
     privacy: {
       notes: [
-        "This dashboard contains aggregated metrics only.",
-        "No user-generated content (evidence/documents/messages) is viewable.",
-        "Small counts are bucketed to prevent re-identification.",
+        "Aggregated metrics only (no user-uploaded content).",
+        "Small counts are bucketed to reduce re-identification risk.",
+        "No names, emails, messages, evidence text, or document text are accessible.",
       ],
     },
   };

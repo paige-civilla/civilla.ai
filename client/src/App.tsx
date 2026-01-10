@@ -47,6 +47,7 @@ import AppParentingPlan from "@/pages/AppParentingPlan";
 import AppStartHere from "@/pages/AppStartHere";
 import AppAdminDashboard from "@/pages/AppAdminDashboard";
 import AppGrantDashboard from "@/pages/AppGrantDashboard";
+import AppGrantDashboardPrint from "@/pages/AppGrantDashboardPrint";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -76,6 +77,7 @@ function Router() {
       <Route path="/app/start-here" component={AppStartHere} />
       <Route path="/app/admin" component={AppAdminDashboard} />
       <Route path="/app/grants" component={AppGrantDashboard} />
+      <Route path="/app/grants/print" component={AppGrantDashboardPrint} />
       <Route path="/app/account" component={AppAccountSettings} />
       <Route path="/app/cases" component={AppCases} />
       <Route path="/app/dashboard/:caseId" component={AppDashboard} />
