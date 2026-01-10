@@ -1359,10 +1359,48 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS admin_audit_logs_created_at_idx ON admin_audit_logs(created_at)`
   ]);
 
+  await initTable("draft_outlines", `
+    CREATE TABLE IF NOT EXISTS draft_outlines (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      title TEXT NOT NULL,
+      template_key TEXT NOT NULL DEFAULT 'neutral_summary',
+      sections_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS draft_outlines_user_idx ON draft_outlines(user_id)`,
+    `CREATE INDEX IF NOT EXISTS draft_outlines_case_idx ON draft_outlines(case_id)`
+  ]);
+
+  await initTable("draft_outline_claims", `
+    CREATE TABLE IF NOT EXISTS draft_outline_claims (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      outline_id VARCHAR(255) NOT NULL REFERENCES draft_outlines(id) ON DELETE CASCADE,
+      section_id TEXT NOT NULL,
+      claim_id VARCHAR(255) NOT NULL REFERENCES case_claims(id) ON DELETE CASCADE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS draft_outline_claims_user_idx ON draft_outline_claims(user_id)`,
+    `CREATE INDEX IF NOT EXISTS draft_outline_claims_case_idx ON draft_outline_claims(case_id)`,
+    `CREATE INDEX IF NOT EXISTS draft_outline_claims_outline_idx ON draft_outline_claims(outline_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS draft_outline_claims_unique_idx ON draft_outline_claims(outline_id, claim_id)`
+  ]);
+
   const analyticsExists = await tableExists("analytics_events");
   const auditExists = await tableExists("admin_audit_logs");
+  const draftOutlinesExists = await tableExists("draft_outlines");
+  const draftOutlineClaimsExists = await tableExists("draft_outline_claims");
   console.log(`[DB MIGRATION] Verification: analytics_events table present: ${analyticsExists}`);
   console.log(`[DB MIGRATION] Verification: admin_audit_logs table present: ${auditExists}`);
+  console.log(`[DB MIGRATION] Verification: draft_outlines table present: ${draftOutlinesExists}`);
+  console.log(`[DB MIGRATION] Verification: draft_outline_claims table present: ${draftOutlineClaimsExists}`);
 
   await ensureSchemaMigrations();
   

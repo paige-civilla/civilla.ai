@@ -2178,3 +2178,70 @@ export const insertAdminAuditLogSchema = z.object({
 
 export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
 export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+
+// Phase 3: Draft Outlines (Section-based document organization)
+export const draftOutlineTemplateKeys = ["neutral_summary", "declaration_style", "trial_binder_summary"] as const;
+export type DraftOutlineTemplateKey = typeof draftOutlineTemplateKeys[number];
+
+export const draftOutlines = pgTable("draft_outlines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  title: text("title").notNull(),
+  templateKey: text("template_key").notNull().default("neutral_summary"),
+  sectionsJson: jsonb("sections_json").notNull().default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("draft_outlines_user_idx").on(table.userId),
+  caseIdx: index("draft_outlines_case_idx").on(table.caseId),
+}));
+
+export const insertDraftOutlineSchema = z.object({
+  title: z.string().min(1).max(500).optional().default("Draft Outline"),
+  templateKey: z.enum(draftOutlineTemplateKeys).optional().default("neutral_summary"),
+});
+
+export const updateDraftOutlineSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  sectionsJson: z.any().optional(),
+});
+
+export type InsertDraftOutline = z.infer<typeof insertDraftOutlineSchema>;
+export type UpdateDraftOutline = z.infer<typeof updateDraftOutlineSchema>;
+export type DraftOutline = typeof draftOutlines.$inferSelect;
+
+// Phase 3: Draft Outline Claims (join table linking claims to outline sections)
+export const draftOutlineClaims = pgTable("draft_outline_claims", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  outlineId: varchar("outline_id").notNull().references(() => draftOutlines.id, { onDelete: "cascade" }),
+  sectionId: text("section_id").notNull(),
+  claimId: varchar("claim_id").notNull().references(() => caseClaims.id, { onDelete: "cascade" }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("draft_outline_claims_user_idx").on(table.userId),
+  caseIdx: index("draft_outline_claims_case_idx").on(table.caseId),
+  outlineIdx: index("draft_outline_claims_outline_idx").on(table.outlineId),
+  uniqueOutlineClaim: uniqueIndex("draft_outline_claims_unique_idx").on(table.outlineId, table.claimId),
+}));
+
+export const insertDraftOutlineClaimSchema = z.object({
+  sectionId: z.string().min(1),
+  claimId: z.string().min(1),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
+
+export const bulkUpdateDraftOutlineClaimsSchema = z.object({
+  moves: z.array(z.object({
+    claimId: z.string().min(1),
+    sectionId: z.string().min(1),
+    sortOrder: z.number().int().min(0),
+  })),
+});
+
+export type InsertDraftOutlineClaim = z.infer<typeof insertDraftOutlineClaimSchema>;
+export type BulkUpdateDraftOutlineClaims = z.infer<typeof bulkUpdateDraftOutlineClaimsSchema>;
+export type DraftOutlineClaim = typeof draftOutlineClaims.$inferSelect;
