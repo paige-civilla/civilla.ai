@@ -11246,5 +11246,25 @@ Top 3 selection criteria:
     }
   });
 
+  // ============================================================
+  // DEV-ONLY AUDIT ENDPOINTS
+  // ============================================================
+  const { devOnly } = await import("./middleware/devOnly");
+  
+  app.get("/api/audit/run", requireAuth, devOnly, async (req, res) => {
+    try {
+      const { runFullAudit } = await import("./audit/runAudit");
+      const result = await runFullAudit();
+      res.json(result);
+    } catch (error) {
+      console.error("[AUDIT] Error:", error);
+      res.status(500).json({
+        ok: false,
+        error: "Audit failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
   return httpServer;
 }
