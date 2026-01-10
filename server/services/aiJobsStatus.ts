@@ -32,12 +32,19 @@ export interface ClaimsStatus {
   lastError: string | null;
 }
 
+export interface FactsStatus {
+  total: number;
+  promoted: number;
+  pending: number;
+}
+
 export interface AiJobsStatusResponse {
   ok: boolean;
   caseId: string;
   extraction: ExtractionStatus;
   analyses: AnalysisStatus;
   claims: ClaimsStatus;
+  facts: FactsStatus;
   updatedAt: string;
 }
 
@@ -70,12 +77,13 @@ export function humanizeError(error: string | null | undefined): string {
 }
 
 export async function getAiJobsStatus(userId: string, caseId: string): Promise<AiJobsStatusResponse> {
-  const [extractionCounts, analysisCounts, recentFailedExtractions, recentFailedAnalyses, claimsLogs] = await Promise.all([
+  const [extractionCounts, analysisCounts, recentFailedExtractions, recentFailedAnalyses, claimsLogs, factsCount] = await Promise.all([
     storage.countExtractionsByStatus(userId, caseId),
     storage.countAnalysesByStatus(userId, caseId),
     storage.getRecentFailedExtractions(userId, caseId, 5),
     storage.getRecentFailedAnalyses(userId, caseId, 5),
     storage.getRecentClaimsActivityLogs(userId, caseId, 10),
+    storage.countEvidenceFactsByCase(userId, caseId),
   ]);
 
   const extractionFailures: RecentFailure[] = recentFailedExtractions.map(e => ({
@@ -127,6 +135,11 @@ export async function getAiJobsStatus(userId: string, caseId: string): Promise<A
       pending: isPending,
       lastRunAt,
       lastError,
+    },
+    facts: {
+      total: factsCount.total,
+      promoted: factsCount.promoted,
+      pending: factsCount.pending,
     },
     updatedAt: new Date().toISOString(),
   };
