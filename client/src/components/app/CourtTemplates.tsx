@@ -9,11 +9,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, Download, Eye, Loader2, Scale, List, FileCheck, BookOpen, MessageSquare, Users, TrendingUp, Briefcase, Sparkles, Lightbulb, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ReactMarkdown from "react-markdown";
 import AutoFillPreview from "./AutoFillPreview";
+import FieldMappingPanel from "./FieldMappingPanel";
 
 interface TemplateDefinition {
   templateKey: string;
@@ -73,6 +74,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showAutoFill, setShowAutoFill] = useState(false);
   const [includeEvidenceFacts, setIncludeEvidenceFacts] = useState(false);
+  const [showFieldMapping, setShowFieldMapping] = useState(false);
 
   const { data: templatesData } = useQuery<{ templates: TemplateDefinition[]; categories: Record<string, TemplateCategory> }>({
     queryKey: ["/api/templates"],
@@ -134,6 +136,7 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
     setDocumentTitle(`${template.displayName} - ${new Date().toLocaleDateString()}`);
     setPreviewMarkdown(null);
     setShowAutoFill(false);
+    setShowFieldMapping(false);
   };
 
   const handleAutoFillApply = (sections: Array<{ sectionKey: string; title: string; contentMarkdown: string }>) => {
@@ -405,7 +408,22 @@ export default function CourtTemplates({ caseId }: CourtTemplatesProps) {
                   <Sparkles className="w-4 h-4 mr-2" />
                   {showAutoFill ? "Hide Auto-Fill" : "Auto-Fill from Evidence"}
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFieldMapping(!showFieldMapping)}
+                  data-testid="button-toggle-field-mapping"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {showFieldMapping ? "Hide Suggestions" : "View Field Suggestions"}
+                </Button>
               </div>
+
+              {showFieldMapping && (
+                <FieldMappingPanel
+                  caseId={caseId}
+                  templateKey={selectedTemplate.templateKey}
+                />
+              )}
 
               {showAutoFill && (
                 <AutoFillPreview

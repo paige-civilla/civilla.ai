@@ -1,0 +1,97 @@
+REPLIT TASK: Fresh Beta Reset + Admin/Grant Setup (DO NOT INVENT PASSWORDS)
+
+Goal
+1) Clear all users and all user-generated data so we can run a clean beta test.
+2) Provide the exact steps for Paige to create an Admin account + Grant Viewer account using normal signup, then promote them via DB flags.
+3) ALSO clear uploaded files from Cloudflare R2 that belong to the wiped data (if applicable), so storage is clean too.
+
+Hard rules
+- Do NOT create or share any “default username/password”.
+- Admin/grant access must be done by promoting a real user account via DB flags.
+- Before deleting, print a warning in the console: “IRREVERSIBLE WITHOUT BACKUP”.
+- Use transactions where possible.
+- Do not wipe marketing-side content; only app database + R2 objects tied to evidence uploads.
+
+Step 0 — Safety
+- Confirm DATABASE_URL points to the correct Neon DB (the beta DB).
+- If possible, create a DB backup snapshot (Neon) before wiping.
+
+Step 1 — Identify tables to wipe
+- Enumerate all tables in public schema.
+- Categorize:
+  A) user-generated tables (wipe)
+  B) system/reference tables (keep, if any)
+- Output the final wipe list in logs before executing.
+
+Step 2 — Wipe DB (Postgres)
+Implement a server-only script (dev-only) OR provide SQL for Paige to run in Neon:
+- Disable/handle FK constraints correctly:
+  Use TRUNCATE ... CASCADE for user-generated tables.
+- Also reset sequences where relevant.
+
+Minimum expected wiped data includes (adjust to actual table names):
+users / user_profiles
+cases
+case_children
+timeline_events
+timeline_categories
+evidence_files
+evidence_extractions
+evidence_notes / case_evidence_notes
+evidence_ai_analyses
+documents (generated docs)
+lexi_threads
+lexi_messages
+case_rule_terms (optional: if it’s per-case caching, wipe it)
+trial_prep_shortlist
+exhibit_lists
+exhibit_evidence
+exhibit_snippets
+claims/citations/issues tables:
+case_claims, citation_pointers, claim_citations, issue_groupings, issue_claims
+activity_logs / lexi_feedback_events
+
+IMPORTANT:
+- If there are any “seeded templates” tables that are not user-specific, keep them.
+
+Step 3 — Wipe Cloudflare R2 (uploaded evidence)
+- Find how evidence file keys are stored (likely in evidence_files: storageKey / r2Key / url).
+- Because DB is wiped, you MUST collect keys BEFORE truncating evidence_files, OR do the wipe in this order:
+  1) Query all evidence file storage keys into memory
+  2) Delete those objects from R2
+  3) Then truncate DB tables
+- If keys are not stored or are inconsistent, log that clearly.
+
+Step 4 — Create Admin + Grant Viewer (no passwords)
+After wipe, provide exact instructions to Paige:
+1) Sign up normally in the app for two accounts:
+   - admin@... (Admin)
+   - grants@... (Grant Viewer)
+2) In Neon SQL editor, run:
+   UPDATE user_profiles SET is_admin = true WHERE user_id = '<ADMIN_USER_UUID>';
+   UPDATE user_profiles SET is_grant_viewer = true WHERE user_id = '<GRANT_USER_UUID>';
+3) Confirm by logging in and visiting:
+   /app/admin
+   /app/grants
+
+Step 5 — Verification checklist
+After wipe:
+- /api/health OK
+- Create case works
+- Upload evidence works
+- Extraction jobs run
+- Run AI analysis works
+- Claims suggest works
+- Document compile from claims works
+- Admin dashboard loads (admin user)
+- Grant dashboard loads (grant user)
+
+Output required
+Return a single report:
+- Exact SQL used (or exact script path + commands)
+- Tables wiped + row counts before/after
+- Whether R2 objects were deleted + count
+- Instructions for Paige to promote admin/grant users (no passwords)
+- Any issues found
+
+Proceed now and implement.

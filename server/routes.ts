@@ -10928,6 +10928,35 @@ Top 3 selection criteria:
     }
   });
 
+  app.get("/api/cases/:caseId/templates/field-mapping", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      const templateKey = req.query.templateKey as string;
+
+      if (!templateKey) {
+        return res.status(400).json({ error: "templateKey query param required" });
+      }
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { getFieldMappingSuggestions } = await import("./templates/compileTemplate");
+      const result = await getFieldMappingSuggestions(storage, userId, caseId, templateKey);
+      
+      if (!result) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Field mapping error:", error);
+      res.status(500).json({ error: "Failed to get field mapping suggestions" });
+    }
+  });
+
   app.get("/api/cases/:caseId/court-templates/preflight", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;

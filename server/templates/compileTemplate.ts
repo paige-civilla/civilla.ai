@@ -132,6 +132,130 @@ function filterClaimsByTemplate(
   return filtered;
 }
 
+export interface FieldSuggestion {
+  claimId: string;
+  claimText: string;
+  claimType: string;
+  hasCitations: boolean;
+  citationCount: number;
+  suggestedSections: Array<{
+    sectionKey: string;
+    sectionTitle: string;
+    matchReason: string;
+  }>;
+}
+
+export interface FieldMappingResult {
+  templateKey: string;
+  templateName: string;
+  sections: Array<{
+    sectionKey: string;
+    sectionTitle: string;
+    description: string;
+    claimTypes: string[];
+    suggestedClaims: Array<{
+      claimId: string;
+      claimText: string;
+      claimType: string;
+      hasCitations: boolean;
+      citationCount: number;
+      canInsert: boolean;
+      blockReason?: string;
+    }>;
+  }>;
+  uncitedClaimsCount: number;
+  totalClaimsCount: number;
+}
+
+export async function getFieldMappingSuggestions(
+  storage: IStorage,
+  userId: string,
+  caseId: string,
+  templateKey: string
+): Promise<FieldMappingResult | null> {
+  const template = getTemplateByKey(templateKey);
+  if (!template) return null;
+
+  const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+  
+  const claimsWithCitationInfo: Array<{
+    claim: CaseClaim;
+    citationCount: number;
+    hasCitations: boolean;
+  }> = [];
+
+  for (const claim of acceptedClaims) {
+    const citations = await storage.listClaimCitations(userId, claim.id);
+    claimsWithCitationInfo.push({
+      claim,
+      citationCount: citations.length,
+      hasCitations: citations.length > 0,
+    });
+  }
+
+  const sections: FieldMappingResult["sections"] = [];
+  let uncitedCount = 0;
+
+  for (const section of template.sections) {
+    if (section.key === "intro" || section.key === "conclusion" || section.key === "cover") {
+      continue;
+    }
+
+    const suggestedClaims: FieldMappingResult["sections"][0]["suggestedClaims"] = [];
+    
+    for (const { claim, citationCount, hasCitations } of claimsWithCitationInfo) {
+      let matchesSection = false;
+      
+      if (section.claimTypes && section.claimTypes.length > 0) {
+        matchesSection = section.claimTypes.includes(claim.claimType);
+      } else if (section.claimTags && section.claimTags.length > 0) {
+        const tags = Array.isArray(claim.tags) ? claim.tags : [];
+        matchesSection = section.claimTags.some(tag => tags.includes(tag));
+      } else {
+        matchesSection = true;
+      }
+
+      if (matchesSection) {
+        const canInsert = hasCitations || template.requiredCitationCount === 0;
+        let blockReason: string | undefined;
+        
+        if (!hasCitations && template.requiredCitationCount > 0) {
+          blockReason = "This claim cannot be inserted because it lacks evidence citations. Add citations to this claim first.";
+          uncitedCount++;
+        } else if (claim.missingInfoFlag && !template.allowMissingInfoClaims) {
+          blockReason = "This claim is flagged as needing more information.";
+        }
+
+        suggestedClaims.push({
+          claimId: claim.id,
+          claimText: claim.claimText,
+          claimType: claim.claimType,
+          hasCitations,
+          citationCount,
+          canInsert: canInsert && !claim.missingInfoFlag,
+          blockReason,
+        });
+      }
+    }
+
+    sections.push({
+      sectionKey: section.key,
+      sectionTitle: section.title,
+      description: section.description,
+      claimTypes: section.claimTypes || [],
+      suggestedClaims,
+    });
+  }
+
+  return {
+    templateKey,
+    templateName: template.displayName,
+    sections,
+    uncitedClaimsCount: uncitedCount,
+    totalClaimsCount: acceptedClaims.length,
+  };
+}
+
 export async function runPreflight(
   storage: IStorage,
   userId: string,
