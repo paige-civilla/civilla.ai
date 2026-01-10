@@ -259,6 +259,11 @@ export default function AppDocuments() {
         quote?: string;
       };
     }>;
+    linkedTimelineEvents?: Array<{
+      eventId: string;
+      eventDate: string;
+      eventTitle: string;
+    }>;
   }
 
   const [compileResult, setCompileResult] = useState<{ markdown: string; trace: TraceEntry[]; documentId?: string; title?: string } | null>(null);
@@ -1514,6 +1519,22 @@ export default function AppDocuments() {
                                     )}
                                   </div>
                                 ))}
+                              </div>
+                            )}
+                            {entry.linkedTimelineEvents && entry.linkedTimelineEvents.length > 0 && (
+                              <div className="mt-2 pl-3">
+                                <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                                  <History className="w-3 h-3" />
+                                  Linked Timeline Events:
+                                </p>
+                                <div className="space-y-1">
+                                  {entry.linkedTimelineEvents.map((event) => (
+                                    <div key={event.eventId} className="text-xs text-muted-foreground pl-2 border-l-2 border-primary/30">
+                                      <span className="font-medium">{event.eventDate}</span>
+                                      {event.eventTitle && <span className="ml-1">— {event.eventTitle.length > 60 ? event.eventTitle.substring(0, 60) + "..." : event.eventTitle}</span>}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>

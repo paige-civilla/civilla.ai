@@ -3609,7 +3609,7 @@ export class DatabaseStorage implements IStorage {
     
     return links.map(l => ({
       eventId: l.eventId,
-      eventDate: l.eventDate,
+      eventDate: l.eventDate instanceof Date ? l.eventDate.toISOString().split('T')[0] : String(l.eventDate),
       eventTitle: l.eventTitle || "",
       linkId: l.linkId,
     }));
