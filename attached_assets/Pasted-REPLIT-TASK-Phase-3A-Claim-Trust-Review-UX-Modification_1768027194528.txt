@@ -1,0 +1,152 @@
+REPLIT TASK: Phase 3A — Claim Trust + Review UX (Modification-of-Custody style)
+
+Goal
+Make “claims → citations → drafting” feel trustworthy and reviewable by adding:
+1) Claim confidence badges (Supported / Needs review / Not ready)
+2) “Why this claim is included” expandable section (shows citations + quote)
+3) Draft-locking (claims used in compiled documents become locked)
+4) One-time Phase Transition UX message when readiness crosses threshold
+
+IMPORTANT
+- No legal advice. This is UX + traceability only.
+- Do NOT fabricate citations or page numbers.
+- Use existing DB tables: case_claims, claim_citations, citation_pointers, documents (or compiled docs), draft readiness endpoint.
+- Keep changes additive and idempotent.
+- Make it work on desktop + mobile.
+
+────────────────────────────────────────────────────────────
+A) DATA MODEL: Draft-Locking (DB + migrations)
+────────────────────────────────────────────────────────────
+1) Update shared/schema.ts
+Add these columns to case_claims (all nullable/default safe):
+- used_in_doc_ids JSONB default [] (array of doc ids where claim was used)
+- is_locked boolean default false
+- locked_at timestamp nullable
+- locked_reason text nullable (e.g., "Used in compiled document")
+
+Add zod update schema fields so UI can PATCH:
+- isLocked, lockedReason (only allow server to set; UI can request unlock)
+
+2) server/db.ts migrations
+Add ensureCaseClaimsColumns() that runs every startup to add the above columns if missing.
+
+────────────────────────────────────────────────────────────
+B) BACKEND: Lock claims when compiling + allow unlock with warning
+────────────────────────────────────────────────────────────
+1) In the compile-from-claims endpoint (POST /api/cases/:caseId/documents/compile-claims)
+After the document is created successfully:
+- For every ACCEPTED claim that was included in the compiled output:
+  - Append the new document id into claim.used_in_doc_ids (dedupe)
+  - Set claim.is_locked = true
+  - Set claim.locked_at = now()
+  - Set claim.locked_reason = "Used in compiled document"
+
+Return in response:
+- compiledDocId
+- lockedClaimCount
+
+2) Add endpoints:
+- PATCH /api/claims/:claimId/lock   (admin/internal only OR same user)
+  Body: { reason?: string }
+- PATCH /api/claims/:claimId/unlock
+  Body: { confirm: true, reason?: string }
+Rules:
+- requireAuth
+- user must own the claim via case ownership
+- unlock requires confirm=true and logs an activity event
+
+3) Activity logging (privacy-safe)
+Write to activity_logs:
+- claim_locked
+- claim_unlocked
+Include: caseId, claimId, docId (if relevant), reason (short), timestamp.
+
+────────────────────────────────────────────────────────────
+C) FRONTEND: Claim Confidence Badges + “Why included” expander
+────────────────────────────────────────────────────────────
+Where: EvidenceViewer claims UI (the claims section you already added)
+
+1) Add confidence status computation per claim:
+- Supported (green): claim has >=1 citation AND missing_info_flag is false
+- Needs review (amber): missing_info_flag is true (even if cited)
+- Not ready (red): 0 citations
+
+Show a small badge/pill next to each claim:
+- "Supported"
+- "Needs review"
+- "Not ready"
+
+2) Add “Why this is included” expander per claim:
+Under each claim, add a toggle link/button:
+- "Why this is included"
+When expanded, display:
+- For each citation:
+  - Evidence filename
+  - Page number (if present)
+  - Timestamp (if present)
+  - Short quote snippet from citation_pointers (already stored)
+Formatting:
+- Use bullet list, short lines, and spacing (no run-on paragraph)
+
+3) Locked claim UX
+If claim.is_locked:
+- Show a lock icon + label "Locked (used in draft)"
+- Disable inline editing by default
+- Show an “Unlock” button that opens a confirm modal:
+  Modal copy:
+  “This claim was used in a compiled document. Editing it may require re-review of your draft.”
+  Buttons: Cancel / Unlock (calls /unlock with confirm=true)
+- After unlock, allow edits again and show an amber warning until it is re-cited / re-accepted.
+
+────────────────────────────────────────────────────────────
+D) FRONTEND: One-time Phase Transition UX message
+────────────────────────────────────────────────────────────
+Goal: show ONCE when a case becomes “Draft Preparation ready”.
+
+Definition (use draft readiness API you already have):
+- readinessPercent >= 70
+- uncited accepted claims == 0
+- extractionCoverage >= 80 (if you have it; otherwise skip)
+
+Implementation:
+1) Add a case-scoped flag stored in DB:
+Option A (preferred): in lexi_case_memory.preferences_json OR a new case_settings field:
+- phase_transition_shown boolean default false
+- phase string enum: "gathering" | "draft_preparation" | "drafting"
+
+2) On dashboard (or Document Creator preflight):
+- If criteria met AND phase_transition_shown is false:
+  - Show a single banner/card:
+    Title: “You’re ready for Draft Preparation”
+    Body (2–3 lines max):
+      “You’ve moved from Information Gathering to Draft Preparation. You can still add evidence, but new information may require re-review.”
+    Buttons:
+      - “Got it” (sets phase_transition_shown=true)
+      - “Open Document Creator” (navigate)
+
+3) Never show it again once acknowledged.
+
+────────────────────────────────────────────────────────────
+E) UI STYLE REQUIREMENTS (match your readability goals)
+────────────────────────────────────────────────────────────
+- No long run-on paragraphs.
+- Use headings + bullets + spacing.
+- In Lexi and in claim explanations, keep paragraphs <= 5 lines.
+- Use existing theme tokens (module tile colors etc.). No new hard-coded blues.
+
+────────────────────────────────────────────────────────────
+F) VERIFY (must do before marking complete)
+────────────────────────────────────────────────────────────
+1) Create/accept a claim WITHOUT citations → shows "Not ready" badge (red)
+2) Attach a citation → badge becomes "Supported" (green)
+3) Mark missing info → badge becomes "Needs review" (amber)
+4) Compile from claims → included claims become locked with doc id stored
+5) Locked claims cannot be edited until unlock confirm
+6) Phase transition banner appears once when readiness meets threshold, then never again
+
+Deliverable
+- List files changed
+- Confirm migrations added for case_claims new columns
+- Confirm compile endpoint locks claims
+- Confirm EvidenceViewer shows badges + “Why included” expander
+- Confirm phase transition one-time behavior works
