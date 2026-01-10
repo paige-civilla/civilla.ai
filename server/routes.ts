@@ -1404,6 +1404,92 @@ export async function registerRoutes(
     }
   });
 
+  // User transparency log - filtered for user-visible events only
+  const USER_VISIBLE_EVENT_TYPES = [
+    "evidence_upload",
+    "evidence_extracted", 
+    "claims_suggested",
+    "claim_accept",
+    "claim_reject",
+    "document_generated",
+    "document_export",
+    "export_performed",
+    "timeline_event_created",
+    "case_created",
+  ];
+
+  app.get("/api/user/transparency-log", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+
+      const allLogs = await storage.listActivityLogs(userId, limit * 2, 0);
+      
+      // Filter to only user-visible events, exclude internal/admin notes
+      const visibleLogs = allLogs
+        .filter(log => USER_VISIBLE_EVENT_TYPES.includes(log.eventType))
+        .map(log => ({
+          id: log.id,
+          eventType: log.eventType,
+          description: log.description,
+          createdAt: log.createdAt,
+          caseId: log.caseId,
+          // Exclude internal metadata, only include safe fields
+          metadata: log.metadata ? {
+            count: (log.metadata as Record<string, unknown>).count,
+            filename: (log.metadata as Record<string, unknown>).filename,
+            templateName: (log.metadata as Record<string, unknown>).templateName,
+          } : undefined,
+        }))
+        .slice(0, limit);
+
+      res.json(visibleLogs);
+    } catch (error) {
+      console.error("Transparency log error:", error);
+      res.status(500).json({ error: "Failed to fetch transparency log" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/transparency-log", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const caseId = req.params.caseId;
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const allLogs = await storage.listActivityLogs(userId, limit * 2, 0);
+      
+      // Filter to case-specific, user-visible events only
+      const visibleLogs = allLogs
+        .filter(log => 
+          log.caseId === caseId && 
+          USER_VISIBLE_EVENT_TYPES.includes(log.eventType)
+        )
+        .map(log => ({
+          id: log.id,
+          eventType: log.eventType,
+          description: log.description,
+          createdAt: log.createdAt,
+          caseId: log.caseId,
+          metadata: log.metadata ? {
+            count: (log.metadata as Record<string, unknown>).count,
+            filename: (log.metadata as Record<string, unknown>).filename,
+            templateName: (log.metadata as Record<string, unknown>).templateName,
+          } : undefined,
+        }))
+        .slice(0, limit);
+
+      res.json(visibleLogs);
+    } catch (error) {
+      console.error("Case transparency log error:", error);
+      res.status(500).json({ error: "Failed to fetch transparency log" });
+    }
+  });
+
   // Case readiness score endpoint
   app.get("/api/cases/:caseId/readiness", requireAuth, async (req, res) => {
     try {
