@@ -15,6 +15,25 @@ export interface ClaimWithCitations {
   citations: CitationPointer[];
 }
 
+export interface TracedSentence {
+  sentenceId: string;
+  sectionKey: string;
+  sectionTitle: string;
+  paragraphNumber: number;
+  text: string;
+  claimId: string;
+  citationIds: string[];
+  evidenceFileIds: string[];
+  citationDetails: Array<{
+    citationId: string;
+    evidenceFileId: string;
+    fileName: string;
+    pageNumber?: number;
+    timestampSeconds?: number;
+    quoteSnippet: string;
+  }>;
+}
+
 export interface CompileResult {
   ok: boolean;
   markdown: string;
@@ -24,6 +43,7 @@ export interface CompileResult {
     exhibitLabel: string;
     pagesReferenced: number[];
   }>;
+  tracedSentences: TracedSentence[];
   stats: {
     totalClaimsIncluded: number;
     totalCitations: number;
@@ -201,6 +221,7 @@ export async function compileTemplate(
       ok: false,
       markdown: "",
       sources: [],
+      tracedSentences: [],
       stats: { totalClaimsIncluded: 0, totalCitations: 0, sectionsGenerated: 0 },
       errors: ["Template not found"],
     };
@@ -236,6 +257,7 @@ export async function compileTemplate(
       ok: false,
       markdown: "",
       sources: [],
+      tracedSentences: [],
       stats: { totalClaimsIncluded: 0, totalCitations: 0, sectionsGenerated: 0 },
       errors,
     };
@@ -246,6 +268,7 @@ export async function compileTemplate(
       ok: false,
       markdown: "",
       sources: [],
+      tracedSentences: [],
       stats: { totalClaimsIncluded: 0, totalCitations: 0, sectionsGenerated: 0 },
       errors: ["No claims available to compile"],
     };
@@ -280,6 +303,7 @@ export async function compileTemplate(
 
   let sectionsGenerated = 0;
   let paragraphNumber = 0;
+  const tracedSentences: TracedSentence[] = [];
 
   for (const section of template.sections) {
     if (section.key === "intro" || section.key === "conclusion" || section.key === "cover") {
@@ -334,6 +358,28 @@ export async function compileTemplate(
       );
 
       markdown += `${paragraphNumber}. ${claim.claimText} ${citationRefs.join(" ")}\n\n`;
+
+      tracedSentences.push({
+        sentenceId: `${section.key}-${paragraphNumber}`,
+        sectionKey: section.key,
+        sectionTitle: section.title,
+        paragraphNumber,
+        text: claim.claimText,
+        claimId: claim.id,
+        citationIds: citations.map(c => c.id),
+        evidenceFileIds: [...new Set(citations.map(c => c.evidenceFileId))],
+        citationDetails: citations.map(cit => {
+          const evidence = evidenceMap.get(cit.evidenceFileId);
+          return {
+            citationId: cit.id,
+            evidenceFileId: cit.evidenceFileId,
+            fileName: evidence?.originalName || "Unknown",
+            pageNumber: cit.pageNumber ?? undefined,
+            timestampSeconds: cit.timestampSeconds ?? undefined,
+            quoteSnippet: (cit.quote || "").slice(0, 140),
+          };
+        }),
+      });
     }
   }
 
@@ -387,6 +433,7 @@ export async function compileTemplate(
     ok: true,
     markdown,
     sources,
+    tracedSentences,
     stats: {
       totalClaimsIncluded: claimsWithCitations.length,
       totalCitations,
