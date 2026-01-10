@@ -22,6 +22,7 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
+- 2026-01-10: Task 3 Complete - Resource Field Maps with resource_field_maps table, CRUD API endpoints, bulk create with suggestions, keyword-based claim suggestion algorithm, ResourceFieldMapPanel component with collapsible fields, claim suggestions, manual value input, completion tracking, integrated into Court Forms page with "Map Fields" button
 - 2026-01-10: Task 2 Complete - Form Pack Finder with Court Forms & Packets module page, state/category/keyword search, official-domain filtering (.gov/.us/courts only), pre-populated resources for 10 states + federal, saved resources with edit/delete functionality
 - 2026-01-10: Task 1 Complete - Template-to-Field Auto-Population with 10 narrative templates, autofill endpoint using keyword/tag/claimType matching, AutoFillPreview component with readiness gating (≥60% + ≥5 cited claims)
 - 2026-01-10: Fixed Lexi Sources - All sources now clickable: valid URLs verified via HEAD request, invalid/unreachable URLs converted to Google search links. Sources sorted (official domains first), deduplicated, limited to 5. LexiPanel always renders as clickable <a> tags.
