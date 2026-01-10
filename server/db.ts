@@ -1393,6 +1393,28 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS draft_outline_claims_unique_idx ON draft_outline_claims(outline_id, claim_id)`
   ]);
 
+  await initTable("resource_field_maps", `
+    CREATE TABLE IF NOT EXISTS resource_field_maps (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      resource_id VARCHAR(255) NOT NULL REFERENCES case_resources(id) ON DELETE CASCADE,
+      field_label TEXT NOT NULL,
+      field_description TEXT,
+      claim_id VARCHAR(255) REFERENCES case_claims(id) ON DELETE SET NULL,
+      suggested_claim_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+      manual_value TEXT,
+      is_completed BOOLEAN NOT NULL DEFAULT false,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS resource_field_maps_user_idx ON resource_field_maps(user_id)`,
+    `CREATE INDEX IF NOT EXISTS resource_field_maps_case_idx ON resource_field_maps(case_id)`,
+    `CREATE INDEX IF NOT EXISTS resource_field_maps_resource_idx ON resource_field_maps(resource_id)`
+  ]);
+
   const analyticsExists = await tableExists("analytics_events");
   const auditExists = await tableExists("admin_audit_logs");
   const draftOutlinesExists = await tableExists("draft_outlines");

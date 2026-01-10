@@ -1,0 +1,123 @@
+/**
+ * CIVILLA — MODIFICATION-OF-CUSTODY PARITY (FINAL SUB-BUILD)
+ * Implements Blocks 1–4 with strict UPL safeguards
+ */
+
+/* =====================================================
+   BLOCK 1 — ASSISTIVE FIELD MAPPING (NO AUTO-FILL)
+   ===================================================== */
+
+Add a new AI-assisted endpoint:
+
+POST /api/cases/:caseId/documents/field-mapping
+
+Behavior:
+- Input: accepted claims + document type
+- Output:
+  [
+    {
+      claimId,
+      suggestedSections: ["Background", "Factual Allegations"],
+      confidence: "high" | "medium"
+    }
+  ]
+
+Rules:
+- DO NOT insert text into documents
+- DO NOT rewrite claims
+- DO NOT infer facts
+- Only suggest structural placement
+
+
+/* =====================================================
+   BLOCK 2 — CONTRADICTION & GAP FLAGS
+   ===================================================== */
+
+Add a backend analyzer:
+
+GET /api/cases/:caseId/quality-check
+
+Returns:
+- conflictingDates[]
+- uncitedClaims[]
+- orphanEvidence[]
+- incompleteClaims[]
+
+Rules:
+- No recommendations
+- No legal language
+- Flags only (severity: info | warning)
+
+
+/* =====================================================
+   BLOCK 3 — TRACEABILITY DRILL-DOWN
+   ===================================================== */
+
+Enhance compiled documents:
+
+For every rendered sentence:
+- Attach metadata:
+  {
+    claimId,
+    citationIds[],
+    evidenceFileId
+  }
+
+UI:
+- Click sentence → side panel opens
+- Show:
+  Claim text
+  Citation snippet
+  Evidence filename + page/timestamp
+
+Rules:
+- Read-only
+- No editing in trace view
+
+
+/* =====================================================
+   BLOCK 4 — PRE-SUBMISSION REVIEW + LEGAL DISCLAIMER
+   ===================================================== */
+
+Before enabling EXPORT:
+
+Require explicit user agreement via modal:
+
+Title:
+"Important — Please Review Before Continuing"
+
+Body (non-editable):
+"Civilla is not a law firm and does not provide legal advice.
+This document is generated from information you provided.
+Court requirements vary by jurisdiction.
+You are responsible for reviewing, editing, and determining
+whether this document is appropriate for filing.
+No outcomes are guaranteed."
+
+Required actions:
+☐ I understand this is not legal advice
+☐ I understand I am responsible for reviewing this document
+
+Only when BOTH checked:
+- Enable "Export Document"
+
+Log:
+- userId
+- caseId
+- timestamp
+- documentId
+- acknowledgementVersion
+
+Block export if unchecked.
+
+
+/* =====================================================
+   GLOBAL SAFEGUARDS
+   ===================================================== */
+
+- All AI outputs must trace to claims
+- All claims must trace to citations
+- All citations must trace to evidence
+- No drafting from raw text
+- No predictive language
+- No recommendations

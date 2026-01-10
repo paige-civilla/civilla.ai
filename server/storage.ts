@@ -189,6 +189,10 @@ import {
   type CaseResource,
   type InsertCaseResource,
   type UpdateCaseResource,
+  resourceFieldMaps,
+  type ResourceFieldMap,
+  type InsertResourceFieldMap,
+  type UpdateResourceFieldMap,
 } from "@shared/schema";
 
 export interface ModuleUsageCount {
@@ -535,6 +539,14 @@ export interface IStorage {
   createCaseResource(userId: string, caseId: string, data: InsertCaseResource): Promise<CaseResource>;
   updateCaseResource(userId: string, resourceId: string, data: UpdateCaseResource): Promise<CaseResource | undefined>;
   deleteCaseResource(userId: string, resourceId: string): Promise<boolean>;
+
+  // Task 3: Resource Field Maps (Phase 2)
+  listResourceFieldMaps(userId: string, resourceId: string): Promise<ResourceFieldMap[]>;
+  getResourceFieldMap(userId: string, fieldMapId: string): Promise<ResourceFieldMap | undefined>;
+  createResourceFieldMap(userId: string, caseId: string, resourceId: string, data: InsertResourceFieldMap): Promise<ResourceFieldMap>;
+  updateResourceFieldMap(userId: string, fieldMapId: string, data: UpdateResourceFieldMap): Promise<ResourceFieldMap | undefined>;
+  deleteResourceFieldMap(userId: string, fieldMapId: string): Promise<boolean>;
+  bulkCreateResourceFieldMaps(userId: string, caseId: string, resourceId: string, fields: InsertResourceFieldMap[]): Promise<ResourceFieldMap[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4201,6 +4213,98 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return result.length > 0;
+  }
+
+  async listResourceFieldMaps(userId: string, resourceId: string): Promise<ResourceFieldMap[]> {
+    return db
+      .select()
+      .from(resourceFieldMaps)
+      .where(and(
+        eq(resourceFieldMaps.resourceId, resourceId),
+        eq(resourceFieldMaps.userId, userId)
+      ))
+      .orderBy(asc(resourceFieldMaps.sortOrder));
+  }
+
+  async getResourceFieldMap(userId: string, fieldMapId: string): Promise<ResourceFieldMap | undefined> {
+    const [fieldMap] = await db
+      .select()
+      .from(resourceFieldMaps)
+      .where(and(
+        eq(resourceFieldMaps.id, fieldMapId),
+        eq(resourceFieldMaps.userId, userId)
+      ));
+    return fieldMap;
+  }
+
+  async createResourceFieldMap(userId: string, caseId: string, resourceId: string, data: InsertResourceFieldMap): Promise<ResourceFieldMap> {
+    const [fieldMap] = await db
+      .insert(resourceFieldMaps)
+      .values({
+        userId,
+        caseId,
+        resourceId,
+        fieldLabel: data.fieldLabel,
+        fieldDescription: data.fieldDescription,
+        claimId: data.claimId,
+        manualValue: data.manualValue,
+        isCompleted: data.isCompleted ?? false,
+        sortOrder: data.sortOrder ?? 0,
+      })
+      .returning();
+    return fieldMap;
+  }
+
+  async updateResourceFieldMap(userId: string, fieldMapId: string, data: UpdateResourceFieldMap): Promise<ResourceFieldMap | undefined> {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.fieldLabel !== undefined) updateData.fieldLabel = data.fieldLabel;
+    if (data.fieldDescription !== undefined) updateData.fieldDescription = data.fieldDescription;
+    if (data.claimId !== undefined) updateData.claimId = data.claimId;
+    if (data.manualValue !== undefined) updateData.manualValue = data.manualValue;
+    if (data.isCompleted !== undefined) updateData.isCompleted = data.isCompleted;
+    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+
+    const [fieldMap] = await db
+      .update(resourceFieldMaps)
+      .set(updateData)
+      .where(and(
+        eq(resourceFieldMaps.id, fieldMapId),
+        eq(resourceFieldMaps.userId, userId)
+      ))
+      .returning();
+    return fieldMap;
+  }
+
+  async deleteResourceFieldMap(userId: string, fieldMapId: string): Promise<boolean> {
+    const result = await db
+      .delete(resourceFieldMaps)
+      .where(and(
+        eq(resourceFieldMaps.id, fieldMapId),
+        eq(resourceFieldMaps.userId, userId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async bulkCreateResourceFieldMaps(userId: string, caseId: string, resourceId: string, fields: InsertResourceFieldMap[]): Promise<ResourceFieldMap[]> {
+    if (fields.length === 0) return [];
+    
+    const values = fields.map((f, idx) => ({
+      userId,
+      caseId,
+      resourceId,
+      fieldLabel: f.fieldLabel,
+      fieldDescription: f.fieldDescription,
+      claimId: f.claimId,
+      manualValue: f.manualValue,
+      isCompleted: f.isCompleted ?? false,
+      sortOrder: f.sortOrder ?? idx,
+    }));
+
+    return db
+      .insert(resourceFieldMaps)
+      .values(values)
+      .returning();
   }
 }
 

@@ -2330,3 +2330,45 @@ export const updateCaseResourceSchema = z.object({
 export type InsertCaseResource = z.infer<typeof insertCaseResourceSchema>;
 export type UpdateCaseResource = z.infer<typeof updateCaseResourceSchema>;
 export type CaseResource = typeof caseResources.$inferSelect;
+
+export const resourceFieldMaps = pgTable("resource_field_maps", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  resourceId: varchar("resource_id").notNull().references(() => caseResources.id, { onDelete: "cascade" }),
+  fieldLabel: text("field_label").notNull(),
+  fieldDescription: text("field_description"),
+  claimId: varchar("claim_id").references(() => caseClaims.id, { onDelete: "set null" }),
+  suggestedClaimIds: jsonb("suggested_claim_ids").notNull().default(sql`'[]'::jsonb`),
+  manualValue: text("manual_value"),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("resource_field_maps_user_idx").on(table.userId),
+  caseIdx: index("resource_field_maps_case_idx").on(table.caseId),
+  resourceIdx: index("resource_field_maps_resource_idx").on(table.resourceId),
+}));
+
+export const insertResourceFieldMapSchema = z.object({
+  fieldLabel: z.string().min(1).max(500),
+  fieldDescription: z.string().max(2000).optional().nullable(),
+  claimId: z.string().optional().nullable(),
+  manualValue: z.string().max(5000).optional().nullable(),
+  isCompleted: z.boolean().optional().default(false),
+  sortOrder: z.number().int().optional().default(0),
+});
+
+export const updateResourceFieldMapSchema = z.object({
+  fieldLabel: z.string().min(1).max(500).optional(),
+  fieldDescription: z.string().max(2000).optional().nullable(),
+  claimId: z.string().optional().nullable(),
+  manualValue: z.string().max(5000).optional().nullable(),
+  isCompleted: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export type InsertResourceFieldMap = z.infer<typeof insertResourceFieldMapSchema>;
+export type UpdateResourceFieldMap = z.infer<typeof updateResourceFieldMapSchema>;
+export type ResourceFieldMap = typeof resourceFieldMaps.$inferSelect;
