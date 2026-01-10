@@ -249,3 +249,57 @@ export function getFactTypeColor(factType: string): string {
   };
   return colors[factType] || "slate";
 }
+
+interface TriggerFactExtractionOptions {
+  userId: string;
+  caseId: string;
+  evidenceId: string;
+  extractedText: string;
+}
+
+export function triggerFactExtractionForEvidence(opts: TriggerFactExtractionOptions): void {
+  const { userId, caseId, evidenceId, extractedText } = opts;
+
+  if (!extractedText || extractedText.trim().length < 100) {
+    console.log(`[FactExtraction] Skipping fact extraction for evidence ${evidenceId}: text too short`);
+    return;
+  }
+
+  setImmediate(async () => {
+    try {
+      console.log(`[FactExtraction] Starting auto-extraction for evidence ${evidenceId}`);
+      
+      await storage.createActivityLog(
+        userId,
+        caseId,
+        "evidence_fact_extraction_started",
+        `Auto-extracting facts from evidence`,
+        { evidenceId }
+      );
+
+      const result = await runFactExtractionForEvidence(userId, caseId, evidenceId);
+      
+      if (result.success) {
+        console.log(`[FactExtraction] Auto-extracted ${result.factsCreated} facts for evidence ${evidenceId}`);
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "evidence_fact_extraction_completed",
+          `Extracted ${result.factsCreated} facts from evidence`,
+          { evidenceId, factsCreated: result.factsCreated }
+        );
+      } else {
+        console.log(`[FactExtraction] Auto-extraction failed for evidence ${evidenceId}: ${result.error}`);
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "evidence_fact_extraction_failed",
+          `Failed to extract facts: ${result.error}`,
+          { evidenceId, error: result.error }
+        );
+      }
+    } catch (error) {
+      console.error(`[FactExtraction] Error during auto-extraction for evidence ${evidenceId}:`, error);
+    }
+  });
+}

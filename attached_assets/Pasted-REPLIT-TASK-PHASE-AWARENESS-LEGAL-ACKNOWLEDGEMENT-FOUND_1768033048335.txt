@@ -1,0 +1,54 @@
+REPLIT TASK — PHASE AWARENESS + LEGAL ACKNOWLEDGEMENT (FOUNDATIONAL UX)
+
+GOAL:
+Make Civilla behave like the Modification of Custody workflow by clearly guiding users through phases and enforcing legal disclaimers without overwhelming the dashboard or creating new modules.
+
+WHAT TO IMPLEMENT:
+
+1. PHASE AWARENESS UX (GLOBAL)
+- Add a small, non-intrusive banner at the top of main app pages that indicates the current phase:
+  • Phase 1: Evidence & Timeline
+  • Phase 2: Patterns & Claims
+  • Phase 3: Court-Formatted Documents
+- The banner should automatically change based on the page/module the user is on.
+- This is informational only (no blocking).
+
+2. LEGAL ACKNOWLEDGEMENT GATE (PHASE-BASED)
+- Before a user enters Phase 3 (Document Drafting):
+  • Show a one-time acknowledgement modal stating:
+    “Civilla is not a law firm and does not provide legal advice. Documents are generated from user-provided information and must be reviewed before filing.”
+  • Require explicit user agreement before continuing.
+  • Store acknowledgement so it does NOT repeat every time.
+
+3. JUMP-AHEAD WARNING (NOT A BLOCK)
+- If a user attempts to access Phase 3 without sufficient preparation (evidence, claims, citations):
+  • Allow access
+  • Show a warning banner:
+    “You can continue, but your draft may be incomplete due to missing evidence or citations.”
+
+4. NAVIGATION PLACEMENT
+- Do NOT create a new module.
+- Phase awareness and acknowledgements should live in:
+  • App layout
+  • Document creator flow
+  • Existing navigation patterns only
+
+5. PRIVACY & UPL COMPLIANCE
+- Ensure this system:
+  • Does NOT provide legal advice
+  • Does NOT suggest what to file
+  • Only explains structure, readiness, and limitations
+- Language must be neutral, court-appropriate, and consistent with existing compliance text.
+
+DELIVERABLE:
+- Phase banner visible across the app
+- One-time legal acknowledgement before drafting
+- Non-blocking warnings for early access
+- No new dashboard modules added
+
+DO NOT:
+- Add legal strategy
+- Add filing instructions
+- Add admin visibility into user content
+
+END TASK

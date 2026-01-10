@@ -2,6 +2,7 @@ import { storage } from "../storage";
 import { extractEvidenceText } from "./evidenceExtraction";
 import { getSignedDownloadUrl } from "../r2";
 import { triggerClaimsSuggestionForEvidence } from "../claims/autoSuggest";
+import { triggerFactExtractionForEvidence } from "./factExtraction";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -142,6 +143,13 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
     console.log(`[ExtractionJob] Complete for evidence ${evidenceId}: ${result.text.length} chars`);
 
     triggerClaimsSuggestionForEvidence({
+      userId,
+      caseId,
+      evidenceId,
+      extractedText: result.text,
+    });
+
+    triggerFactExtractionForEvidence({
       userId,
       caseId,
       evidenceId,
