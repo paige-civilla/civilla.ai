@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
 import { PieChart, Download, FileText } from "lucide-react";
@@ -37,10 +38,12 @@ interface GrantMetrics {
 }
 
 export default function AppGrantDashboard() {
+  const [days, setDays] = useState(90);
+
   const { data, isLoading, error } = useQuery<GrantMetrics>({
-    queryKey: ["/api/grants/metrics", { days: 90 }],
+    queryKey: ["/api/grants/metrics", { days }],
     queryFn: async () => {
-      const res = await fetch(`/api/grants/metrics?days=90`, { credentials: "include" });
+      const res = await fetch(`/api/grants/metrics?days=${days}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load");
       return res.json();
     },
@@ -61,10 +64,21 @@ export default function AppGrantDashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  className="border border-[hsl(var(--module-tile-border))] rounded px-2 py-2 text-sm bg-white text-[#243032]"
+                  value={days}
+                  onChange={(e) => setDays(Number(e.target.value))}
+                  data-testid="select-days"
+                >
+                  <option value={7}>Last 7 days</option>
+                  <option value={30}>Last 30 days</option>
+                  <option value={90}>Last 90 days</option>
+                  <option value={180}>Last 180 days</option>
+                </select>
                 <a
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded border border-[hsl(var(--module-tile-border))] bg-white text-sm text-[#243032] hover:bg-[#243032]/5 transition-colors"
-                  href="/api/grants/metrics.csv?days=90"
+                  href={`/api/grants/metrics.csv?days=${days}`}
                   target="_blank"
                   rel="noreferrer"
                   data-testid="link-download-csv"
@@ -74,7 +88,7 @@ export default function AppGrantDashboard() {
                 </a>
                 <a
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded border border-[hsl(var(--module-tile-border))] bg-white text-sm text-[#243032] hover:bg-[#243032]/5 transition-colors"
-                  href="/app/grants/print?days=90"
+                  href={`/app/grants/print?days=${days}`}
                   target="_blank"
                   rel="noreferrer"
                   data-testid="link-print-pdf"
