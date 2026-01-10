@@ -1,0 +1,217 @@
+REPLIT TASK: Phase 3 — Draft Sections (Evidence → Organized Draft) | UPL-safe
+
+Goal
+Make “Compile from Claims” feel like Paige’s Modification-of-Custody workflow:
+1) We NEVER draft from raw text.
+2) We ONLY draft from ACCEPTED claims with citations.
+3) Before compiling a document, users get a SECTION-BASED outline that auto-fills from their accepted claims (UPL-safe organization, not legal advice).
+4) Users can move claims between sections, rename sections, and see coverage + missing info warnings.
+5) Compile output uses those sections with citations.
+
+Non-negotiables / Guardrails
+- No legal advice. No “you should file X.” No outcome predictions.
+- Only use accepted claims (status=accepted).
+- Any compiled paragraph must be backed by one or more citations OR must be labeled “Missing citation” and blocked from export until user resolves.
+- Show “Missing info” warnings but do not block compile (only block missing citations).
+- Tone must remain neutral and court-appropriate.
+
+------------------------------------------------------------
+A) DATABASE (Add Draft Outline tables)
+------------------------------------------------------------
+Add these tables in shared/schema.ts + ensureSchemaMigrations in server/db.ts (additive + idempotent):
+
+1) draft_outlines
+- id (uuid pk)
+- user_id (uuid, indexed)
+- case_id (uuid, indexed)
+- title (text)  // e.g., “Declaration — Parenting time issues”
+- template_key (text) // e.g., "neutral_summary", "declaration_style", etc.
+- sections_json (jsonb) // ordered array of sections; each section has id, title, description, isRequired, order
+- created_at, updated_at
+
+2) draft_outline_claims (join table)
+- id (uuid pk)
+- user_id (uuid, indexed)
+- case_id (uuid, indexed)
+- outline_id (uuid, indexed, fk -> draft_outlines.id)
+- section_id (text) // refers to sections_json[*].id
+- claim_id (uuid, indexed, fk -> case_claims.id)
+- sort_order (int)
+- created_at
+
+Constraints:
+- Unique (outline_id, claim_id) so a claim can only appear once per outline by default (we can allow duplicates later, but keep it simple now).
+
+Migration:
+- Create tables if missing.
+- Add indexes.
+- No dropping.
+
+------------------------------------------------------------
+B) BACKEND API (Create/Read/Update Outline + Compile)
+------------------------------------------------------------
+Add endpoints in server/routes.ts with requireAuth + ownership enforcement:
+
+1) GET /api/cases/:caseId/draft-outline
+Returns the latest outline for the case (or null).
+
+2) POST /api/cases/:caseId/draft-outline
+Creates a new outline from accepted claims.
+Body:
+{
+  title?: string,
+  templateKey?: "neutral_summary" | "declaration_style" | "trial_binder_summary" (keep small)
+}
+Behavior:
+- Pull accepted claims for case.
+- Auto-generate default sections based on templateKey:
+  neutral_summary default sections:
+   - "Case Overview" (required)
+   - "Key Facts (Chronological)" (required)
+   - "Key Issues / Themes" (required)
+   - "Supporting Evidence Index" (required)
+   - "Open Questions / Missing Info" (optional)
+  declaration_style sections:
+   - "Introduction"
+   - "Background"
+   - "Facts (Chronological)"
+   - "Concerns / Observations (Neutral)"
+   - "Exhibits Referenced"
+   - "Missing Info"
+- Auto-assign claims to sections using deterministic rules:
+   - claim.type / tags / issue grouping membership
+   - timeline-ish claims → "Facts"
+   - context/procedural → "Case Overview"
+   - pattern/theme → "Key Issues / Themes"
+   - missing_info_flag claims → "Open Questions / Missing Info"
+- Save sections_json ordered.
+- Save join rows with sort_order.
+
+3) PATCH /api/draft-outline/:outlineId
+Updates title, template_key, or sections_json (rename/reorder sections).
+Body:
+{
+  title?: string,
+  sectionsJson?: any
+}
+
+4) PUT /api/draft-outline/:outlineId/claims
+Bulk update claim placements + ordering in one request.
+Body:
+{
+  moves: [
+    { claimId, sectionId, sortOrder }
+  ]
+}
+Behavior:
+- Verify each claimId belongs to this case + user.
+- Upsert rows into draft_outline_claims and set sort_order.
+- Remove any claims no longer included if not in moves list (optional: keep, but simplest is sync exactly).
+
+5) GET /api/draft-outline/:outlineId
+Returns outline + sections + claims grouped by section with citation counts + missing flags:
+{
+  outline,
+  sections: [
+    {
+      id, title, description, order,
+      claims: [{ claim, citationCount, hasCitations, missingInfoFlag }]
+    }
+  ],
+  stats: {
+    acceptedClaims,
+    citedClaims,
+    uncitedClaims,
+    missingInfoClaims
+  }
+}
+
+6) POST /api/draft-outline/:outlineId/compile
+Compiles markdown (or doc record) FROM outline sections.
+Rules:
+- Only include claims that are accepted AND present in outline mapping.
+- For each claim, include citation brackets inline:
+  [EVID: filename, p.X | “short quote”]
+- Group by section headings.
+- Add a “Sources” section listing unique evidence files.
+- BLOCK compile if any claim used has 0 citations:
+  return 409 { code: "UNCITED_CLAIMS", uncitedClaimIds: [...] }
+- Allow compile if citations exist but missing_info_flag is true; add a warning badge block at top of that section.
+
+Store compiled output using existing documents table (same as compile-claims endpoint), but set:
+- document.source = "outline"
+- metadata.outlineId
+- metadata.templateKey
+
+------------------------------------------------------------
+C) FRONTEND UI (Document Creator: Outline Builder step)
+------------------------------------------------------------
+In client/src/pages/AppDocuments.tsx (or wherever compile-from-claims lives), implement:
+
+1) “Compile from Claims” becomes:
+Step 1: Ready to Draft (already exists)
+Step 2: Draft Outline (NEW)
+Step 3: Compile + Preview (existing output view)
+
+2) Draft Outline UI layout:
+- Left column: Sections list (reorder via drag or up/down buttons).
+- Right column: Claims in selected section.
+- Each claim card shows:
+  - claim text
+  - citation badge: “Sources: N” (red if 0)
+  - missing info flag badge (amber)
+  - quick actions: “Move to…” dropdown + up/down reorder inside section
+- Top bar:
+  - Outline title (editable inline like thread rename)
+  - Template dropdown (neutral_summary / declaration_style / trial_binder_summary)
+  - “Rebuild Outline” button (re-run auto assignment but do NOT delete manual moves unless user confirms; simplest: rebuild only if user has no manual edits; otherwise show warning modal)
+- Coverage panel:
+  - Cited vs uncited count
+  - Missing info count
+  - Button: “Auto-attach missing sources” (already built in Phase 2B) — runs bulk auto-attach then refreshes outline data.
+
+3) Compile button:
+- Disabled if uncitedClaims > 0.
+- Shows exact message: “Add sources to X claims before compiling.”
+- On success, navigates to the compiled doc preview (existing pattern).
+
+4) Deep-link compatibility:
+If user clicks a claim from search results (?claimId=...), outline builder should scroll and highlight that claim card if present.
+
+------------------------------------------------------------
+D) KEEP IT UPL-SAFE (Microcopy + safe framing)
+------------------------------------------------------------
+Add a small banner on Outline step:
+“Civilla organizes your accepted, cited facts into a neutral draft structure. Verify everything against the original evidence.”
+
+No legal recommendations. No filing instructions.
+
+------------------------------------------------------------
+E) ACCEPTANCE TESTS (must pass)
+------------------------------------------------------------
+1) Case with accepted claims + citations:
+- Outline auto-creates, sections populated.
+- Compile works and produces sectioned markdown with citations.
+
+2) Case with accepted claims but some missing citations:
+- Outline shows red badges.
+- Compile blocked with helpful message.
+- Bulk auto-attach reduces uncited count.
+
+3) Reorder + move claims:
+- Persist after refresh (server source of truth).
+
+4) Permissions:
+- User cannot access another user’s outline, claims, or case.
+
+------------------------------------------------------------
+F) REPORT BACK IN YOUR RESPONSE
+------------------------------------------------------------
+After implementing, reply with:
+- Files changed
+- New endpoints
+- Table names + key columns
+- Confirmation compile is blocked on uncited claims
+- A quick “how to test” checklist for Paige (non-dev)
+
+Now implement this end-to-end.

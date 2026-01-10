@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { X, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText, StickyNote, Plus, Pencil, Trash2, Check, Loader2, BookOpen, Scale, ChevronDown, ChevronUp, CheckCircle, Circle, Tag, Clock, AlignLeft, AlertTriangle, Sparkles, XCircle, MessageSquareQuote, Link as LinkIcon } from "lucide-react";
+import { X, ExternalLink, ZoomIn, ZoomOut, RotateCw, FileText, StickyNote, Plus, Pencil, Trash2, Check, Loader2, BookOpen, Scale, ChevronDown, ChevronUp, CheckCircle, Circle, Tag, Clock, AlignLeft, AlertTriangle, Sparkles, XCircle, MessageSquareQuote, Link as LinkIcon, Shield, ShieldCheck, ShieldAlert, Lock, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,35 @@ function getAnchorSummary(note: EvidenceNoteFull): string {
 function getNoteColorClass(color: string | null): string {
   const found = NOTE_COLORS.find(c => c.value === color);
   return found?.class || "bg-muted/50";
+}
+
+function getClaimConfidence(claim: { citations?: { id: string }[]; missingInfoFlag?: boolean }): {
+  level: "high" | "medium" | "low";
+  label: string;
+  colorClass: string;
+  icon: typeof ShieldCheck;
+} {
+  const citationCount = claim.citations?.length || 0;
+  if (claim.missingInfoFlag) {
+    return { level: "low", label: "Needs Info", colorClass: "text-amber-600 dark:text-amber-400", icon: ShieldAlert };
+  }
+  if (citationCount >= 2) {
+    return { level: "high", label: "Strong", colorClass: "text-green-600 dark:text-green-400", icon: ShieldCheck };
+  }
+  if (citationCount === 1) {
+    return { level: "medium", label: "Supported", colorClass: "text-blue-600 dark:text-blue-400", icon: Shield };
+  }
+  return { level: "low", label: "Unsupported", colorClass: "text-red-600 dark:text-red-400", icon: ShieldAlert };
+}
+
+function getCreatedFromLabel(createdFrom: string): string {
+  switch (createdFrom) {
+    case "ai_suggestion": return "AI Suggested";
+    case "ai_extracted": return "AI Extracted";
+    case "manual": return "Manually Added";
+    case "imported": return "Imported";
+    default: return createdFrom;
+  }
 }
 
 export default function EvidenceViewer({ caseId, evidence, onClose, extractedText, extractionStatus }: EvidenceViewerProps) {
@@ -361,8 +390,17 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
   });
 
   const [expandedClaimSources, setExpandedClaimSources] = useState<Set<string>>(new Set());
+  const [expandedWhyIncluded, setExpandedWhyIncluded] = useState<Set<string>>(new Set());
   function toggleClaimSources(claimId: string) {
     setExpandedClaimSources(prev => {
+      const next = new Set(prev);
+      if (next.has(claimId)) next.delete(claimId);
+      else next.add(claimId);
+      return next;
+    });
+  }
+  function toggleWhyIncluded(claimId: string) {
+    setExpandedWhyIncluded(prev => {
       const next = new Set(prev);
       if (next.has(claimId)) next.delete(claimId);
       else next.add(claimId);
@@ -784,10 +822,27 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
                         </div>
                       ) : (
                         <>
-                          <p className="text-sm">{claim.claimText}</p>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm flex-1">{claim.claimText}</p>
+                            {(() => {
+                              const confidence = getClaimConfidence(claim);
+                              const ConfIcon = confidence.icon;
+                              return (
+                                <div className={`flex items-center gap-1 text-xs ${confidence.colorClass}`} data-testid={`badge-confidence-${claim.id}`}>
+                                  <ConfIcon className="w-3.5 h-3.5" />
+                                  <span className="font-medium">{confidence.label}</span>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <div className="flex flex-wrap gap-1 items-center">
                             <Badge variant="secondary" className="text-xs">{claim.claimType}</Badge>
                             {claim.missingInfoFlag && <Badge variant="destructive" className="text-xs">Missing Info</Badge>}
+                            {claim.isLocked && (
+                              <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+                                <Lock className="w-3 h-3 mr-1" />Locked
+                              </Badge>
+                            )}
                             {Array.isArray(claim.tags) && (claim.tags as string[]).map((tag, i) => (
                               <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
                             ))}
@@ -799,6 +854,24 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
                               Sources: {claim.citations?.length || 0}
                             </Badge>
                           </div>
+                          <button 
+                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                            onClick={() => toggleWhyIncluded(claim.id)}
+                            data-testid={`button-why-included-${claim.id}`}
+                          >
+                            <Info className="w-3 h-3" />
+                            {expandedWhyIncluded.has(claim.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            Why included
+                          </button>
+                          {expandedWhyIncluded.has(claim.id) && (
+                            <div className="pl-3 border-l-2 border-muted space-y-1 text-xs text-muted-foreground" data-testid={`why-included-content-${claim.id}`}>
+                              <p><strong>Origin:</strong> {getCreatedFromLabel(claim.createdFrom)}</p>
+                              <p><strong>Type:</strong> {claim.claimType}</p>
+                              <p><strong>Sources:</strong> {claim.citations?.length || 0} citation{(claim.citations?.length || 0) !== 1 ? "s" : ""} attached</p>
+                              {claim.sourceNoteId && <p><strong>From Note:</strong> Linked to evidence note</p>}
+                              {claim.isLocked && <p><strong>Status:</strong> Locked - used in compiled document</p>}
+                            </div>
+                          )}
                           {(!claim.citations || claim.citations.length === 0) && (
                             <Button
                               size="sm"
@@ -884,8 +957,25 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
                     {acceptedClaims.map((claim) => (
                       <Card key={claim.id} className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                         <CardContent className="p-2 space-y-1">
-                          <p className="text-xs">{claim.claimText.length > 100 ? claim.claimText.substring(0, 100) + "..." : claim.claimText}</p>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs flex-1">{claim.claimText.length > 100 ? claim.claimText.substring(0, 100) + "..." : claim.claimText}</p>
+                            {(() => {
+                              const confidence = getClaimConfidence(claim);
+                              const ConfIcon = confidence.icon;
+                              return (
+                                <div className={`flex items-center gap-1 text-xs shrink-0 ${confidence.colorClass}`} data-testid={`badge-confidence-accepted-${claim.id}`}>
+                                  <ConfIcon className="w-3 h-3" />
+                                  <span className="font-medium">{confidence.label}</span>
+                                </div>
+                              );
+                            })()}
+                          </div>
                           <div className="flex flex-wrap gap-1 items-center">
+                            {claim.isLocked && (
+                              <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+                                <Lock className="w-3 h-3 mr-1" />Locked
+                              </Badge>
+                            )}
                             <Badge 
                               variant={claim.citations && claim.citations.length > 0 ? "secondary" : "destructive"} 
                               className="text-xs"
