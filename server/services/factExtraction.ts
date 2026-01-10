@@ -135,12 +135,13 @@ export async function runFactExtractionForEvidence(
     return { success: false, factsCreated: 0, error: "Evidence file not found" };
   }
 
-  const extractions = await storage.listEvidenceExtractions(userId, caseId, evidenceId);
-  const textContent = extractions.map((e) => e.extractedText || "").join("\n\n");
+  const extractions = await storage.listEvidenceExtractions(userId, caseId);
+  const evidenceExtractions = extractions.filter((e) => e.evidenceId === evidenceId);
+  const textContent = evidenceExtractions.map((e) => e.extractedText || "").join("\n\n");
 
   if (!textContent || textContent.trim().length < 50) {
     const ocrPages = await storage.listEvidenceOcrPages(userId, caseId, evidenceId);
-    const ocrText = ocrPages.map((p) => p.text || "").join("\n\n");
+    const ocrText = ocrPages.map((p) => p.textPrimary || "").join("\n\n");
     
     if (!ocrText || ocrText.trim().length < 50) {
       return { success: false, factsCreated: 0, error: "No extracted text available for this evidence" };
@@ -203,9 +204,10 @@ export async function promoteFactToClaim(
   const claim = await storage.createCaseClaim(userId, caseId, {
     claimText: fact.factText,
     claimType: "fact",
-    createdFrom: "evidence_fact",
+    createdFrom: "extraction",
     status: "suggested",
     tags: [fact.factType],
+    missingInfoFlag: false,
   });
 
   await storage.updateEvidenceFact(userId, factId, {

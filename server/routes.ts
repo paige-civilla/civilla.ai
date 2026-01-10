@@ -40,6 +40,7 @@ import { createLimiter } from "./utils/concurrency";
 import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
 import { searchCaseWide } from "./services/search";
 import { isAutoSuggestPending, getAutoSuggestStats, triggerClaimsSuggestionForEvidence } from "./claims/autoSuggest";
+import { runFactExtractionForEvidence, promoteFactToClaim, getFactTypeLabel, getFactTypeColor } from "./services/factExtraction";
 import { requireAdmin } from "./middleware/admin";
 import { getAdminMetrics, getSystemHealth, searchUsers, setUserRoles, createAdminAuditLog, listAdminAuditLogs, createAnalyticsEvent } from "./admin/adminMetrics";
 import { requireGrantViewer } from "./middleware/grantViewer";
@@ -1554,6 +1555,178 @@ Return a JSON object with this structure:
     } catch (error) {
       console.error("Retry claims error:", error);
       res.status(500).json({ error: "Failed to retry claims suggestion" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/evidence/:evidenceId/facts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+      const { factType, promotedToClaim } = req.query;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      const filters: { evidenceId?: string; factType?: string; promotedToClaim?: boolean } = {
+        evidenceId,
+      };
+      if (factType && typeof factType === "string") {
+        filters.factType = factType;
+      }
+      if (promotedToClaim !== undefined) {
+        filters.promotedToClaim = promotedToClaim === "true";
+      }
+
+      const facts = await storage.listEvidenceFacts(userId, caseId, filters);
+      res.json({ facts });
+    } catch (error) {
+      console.error("List evidence facts error:", error);
+      res.status(500).json({ error: "Failed to list evidence facts" });
+    }
+  });
+
+  app.post("/api/cases/:caseId/evidence/:evidenceId/facts/run", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, evidenceId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const file = await storage.getEvidenceFile(evidenceId, userId);
+      if (!file || file.caseId !== caseId) {
+        return res.status(404).json({ error: "Evidence file not found" });
+      }
+
+      await storage.createActivityLog(
+        userId,
+        caseId,
+        "evidence_fact_extraction_started",
+        `Started fact extraction for ${file.originalName}`,
+        { evidenceId },
+        { moduleKey: "evidence", entityType: "evidence_file", entityId: evidenceId }
+      );
+
+      const result = await runFactExtractionForEvidence(userId, caseId, evidenceId);
+
+      if (result.success) {
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "evidence_fact_extraction_completed",
+          `Extracted ${result.factsCreated} facts from ${file.originalName}`,
+          { evidenceId, factsCreated: result.factsCreated },
+          { moduleKey: "evidence", entityType: "evidence_file", entityId: evidenceId }
+        );
+        res.json({ ok: true, factsCreated: result.factsCreated });
+      } else {
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "evidence_fact_extraction_failed",
+          `Fact extraction failed for ${file.originalName}: ${result.error}`,
+          { evidenceId, error: result.error },
+          { moduleKey: "evidence", entityType: "evidence_file", entityId: evidenceId }
+        );
+        res.status(400).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error("Run fact extraction error:", error);
+      res.status(500).json({ error: "Failed to run fact extraction" });
+    }
+  });
+
+  app.post("/api/facts/:factId/promote-to-claim", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { factId } = req.params;
+
+      const fact = await storage.getEvidenceFact(userId, factId);
+      if (!fact) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+
+      const result = await promoteFactToClaim(userId, fact.caseId, factId);
+
+      if (result.success) {
+        await storage.createActivityLog(
+          userId,
+          fact.caseId,
+          "evidence_fact_promoted",
+          `Promoted fact to claim`,
+          { factId, claimId: result.claimId },
+          { moduleKey: "claims", entityType: "claim", entityId: result.claimId }
+        );
+        res.json({ ok: true, claimId: result.claimId });
+      } else {
+        res.status(400).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error("Promote fact to claim error:", error);
+      res.status(500).json({ error: "Failed to promote fact to claim" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/facts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId } = req.params;
+      const { factType, promotedToClaim, evidenceId } = req.query;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const filters: { evidenceId?: string; factType?: string; promotedToClaim?: boolean } = {};
+      if (evidenceId && typeof evidenceId === "string") {
+        filters.evidenceId = evidenceId;
+      }
+      if (factType && typeof factType === "string") {
+        filters.factType = factType;
+      }
+      if (promotedToClaim !== undefined) {
+        filters.promotedToClaim = promotedToClaim === "true";
+      }
+
+      const facts = await storage.listEvidenceFacts(userId, caseId, filters);
+      const counts = await storage.countEvidenceFactsByCase(userId, caseId);
+
+      res.json({ facts, counts });
+    } catch (error) {
+      console.error("List case facts error:", error);
+      res.status(500).json({ error: "Failed to list case facts" });
+    }
+  });
+
+  app.delete("/api/facts/:factId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { factId } = req.params;
+
+      const fact = await storage.getEvidenceFact(userId, factId);
+      if (!fact) {
+        return res.status(404).json({ error: "Fact not found" });
+      }
+
+      const deleted = await storage.deleteEvidenceFact(userId, factId);
+      if (deleted) {
+        res.json({ ok: true });
+      } else {
+        res.status(400).json({ error: "Failed to delete fact" });
+      }
+    } catch (error) {
+      console.error("Delete fact error:", error);
+      res.status(500).json({ error: "Failed to delete fact" });
     }
   });
 
