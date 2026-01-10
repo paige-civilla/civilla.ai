@@ -2999,6 +2999,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
             quote?: string;
           };
         }>;
+        linkedTimelineEvents: Array<{
+          eventId: string;
+          eventDate: string;
+          eventTitle: string;
+        }>;
       };
 
       const trace: TraceEntry[] = [];
@@ -3032,10 +3037,16 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         for (const claim of typeClaims) {
           globalIndex++;
           const citationPointers = await storage.listClaimCitations(userId, claim.id);
+          const linkedEvents = await storage.getTimelineEventsLinkedToClaim(userId, caseId, claim.id);
           const traceEntry: TraceEntry = {
             claimId: claim.id,
             claimText: claim.claimText,
             citations: [],
+            linkedTimelineEvents: linkedEvents.map(e => ({
+              eventId: e.eventId,
+              eventDate: e.eventDate,
+              eventTitle: e.eventTitle,
+            })),
           };
 
           const citationBrackets: string[] = [];
