@@ -1773,6 +1773,10 @@ export const caseClaims = pgTable("case_claims", {
   createdFrom: text("created_from").notNull().default("manual"),
   status: text("status").notNull().default("suggested"),
   sourceNoteId: varchar("source_note_id").references(() => evidenceNotes.id),
+  usedInDocIds: jsonb("used_in_doc_ids").notNull().default(sql`'[]'::jsonb`),
+  isLocked: boolean("is_locked").notNull().default(false),
+  lockedAt: timestamp("locked_at"),
+  lockedReason: text("locked_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({

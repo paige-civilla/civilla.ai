@@ -1132,12 +1132,20 @@ export async function initDbTables(): Promise<void> {
       created_from TEXT NOT NULL DEFAULT 'manual',
       status TEXT NOT NULL DEFAULT 'suggested',
       source_note_id VARCHAR(255),
+      used_in_doc_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+      is_locked BOOLEAN NOT NULL DEFAULT FALSE,
+      locked_at TIMESTAMP,
+      locked_reason TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `, [
     `CREATE INDEX IF NOT EXISTS idx_case_claims_case ON case_claims(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_case_claims_case_status ON case_claims(case_id, status)`
+    `CREATE INDEX IF NOT EXISTS idx_case_claims_case_status ON case_claims(case_id, status)`,
+    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS used_in_doc_ids JSONB NOT NULL DEFAULT '[]'::jsonb`,
+    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS locked_at TIMESTAMP`,
+    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS locked_reason TEXT`
   ]);
 
   await initTable("claim_citations", `
