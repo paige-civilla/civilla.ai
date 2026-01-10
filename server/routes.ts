@@ -2879,6 +2879,47 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.post("/api/cases/:caseId/documents/:documentId/acknowledge", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { caseId, documentId } = req.params;
+
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const { acknowledgementVersion, reviewedChecked, understandChecked } = req.body;
+
+      if (!reviewedChecked || !understandChecked) {
+        return res.status(400).json({ error: "Both checkboxes must be checked to proceed" });
+      }
+
+      await storage.createActivityLog(
+        userId,
+        caseId,
+        "document_acknowledgement",
+        "Pre-submission disclaimer acknowledged before document export",
+        {
+          documentId,
+          acknowledgementVersion: acknowledgementVersion || "1.0",
+          reviewedChecked,
+          understandChecked,
+          acknowledgedAt: new Date().toISOString(),
+        },
+        {
+          entityType: "document",
+          entityId: documentId,
+        }
+      );
+
+      res.json({ ok: true, logged: true });
+    } catch (error) {
+      console.error("Document acknowledgement error:", error);
+      res.status(500).json({ error: "Failed to log acknowledgement" });
+    }
+  });
+
   app.get("/api/cases/:caseId/documents/compile-claims/preflight", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;

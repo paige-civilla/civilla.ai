@@ -367,7 +367,7 @@ export async function compileTemplate(
         text: claim.claimText,
         claimId: claim.id,
         citationIds: citations.map(c => c.id),
-        evidenceFileIds: [...new Set(citations.map(c => c.evidenceFileId))],
+        evidenceFileIds: Array.from(new Set(citations.map(c => c.evidenceFileId))),
         citationDetails: citations.map(cit => {
           const evidence = evidenceMap.get(cit.evidenceFileId);
           return {

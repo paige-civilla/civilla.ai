@@ -1988,6 +1988,7 @@ export const activityLogTypes = [
   "grant_metrics_viewed",
   "facts_suggested",
   "facts_suggesting",
+  "document_acknowledgement",
 ] as const;
 export type ActivityLogType = typeof activityLogTypes[number];
 
