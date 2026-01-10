@@ -5361,6 +5361,23 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/ai/diagnostics", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { runAiDiagnostics } = await import("./services/aiDiagnostics");
+      const result = await runAiDiagnostics(userId);
+      res.json(result);
+    } catch (error) {
+      console.error("[AI][Diagnostics] Error:", error);
+      res.status(500).json({ 
+        ok: false, 
+        error: "Diagnostics failed", 
+        code: "DIAGNOSTICS_ERROR",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/lexi/disclaimer", requireAuth, (_req, res) => {
     res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
   });
