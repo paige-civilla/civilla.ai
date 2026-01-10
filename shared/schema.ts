@@ -54,6 +54,7 @@ export const userProfiles = pgTable("user_profiles", {
   onboardingStatus: text("onboarding_status").notNull().default("incomplete"),
   startHereSeen: boolean("start_here_seen").notNull().default(false),
   isAdmin: boolean("is_admin").notNull().default(false),
+  isGrantViewer: boolean("is_grant_viewer").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
