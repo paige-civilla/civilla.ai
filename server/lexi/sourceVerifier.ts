@@ -1,6 +1,12 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+let pdfParseModule: any = null;
+
+async function loadPdfParse(): Promise<(buffer: Buffer) => Promise<{ text: string; info?: { Title?: string } }>> {
+  if (!pdfParseModule) {
+    const mod = await import("pdf-parse");
+    pdfParseModule = mod.default || mod;
+  }
+  return pdfParseModule;
+}
 
 export interface VerifiedSource {
   label: string;
@@ -153,7 +159,8 @@ async function fetchPageContent(url: string, timeoutMs: number = 8000): Promise<
     if (contentType.includes("application/pdf")) {
       const buffer = await response.arrayBuffer();
       try {
-        const pdfData = await pdfParse(Buffer.from(buffer));
+        const pdfParseFn = await loadPdfParse();
+        const pdfData = await pdfParseFn(Buffer.from(buffer));
         return {
           text: pdfData.text || "",
           title: pdfData.info?.Title || "",
