@@ -46,6 +46,9 @@ import { requireAdmin } from "./middleware/admin";
 import { getAdminMetrics, getSystemHealth, searchUsers, setUserRoles, createAdminAuditLog, listAdminAuditLogs, createAnalyticsEvent } from "./admin/adminMetrics";
 import { requireGrantViewer } from "./middleware/grantViewer";
 import { getGrantMetrics } from "./services/grantMetrics";
+import { runSmokeChecks, type SmokeCheckReport } from "./diagnostics/smokeChecks";
+import { serverStartTime } from "./index";
+import { EvidenceExtractionSchema, EvidenceAiAnalysisSchema, AiHealthResponseSchema } from "@shared/aiContracts";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -6406,6 +6409,111 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (e: any) {
       console.error("Admin audit logs error:", e);
       res.status(500).json({ ok: false, error: "Failed to get audit logs" });
+    }
+  });
+
+  app.get("/api/admin/smoke", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const caseId = typeof req.query.caseId === "string" ? req.query.caseId : undefined;
+      const report = await runSmokeChecks(userId, caseId);
+      res.json({ ...report, requestId: req.requestId });
+    } catch (e: any) {
+      console.error("[SmokeCheck] error:", e);
+      res.status(500).json({ ok: false, error: "Smoke check failed", requestId: req.requestId });
+    }
+  });
+
+  app.get("/api/admin/diagnostics", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { sql } = await import("drizzle-orm");
+      
+      const recentFailuresResult = await db.execute(sql`
+        SELECT type, created_at, error_code, request_id, module_key
+        FROM activity_logs
+        WHERE error_code IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 20
+      `);
+      
+      const recentFailures = (recentFailuresResult.rows || []).map((row: any) => ({
+        type: row.type,
+        createdAt: row.created_at,
+        normalizedError: row.error_code ? String(row.error_code).replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]") : "Unknown",
+        requestId: row.request_id || null,
+        moduleKey: row.module_key || null,
+      }));
+      
+      const extractionCountsResult = await db.execute(sql`
+        SELECT status, COUNT(*)::int as count FROM evidence_extractions GROUP BY status
+      `);
+      const extractions: Record<string, number> = {};
+      for (const row of (extractionCountsResult.rows || []) as any[]) {
+        extractions[row.status || "unknown"] = row.count;
+      }
+      
+      const analysisCountsResult = await db.execute(sql`
+        SELECT status, COUNT(*)::int as count FROM evidence_ai_analyses GROUP BY status
+      `);
+      const analyses: Record<string, number> = {};
+      for (const row of (analysisCountsResult.rows || []) as any[]) {
+        analyses[row.status || "unknown"] = row.count;
+      }
+      
+      const uptimeSeconds = Math.floor((Date.now() - (serverStartTime || Date.now())) / 1000);
+      const commitHash = process.env.REPL_ID || process.env.RAILWAY_GIT_COMMIT_SHA || null;
+      
+      res.json({
+        recentFailures,
+        counts: { extractions, analyses },
+        lastChecks: { openai: null, vision: null },
+        deployment: {
+          nodeEnv: process.env.NODE_ENV || "development",
+          uptimeSeconds,
+          commitHash,
+        },
+        requestId: req.requestId,
+      });
+    } catch (e: any) {
+      console.error("[Diagnostics] error:", e);
+      res.status(500).json({ ok: false, error: "Diagnostics failed", requestId: req.requestId });
+    }
+  });
+
+  app.get("/api/admin/contracts", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const caseId = typeof req.query.caseId === "string" ? req.query.caseId : undefined;
+      const results: Array<{ schema: string; valid: boolean; errors?: string[] }> = [];
+      
+      if (caseId) {
+        const userId = req.session.userId as string;
+        const extractions = await storage.listEvidenceExtractions(userId, caseId);
+        
+        for (const ext of extractions.slice(0, 5)) {
+          const parsed = EvidenceExtractionSchema.safeParse(ext);
+          results.push({
+            schema: "EvidenceExtraction",
+            valid: parsed.success,
+            errors: parsed.success ? undefined : parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`),
+          });
+        }
+        
+        const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
+        for (const analysis of analyses.slice(0, 5)) {
+          const parsed = EvidenceAiAnalysisSchema.safeParse(analysis);
+          results.push({
+            schema: "EvidenceAiAnalysis",
+            valid: parsed.success,
+            errors: parsed.success ? undefined : parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`),
+          });
+        }
+      }
+      
+      const allValid = results.every(r => r.valid);
+      res.json({ ok: allValid, results, requestId: req.requestId });
+    } catch (e: any) {
+      console.error("[Contracts] error:", e);
+      res.status(500).json({ ok: false, error: "Contract validation failed", requestId: req.requestId });
     }
   });
 

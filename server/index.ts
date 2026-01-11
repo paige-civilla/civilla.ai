@@ -10,6 +10,7 @@ import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
 import { requeueStaleExtractions } from "./services/evidenceJobs";
 import { logGcvStatus } from "./services/evidenceExtraction";
+import { requestIdMiddleware } from "./middleware/requestId";
 
 const app = express();
 const httpServer = createServer(app);
@@ -74,6 +75,10 @@ app.use(
     },
   })
 );
+
+app.use(requestIdMiddleware);
+
+export const serverStartTime = Date.now();
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
