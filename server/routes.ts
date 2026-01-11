@@ -5812,21 +5812,55 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       res.json({ assistantMessage: assistantMsg, intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources });
     } catch (err: any) {
+      const requestId = crypto.randomUUID();
+      const userId = req.session?.userId || "unknown";
+      const threadId = req.body?.threadId || "unknown";
+      const effectiveCaseId = req.body?.caseId || null;
+      
       const status = err?.status || err?.response?.status;
       const code = err?.code || err?.error?.code;
+      const errorMessage = err?.message || String(err);
+
+      // Log with correlation ID (redact any keys in error message)
+      const safeMessage = errorMessage.replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]");
+      console.error("[LexiChatError]", { 
+        requestId, 
+        userId, 
+        threadId, 
+        caseId: effectiveCaseId, 
+        code: code || "UNKNOWN",
+        message: safeMessage 
+      });
 
       if (status === 401 || code === "invalid_api_key") {
-        return res.status(401).json({
-          error: "Lexi cannot authenticate to OpenAI (invalid API key). Update OPENAI_API_KEY in Replit Secrets and restart.",
+        return res.status(503).json({
+          error: "Lexi can't authenticate. Please contact support.",
+          code: "OPENAI_KEY_INVALID",
+          requestId,
         });
       }
 
       if (status === 429) {
-        return res.status(429).json({ error: "Lexi is temporarily rate-limited. Please try again in a moment." });
+        return res.status(429).json({ 
+          error: "Lexi is busy. Try again in a minute.", 
+          code: "OPENAI_RATE_LIMIT",
+          requestId,
+        });
       }
 
-      console.error("Lexi chat error:", err);
-      res.status(500).json({ error: "Failed to process message" });
+      if (err.name === "AbortError" || code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT") {
+        return res.status(504).json({ 
+          error: "Lexi timed out. Try Faster mode.", 
+          code: "LEXI_TIMEOUT",
+          requestId,
+        });
+      }
+
+      res.status(500).json({ 
+        error: "Lexi failed", 
+        code: "LEXI_FAILED",
+        requestId,
+      });
     }
   });
 
@@ -6083,16 +6117,30 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       sendSSE("done", { ok: true, threadId, messageId: assistantMessage.id });
       res.end();
     } catch (err: any) {
+      const requestId = crypto.randomUUID();
       const status = err?.status || err?.response?.status;
       const code = err?.code || err?.error?.code;
+      const errorMessage = err?.message || String(err);
+      
+      // Log with correlation ID (redact any keys)
+      const safeMessage = errorMessage.replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]");
+      console.error("[LexiStreamError]", { 
+        requestId, 
+        userId, 
+        threadId: req.body?.threadId || "auto",
+        caseId: req.body?.caseId || null, 
+        code: code || "UNKNOWN",
+        message: safeMessage 
+      });
 
       if (status === 401 || code === "invalid_api_key") {
-        sendSSE("error", { code: "OPENAI_KEY_INVALID", message: "Lexi cannot authenticate to OpenAI. Update OPENAI_API_KEY in Secrets." });
+        sendSSE("error", { code: "OPENAI_KEY_INVALID", message: "Lexi can't authenticate. Please contact support.", requestId });
       } else if (status === 429) {
-        sendSSE("error", { code: "OPENAI_RATE_LIMIT", message: "Rate limit hit. Try again in a minute." });
+        sendSSE("error", { code: "OPENAI_RATE_LIMIT", message: "Lexi is busy. Try again in a minute.", requestId });
+      } else if (err.name === "AbortError" || code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT") {
+        sendSSE("error", { code: "LEXI_TIMEOUT", message: "Lexi timed out. Try Faster mode.", requestId });
       } else {
-        console.error("Lexi stream error:", err);
-        sendSSE("error", { code: "UNKNOWN", message: "Something went wrong. Please try again." });
+        sendSSE("error", { code: "LEXI_FAILED", message: `Lexi error (ID: ${requestId}). Please try again.`, requestId });
       }
       res.end();
     }

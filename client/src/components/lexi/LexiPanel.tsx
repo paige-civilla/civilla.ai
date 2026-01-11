@@ -357,11 +357,38 @@ export default function LexiPanel() {
         stylePreset,
         fastMode,
       });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw errorData;
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/lexi/threads", activeThreadId, "messages"] });
       setCurrentModuleKey(undefined);
+      setInlineError(null);
+    },
+    onError: (err: any) => {
+      const errorCode = err?.code || "UNKNOWN";
+      const requestId = err?.requestId;
+      let errorMessage = "Lexi failed. Please try again.";
+      
+      if (errorCode === "OPENAI_KEY_INVALID") {
+        errorMessage = "Lexi can't authenticate. Please contact support.";
+      } else if (errorCode === "OPENAI_RATE_LIMIT") {
+        errorMessage = "Lexi is busy. Try again in a minute.";
+      } else if (errorCode === "LEXI_TIMEOUT") {
+        errorMessage = "Lexi timed out. Try Faster mode.";
+      } else if (requestId) {
+        errorMessage = `Lexi error (ID: ${requestId}). Please try again.`;
+      }
+      
+      setInlineError(errorMessage);
+      toast({
+        title: "Lexi Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     },
   });
 
@@ -466,12 +493,21 @@ export default function LexiPanel() {
                 newThreadId = data.threadId;
               }
               if (data.code && data.message) {
-                const isTimeout = data.code === "LEXI_TIMEOUT" || data.code === "TIMEOUT";
+                let errorMsg = data.message;
+                if (data.code === "OPENAI_KEY_INVALID") {
+                  errorMsg = "Lexi can't authenticate. Please contact support.";
+                } else if (data.code === "OPENAI_RATE_LIMIT") {
+                  errorMsg = "Lexi is busy. Try again in a minute.";
+                } else if (data.code === "LEXI_TIMEOUT" || data.code === "TIMEOUT") {
+                  errorMsg = "Lexi timed out. Try Faster mode.";
+                } else if (data.requestId) {
+                  errorMsg = `Lexi error (ID: ${data.requestId}). Please try again.`;
+                }
+                
+                setInlineError(errorMsg);
                 toast({
-                  title: isTimeout ? "Lexi Timed Out" : "Lexi Error",
-                  description: isTimeout 
-                    ? "Lexi took too long. Try again (or turn on Faster mode in settings)." 
-                    : data.message,
+                  title: "Lexi Error",
+                  description: errorMsg,
                   variant: "destructive",
                 });
               }
@@ -1118,6 +1154,11 @@ export default function LexiPanel() {
                         )}
                       </button>
                     </div>
+                    {inlineError && (
+                      <p className="mt-2 text-xs text-destructive" data-testid="lexi-inline-error">
+                        {inlineError}
+                      </p>
+                    )}
                   </div>
                 </>
               )}
