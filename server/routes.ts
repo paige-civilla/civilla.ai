@@ -49,6 +49,7 @@ import { getGrantMetrics } from "./services/grantMetrics";
 import { runSmokeChecks, type SmokeCheckReport } from "./diagnostics/smokeChecks";
 import { serverStartTime } from "./index";
 import { EvidenceExtractionSchema, EvidenceAiAnalysisSchema, AiHealthResponseSchema } from "@shared/aiContracts";
+import { isAiTestMode, getMockLexiResponse, getMockStreamChunks } from "./lexi/testMode";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -5755,30 +5756,37 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         console.log("[Lexi] fastMode:", fastMode, "model:", model, "timeout:", timeoutMs);
       }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      let assistantContent: string;
+      
+      if (isAiTestMode()) {
+        console.log("[Lexi] AI_TEST_MODE active - using mock response");
+        assistantContent = getMockLexiResponse(intent, message);
+      } else {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      let completion;
-      try {
-        completion = await openai.chat.completions.create({
-          model,
-          messages: chatHistory,
-          temperature,
-          max_completion_tokens: maxTokens,
-        }, { signal: controller.signal });
-      } catch (abortErr: any) {
-        clearTimeout(timeoutId);
-        if (abortErr.name === "AbortError" || controller.signal.aborted) {
-          return res.status(504).json({ 
-            error: "Lexi timed out. Try again.", 
-            code: "LEXI_TIMEOUT" 
-          });
+        let completion;
+        try {
+          completion = await openai.chat.completions.create({
+            model,
+            messages: chatHistory,
+            temperature,
+            max_completion_tokens: maxTokens,
+          }, { signal: controller.signal });
+        } catch (abortErr: any) {
+          clearTimeout(timeoutId);
+          if (abortErr.name === "AbortError" || controller.signal.aborted) {
+            return res.status(504).json({ 
+              error: "Lexi timed out. Try again.", 
+              code: "LEXI_TIMEOUT" 
+            });
+          }
+          throw abortErr;
         }
-        throw abortErr;
-      }
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      let assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+        assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+      }
       
       // Apply safety and formatting pass
       assistantContent = formatLexiResponse(assistantContent, {
@@ -6042,37 +6050,49 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         clientDisconnected = true;
       });
 
-      const controller = new AbortController();
-      const stream = await openai.chat.completions.create({
-        model,
-        messages: chatHistory,
-        temperature,
-        max_completion_tokens: maxTokens,
-        stream: true,
-      }, { signal: controller.signal });
-
       let fullContent = "";
-      const timeout = setTimeout(() => {
-        if (!clientDisconnected) {
-          controller.abort();
-          sendSSE("error", { code: "LEXI_TIMEOUT", message: "Lexi took too long. Try again (or turn on Faster mode)." });
-          res.end();
+      
+      if (isAiTestMode()) {
+        console.log("[LexiStream] AI_TEST_MODE active - using mock stream");
+        const chunks = getMockStreamChunks(intent, message);
+        for (const chunk of chunks) {
+          if (clientDisconnected) break;
+          fullContent += chunk;
+          sendSSE("token", { delta: chunk });
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
-      }, timeoutMs);
+      } else {
+        const controller = new AbortController();
+        const stream = await openai.chat.completions.create({
+          model,
+          messages: chatHistory,
+          temperature,
+          max_completion_tokens: maxTokens,
+          stream: true,
+        }, { signal: controller.signal });
 
-      for await (const chunk of stream) {
-        if (clientDisconnected) {
-          console.log("[LexiStream] Client disconnected, aborting stream");
-          break;
+        const timeout = setTimeout(() => {
+          if (!clientDisconnected) {
+            controller.abort();
+            sendSSE("error", { code: "LEXI_TIMEOUT", message: "Lexi took too long. Try again (or turn on Faster mode)." });
+            res.end();
+          }
+        }, timeoutMs);
+
+        for await (const chunk of stream) {
+          if (clientDisconnected) {
+            console.log("[LexiStream] Client disconnected, aborting stream");
+            break;
+          }
+          const delta = chunk.choices[0]?.delta?.content || "";
+          if (delta) {
+            fullContent += delta;
+            sendSSE("token", { delta });
+          }
         }
-        const delta = chunk.choices[0]?.delta?.content || "";
-        if (delta) {
-          fullContent += delta;
-          sendSSE("token", { delta });
-        }
+
+        clearTimeout(timeout);
       }
-
-      clearTimeout(timeout);
 
       if (clientDisconnected) {
         console.log("[LexiStream] Not persisting partial response due to client disconnect");
