@@ -144,3 +144,46 @@ All AI routes return structured error codes:
 - `ANALYSIS_ERROR`, `CLAIMS_SUGGEST_FAILED`
 
 Frontend: `humanizeAiError()` function in `server/services/aiDiagnostics.ts` maps codes to user-friendly messages.
+
+## Regression Rails (2026-01-11)
+
+### Request ID Middleware
+- All API responses include `x-request-id` header
+- All error responses include `requestId` field for debugging
+- Implementation: `server/middleware/requestId.ts`
+
+### Admin Smoke Tests
+- `GET /api/admin/smoke` - Runs comprehensive smoke checks (admin only)
+  - DB schema verification (required AI columns)
+  - OpenAI connectivity check
+  - Vision API check
+  - R2 storage check
+  - Lexi thread create/delete check
+  - Case create dry-run check
+- Returns: `{ ok: boolean, checks: [...], timestamp: string, requestId }`
+
+### Admin Diagnostics
+- `GET /api/admin/diagnostics` - Operational dashboard data (admin only)
+  - Recent AI failures from activity_logs (last 20)
+  - Extraction/analysis counts by status
+  - Server uptime, NODE_ENV, commit hash
+- All data is privacy-safe (no user content)
+
+### Contract Validation
+- `GET /api/admin/contracts?caseId=...` - Validates API responses against Zod schemas
+- Schemas in `shared/aiContracts.ts`:
+  - `EvidenceExtractionSchema`, `EvidenceAiAnalysisSchema`
+  - `DraftReadinessSchema`, `SearchResultSchema`
+  - `AiHealthResponseSchema`, `SmokeCheckReportSchema`
+
+### AI Test Mode
+- Set `AI_TEST_MODE=true` to use mock Lexi responses
+- Exercises full pipeline (thread creation, message storage, formatting) without OpenAI costs
+- Implementation: `server/lexi/testMode.ts`
+
+### Error Utilities
+- `server/utils/humanizeError.ts` - Redact secrets, shorten stacks, map error codes
+
+### Predeploy Check Scripts
+- `tsx server/diagnostics/smokeRunner.ts` - Run all smoke checks
+- `tsx server/diagnostics/predeployCheck.ts` - Blocking checks for deploy
