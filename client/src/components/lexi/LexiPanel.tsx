@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X, HelpCircle } from "lucide-react";
+import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X, HelpCircle, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { LexiThread, LexiMessage, LexiUserPrefs } from "@shared/schema";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { getLexiContextFromRoute } from "@/lib/lexiContext";
 
 const OPEN_KEY = "civilla_lexi_open_v1";
 const STYLE_KEY = "civilla_lexi_style_v1";
@@ -208,6 +209,7 @@ export default function LexiPanel() {
   const [renameValue, setRenameValue] = useState("");
   const [pendingAsk, setPendingAsk] = useState<{ text: string; mode?: "help" | "chat" | "research"; moduleKey?: string } | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
+  const [inlineError, setInlineError] = useState<string | null>(null);
   const [stylePreset, setStylePreset] = useState<StylePreset>(() => {
     try {
       const saved = localStorage.getItem(STYLE_KEY);
@@ -277,10 +279,14 @@ export default function LexiPanel() {
   const messages = messagesData?.messages ?? [];
 
   const createThreadMutation = useMutation({
-    mutationFn: async (threadTitle: string) => {
+    mutationFn: async (params: { title?: string; moduleKey?: string }) => {
       setThreadError(null);
+      setInlineError(null);
       const url = caseId ? `/api/cases/${caseId}/lexi/threads` : "/api/lexi/threads";
-      const res = await apiRequest("POST", url, { title: threadTitle });
+      const res = await apiRequest("POST", url, { 
+        title: params.title, 
+        moduleKey: params.moduleKey 
+      });
       if (!res.ok) {
         throw new Error("Failed to create thread");
       }
@@ -531,12 +537,21 @@ export default function LexiPanel() {
       const { text, mode: requestedMode, moduleKey } = e.detail || {};
       if (!text) return;
       
+      console.log("[Lexi] suggested click", { text, moduleKey, threadId: activeThreadId });
+      
       setOpen(true);
       setInput(text);
       setCurrentModuleKey(moduleKey);
+      setInlineError(null);
       
-      if (activeThreadId) {
-        setPendingAsk({ text, mode: requestedMode, moduleKey });
+      // Always set pendingAsk - it will be sent when thread is ready
+      setPendingAsk({ text, mode: requestedMode, moduleKey });
+      
+      // If no thread exists, create one automatically with the module context
+      if (!activeThreadId && !createThreadMutation.isPending) {
+        const ctx = getLexiContextFromRoute(location);
+        const effectiveModuleKey = moduleKey || ctx.moduleKey;
+        createThreadMutation.mutate({ moduleKey: effectiveModuleKey });
       }
     };
 
@@ -544,7 +559,7 @@ export default function LexiPanel() {
     return () => {
       window.removeEventListener("lexi:ask" as any, handleLexiAsk);
     };
-  }, [activeThreadId]);
+  }, [activeThreadId, location, createThreadMutation]);
 
   useEffect(() => {
     if (pendingAsk && activeThreadId && !sendMessageMutation.isPending && !isStreaming) {
@@ -567,11 +582,13 @@ export default function LexiPanel() {
   async function send() {
     const text = input.trim();
     if (!text || sendMessageMutation.isPending || isStreaming) return;
+    
+    setInlineError(null);
 
     if (!activeThreadId) {
-      const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-      setPendingAsk({ text, moduleKey: currentModuleKey });
-      createThreadMutation.mutate(`New conversation - ${timestamp}`);
+      const ctx = getLexiContextFromRoute(location);
+      setPendingAsk({ text, moduleKey: currentModuleKey || ctx.moduleKey });
+      createThreadMutation.mutate({ moduleKey: currentModuleKey || ctx.moduleKey });
       setInput("");
       return;
     }
@@ -586,18 +603,20 @@ export default function LexiPanel() {
 
   async function handleSuggestedQuestion(question: string) {
     if (sendMessageMutation.isPending || createThreadMutation.isPending || isStreaming) return;
+    
+    setInlineError(null);
+    const ctx = getLexiContextFromRoute(location);
 
     if (!activeThreadId) {
-      const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-      setPendingAsk({ text: question });
-      createThreadMutation.mutate(`New conversation - ${timestamp}`);
+      setPendingAsk({ text: question, moduleKey: ctx.moduleKey });
+      createThreadMutation.mutate({ moduleKey: ctx.moduleKey });
       return;
     }
 
     if (streamingEnabled) {
-      sendStreamingMessage({ text: question });
+      sendStreamingMessage({ text: question, moduleKey: ctx.moduleKey });
     } else {
-      sendMessageMutation.mutate({ text: question });
+      sendMessageMutation.mutate({ text: question, moduleKey: ctx.moduleKey });
     }
   }
 
@@ -606,8 +625,8 @@ export default function LexiPanel() {
   }
 
   function startNewThread() {
-    const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-    createThreadMutation.mutate(`New conversation - ${timestamp}`);
+    const ctx = getLexiContextFromRoute(location);
+    createThreadMutation.mutate({ moduleKey: ctx.moduleKey });
   }
 
   function handleAddToDeadlines(messageContent: string) {
@@ -888,11 +907,12 @@ export default function LexiPanel() {
                       type="button"
                       onClick={startNewThread}
                       disabled={createThreadMutation.isPending}
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-medium bg-[#314143] text-white hover:opacity-90 active:opacity-80 disabled:opacity-50 transition-opacity"
                       data-testid="button-start-conversation"
+                      aria-label="Start conversation"
                     >
-                      <Plus className="w-4 h-4" />
-                      {createThreadMutation.isPending ? "Starting..." : "Start a conversation"}
+                      <MessageSquare className="w-4 h-4" />
+                      {createThreadMutation.isPending ? "Starting..." : "Start conversation"}
                     </button>
                     {threadError && (
                       <p className="mt-2 text-xs text-destructive" data-testid="lexi-thread-error">

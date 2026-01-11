@@ -1,0 +1,145 @@
+REPLIT TASK: Fix Lexi “Something went wrong”, make suggested questions auto-send, pill-style Start button, and auto-name threads by page
+
+GOAL
+A) Clicking any suggested question anywhere in the app should:
+   1) Open Lexi panel (if closed)
+   2) Ensure a thread exists (auto-create if none)
+   3) Auto-name the thread based on the current page/module (Dashboard/Evidence/etc.)
+   4) Send the suggested question as the first message immediately
+B) “Start conversation” should be a pill button styled like the dark navbar.
+C) If Lexi fails (OpenAI/Vision/DB), show the real actionable error to the user (not a generic “something went wrong”), and log it server-side with a correlation id.
+
+IMPLEMENTATION PLAN
+
+1) STANDARDIZE “MODULE CONTEXT” FOR LEXI THREAD CREATION (frontend)
+- Create a tiny helper in: client/src/lib/lexiContext.ts
+  Export function getLexiContextFromRoute(locationPathname: string): {
+    moduleKey: string;   // e.g. "dashboard", "evidence", "timeline", "documents", "patterns", "trial-prep", "exhibits", "children", "child-support", "parenting-plan", "start-here"
+    defaultTitle: string // e.g. "Evidence", "Timeline", etc.
+  }
+  - Use simple pathname checks:
+    /app/dashboard -> dashboard
+    /app/evidence -> evidence
+    /app/timeline -> timeline
+    /app/documents -> documents
+    /app/patterns -> patterns
+    /app/trial-prep -> trial-prep
+    /app/exhibits -> exhibits
+    /app/children -> children
+    /app/child-support -> child-support
+    /app/parenting-plan -> parenting-plan
+    /app/start-here -> start-here
+  - Fallback: moduleKey="general", defaultTitle="Lexi"
+
+2) FIX THREAD AUTO-NAMING (frontend + backend)
+FRONTEND (client/src/components/lexi/LexiPanel.tsx):
+- When creating a new thread (Start conversation OR suggested question click), send moduleKey + title:
+  POST /api/lexi/threads body should include:
+    { caseId?: string|null, moduleKey: string, title?: string }
+  - title should default to ctx.defaultTitle (from helper), but only apply if user didn’t type one.
+
+BACKEND (server/routes.ts):
+- Update POST /api/lexi/threads to accept moduleKey + title (optional).
+- When creating thread:
+  - If req.body.title exists and non-empty -> use it.
+  - Else if moduleKey exists -> set title = Title Case of moduleKey (or map it nicely: "Trial Prep", "Child Support", "Start Here").
+  - Store moduleKey on lexi_threads if schema has it; if not present, add it via migration ensureLexiThreadsColumns() (you already have ensure system).
+
+ACCEPTANCE:
+- Creating thread from Evidence page sets title “Evidence”
+- Creating thread from Dashboard page sets title “Dashboard”
+- User can still rename thread manually (existing rename UI stays)
+
+3) MAKE SUGGESTED QUESTIONS ACTUALLY SEND (global fix)
+PROBLEM: Suggested questions currently only open Lexi and do not send / do not create thread.
+
+FRONTEND: create ONE shared function and reuse it everywhere.
+- In LexiPanel.tsx create:
+  async function startThreadIfNeededAndSend(text: string, originModuleKey?: string) { ... }
+
+Implementation details:
+- Ensure Lexi panel opens:
+  setIsOpen(true) or whatever your Lexi open state uses.
+- Ensure auth:
+  If user not logged in -> show toast “Please log in to use Lexi”
+- Ensure thread:
+  If no activeThreadId:
+    - Determine ctx from route (use getLexiContextFromRoute)
+    - Call createThreadMutation with { moduleKey: ctx.moduleKey, title: ctx.defaultTitle, caseId: selectedCaseId ?? null }
+    - Wait for it to return thread id, set activeThreadId
+- Send message:
+  - Call sendMessage mutation/streaming function with threadId + content
+  - Make sure you do NOT clear the outgoing message if send fails
+- Update ALL suggested question buttons (across pages) to call this function:
+  - Dashboard suggested chips
+  - Evidence page suggested chips
+  - Start Here page suggested chips
+  - Any module intro suggested chips
+
+Where to update:
+- Search repo for suggested questions components:
+  - “SuggestedQuestion”
+  - “suggestedQuestions”
+  - chips/buttons near module intros
+- Replace their onClick with:
+  startThreadIfNeededAndSend(questionText)
+
+ACCEPTANCE:
+- Clicking any suggested question sends immediately and appears in the thread history.
+- If no thread exists, it auto-creates and names it based on the page.
+
+4) PILL “START CONVERSATION” BUTTON (UI)
+FRONTEND: LexiPanel.tsx
+- Replace the current Start Conversation button styling with a pill button matching navbar tone:
+  - className:
+    "rounded-full px-4 py-2 font-medium bg-[hsl(var(--nav))] text-white hover:opacity-90 active:opacity-80"
+  If you don’t have --nav token, use the same class/colors as AppNavbar background.
+- Keep accessibility:
+  - type="button"
+  - aria-label
+- Make it visually consistent with the app.
+
+ACCEPTANCE:
+- Button is pill shaped
+- Color matches navbar dark tone
+- Looks good on mobile
+
+5) FIX “LEXI ERROR / SOMETHING WENT WRONG” (real errors + correlation id)
+BACKEND (server/routes.ts):
+- In POST /api/lexi/chat (and streaming endpoint if exists):
+  - Wrap OpenAI call with try/catch.
+  - Generate a requestId/correlationId (simple: crypto.randomUUID()).
+  - console.error with:
+    "[LexiChatError]", { requestId, userId, threadId, caseId, code, message }
+  - Return 500 with:
+    { error: "Lexi failed", requestId, code: "LEXI_FAILED" }
+  - If OpenAI returns 401 -> code: OPENAI_KEY_INVALID (status 503 recommended)
+  - If 429 -> code: OPENAI_RATE_LIMIT (status 429)
+  - If timeout -> code: LEXI_TIMEOUT (status 504)
+  - Always redact keys in messages.
+
+FRONTEND (LexiPanel.tsx):
+- When chat call fails:
+  - Show toast:
+    - If error.code === "OPENAI_KEY_INVALID": “Lexi can’t authenticate. Please contact support.”
+    - If error.code === "OPENAI_RATE_LIMIT": “Lexi is busy. Try again in a minute.”
+    - If error.code === "LEXI_TIMEOUT": “Lexi timed out. Try Faster mode.”
+    - Else: “Lexi error (ID: {requestId}). Please try again.”
+- Display inline error under the input as well (not only toast).
+
+ACCEPTANCE:
+- No more generic “Something went wrong” without details.
+- When failure happens, user gets an ID and a clear next action.
+
+6) VERIFY
+- Add a quick dev-only log in LexiPanel when suggested click happens:
+  console.log("[Lexi] suggested click", { text, moduleKey, threadId })
+- Test:
+  1) Open app on Dashboard, click suggested question -> sends, thread named Dashboard
+  2) Go to Evidence, click suggested question -> sends, thread named Evidence
+  3) Start conversation button -> creates thread named by page, pill style
+  4) If OpenAI key removed -> user sees “Lexi can’t authenticate…” not generic
+
+DELIVERABLE
+- Provide a summary of files changed + confirm acceptance criteria.
+- Do NOT introduce new UI patterns beyond what’s described.
