@@ -325,6 +325,11 @@ export default function AppOnboarding() {
         }
         if (!child.dateOfBirth && !isFieldDeferred(child.dateOfBirth)) {
           newErrors[`child_${idx}_dob`] = "Date of birth required";
+        } else if (child.dateOfBirth && !isFieldDeferred(child.dateOfBirth)) {
+          const v = child.dateOfBirth.trim();
+          if (v !== "unknown" && v !== "prefer_not_to_say" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+            newErrors[`child_${idx}_dob`] = "Use YYYY-MM-DD (example: 2015-07-04)";
+          }
         }
       });
     }
@@ -972,9 +977,33 @@ export default function AppOnboarding() {
                         <div>
                           <Label>Date of Birth *</Label>
                           <Input
-                            type="date"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="YYYY-MM-DD"
+                            autoComplete="bday"
                             value={isFieldDeferred(child.dateOfBirth) ? "" : child.dateOfBirth}
-                            onChange={e => updateChild(idx, "dateOfBirth", e.target.value)}
+                            onChange={e => {
+                              const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10);
+                              updateChild(idx, "dateOfBirth", v);
+                            }}
+                            onBlur={() => {
+                              const v = (child.dateOfBirth ?? "").trim();
+                              if (!v || v === "unknown" || v === "prefer_not_to_say") return;
+                              if (/^\d{8}$/.test(v)) {
+                                const fixed = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+                                updateChild(idx, "dateOfBirth", fixed);
+                                return;
+                              }
+                              if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                                setErrors(prev => ({ ...prev, [`child_${idx}_dob`]: "Use YYYY-MM-DD (example: 2015-07-04)" }));
+                              } else {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors[`child_${idx}_dob`];
+                                  return newErrors;
+                                });
+                              }
+                            }}
                             className={errors[`child_${idx}_dob`] ? "border-destructive" : ""}
                             disabled={isFieldDeferred(child.dateOfBirth)}
                             data-testid={`input-child-dob-${idx}`}

@@ -1,0 +1,80 @@
+REPLIT TASK: Fix Children DOB year input resetting on onboarding
+
+Bug:
+On AppOnboarding Children step, when typing a child date of birth, entering the last digit of the year (e.g., typing "2015") causes the field to reset/clear.
+
+Root cause (likely):
+DOB is either using <input type="date"> (partial input rejected) OR we’re parsing/formatting DOB on every keystroke in a controlled input, causing React to re-render with "" when the intermediate value is invalid.
+
+Goal:
+Allow typing DOB without resets. Validate only on blur or on Next.
+
+Do this:
+
+1) Find the child DOB field in:
+client/src/pages/AppOnboarding.tsx
+(Children step – the input bound to child.dateOfBirth or similar)
+
+2) Replace any <Input type="date" ...> used for child DOB with a plain text input:
+- type="text"
+- inputMode="numeric"
+- placeholder="YYYY-MM-DD"
+- autoComplete="bday"
+- DO NOT parse/format the value inside onChange.
+
+Example replacement:
+
+BEFORE (typical problematic patterns):
+<Input type="date" value={child.dateOfBirth ?? ""} onChange={(e)=> updateChild(i,{dateOfBirth: formatDate(e.target.value)})} />
+
+OR:
+onChange={(e)=> updateChild(i,{dateOfBirth: new Date(e.target.value).toISOString().slice(0,10)})}
+
+AFTER (safe):
+<Input
+  type="text"
+  inputMode="numeric"
+  placeholder="YYYY-MM-DD"
+  value={child.dateOfBirth ?? ""}
+  onChange={(e) => {
+    // allow partial typing; keep only digits and dashes, max 10 chars
+    const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10);
+    updateChild(i, { dateOfBirth: v });
+  }}
+  onBlur={() => {
+    // validate ONLY on blur: allow "", "unknown", "prefer_not_to_say"
+    const v = (child.dateOfBirth ?? "").trim();
+    if (!v || v === "unknown" || v === "prefer_not_to_say") return;
+
+    // if user typed 8 digits without dashes, auto-insert dashes: YYYYMMDD -> YYYY-MM-DD
+    if (/^\d{8}$/.test(v)) {
+      const fixed = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+      updateChild(i, { dateOfBirth: fixed });
+      return;
+    }
+
+    // final validation: must be YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      // set a field-level error state for DOB instead of clearing input
+      setFieldError?.(`children.${i}.dateOfBirth`, "Use YYYY-MM-DD (example: 2015-07-04)");
+    } else {
+      clearFieldError?.(`children.${i}.dateOfBirth`);
+    }
+  }}
+/>
+
+3) Make sure Next-step validation does NOT reject partial typing mid-input.
+Only validate on Next if:
+- dateOfBirth is non-empty AND not sentinel AND not valid format.
+
+4) Add one simple test:
+- In onboarding Children step, click DOB, type "2015-01-02" slowly.
+Expected:
+- field never resets
+- year remains "2015"
+- Next works
+
+Deliverable:
+Commit the change in AppOnboarding.tsx (and any shared validation helpers if needed).
+Do NOT change database schema.
+Do NOT clear the input on invalid; show an inline error instead.
