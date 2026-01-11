@@ -4258,10 +4258,22 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  const SENTINEL_VALUES = ["unknown", "prefer_not_to_say"] as const;
+  
+  const sentinelOrString = z.string().refine(
+    (v) => v.length > 0 || SENTINEL_VALUES.includes(v as any),
+    "Value is required"
+  );
+  
+  const dobSchema = z.string().refine((v) => {
+    if (!v || v === "" || SENTINEL_VALUES.includes(v as any)) return true;
+    return /^\d{4}-\d{2}-\d{2}$/.test(v);
+  }, "Date must be YYYY-MM-DD format, 'unknown', or 'prefer_not_to_say'");
+
   const onboardingCompleteSchema = z.object({
     profile: z.object({
       fullName: z.string().min(1, "Full name is required"),
-      email: z.string().email().optional(),
+      email: z.string().email().optional().or(z.literal("")),
       phone: z.string().optional(),
       addressLine1: z.string().min(1, "Address is required"),
       addressLine2: z.string().optional(),
@@ -4284,9 +4296,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       hasChildren: z.boolean(),
     }),
     children: z.array(z.object({
-      firstName: z.string().min(1, "First name is required"),
+      firstName: z.string().min(1, "First name is required").or(z.enum(SENTINEL_VALUES)),
       lastName: z.string().optional(),
-      dateOfBirth: z.string().min(1, "Date of birth is required"),
+      dateOfBirth: dobSchema,
       notes: z.string().optional(),
     })).optional(),
     agreements: z.object({
@@ -4306,6 +4318,16 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }),
     deferredFields: z.record(z.boolean()).optional(),
   });
+  
+  function humanizeOnboardingError(err: any): string {
+    if (!err) return "Unknown error";
+    const msg = err.message || String(err);
+    if (msg.includes("duplicate key")) return "This record already exists";
+    if (msg.includes("violates foreign key")) return "Referenced record not found";
+    if (msg.includes("violates not-null")) return "A required field is missing";
+    if (msg.includes("invalid input syntax")) return "Invalid data format";
+    return msg.slice(0, 200);
+  }
 
   app.post("/api/onboarding/complete", requireAuth, async (req, res) => {
     try {
@@ -4318,7 +4340,12 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           const path = err.path.join(".");
           fields[path] = err.message;
         }
-        return res.status(400).json({ error: "Validation failed", fields });
+        return res.status(422).json({ 
+          error: "Validation failed", 
+          code: "VALIDATION_FAILED",
+          fields,
+          issues: parseResult.error.issues 
+        });
       }
 
       const { profile, case: caseData, children, agreements, versions, deferredFields } = parseResult.data;
@@ -4395,9 +4422,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       res.json({ ok: true, caseId: targetCase.id });
-    } catch (error) {
-      console.error("Onboarding complete error:", error);
-      res.status(500).json({ error: "Failed to complete onboarding" });
+    } catch (error: any) {
+      const userId = req.session?.userId || "unknown";
+      console.error("[Onboarding] failed", { 
+        userId, 
+        body: req.body ? { ...req.body, agreements: "[redacted]" } : null,
+        error: error?.message || error 
+      });
+      res.status(400).json({ 
+        error: "Onboarding failed", 
+        code: "ONBOARDING_SAVE_FAILED", 
+        detail: humanizeOnboardingError(error) 
+      });
     }
   });
 

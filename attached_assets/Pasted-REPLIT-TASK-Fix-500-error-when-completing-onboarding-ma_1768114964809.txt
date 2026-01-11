@@ -1,0 +1,70 @@
+REPLIT TASK: Fix 500 error when completing onboarding (make it fail-safe + self-diagnosing)
+
+Goal:
+Onboarding must never 500 silently. It must either (a) succeed, or (b) return a clear 4xx validation error with a readable message. Also ensure DB columns/validation match our "unknown" and "prefer_not_to_say" sentinel values.
+
+Do ALL of the following:
+
+1) IDENTIFY THE EXACT ENDPOINT
+Search server/routes.ts for the onboarding completion/save route(s):
+- likely POST/PATCH involving user_profiles, cases, case_children, onboarding_complete flags, etc.
+Find the handler that fires when the user clicks the final “Finish” / “Complete” button.
+
+2) ADD A HARD ERROR WRAPPER + STRUCTURED RESPONSE (NO MORE GENERIC 500)
+Wrap the entire onboarding handler body in try/catch.
+On catch:
+- console.error("[Onboarding] failed", { userId, body: req.body, error: err })
+- return res.status(400 or 409).json({ error: "Onboarding failed", code: "ONBOARDING_SAVE_FAILED", detail: humanizeError(err) })
+IMPORTANT: humanizeError must redact secrets + shorten messages like we do elsewhere.
+
+3) VALIDATE INPUTS ON SERVER WITH ZOD AND RETURN 422 (NOT 500)
+Before writing to DB:
+- parse req.body with a Zod schema that matches what the frontend sends.
+If Zod fails:
+- return 422 with { code:"VALIDATION_FAILED", issues: zodError.issues }
+
+4) ALIGN SENTINEL VALUES (CRITICAL)
+Search the entire repo for:
+- "prefer_not"
+- "prefer_not_to_say"
+- "unknown"
+Standardize to ONLY these two sentinel values everywhere:
+- "unknown"
+- "prefer_not_to_say"
+Update any Zod enums / refinements that reject them.
+Update any “date parsing” logic so these pass through without attempting Date conversion.
+
+5) CHILD DOB MUST NOT BE PARSED AS DATE DURING SAVE
+If the backend does anything like new Date(child.dateOfBirth):
+- change it to store string as-is.
+Allowed values:
+- "" (empty) -> treat as null
+- "unknown"
+- "prefer_not_to_say"
+- "YYYY-MM-DD" (validate pattern only)
+If format invalid, return 422 instead of 500.
+
+6) DB MIGRATIONS: ENSURE REQUIRED COLUMNS EXIST (AUTO-FIX)
+In server/db.ts ensureSchemaMigrations(), add an ensure function that verifies any onboarding-related columns we depend on exist.
+At minimum, verify columns used in the onboarding save path exist in:
+- user_profiles (phone, address fields, etc)
+- cases (starting_point, case_number, nickname, state, case_type, etc)
+- case_children (date_of_birth or dob field type, plus any status column if we added one)
+If any are missing:
+- addColumnIfMissing(...)
+- log verification results like other migrations
+
+7) REPRO + CONFIRM
+After changes:
+- restart app
+- run onboarding end-to-end with:
+  - blank values + click “I don’t know yet”
+  - “Prefer not to say”
+  - a valid DOB like 2015-01-02
+Expected:
+- No 500s
+- If something is wrong, user gets a specific 422/409 message and server logs show [Onboarding] failed with exact DB/Zod error.
+
+Deliverable:
+- Commit changes to server/routes.ts and server/db.ts (and any shared schema validators).
+- Post back the exact root cause that originally caused the 500 (missing column? validation mismatch?).
