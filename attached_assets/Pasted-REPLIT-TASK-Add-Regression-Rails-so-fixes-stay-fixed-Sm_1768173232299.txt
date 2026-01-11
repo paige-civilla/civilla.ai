@@ -1,0 +1,206 @@
+REPLIT TASK: Add “Regression Rails” so fixes stay fixed (Smoke Tests + Diagnostics + Contract Guards)
+
+GOAL
+When we fix a feature (Lexi, case create, extraction, analysis, claims, document compile), it should NOT silently break later. Add automated checks that:
+1) detect breakage immediately
+2) show a clear reason + requestId
+3) prevent “publish/deploy” if critical paths fail (in dev + optionally in prod)
+
+========================================================
+PART 1 — CENTRALIZE “CRITICAL PATHS” AS A SMOKE TEST
+========================================================
+
+A) Create a new server diagnostic module:
+
+Create file: server/diagnostics/smokeChecks.ts
+
+Implement function:
+export async function runSmokeChecks(userId: string, caseId?: string): Promise<{
+  ok: boolean;
+  checks: Array<{ name: string; ok: boolean; detail?: string }>;
+}>
+
+Smoke checks MUST include (minimal “spine”):
+1) DB schema verification (call existing ensure/check functions if available)
+   - confirm required AI columns exist:
+     lexi_threads.disclaimer_shown
+     evidence_extractions.status
+     evidence_ai_analyses.status
+     case_rule_terms.module_key
+     plus anything else your migration system already verifies
+
+2) OpenAI connectivity check (do a tiny model call)
+   - reuse existing /api/ai/health logic if present
+   - return readable errors:
+     OPENAI_KEY_MISSING / OPENAI_KEY_INVALID / OPENAI_RATE_LIMIT / OPENAI_ERROR
+
+3) Vision connectivity check (if GOOGLE_CLOUD_VISION_API_KEY is set)
+   - reuse /api/vision/health logic if present
+   - if missing, mark check ok=false but non-blocking ONLY if OCR is optional in current env
+
+4) Lexi thread create check (GENERAL thread)
+   - attempt to create a general Lexi thread for user (or validate create route can succeed)
+   - DO NOT actually send a message here if it costs money; just validate thread creation works
+
+5) Case create check (dry-run)
+   - do NOT create real cases repeatedly
+   - instead, validate server-side createCase handler’s dependencies:
+     * user exists
+     * required columns exist in cases
+     * insert shape validates
+   - OR create a disposable “SMOKE_TEST_CASE” and auto-delete it immediately
+
+B) Add an admin-only endpoint to run smoke tests:
+
+In server/routes.ts add:
+
+GET /api/admin/smoke
+- requireAuth + requireAdmin
+- optionally accepts ?caseId=...
+- calls runSmokeChecks(req.user.id, caseId)
+- returns JSON with checks + ok boolean
+- also returns a requestId (see Part 3)
+
+========================================================
+PART 2 — ADD AN ADMIN “DIAGNOSTICS DASHBOARD” DATA ENDPOINT
+========================================================
+
+A) Add endpoint:
+
+GET /api/admin/diagnostics
+- requireAuth + requireAdmin
+- returns privacy-safe operational info ONLY (NO user content)
+Include:
+- last 20 AI failures from activity_logs (already exists) with:
+  type, createdAt, normalized error, requestId, moduleKey if available
+- counts:
+  evidence_extractions by status
+  evidence_ai_analyses by status
+  claims suggestion background status (if Phase 2D exists)
+- last successful OpenAI + Vision check timestamps (store in memory or activity logs)
+- deployment info:
+  NODE_ENV, commit hash if available, server uptime seconds
+
+B) Ensure all errors are normalized:
+Create helper server/utils/humanizeError.ts (if not already):
+- redact anything that looks like an API key
+- shorten long stack traces
+- map common failure codes to friendly messages
+
+========================================================
+PART 3 — MAKE FAILURES NON-SILENT (REQUEST ID + BETTER LOGGING)
+========================================================
+
+A) Add a Request ID middleware:
+
+Create file: server/middleware/requestId.ts
+- generate requestId (uuid or short id)
+- attach to req.requestId
+- set response header: x-request-id
+- include in every error JSON: { error: "...", requestId }
+
+Wire it early in server/index.ts BEFORE routes.
+
+B) Update ALL AI-related endpoints to:
+- catch errors
+- log: [AI] <route> requestId, userId, caseId if any, errorCode
+- return { error: "...", code: "...", requestId }
+
+Endpoints to ensure include:
+- /api/lexi/chat
+- /api/lexi/threads
+- extraction run/retry
+- ai analysis run/retry
+- claims suggest/retry
+- compile-claims
+- pattern analysis export
+- trial binder export
+
+========================================================
+PART 4 — “LOCK IT IN”: CONTRACT GUARDS FOR THE AI SPINE
+========================================================
+
+A) Create shared contract file:
+
+Create: shared/aiContracts.ts
+
+Export:
+- const status enums used across DB + UI:
+  extractionStatusValues
+  analysisStatusValues
+  claimStatusValues
+- Zod schemas for the payload shapes the frontend relies on:
+  AiHealthResponseSchema
+  EvidenceExtractionSchema (subset that UI uses)
+  EvidenceAiAnalysisSchema (subset)
+  DraftReadinessSchema
+  SearchResultSchema
+
+B) Add a server-side contract check route (admin only):
+
+GET /api/admin/contracts
+- validates that the real responses conform to these schemas for a given caseId
+- returns which schema failed (if any)
+
+This prevents “we changed a field name and broke the UI”.
+
+========================================================
+PART 5 — AUTOMATIC CHECK BEFORE DEPLOY/START (SAFE MODE)
+========================================================
+
+A) Add npm scripts:
+
+In package.json:
+"scripts": {
+  ...
+  "smoke": "node ./dist/server/smokeRunner.cjs",
+  "predeploy:check": "node ./dist/server/predeployCheck.cjs"
+}
+
+B) Implement a predeploy check that runs in production deploys:
+Create:
+server/diagnostics/predeployCheck.ts
+- runs runSmokeChecks for an admin user (or system user) if available
+- if OPENAI invalid: exit 1 (fail deploy)
+- if DB missing columns: exit 1
+- if Lexi thread cannot create: exit 1
+- Vision missing should NOT fail deploy unless OCR is marked REQUIRED
+
+If Replit supports a “Deployment command”, prepend:
+npm run predeploy:check && npm start
+
+If not, log a giant warning banner in the Admin dashboard and keep app running.
+
+========================================================
+PART 6 — QA “FIX STAYS FIXED” TEST MODE (NO COST)
+========================================================
+
+A) Add a config:
+AI_TEST_MODE=true
+If true:
+- Lexi chat route uses a mock response WITHOUT calling OpenAI
+- still exercises:
+  thread creation, message insert, formatting pipeline, sources normalization
+This lets us test end-to-end without spending money and without API flakiness.
+
+========================================================
+DELIVERABLES / REPORT BACK
+========================================================
+
+After implementing, report:
+
+1) Files created/changed
+2) Confirm:
+- /api/admin/smoke works and returns checks list
+- /api/admin/diagnostics returns counts + last failures
+- x-request-id header appears on ALL responses
+- contract schemas exist in shared/aiContracts.ts
+3) Show example output of /api/admin/smoke (redacted)
+
+IMPORTANT PRIVACY NOTE
+Diagnostics must NEVER return:
+- evidence extracted text
+- Lexi messages
+- documents content
+- names/emails/addresses
+Only counts + error summaries + request IDs.
