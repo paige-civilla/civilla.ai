@@ -1,0 +1,179 @@
+REPLIT TASK: Implement Stripe Billing + Entitlements + Server-Side Paywalls (end-to-end)
+
+You already produced PART 1 audit. Continue with implementation, but DO IT IN THIS ORDER and REPORT EVERYTHING at the end.
+
+NON-NEGOTIABLE RULE:
+Paywalls must be enforced SERVER-SIDE first. UI is secondary.
+
+========================================
+PART 2 — DATA MODEL (Stripe + billing fields)
+========================================
+1) Update shared/schema.ts to add billing fields to user_profiles (or billing table if preferred):
+- stripeCustomerId (text)
+- stripeSubscriptionId (text)
+- stripePriceId (text)
+- subscriptionStatus (text)  // trialing|active|past_due|canceled|incomplete|unpaid|paused|comped
+- currentPlan (text)         // free|core|pro|premium
+- addOnSecondCase (boolean default false)
+- addOnArchiveMode (boolean default false)
+- archiveModeEnabled (boolean derived ok, but store addOnArchiveMode)
+- dataCapOveragePaidAt (timestamp nullable)
+- usageMonthBytes (bigint default 0) (or usage counter field; keep minimal but present)
+
+2) Add idempotent migrations via server/db.ts ensureSchemaMigrations() to add missing columns + indexes.
+- Must NOT drop tables.
+- Must log verification booleans for the new billing columns at startup.
+
+========================================
+PART 3 — ENTITLEMENTS RESOLVER (single source of truth)
+========================================
+Create/Update server/entitlements.ts so it is the only place that computes:
+getEntitlements(userProfile) -> {
+  plan,
+  subscriptionStatus,
+  isComped,
+  isLifetime,
+  casesAllowed,
+  analysisEnabled,         // false if archive mode enabled
+  ocrEnabled,
+  aiAnalysisEnabled,
+  claimsEnabled,
+  docCompileEnabled,
+  exportsEnabled,
+  patternExportEnabled,
+}
+
+Rules:
+- free: minimal (case creation allowed maybe 1?), NO AI analysis, NO OCR, NO compile/export
+- core: allow base features (define clearly), casesAllowed=1
+- pro: allow more + optional add-on second case
+- premium: allow everything, casesAllowed=2 if add-on or included—decide and document in code comments
+- archive mode add-on: upload allowed BUT all analysis features disabled (OCR/AI/claims/compile/pattern export)
+- comped/lifetime premium: treated as premium with status="comped" or isLifetime=true
+
+IMPORTANT: The audit mentions casesAllowed exists on users table. Normalize: move “casesAllowed” into user_profiles OR compute it from plan + add-on and store a cached value; but enforcement must use entitlements resolver output.
+
+========================================
+PART 4 — STRIPE INTEGRATION (backend routes)
+========================================
+Implement these endpoints:
+
+A) POST /api/billing/checkout  (requireAuth)
+Body: { plan: "core"|"pro"|"premium", addSecondCase?: boolean, archiveMode?: boolean }
+- Creates Stripe customer if missing
+- Creates subscription checkout session using PRICE IDs in env
+- Returns { url }
+
+B) POST /api/billing/portal  (requireAuth)
+- Creates portal session for the customer
+- Returns { url }
+
+C) POST /api/billing/webhook  (NO auth)
+- Verify STRIPE_WEBHOOK_SECRET
+- Handle:
+  - checkout.session.completed
+  - customer.subscription.created
+  - customer.subscription.updated
+  - customer.subscription.deleted
+  - invoice.paid
+  - invoice.payment_failed
+Update user_profiles billing fields accordingly:
+- stripeCustomerId, stripeSubscriptionId, stripePriceId
+- subscriptionStatus
+- currentPlan (map from priceId)
+- add-ons if represented by prices (or store flags if you’re using metadata)
+MUST be idempotent and safe to re-run.
+
+D) GET /api/billing/status (requireAuth)
+Return normalized billing info + entitlements for the logged-in user.
+
+Secrets required (exact names; do not add extras):
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- STRIPE_PRICE_CORE
+- STRIPE_PRICE_PRO
+- STRIPE_PRICE_PREMIUM
+OPTIONAL if using add-ons as separate prices:
+- STRIPE_PRICE_SECOND_CASE_ADDON
+- STRIPE_PRICE_ARCHIVE_ADDON
+OPTIONAL if using one-time overage:
+- STRIPE_PRICE_OVERAGE_ONE_TIME
+
+Do NOT store card data. Use portal.
+
+========================================
+PART 5 — SERVER-SIDE PAYWALL ENFORCEMENT (critical)
+========================================
+Add a middleware helper:
+requireEntitlement(checkFn) that:
+- loads user profile
+- computes entitlements
+- if checkFn(entitlements) fails -> return 402 with:
+  { error:"Payment required", code:"PLAN_REQUIRED", requiredPlan:"pro" }
+
+Apply to the following routes (minimum list):
+- POST /api/cases  (enforce casesAllowed cap)
+- evidence extraction/OCR routes
+- AI analysis routes
+- claims suggestion routes (manual + auto)
+- document compile/export routes
+- pattern analysis export route
+- trial binder export if it is considered premium
+
+Archive mode rules:
+- Upload allowed
+- Any OCR/AI/analysis endpoints return 402 code="ARCHIVE_MODE" with user-friendly message
+
+========================================
+PART 6 — FRONTEND HOOKUP
+========================================
+1) Plans.tsx
+- All checkout buttons call POST /api/billing/checkout and redirect to returned url.
+
+2) AppAccountSettings.tsx
+- Show plan + status + add-ons
+- Button "Manage subscription" calls /api/billing/portal and redirects
+- If comped/lifetime, show plan and hide purchase buttons, but still show status “Comped (Lifetime)”.
+
+3) Global paywall UX
+- If any API returns 402, show an upgrade modal with:
+  - what feature was blocked
+  - required plan
+  - upgrade CTA
+
+========================================
+PART 7 — COMPED / LIFETIME PREMIUM ACCOUNTS (no Stripe charges ever)
+========================================
+Ensure these emails are ALWAYS premium+comped:
+- paigelindibella@gmail.com
+- jetdocllc@gmail.com
+- paige@civilla.ai
+- bryan@civilla.ai
+
+Implementation requirements:
+- On login (or first request), if user email matches (case-insensitive):
+  set currentPlan="premium", subscriptionStatus="comped", subscriptionSource="comped",
+  isLifetime=true, compedReason="founder/partner"
+- Must bypass checkout and all paywalls.
+- Must still display Premium in Account Settings.
+
+========================================
+PART 8 — FINAL OUTPUT REQUIRED
+========================================
+After implementing, output:
+
+1) Files changed (full list)
+2) New env secrets required
+3) Endpoints added/updated
+4) Exactly which routes are paywalled and what the 402 responses look like
+5) Test plan for Paige (Stripe TEST MODE):
+   - buy core/pro/premium
+   - cancel in portal
+   - simulate payment failure
+   - verify webhooks update plan
+   - verify paywalls block/unblock OCR + AI + compile
+6) Confirm comped users bypass Stripe and show Premium
+7) Confirm “free tier” cannot run OCR/AI/compile even if UI tries
+
+DO NOT skip server-side enforcement.
+DO NOT claim it’s done unless paywalls are applied to the routes listed.

@@ -1,0 +1,130 @@
+REPLIT TASK: Pricing + Stripe Full Audit → Implement End-to-End Billing + Paywalls + Subscription Center
+
+Context
+We need to identify every place pricing/entitlements should be enforced and then fully wire Stripe subscriptions + paywalls + account subscription center. Assume non-dev operator (Paige) will paste ONE prompt, so you must do the audit AND implement. Provide a final report with exact files changed and how to test.
+
+PART 1 — AUDIT (produce a written report first, then implement)
+1) Search the entire repo for anything pricing-related:
+   - keywords: "plan", "tier", "premium", "pro", "core", "subscription", "entitlement", "billing", "stripe", "paywall", "case_limit", "cases_allowed", "archive", "data cap", "overage", "usage", "portal", "checkout"
+   - list every file + line range where found
+2) Identify current “truth” for user plan:
+   - Is there a DB column (user_profiles.plan, subscription_status, cases_allowed, etc.)?
+   - Is anything enforced server-side vs only in UI?
+3) Identify all features that must be gated (both UI and API):
+   - Civilla Core $19.99/mo
+   - Civilla Pro $29.99/mo
+   - Civilla Premium $49.99/mo
+   - Add second case: +$9.99/mo
+   - Archive mode: +$6.99/mo (upload allowed, analysis disabled)
+   - Data cap overage trigger: user pays one-time $19.99 when triggered
+   Output a table: Feature → Where UI is → Where API is → Current enforcement (none/partial/full)
+
+PART 2 — DATA MODEL (entitlements + Stripe fields)
+Create/confirm tables/columns to support:
+- stripe_customer_id
+- stripe_subscription_id
+- stripe_price_id
+- subscription_status (trialing/active/past_due/canceled/etc.)
+- current_plan (core/pro/premium)
+- add_on_second_case (bool)
+- add_on_archive_mode (bool)
+- usage_bytes_month (or token/page counters if used)
+- data_cap_overage_paid_at (timestamp) + last_overage_invoice_id
+- is_comped (bool) + comp_reason (text)
+Add migrations using the existing ensureSchemaMigrations pattern (idempotent).
+
+PART 3 — STRIPE INTEGRATION (server)
+Implement:
+A) Stripe client setup
+- Secrets required in Replit:
+  STRIPE_SECRET_KEY
+  STRIPE_WEBHOOK_SECRET
+  STRIPE_PRICE_CORE
+  STRIPE_PRICE_PRO
+  STRIPE_PRICE_PREMIUM
+  STRIPE_PRICE_SECOND_CASE_ADDON (if using separate price)
+  STRIPE_PRICE_ARCHIVE_ADDON (if using separate price)
+  STRIPE_PRICE_OVERAGE_ONE_TIME (if using one-time)
+B) Checkout session creation endpoint (auth required)
+- POST /api/billing/checkout
+  body: { plan: "core"|"pro"|"premium", addSecondCase?: boolean, archiveMode?: boolean }
+  Creates customer if needed and starts subscription.
+C) Customer portal endpoint (auth required)
+- POST /api/billing/portal
+  Returns portal URL
+D) Webhook endpoint (no auth)
+- POST /api/billing/webhook
+  Verify signature, handle:
+  - checkout.session.completed
+  - customer.subscription.created/updated/deleted
+  - invoice.paid / invoice.payment_failed
+  - payment_intent.succeeded (for one-time overage)
+  Update DB entitlements as the source of truth.
+E) Billing status endpoint (auth required)
+- GET /api/billing/status
+  Returns normalized billing + entitlements for Account Settings display.
+
+PART 4 — PAYWALL ENFORCEMENT (server-first)
+Add a single entitlement resolver:
+- getEntitlements(userId) -> { plan, casesAllowed, analysisEnabled, archiveMode, ... }
+Enforce in the APIs that matter:
+- Case limits
+- Evidence extraction + OCR
+- AI analysis
+- Claims suggestion/auto-suggest
+- Document compilation/export
+- Pattern analysis export
+Anything “analysis” related should be blocked in archive mode.
+Return 402 with a clear error code like:
+  { error: "Payment required", code: "PLAN_REQUIRED", requiredPlan: "pro" }
+UI will use this to show upgrade prompts.
+
+PART 5 — FRONTEND
+A) Activate pricing buttons:
+- Wherever “Upgrade” or pricing CTAs exist, wire them to /api/billing/checkout
+B) Account Settings “Subscription Center”:
+- Show current plan + status + add-ons
+- Buttons:
+  - Manage subscription (portal)
+  - Upgrade/Downgrade (checkout)
+  - Cancel (via portal)
+C) Upgrade modals / paywall handling:
+- If API returns 402, show a modal with plan comparison and a single “Upgrade” CTA.
+
+PART 6 — COMPED / LIFETIME PREMIUM (NO CHARGES EVER)
+Hardcode comped users by email (case-insensitive):
+- paigelindibella@gmail.com
+- jetdocllc@gmail.com
+- paige@civilla.ai
+- bryan@civilla.ai
+Rules:
+- They must display as “Premium” in Account Settings.
+- They must bypass paywalls.
+- They must never be sent to Stripe checkout automatically.
+Implement as DB-based entitlements:
+- is_comped=true, current_plan="premium", subscription_status="comped"
+Add an admin-only script/endpoint to apply this safely (or automatic on login by matching email).
+
+PART 7 — TEST PLAN + SAFETY
+Provide a step-by-step test plan for Paige:
+- Stripe test mode flow
+- Webhook verification
+- Upgrade/downgrade
+- Past_due simulation
+- Add-on toggles
+- Archive mode gating behavior
+- Overage one-time charge trigger simulation
+
+Output requirements (must include):
+- List of files changed
+- Secrets required (exact names)
+- Routes added
+- Exact gating behaviors (what blocks what)
+- How to verify “comped premium” works without Stripe
+- Confirm backend enforcement exists (not UI-only)
+
+IMPORTANT
+- Do not store any card data.
+- Use Stripe Customer Portal for management.
+- Use existing auth middleware.
+- Follow existing code patterns in this repo.
