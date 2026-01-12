@@ -271,7 +271,7 @@ function PricingCardsSection() {
 
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
 
-  const handleBuyPack = async (packType: "mini" | "premium") => {
+  const handleBuyPack = async (packType: "overlimit_200" | "plus_600") => {
     setLoadingPack(packType);
     try {
       const response = await fetch("/api/billing/processing-pack/checkout", {
@@ -396,39 +396,29 @@ function PricingCardsSection() {
 
   const processingPacks = [
     {
-      id: "mini" as const,
-      title: "Mini Processing Pack",
-      price: "$20",
+      id: "overlimit_200" as const,
+      title: "Over-Limit Processing Pack",
+      price: "$19.99",
       priceNote: "one-time",
-      credits: {
-        claims: 15,
-        patterns: 10,
-        documents: 10,
-        ocrPages: 500,
-      },
+      credits: 200,
       bullets: [
-        "15 claim suggestions",
-        "10 pattern analyses",
-        "10 document generations",
-        "500 OCR pages",
+        "200 additional analysis credits",
+        "Use for OCR, AI analysis, claims, patterns, document generation",
+        "Credits consumed before plan limits",
+        "Never expires",
       ],
     },
     {
-      id: "premium" as const,
-      title: "Premium Processing Pack",
+      id: "plus_600" as const,
+      title: "Processing Pack Plus",
       price: "$50",
       priceNote: "one-time",
-      credits: {
-        claims: 50,
-        patterns: 25,
-        documents: 25,
-        ocrPages: 2000,
-      },
+      credits: 600,
       bullets: [
-        "50 claim suggestions",
-        "25 pattern analyses",
-        "25 document generations",
-        "2,000 OCR pages",
+        "600 additional analysis credits",
+        "Use for OCR, AI analysis, claims, patterns, document generation",
+        "Credits consumed before plan limits",
+        "Never expires",
       ],
       highlight: true,
     },

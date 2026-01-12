@@ -198,22 +198,19 @@ function SubscriptionTierCard({ tier }: { tier: "free" | "core" | "pro" | "premi
   );
 }
 
-interface UserCredits {
-  claims: number;
-  patterns: number;
-  documents: number;
-  ocrPages: number;
+interface CreditsResponse {
+  analysisCredits: number;
 }
 
 function ProcessingCreditsCard() {
   const { toast } = useToast();
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
 
-  const { data: credits, isLoading } = useQuery<UserCredits>({
+  const { data: credits, isLoading } = useQuery<CreditsResponse>({
     queryKey: ["/api/billing/credits"],
   });
 
-  const handleBuyPack = async (packType: "mini" | "premium") => {
+  const handleBuyPack = async (packType: "overlimit_200" | "plus_600") => {
     setLoadingPack(packType);
     try {
       const response = await fetch("/api/billing/processing-pack/checkout", {
@@ -244,40 +241,26 @@ function ProcessingCreditsCard() {
     }
   };
 
-  const totalCredits = credits 
-    ? credits.claims + credits.patterns + credits.documents + credits.ocrPages 
-    : 0;
-
-  const hasCredits = totalCredits > 0;
+  const analysisCredits = credits?.analysisCredits ?? 0;
+  const hasCredits = analysisCredits > 0;
 
   return (
     <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-6 mt-4">
       <div className="flex items-center gap-3 mb-3">
         <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        <h3 className="font-heading font-bold text-neutral-darkest dark:text-cream">Processing Credits</h3>
+        <h3 className="font-heading font-bold text-neutral-darkest dark:text-cream">Analysis Credits</h3>
       </div>
       
       {isLoading ? (
         <p className="text-sm text-neutral-darkest/60 dark:text-cream/60">Loading credits...</p>
       ) : hasCredits ? (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="bg-white/60 dark:bg-neutral-800/60 rounded-lg p-3">
-              <p className="text-neutral-darkest/60 dark:text-cream/60 text-xs">Claim Suggestions</p>
-              <p className="font-bold text-neutral-darkest dark:text-cream" data-testid="credits-claims">{credits?.claims || 0}</p>
-            </div>
-            <div className="bg-white/60 dark:bg-neutral-800/60 rounded-lg p-3">
-              <p className="text-neutral-darkest/60 dark:text-cream/60 text-xs">Pattern Analyses</p>
-              <p className="font-bold text-neutral-darkest dark:text-cream" data-testid="credits-patterns">{credits?.patterns || 0}</p>
-            </div>
-            <div className="bg-white/60 dark:bg-neutral-800/60 rounded-lg p-3">
-              <p className="text-neutral-darkest/60 dark:text-cream/60 text-xs">Document Generations</p>
-              <p className="font-bold text-neutral-darkest dark:text-cream" data-testid="credits-documents">{credits?.documents || 0}</p>
-            </div>
-            <div className="bg-white/60 dark:bg-neutral-800/60 rounded-lg p-3">
-              <p className="text-neutral-darkest/60 dark:text-cream/60 text-xs">OCR Pages</p>
-              <p className="font-bold text-neutral-darkest dark:text-cream" data-testid="credits-ocr">{credits?.ocrPages || 0}</p>
-            </div>
+          <div className="bg-white/60 dark:bg-neutral-800/60 rounded-lg p-4">
+            <p className="text-neutral-darkest/60 dark:text-cream/60 text-sm mb-1">Remaining Analysis Credits</p>
+            <p className="font-bold text-2xl text-neutral-darkest dark:text-cream" data-testid="credits-analysis">{analysisCredits}</p>
+            <p className="text-xs text-neutral-darkest/50 dark:text-cream/50 mt-1">
+              Each OCR extraction, AI analysis, claims suggestion, pattern analysis, or document generation uses 1 credit.
+            </p>
           </div>
           <p className="text-xs text-neutral-darkest/60 dark:text-cream/60">
             Credits are consumed before your subscription limits. They never expire.
@@ -285,7 +268,7 @@ function ProcessingCreditsCard() {
         </div>
       ) : (
         <p className="text-sm text-neutral-darkest/70 dark:text-cream/70 mb-3">
-          No processing credits. Purchase a pack to get extra AI processing capacity beyond your plan limits.
+          No analysis credits. Purchase a pack to get extra AI processing capacity beyond your plan limits.
         </p>
       )}
       
@@ -293,20 +276,20 @@ function ProcessingCreditsCard() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleBuyPack("mini")}
+          onClick={() => handleBuyPack("overlimit_200")}
           disabled={loadingPack !== null}
-          data-testid="button-buy-mini-pack"
+          data-testid="button-buy-overlimit-pack"
         >
-          {loadingPack === "mini" ? "Processing..." : "Mini Pack ($20)"}
+          {loadingPack === "overlimit_200" ? "Processing..." : "200 Credits ($19.99)"}
         </Button>
         <Button
           variant="default"
           size="sm"
-          onClick={() => handleBuyPack("premium")}
+          onClick={() => handleBuyPack("plus_600")}
           disabled={loadingPack !== null}
-          data-testid="button-buy-premium-pack"
+          data-testid="button-buy-plus-pack"
         >
-          {loadingPack === "premium" ? "Processing..." : "Premium Pack ($50)"}
+          {loadingPack === "plus_600" ? "Processing..." : "600 Credits ($50)"}
         </Button>
       </div>
     </div>
