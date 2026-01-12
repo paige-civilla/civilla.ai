@@ -62,7 +62,7 @@ import {
   handleWebhookEvent, 
   getEntitlements,
   isCompedEmail,
-  getUserCredits,
+  getAnalysisCredits,
   ProcessingPackType
 } from "./billing";
 import { requireAnalysis, requireDownloads, checkCaseLimit, loadEntitlements, PaywallRequest } from "./middleware/paywall";
@@ -679,8 +679,8 @@ export async function registerRoutes(
         return res.status(401).json({ error: "User not found" });
       }
 
-      if (!packType || !["mini", "premium"].includes(packType)) {
-        return res.status(400).json({ error: "Valid pack type required (mini or premium)" });
+      if (!packType || !["overlimit_200", "plus_600"].includes(packType)) {
+        return res.status(400).json({ error: "Valid pack type required (overlimit_200 or plus_600)" });
       }
 
       const origin = req.headers.origin || `https://${req.headers.host}`;
@@ -702,12 +702,12 @@ export async function registerRoutes(
     }
   });
 
-  // GET /api/billing/credits - Get user's remaining pack credits
+  // GET /api/billing/credits - Get user's remaining analysis credits
   app.get("/api/billing/credits", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const credits = await getUserCredits(userId);
-      res.json(credits);
+      const analysisCredits = await getAnalysisCredits(userId);
+      res.json({ analysisCredits });
     } catch (error) {
       console.error("Get credits error:", error);
       res.status(500).json({ error: "Failed to get credits" });

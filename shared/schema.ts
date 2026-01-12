@@ -74,6 +74,8 @@ export const userProfiles = pgTable("user_profiles", {
   creditsPatternsRemaining: integer("credits_patterns_remaining").notNull().default(0),
   creditsDocumentsRemaining: integer("credits_documents_remaining").notNull().default(0),
   creditsOcrPagesRemaining: integer("credits_ocr_pages_remaining").notNull().default(0),
+  analysisCreditsRemaining: integer("analysis_credits_remaining").notNull().default(0),
+  lastProcessingPackPurchaseAt: timestamp("last_processing_pack_purchase_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

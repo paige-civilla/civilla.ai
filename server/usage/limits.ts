@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { usageEvents, userProfiles, users } from "@shared/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
-import { getEntitlements, isCompedEmail, SubscriptionTier, getUserCredits, consumeCredit } from "../billing";
+import { getEntitlements, isCompedEmail, SubscriptionTier, getAnalysisCredits, consumeAnalysisCredit } from "../billing";
 
 export type UsageType = "ocr_page" | "ai_call" | "ai_tokens" | "upload_bytes";
 
@@ -190,15 +190,8 @@ export interface QuotaCheckResult {
   usedCredit?: boolean;
 }
 
-type CreditType = "claims" | "patterns" | "documents" | "ocrPages";
-
-function mapQuotaTypeToCreditType(quotaType: QuotaCheckType): CreditType | null {
-  switch (quotaType) {
-    case "ocr_page":
-      return "ocrPages";
-    default:
-      return null;
-  }
+function isAnalysisAction(quotaType: QuotaCheckType): boolean {
+  return quotaType === "ocr_page" || quotaType === "ai_call";
 }
 
 export async function checkQuota(
@@ -206,21 +199,20 @@ export async function checkQuota(
   type: QuotaCheckType,
   quantity: number = 1
 ): Promise<QuotaCheckResult> {
-  const [{ limits, isComped, tier }, usage, credits] = await Promise.all([
+  const [{ limits, isComped, tier }, usage, analysisCredits] = await Promise.all([
     getUserLimits(userId),
     getUserUsage(userId),
-    getUserCredits(userId),
+    getAnalysisCredits(userId),
   ]);
 
   if (isComped) {
     return { allowed: true };
   }
 
-  const creditType = mapQuotaTypeToCreditType(type);
-  if (creditType && credits[creditType] >= quantity) {
-    const result = await consumeCredit(userId, creditType, quantity);
+  if (isAnalysisAction(type) && analysisCredits >= quantity) {
+    const result = await consumeAnalysisCredit(userId, quantity);
     if (result.consumed) {
-      console.log(`[QUOTA] User ${userId} consumed ${quantity} ${creditType} credit(s), ${result.remaining} remaining`);
+      console.log(`[QUOTA] User ${userId} consumed ${quantity} analysis credit(s), ${result.remaining} remaining`);
       return { allowed: true, remaining: result.remaining, usedCredit: true, code: "CREDITS_CONSUMED" };
     }
   }

@@ -1,0 +1,157 @@
+REPLIT TASK: Wire the existing “Over-Limit Processing Pack” tile to Stripe + credits (200), and add a $50 pack
+
+CONTEXT (CURRENT UI COPY)
+Tile on Plans & Pricing page says:
+“Over-Limit Processing Pack — Starts at $19.99 one-time — Includes 200 additional analysis credits …”
+
+GOAL
+1) Keep the existing tile copy (do NOT rewrite marketing copy).
+2) Make it actually work end-to-end:
+   - Button → Stripe one-time checkout
+   - Webhook → awards credits
+   - Quota middleware → consumes credits first
+3) Add a second one-time pack ($50) that awards more credits.
+4) Ensure app blocks show a paywall modal offering packs when a user exceeds soft limits.
+
+────────────────────────────────────────
+A) DEFINE “ANALYSIS CREDIT” (MAKE UI COPY TRUE)
+────────────────────────────────────────
+
+Define 1 analysisCredit as 1 “processing action” that consumes server compute:
+- OCR extraction run for a file (POST /extraction/run) => 1 credit
+- Evidence AI analysis run (POST /ai-analyses/run) => 1 credit
+- Claims suggest/run for evidence (POST /claims/suggest or auto-suggest per file) => 1 credit
+- Pattern analysis run/export (GET/POST pattern analysis generation) => 1 credit
+- Document compile from claims (POST /documents/compile-claims) => 1 credit
+
+IMPORTANT:
+- Lexi chat DOES NOT consume analysis credits (users must be able to talk to Lexi freely within reasonable rate limits).
+- Uploading files does NOT consume analysis credits; only processing does.
+
+────────────────────────────────────────
+B) STRIPE: ONE-TIME PRODUCTS + PRICE IDS
+────────────────────────────────────────
+
+Create/confirm two Stripe one-time prices:
+1) PACK_20: “Over-Limit Processing Pack” price = $19.99 (or $20) one-time
+   metadata.pack_type = "overlimit_200"
+2) PACK_50: “Processing Pack Plus” price = $50 one-time
+   metadata.pack_type = "plus_600"  (or similar)
+
+Add Replit Secrets:
+- STRIPE_PROCESSING_PACK_OVERLIMIT_200_PRICE_ID
+- STRIPE_PROCESSING_PACK_PLUS_600_PRICE_ID
+
+Do NOT hardcode.
+
+────────────────────────────────────────
+C) DATABASE: STORE CREDIT BALANCE
+────────────────────────────────────────
+
+Add to user_profiles via db.ts ensure migrations (idempotent):
+- analysis_credits_remaining INT DEFAULT 0
+- last_processing_pack_purchase_at TIMESTAMP NULL
+
+Log purchases in activity_logs (no PII, no content):
+event = "processing_pack_purchased"
+metadata = { packType, creditsAdded, stripeSessionId }
+
+────────────────────────────────────────
+D) BILLING API: CHECKOUT ROUTE FOR PACKS
+────────────────────────────────────────
+
+Add endpoint:
+POST /api/billing/processing-pack/checkout
+Body: { packType: "overlimit_200" | "plus_600" }
+
+Behavior:
+- requireAuth
+- create Stripe checkout session (mode="payment")
+- choose correct price id by packType
+- set session metadata: { pack_type, user_id }
+- return { url }
+
+────────────────────────────────────────
+E) STRIPE WEBHOOK: AWARD CREDITS
+────────────────────────────────────────
+
+On checkout.session.completed:
+- read metadata.pack_type and metadata.user_id
+- if pack_type == "overlimit_200": add 200 credits
+- if pack_type == "plus_600": add 600 credits
+- update analysis_credits_remaining += credits
+- write activity_logs entry
+- NO automatic recurring charges, no metered billing
+
+Credits stack.
+
+────────────────────────────────────────
+F) QUOTA ENFORCEMENT: CONSUME CREDITS FIRST
+────────────────────────────────────────
+
+Update quota middleware for processing endpoints so the order is:
+
+1) If user_profiles.analysis_credits_remaining > 0:
+   - decrement by 1
+   - allow request
+2) Else apply subscription quotas (daily/monthly soft limits)
+3) If blocked: return HTTP 402 with structured error:
+   { code: "NEEDS_PROCESSING_PACK", message: "Processing limit reached", packSuggested: "overlimit_200" }
+
+This must be applied to:
+- POST /api/cases/:caseId/evidence/:evidenceId/extraction/run
+- POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run
+- POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest (and auto-suggest job trigger per evidence file)
+- POST/GET pattern analysis generation/export (where compute happens)
+- POST /api/cases/:caseId/documents/compile-claims
+
+DO NOT apply to:
+- Lexi chat endpoints
+- Search endpoints
+- Normal CRUD
+
+────────────────────────────────────────
+G) FRONTEND: WIRE EXISTING TILE BUTTON (NO COPY CHANGES)
+────────────────────────────────────────
+
+On Plans.tsx:
+- Find the existing “Over-Limit Processing Pack” tile button
+- On click: call POST /api/billing/processing-pack/checkout with packType="overlimit_200"
+- Redirect to returned url
+
+Add a second tile for the $50 pack:
+- packType="plus_600"
+- Show concise copy:
+  “$50 one-time — Includes 600 additional analysis credits”
+(Keep visual style consistent with existing tile.)
+
+────────────────────────────────────────
+H) FRONTEND: WHEN BLOCKED, OFFER PACK
+────────────────────────────────────────
+
+When any processing call returns code NEEDS_PROCESSING_PACK:
+- show modal:
+  “You’ve reached your processing limit.”
+  Buttons:
+   - “Add Over-Limit Pack ($19.99)” -> overlimit_200
+   - “Add Plus Pack ($50)” -> plus_600
+  and “Not now” closes.
+
+Show this in EvidenceViewer + Documents compile + Pattern Analysis.
+
+────────────────────────────────────────
+I) ACCOUNT SETTINGS: SHOW CREDIT BALANCE
+────────────────────────────────────────
+
+In Account Settings → Subscription:
+- Display analysis_credits_remaining
+- Provide “Buy Processing Pack” buttons for both packs
+
+────────────────────────────────────────
+DONE WHEN (TESTS)
+────────────────────────────────────────
+
+1) User hits limit → sees paywall modal → buys pack → returns → retries action → succeeds
+2) analysis_credits_remaining decrements by 1 per processing action
+3) Lexi chat still works even when credits are 0
+4) $19.99 pack adds exactly 200 credits; $50 pack adds exactly 600 credits
