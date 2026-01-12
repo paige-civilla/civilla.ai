@@ -1510,6 +1510,26 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS claim_suggestion_runs_unique_idx ON claim_suggestion_runs(user_id, evidence_id)`
   ]);
 
+  await initTable("processing_credit_ledger", `
+    CREATE TABLE IF NOT EXISTS processing_credit_ledger (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) REFERENCES cases(id),
+      job_type TEXT NOT NULL,
+      job_key TEXT NOT NULL,
+      delta INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      error TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_user_idx ON processing_credit_ledger(user_id)`,
+    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_case_idx ON processing_credit_ledger(case_id)`,
+    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_job_key_idx ON processing_credit_ledger(job_key)`,
+    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_reason_idx ON processing_credit_ledger(reason)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS processing_credit_ledger_job_key_reason_idx ON processing_credit_ledger(job_key, reason)`
+  ]);
+
   const analyticsExists = await tableExists("analytics_events");
   const auditExists = await tableExists("admin_audit_logs");
   const draftOutlinesExists = await tableExists("draft_outlines");

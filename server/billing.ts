@@ -384,7 +384,8 @@ export async function createProcessingPackCheckout(
 
 export async function awardProcessingPackCredits(
   userId: string,
-  packType: ProcessingPackType
+  packType: ProcessingPackType,
+  sessionId?: string
 ): Promise<void> {
   const creditsToAdd = PROCESSING_PACK_CREDITS[packType];
   if (!creditsToAdd) {
@@ -392,15 +393,17 @@ export async function awardProcessingPackCredits(
     return;
   }
 
-  await db.execute(sql`
-    UPDATE user_profiles SET
-      analysis_credits_remaining = COALESCE(analysis_credits_remaining, 0) + ${creditsToAdd},
-      last_processing_pack_purchase_at = NOW(),
-      updated_at = NOW()
-    WHERE user_id = ${userId}
-  `);
+  const { addPackCredits } = await import("./services/credits");
+  const jobKey = sessionId ? `stripe_session:${sessionId}` : `pack_${packType}:${userId}:${Date.now()}`;
+  
+  await addPackCredits({
+    userId,
+    credits: creditsToAdd,
+    jobKey,
+    jobType: "export",
+  });
 
-  console.log(`[BILLING] Awarded ${creditsToAdd} analysis credits (${packType} pack) to user ${userId}`);
+  console.log(`[BILLING] Awarded ${creditsToAdd} analysis credits (${packType} pack) to user ${userId}, jobKey=${jobKey}`);
 }
 
 export async function getAnalysisCredits(userId: string): Promise<number> {
@@ -487,8 +490,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   if (checkoutType === "processing_pack") {
     const packType = session.metadata?.pack_type as ProcessingPackType;
     if (packType && (packType === "overlimit_200" || packType === "plus_600")) {
-      await awardProcessingPackCredits(userId, packType);
-      console.log(`[BILLING WEBHOOK] Processing pack ${packType} purchased for user ${userId}`);
+      await awardProcessingPackCredits(userId, packType, session.id);
+      console.log(`[BILLING WEBHOOK] Processing pack ${packType} purchased for user ${userId}, sessionId=${session.id}`);
     } else {
       console.error(`[BILLING WEBHOOK] Invalid pack_type in metadata: ${packType}`);
     }

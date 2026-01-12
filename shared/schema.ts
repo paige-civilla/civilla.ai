@@ -2497,3 +2497,30 @@ export const claimSuggestionRuns = pgTable("claim_suggestion_runs", {
 }));
 
 export type ClaimSuggestionRun = typeof claimSuggestionRuns.$inferSelect;
+
+// Processing Credit Ledger - durable ledger for credit debit/refund (idempotent)
+export const creditJobTypes = ["ocr", "ai_analysis", "claim_suggest", "pattern", "doc_compile", "export"] as const;
+export type CreditJobType = typeof creditJobTypes[number];
+
+export const creditReasons = ["consume", "refund_failure", "pack_purchase", "admin_grant", "stripe_refund"] as const;
+export type CreditReason = typeof creditReasons[number];
+
+export const processingCreditLedger = pgTable("processing_credit_ledger", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").references(() => cases.id),
+  jobType: text("job_type").notNull(),
+  jobKey: text("job_key").notNull(),
+  delta: integer("delta").notNull(),
+  reason: text("reason").notNull(),
+  error: text("error"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("processing_credit_ledger_user_idx").on(table.userId),
+  caseIdx: index("processing_credit_ledger_case_idx").on(table.caseId),
+  jobKeyIdx: index("processing_credit_ledger_job_key_idx").on(table.jobKey),
+  reasonIdx: index("processing_credit_ledger_reason_idx").on(table.reason),
+  jobKeyReasonUnique: uniqueIndex("processing_credit_ledger_job_key_reason_idx").on(table.jobKey, table.reason),
+}));
+
+export type ProcessingCreditLedger = typeof processingCreditLedger.$inferSelect;
