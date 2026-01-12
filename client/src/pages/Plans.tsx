@@ -269,6 +269,39 @@ function PricingCardsSection() {
     }
   };
 
+  const [loadingPack, setLoadingPack] = useState<string | null>(null);
+
+  const handleBuyPack = async (packType: "mini" | "premium") => {
+    setLoadingPack(packType);
+    try {
+      const response = await fetch("/api/billing/processing-pack/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ packType }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to start checkout");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Pack checkout error:", error);
+      toast({
+        title: "Unable to purchase pack",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPack(null);
+    }
+  };
+
   const plans = [
     {
       id: "trial",
@@ -359,18 +392,45 @@ function PricingCardsSection() {
         "Reactivate full features anytime",
       ],
     },
+  ] as const;
+
+  const processingPacks = [
     {
-      title: "Over-Limit Processing Pack",
-      price: "Starts at $19.99 one-time",
-      description: "",
+      id: "mini" as const,
+      title: "Mini Processing Pack",
+      price: "$20",
+      priceNote: "one-time",
+      credits: {
+        claims: 15,
+        patterns: 10,
+        documents: 10,
+        ocrPages: 500,
+      },
       bullets: [
-        "Includes 200 additional analysis credits",
-        "We warn you before you reach limits",
-        "No automatic overage charges",
-        "Offered only if you exceed soft limits",
+        "15 claim suggestions",
+        "10 pattern analyses",
+        "10 document generations",
+        "500 OCR pages",
       ],
-      footnote:
-        "If you approach limits, we'll notify you. If exceeded, you can optionally add a one-time pack before more processing runs.",
+    },
+    {
+      id: "premium" as const,
+      title: "Premium Processing Pack",
+      price: "$50",
+      priceNote: "one-time",
+      credits: {
+        claims: 50,
+        patterns: 25,
+        documents: 25,
+        ocrPages: 2000,
+      },
+      bullets: [
+        "50 claim suggestions",
+        "25 pattern analyses",
+        "25 document generations",
+        "2,000 OCR pages",
+      ],
+      highlight: true,
     },
   ] as const;
 
@@ -666,7 +726,7 @@ function PricingCardsSection() {
         {/* Add-ons under the cards */}
         <div className="mt-10">
           <h3 className="text-2xl font-black text-neutral-900 dark:text-cream">Add-Ons</h3>
-          <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3 items-stretch">
+          <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 items-stretch">
             {addOns.map((a) => (
               <div
                 key={a.title}
@@ -685,9 +745,61 @@ function PricingCardsSection() {
                     </li>
                   ))}
                 </ul>
-                {"footnote" in a && a.footnote ? (
-                  <div className="mt-4 text-xs text-neutral-900/60 dark:text-cream/60">{a.footnote}</div>
-                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Processing Packs */}
+        <div className="mt-10">
+          <h3 className="text-2xl font-black text-neutral-900 dark:text-cream">Processing Packs</h3>
+          <p className="mt-2 text-sm text-neutral-900/70 dark:text-cream/70">
+            One-time credit purchases for AI-powered features. Credits are consumed before your subscription limits.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 items-stretch">
+            {processingPacks.map((pack) => (
+              <div
+                key={pack.id}
+                className={`h-full rounded-[24px] border ${
+                  "highlight" in pack && pack.highlight 
+                    ? "border-[#0F3B2E] dark:border-cream/40 ring-2 ring-[#0F3B2E]/20 dark:ring-cream/20" 
+                    : "border-neutral-900/15 dark:border-cream/15"
+                } bg-white/60 dark:bg-neutral-darkest/60 p-6 min-w-0 flex flex-col`}
+              >
+                {"highlight" in pack && pack.highlight && (
+                  <div className="text-xs font-bold text-[#0F3B2E] dark:text-cream/80 uppercase tracking-wider mb-2">
+                    Best Value
+                  </div>
+                )}
+                <div className="text-lg font-black text-neutral-900 dark:text-cream">{pack.title}</div>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-neutral-900 dark:text-cream">{pack.price}</span>
+                  <span className="text-sm font-semibold text-neutral-900/70 dark:text-cream/70">{pack.priceNote}</span>
+                </div>
+                <ul className="mt-4 space-y-2 text-sm text-neutral-900/80 dark:text-cream/80 flex-1">
+                  {pack.bullets.map((t) => (
+                    <li key={t} className="flex gap-2">
+                      <Check className="mt-[2px] h-4 w-4 text-neutral-900/70 dark:text-cream/70" />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="mt-4 w-full rounded-full bg-[#0F3B2E] px-5 py-3 text-center text-sm font-semibold text-white hover:opacity-95 disabled:opacity-70"
+                  onClick={() => handleBuyPack(pack.id)}
+                  disabled={loadingPack !== null}
+                  data-testid={`button-buy-pack-${pack.id}`}
+                >
+                  {loadingPack === pack.id ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    `Buy ${pack.title.replace("Processing Pack", "Pack")}`
+                  )}
+                </button>
               </div>
             ))}
           </div>
