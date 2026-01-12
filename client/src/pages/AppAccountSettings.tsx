@@ -32,6 +32,12 @@ interface UserProfile {
   autoFillEnabled: boolean;
   firmName: string | null;
   barNumber: string | null;
+  subscriptionTier: string;
+  subscriptionSource: string | null;
+  isLifetime: boolean;
+  compedReason: string | null;
+  isAdmin: boolean;
+  isGrantViewer: boolean;
 }
 
 interface LexiUserPrefs {
@@ -608,15 +614,69 @@ export default function AppAccountSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
-                <p className="font-sans text-neutral-darkest mb-2">Manage your plan</p>
-                <p className="font-sans text-sm text-neutral-darkest/60 mb-4">
-                  Subscription management coming soon
-                </p>
-                <Button variant="outline" disabled data-testid="button-manage-plan">
-                  Coming Soon
-                </Button>
-              </div>
+              {profileData?.profile?.isLifetime && profileData?.profile?.subscriptionSource === "comped" ? (
+                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-300" data-testid="badge-tier-premium">
+                        Premium
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-amber-200 to-yellow-200 text-amber-900 border border-amber-400" data-testid="badge-lifetime">
+                        Lifetime
+                      </span>
+                    </div>
+                  </div>
+                  <p className="font-sans text-neutral-darkest mb-1">
+                    You have <strong>Lifetime Premium</strong> access.
+                  </p>
+                  <p className="font-sans text-sm text-neutral-darkest/60">
+                    No billing required. Thank you for being a founding supporter!
+                  </p>
+                </div>
+              ) : profileData?.profile?.subscriptionTier === "premium" ? (
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800 border border-purple-300" data-testid="badge-tier-premium">
+                      Premium
+                    </span>
+                  </div>
+                  <p className="font-sans text-neutral-darkest mb-2">
+                    You're on the <strong>Premium</strong> plan.
+                  </p>
+                  <Button variant="outline" disabled data-testid="button-manage-plan">
+                    Manage Plan (Coming Soon)
+                  </Button>
+                </div>
+              ) : profileData?.profile?.subscriptionTier === "pro" ? (
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-300" data-testid="badge-tier-pro">
+                      Pro
+                    </span>
+                  </div>
+                  <p className="font-sans text-neutral-darkest mb-2">
+                    You're on the <strong>Pro</strong> plan.
+                  </p>
+                  <Button variant="outline" disabled data-testid="button-manage-plan">
+                    Manage Plan (Coming Soon)
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-300" data-testid="badge-tier-free">
+                      Free
+                    </span>
+                  </div>
+                  <p className="font-sans text-neutral-darkest mb-2">Manage your plan</p>
+                  <p className="font-sans text-sm text-neutral-darkest/60 mb-4">
+                    Subscription management coming soon
+                  </p>
+                  <Button variant="outline" disabled data-testid="button-manage-plan">
+                    Coming Soon
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

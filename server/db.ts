@@ -184,6 +184,10 @@ async function ensureUserProfileColumns(): Promise<void> {
   await addColumnIfMissing("user_profiles", "start_here_seen", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing("user_profiles", "is_admin", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing("user_profiles", "is_grant_viewer", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "subscription_tier", "TEXT NOT NULL DEFAULT 'free'");
+  await addColumnIfMissing("user_profiles", "subscription_source", "TEXT");
+  await addColumnIfMissing("user_profiles", "is_lifetime", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "comped_reason", "TEXT");
   await addColumnIfMissing("user_profiles", "drafting_disclaimer_accepted_at", "TIMESTAMP");
 }
 

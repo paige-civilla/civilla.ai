@@ -50,6 +50,7 @@ import { runSmokeChecks, type SmokeCheckReport } from "./diagnostics/smokeChecks
 import { serverStartTime } from "./index";
 import { EvidenceExtractionSchema, EvidenceAiAnalysisSchema, AiHealthResponseSchema } from "@shared/aiContracts";
 import { isAiTestMode, getMockLexiResponse, getMockStreamChunks } from "./lexi/testMode";
+import { applyEntitlementsForUser, applyAllEntitlements, LIFETIME_PREMIUM_EMAILS, ADMIN_EMAILS, GRANT_VIEWER_EMAILS } from "./entitlements";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -497,6 +498,18 @@ export async function registerRoutes(
       const passwordHash = await hashPassword(password);
       const user = await storage.createUser({ email, passwordHash });
 
+      // Apply entitlements (lifetime premium, admin, grant viewer)
+      const entitlements = await applyEntitlementsForUser(email);
+      if (entitlements.lifetimePremium.applied) {
+        console.log(`[ENTITLEMENTS] Applied lifetime premium to new user ${email}`);
+      }
+      if (entitlements.admin.applied) {
+        console.log(`[ROLES] Applied admin role to new user ${email}`);
+      }
+      if (entitlements.grantViewer.applied) {
+        console.log(`[ROLES] Applied grant viewer role to new user ${email}`);
+      }
+
       req.session.userId = user.id;
       
       req.session.save((err) => {
@@ -530,6 +543,9 @@ export async function registerRoutes(
       if (!isValid) {
         return res.status(401).json({ error: "Invalid email or password" });
       }
+
+      // Apply entitlements on login (ensures roles are up-to-date)
+      await applyEntitlementsForUser(email);
 
       req.session.userId = user.id;
 
@@ -595,6 +611,12 @@ export async function registerRoutes(
             onboardingDeferred: profile.onboardingDeferred || {},
             onboardingStatus: profile.onboardingStatus,
             draftingDisclaimerAcceptedAt: profile.draftingDisclaimerAcceptedAt,
+            subscriptionTier: profile.subscriptionTier || "free",
+            subscriptionSource: profile.subscriptionSource,
+            isLifetime: profile.isLifetime || false,
+            compedReason: profile.compedReason,
+            isAdmin: profile.isAdmin || false,
+            isGrantViewer: profile.isGrantViewer || false,
           },
         });
       } else {
@@ -616,6 +638,12 @@ export async function registerRoutes(
             onboardingDeferred: {},
             onboardingStatus: "incomplete",
             draftingDisclaimerAcceptedAt: null,
+            subscriptionTier: "free",
+            subscriptionSource: null,
+            isLifetime: false,
+            compedReason: null,
+            isAdmin: false,
+            isGrantViewer: false,
           },
         });
       }
@@ -6610,6 +6638,43 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     } catch (e: any) {
       console.error("[Acknowledge Alert] error:", e);
       res.status(500).json({ ok: false, error: "Failed to acknowledge alert", requestId: req.requestId });
+    }
+  });
+
+  app.post("/api/admin/refresh-entitlements", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const results = await applyAllEntitlements();
+      
+      res.json({
+        ok: true,
+        allowlists: {
+          lifetimePremium: LIFETIME_PREMIUM_EMAILS,
+          admin: ADMIN_EMAILS,
+          grantViewer: GRANT_VIEWER_EMAILS,
+        },
+        results,
+        requestId: req.requestId,
+      });
+    } catch (e: any) {
+      console.error("[Refresh Entitlements] error:", e);
+      res.status(500).json({ ok: false, error: "Failed to refresh entitlements", requestId: req.requestId });
+    }
+  });
+
+  app.get("/api/admin/entitlements", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      res.json({
+        ok: true,
+        allowlists: {
+          lifetimePremium: LIFETIME_PREMIUM_EMAILS,
+          admin: ADMIN_EMAILS,
+          grantViewer: GRANT_VIEWER_EMAILS,
+        },
+        requestId: req.requestId,
+      });
+    } catch (e: any) {
+      console.error("[Get Entitlements] error:", e);
+      res.status(500).json({ ok: false, error: "Failed to get entitlements", requestId: req.requestId });
     }
   });
 

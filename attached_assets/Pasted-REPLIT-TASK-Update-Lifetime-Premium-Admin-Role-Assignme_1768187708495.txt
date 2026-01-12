@@ -1,0 +1,60 @@
+REPLIT TASK: Update Lifetime Premium + Admin Role Assignments (add Paige/Bryan Civilla emails)
+
+We already implemented the Roles + Lifetime Premium Entitlements + Nav fixes block. Now adjust the allowlists:
+
+────────────────────────────────────────────────────────────
+A) LIFETIME PREMIUM ENTITLEMENTS (COMPED, NO CHARGES EVER)
+────────────────────────────────────────────────────────────
+Add these emails to the lifetime premium comped allowlist (in addition to existing ones):
+
+- paigelindibella@gmail.com
+- jetdocllc@gmail.com
+- paige@civilla.ai
+- bryan@civilla.ai
+
+Behavior:
+- If account exists: set
+  - subscription_tier='premium'
+  - subscription_source='comped'
+  - is_lifetime=true
+  - comped_reason='founder_comp'
+- If account does not exist: do NOT create it; log:
+  "[ENTITLEMENTS] user not found for email X; will apply when account exists"
+- Ensure Stripe billing actions remain hidden/disabled for lifetime comped users.
+- Account Settings must show Premium + Lifetime badge.
+
+────────────────────────────────────────────────────────────
+B) ADMIN ROLE ASSIGNMENT (EMAIL-BASED)
+────────────────────────────────────────────────────────────
+Add these emails to the admin allowlist:
+
+- admin@civilla.ai
+- paige@civilla.ai
+- bryan@civilla.ai
+
+Behavior:
+- If account exists: set user_profiles.is_admin=true
+- If account does not exist: do NOT create it; log:
+  "[ROLES] account not found yet for admin email X"
+- Ensure these admins are NOT forced into grant-restricted behavior.
+
+────────────────────────────────────────────────────────────
+C) GRANT VIEWER ROLE (LOCKED DOWN)
+────────────────────────────────────────────────────────────
+Keep the grant viewer allowlist as:
+
+- grants@civilla.ai
+
+Behavior:
+- user_profiles.is_grant_viewer=true
+- user_profiles.is_admin=false
+- Grant viewer must remain restricted to /app/grants + /api/grants/* (+ logout, and optionally minimal /account for password changes).
+
+────────────────────────────────────────────────────────────
+D) REPORT BACK
+────────────────────────────────────────────────────────────
+After updating, report:
+- Which file(s) contain the allowlists
+- Confirmation that all four lifetime emails are applied (or logged as not found)
+- Confirmation that the three admin emails are applied (or logged as not found)
+- Confirmation that grant viewer remains isolated
