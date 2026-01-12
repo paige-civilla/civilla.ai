@@ -70,6 +70,10 @@ export const userProfiles = pgTable("user_profiles", {
   dataCapOveragePaidAt: timestamp("data_cap_overage_paid_at"),
   lastOverageInvoiceId: text("last_overage_invoice_id"),
   trialEndsAt: timestamp("trial_ends_at"),
+  creditsClaimsRemaining: integer("credits_claims_remaining").notNull().default(0),
+  creditsPatternsRemaining: integer("credits_patterns_remaining").notNull().default(0),
+  creditsDocumentsRemaining: integer("credits_documents_remaining").notNull().default(0),
+  creditsOcrPagesRemaining: integer("credits_ocr_pages_remaining").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

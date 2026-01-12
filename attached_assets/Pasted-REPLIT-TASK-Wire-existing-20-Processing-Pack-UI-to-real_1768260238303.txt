@@ -1,0 +1,157 @@
+REPLIT TASK: Wire existing $20 Processing Pack UI to real Stripe + credits, add $50 pack
+
+CONTEXT
+The Plans & Pricing page already shows a "$20 processing pack" on the frontend.
+Right now it is not guaranteed to be:
+- connected to Stripe one-time checkout
+- awarding credits in the database after purchase
+- used by quota enforcement to unblock actions
+
+GOAL
+1) Keep the existing $20 processing pack section/UI.
+2) Make it actually work end-to-end (Stripe → webhook → credits → quota bypass).
+3) Add a second one-time pack: $50.
+4) Ensure paywall modals across the app offer these packs when limits are hit.
+
+────────────────────────────────────────
+A) STRIPE: ONE-TIME PRODUCTS + PRICE IDS
+────────────────────────────────────────
+
+1) Create/confirm two Stripe ONE-TIME products + prices:
+- Processing Pack — Mini ($20)  -> pack_type="mini"
+- Processing Pack — Premium ($50) -> pack_type="premium"
+
+2) Add env vars in Replit Secrets:
+- STRIPE_PROCESSING_PACK_MINI_PRICE_ID
+- STRIPE_PROCESSING_PACK_PREMIUM_PRICE_ID
+
+DO NOT hardcode price ids.
+
+────────────────────────────────────────
+B) DATABASE: CREDIT COLUMNS (IF NOT ALREADY PRESENT)
+────────────────────────────────────────
+
+Ensure user_profiles has these columns (add via db.ts ensure migrations):
+- credits_claims_remaining INT DEFAULT 0
+- credits_patterns_remaining INT DEFAULT 0
+- credits_documents_remaining INT DEFAULT 0
+- credits_ocr_pages_remaining INT DEFAULT 0
+
+Also log pack purchases in activity_logs.
+
+────────────────────────────────────────
+C) BILLING API: ADD ONE-TIME CHECKOUT ROUTE FOR PACKS
+────────────────────────────────────────
+
+Add endpoint:
+POST /api/billing/processing-pack/checkout
+Body: { packType: "mini" | "premium" }
+Behavior:
+- requireAuth
+- create Stripe checkout session (mode="payment")
+- line_items uses correct price id by packType
+- set metadata: { pack_type: packType, user_id: <uuid> }
+- return { url } to redirect user
+
+Frontend should redirect to returned url.
+
+────────────────────────────────────────
+D) STRIPE WEBHOOK: AWARD CREDITS ON CHECKOUT COMPLETE
+────────────────────────────────────────
+
+In webhook handler for checkout.session.completed:
+- read metadata.pack_type
+- lookup user by metadata.user_id
+- increment credits accordingly:
+
+mini ($20):
+- credits_claims_remaining += 15
+- credits_patterns_remaining += 10
+- credits_documents_remaining += 10
+- credits_ocr_pages_remaining += 500
+
+premium ($50):
+- credits_claims_remaining += 50
+- credits_patterns_remaining += 25
+- credits_documents_remaining += 25
+- credits_ocr_pages_remaining += 2000
+
+Log activity_logs:
+event="processing_pack_purchased"
+metadata includes pack_type and increments
+
+Credits are stackable (multiple purchases add up).
+
+────────────────────────────────────────
+E) QUOTA ENFORCEMENT: CREDITS CONSUMED BEFORE LIMITS
+────────────────────────────────────────
+
+Update quota middleware so that for these actions:
+- Claims generation (auto-suggest / suggest)
+- Pattern analysis runs/export
+- Document compile from claims
+- OCR extraction run
+
+Logic MUST be:
+1) If relevant credits_remaining > 0:
+   - decrement credits first
+   - allow request
+2) Else apply subscription quota limits (daily/monthly)
+3) If blocked -> return a structured error that frontend can detect: { code: "NEEDS_PROCESSING_PACK", needed: "<type>" }
+
+IMPORTANT:
+- Lexi chat should NOT consume these credits.
+- Only “processing” actions consume credits.
+
+────────────────────────────────────────
+F) FRONTEND: KEEP EXISTING $20 PACK UI, WIRE BUTTON
+────────────────────────────────────────
+
+On Plans.tsx:
+- Find the existing $20 processing pack button
+- On click: call POST /api/billing/processing-pack/checkout { packType:"mini" }
+- Redirect user to returned URL
+
+Add a second card/button for $50 pack:
+- call packType:"premium"
+
+If the page already has a placeholder UI for $50, wire it; otherwise add it next to $20.
+
+────────────────────────────────────────
+G) FRONTEND: PAYWALL MODALS OFFER PACKS
+────────────────────────────────────────
+
+When a user hits limits in:
+- Evidence extraction
+- Claims generation
+- Pattern analysis
+- Document compile preflight
+
+If server responds code "NEEDS_PROCESSING_PACK":
+- Show modal with:
+  [Add $20 Processing Pack] -> packType mini
+  [Add $50 Processing Pack] -> packType premium
+- Also show short text: “One-time, usage-based. No subscription upgrade.”
+
+────────────────────────────────────────
+H) ACCOUNT SETTINGS: SHOW CREDITS
+────────────────────────────────────────
+
+In Account Settings → Subscription:
+Display current credits remaining:
+- Claims credits
+- Pattern credits
+- Document compile credits
+- OCR pages credits
+And show “Buy Processing Pack” quick buttons ($20/$50) linking to checkout route.
+
+────────────────────────────────────────
+DONE WHEN
+────────────────────────────────────────
+
+✔ Existing $20 pack button redirects to Stripe and purchase succeeds
+✔ Webhook awards credits immediately
+✔ Retrying blocked action succeeds without upgrading subscription
+✔ $50 pack exists and works
+✔ Credits decrement correctly and show in Account Settings
+✔ Lexi chat unaffected by these credits

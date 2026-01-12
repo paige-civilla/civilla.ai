@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { userProfiles, users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getUncachableStripeClient } from "./stripeClient";
 import Stripe from "stripe";
 
@@ -252,6 +252,33 @@ export const STRIPE_ADDON_PRICES = {
   overageOneTime: process.env.STRIPE_PRICE_OVERAGE_ONE_TIME || "",
 };
 
+export const PROCESSING_PACK_PRICES = {
+  mini: process.env.STRIPE_PROCESSING_PACK_MINI_PRICE_ID || "",
+  premium: process.env.STRIPE_PROCESSING_PACK_PREMIUM_PRICE_ID || "",
+};
+
+export type ProcessingPackType = "mini" | "premium";
+
+export const PROCESSING_PACK_CREDITS: Record<ProcessingPackType, {
+  claims: number;
+  patterns: number;
+  documents: number;
+  ocrPages: number;
+}> = {
+  mini: {
+    claims: 15,
+    patterns: 10,
+    documents: 10,
+    ocrPages: 500,
+  },
+  premium: {
+    claims: 50,
+    patterns: 25,
+    documents: 25,
+    ocrPages: 2000,
+  },
+};
+
 export async function createCheckoutSession(
   userId: string,
   email: string,
@@ -338,6 +365,122 @@ export async function createPortalSession(userId: string, origin?: string): Prom
   return { url: session.url };
 }
 
+export async function createProcessingPackCheckout(
+  userId: string,
+  email: string,
+  packType: ProcessingPackType,
+  origin?: string
+): Promise<{ url: string | null; error?: string }> {
+  const priceId = PROCESSING_PACK_PRICES[packType];
+  if (!priceId) {
+    return { url: null, error: `Stripe price not configured for ${packType} processing pack` };
+  }
+
+  const customerId = await getOrCreateStripeCustomer(userId, email);
+  const stripe = await getUncachableStripeClient();
+
+  const baseUrl = origin || "https://civilla.ai";
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer: customerId,
+    payment_method_types: ["card"],
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${baseUrl}/app/account?pack_purchase=success&pack=${packType}`,
+    cancel_url: `${baseUrl}/plans?pack_canceled=true`,
+    metadata: {
+      userId,
+      pack_type: packType,
+      checkout_type: "processing_pack",
+    },
+  });
+
+  return { url: session.url };
+}
+
+export async function awardProcessingPackCredits(
+  userId: string,
+  packType: ProcessingPackType
+): Promise<void> {
+  const credits = PROCESSING_PACK_CREDITS[packType];
+  if (!credits) {
+    console.error(`[BILLING] Unknown pack type: ${packType}`);
+    return;
+  }
+
+  await db.execute(sql`
+    UPDATE user_profiles SET
+      credits_claims_remaining = COALESCE(credits_claims_remaining, 0) + ${credits.claims},
+      credits_patterns_remaining = COALESCE(credits_patterns_remaining, 0) + ${credits.patterns},
+      credits_documents_remaining = COALESCE(credits_documents_remaining, 0) + ${credits.documents},
+      credits_ocr_pages_remaining = COALESCE(credits_ocr_pages_remaining, 0) + ${credits.ocrPages},
+      updated_at = NOW()
+    WHERE user_id = ${userId}
+  `);
+
+  console.log(`[BILLING] Awarded ${packType} pack credits to user ${userId}:`, credits);
+}
+
+export async function getUserCredits(userId: string): Promise<{
+  claims: number;
+  patterns: number;
+  documents: number;
+  ocrPages: number;
+}> {
+  const result = await db
+    .select({
+      claims: userProfiles.creditsClaimsRemaining,
+      patterns: userProfiles.creditsPatternsRemaining,
+      documents: userProfiles.creditsDocumentsRemaining,
+      ocrPages: userProfiles.creditsOcrPagesRemaining,
+    })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+
+  if (result.length === 0) {
+    return { claims: 0, patterns: 0, documents: 0, ocrPages: 0 };
+  }
+
+  return {
+    claims: result[0].claims ?? 0,
+    patterns: result[0].patterns ?? 0,
+    documents: result[0].documents ?? 0,
+    ocrPages: result[0].ocrPages ?? 0,
+  };
+}
+
+export async function consumeCredit(
+  userId: string,
+  creditType: "claims" | "patterns" | "documents" | "ocrPages",
+  quantity: number = 1
+): Promise<{ consumed: boolean; remaining: number }> {
+  const columnMap = {
+    claims: "credits_claims_remaining",
+    patterns: "credits_patterns_remaining",
+    documents: "credits_documents_remaining",
+    ocrPages: "credits_ocr_pages_remaining",
+  };
+  
+  const column = columnMap[creditType];
+  
+  const result = await db.execute(sql`
+    UPDATE user_profiles 
+    SET ${sql.raw(column)} = GREATEST(0, COALESCE(${sql.raw(column)}, 0) - ${quantity}),
+        updated_at = NOW()
+    WHERE user_id = ${userId} 
+      AND COALESCE(${sql.raw(column)}, 0) >= ${quantity}
+    RETURNING ${sql.raw(column)} as remaining
+  `);
+
+  if (result.rows.length === 0) {
+    const credits = await getUserCredits(userId);
+    const remaining = credits[creditType] ?? 0;
+    return { consumed: false, remaining };
+  }
+
+  return { consumed: true, remaining: Number(result.rows[0].remaining) ?? 0 };
+}
+
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
   console.log(`[BILLING WEBHOOK] Processing event: ${event.type}`);
 
@@ -377,6 +520,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   const userId = session.metadata?.userId;
   if (!userId) {
     console.error("[BILLING WEBHOOK] No userId in checkout session metadata");
+    return;
+  }
+
+  const checkoutType = session.metadata?.checkout_type;
+  
+  if (checkoutType === "processing_pack") {
+    const packType = session.metadata?.pack_type as ProcessingPackType;
+    if (packType && (packType === "mini" || packType === "premium")) {
+      await awardProcessingPackCredits(userId, packType);
+      console.log(`[BILLING WEBHOOK] Processing pack ${packType} purchased for user ${userId}`);
+    } else {
+      console.error(`[BILLING WEBHOOK] Invalid pack_type in metadata: ${packType}`);
+    }
     return;
   }
 
