@@ -4,7 +4,7 @@ import { runSmokeChecks } from "../server/diagnostics/smokeChecks";
 async function main() {
   console.log("Running smoke checks...\n");
   
-  const report = await runSmokeChecks();
+  const report = await runSmokeChecks("system-smoke-check");
   
   console.log("=".repeat(60));
   console.log("SMOKE CHECK REPORT");

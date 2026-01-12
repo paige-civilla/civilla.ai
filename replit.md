@@ -22,6 +22,27 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
+- 2026-01-12: PRODUCTION HARDENING COMPLETE - Per-user quotas, durable job queues, admin diagnostics, alerting:
+  - **Usage Quotas**: usage_events table (append-only ledger), tier-based quotas enforced via middleware
+  - **Quota Limits by Tier**:
+    - Free: 0 OCR pages, 0 AI calls (blocked)
+    - Trial: 20 OCR pages/day, 100/month, 10 AI calls/day, 50/month
+    - Core: 100 OCR pages/day, 500/month, 50 AI calls/day, 200/month
+    - Pro: 200 OCR pages/day, 1000/month, 100 AI calls/day, 400/month
+    - Premium: 500 OCR pages/day, 2500/month, 300 AI calls/day, 1500/month
+  - **Comped Users** (bypass all quotas): paigelindibella@gmail.com, jetdocllc@gmail.com, paige@civilla.ai, bryan@civilla.ai
+  - **Protected Endpoints** (require quota check):
+    - POST /api/cases/:caseId/evidence/:evidenceId/extraction/run (ocr_page quota)
+    - POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run (ai_call quota)
+    - POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest (ai_call quota)
+  - **Durable Job Runner**: server/jobs/jobRunner.ts with global concurrency (2 max), exponential backoff retry, 15-minute stale job requeuing
+  - **AI Jobs Status Endpoints**:
+    - GET /api/cases/:caseId/ai-jobs/status - job counts, failures, quota remaining
+    - GET /api/admin/ai-jobs - backlogs, P95 latency, failure analysis, tier quotas
+    - POST /api/admin/ai-jobs/requeue-stale - manual stale job recovery
+  - **Alerting System**: server/alerts/alerting.ts with Slack webhook integration, 15-minute throttling, failure spike detection (10 failures in 10 minutes)
+  - **Smoke Tests**: script/smoke.ts - run with `npx tsx script/smoke.ts`
+  - **Key Files**: server/usage/limits.ts, server/middleware/quota.ts, server/jobs/jobRunner.ts, server/alerts/alerting.ts
 - 2026-01-12: BILLING SYSTEM COMPLETE - Full Stripe billing integration with:
   - Database: Added stripe_customer_id, stripe_subscription_id, stripe_price_id, subscription_status, add_on_second_case, add_on_archive_mode, usage_bytes_month, trial_ends_at columns to user_profiles
   - API Endpoints: POST /api/billing/checkout, POST /api/billing/portal, GET /api/billing/status, legacy POST /api/stripe/create-checkout-session
