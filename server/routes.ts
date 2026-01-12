@@ -51,6 +51,8 @@ import { serverStartTime } from "./index";
 import { EvidenceExtractionSchema, EvidenceAiAnalysisSchema, AiHealthResponseSchema } from "@shared/aiContracts";
 import { isAiTestMode, getMockLexiResponse, getMockStreamChunks } from "./lexi/testMode";
 import { applyEntitlementsForUser, applyAllEntitlements, LIFETIME_PREMIUM_EMAILS, ADMIN_EMAILS, GRANT_VIEWER_EMAILS } from "./entitlements";
+import { verifyTurnstile, isTurnstileConfigured, getClientIp } from "./turnstile";
+import { idempotentOperation, createAiJob, updateAiJobProgress, completeAiJob, getAiJob, getActiveAiJobs, getAiJobStats } from "./utils/dbHardening";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -464,14 +466,15 @@ export async function registerRoutes(
   });
 
   app.get("/api/turnstile/site-key", (_req, res) => {
-    // CAPTCHA disabled
-    res.json({ siteKey: "" });
+    const siteKey = process.env.TURNSTILE_SITE_KEY || "";
+    res.json({ siteKey });
   });
 
   app.get("/api/auth/turnstile-status", (_req, res) => {
+    const configured = isTurnstileConfigured();
     res.json({
-      enabled: false,
-      siteKeyPresent: false,
+      enabled: configured,
+      siteKeyPresent: !!process.env.TURNSTILE_SITE_KEY,
       isProduction: process.env.NODE_ENV === "production",
     });
   });
@@ -480,7 +483,13 @@ export async function registerRoutes(
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, turnstileToken } = req.body;
+      
+      // Verify Turnstile CAPTCHA (if configured)
+      const turnstileResult = await verifyTurnstile(turnstileToken, getClientIp(req));
+      if (!turnstileResult.ok) {
+        return res.status(400).json({ error: turnstileResult.error || "CAPTCHA verification failed" });
+      }
       
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
@@ -6588,6 +6597,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           recent: getRecentAlerts(10),
           stats: getAlertStats(),
         },
+        aiJobs: getAiJobStats(),
+        activeJobs: getActiveAiJobs().slice(0, 20),
         requestId: req.requestId,
       });
     } catch (e: any) {
