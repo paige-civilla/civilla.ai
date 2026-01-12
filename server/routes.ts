@@ -6537,6 +6537,82 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  app.get("/api/admin/ai-status", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { 
+        getRecentFailures, 
+        getQueueStats, 
+        getAllFeatureStatus,
+        getGlobalUsageStats,
+        getGlobalUsageSummary,
+        getRecentAlerts,
+        getAlertStats,
+      } = await import("./ai");
+      
+      res.json({
+        ok: true,
+        features: getAllFeatureStatus(),
+        recentFailures: getRecentFailures(20),
+        queueStats: getQueueStats(),
+        rateLimits: getGlobalUsageStats(),
+        budgetSummary: getGlobalUsageSummary(),
+        alerts: {
+          recent: getRecentAlerts(10),
+          stats: getAlertStats(),
+        },
+        requestId: req.requestId,
+      });
+    } catch (e: any) {
+      console.error("[AI Status] error:", e);
+      res.status(500).json({ ok: false, error: "Failed to get AI status", requestId: req.requestId });
+    }
+  });
+
+  app.post("/api/admin/feature-flag", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { feature, enabled } = req.body;
+      const { setFeatureEnabled, AI_FEATURES, getAllFeatureStatus } = await import("./ai");
+      
+      if (!feature || typeof enabled !== "boolean") {
+        return res.status(400).json({ ok: false, error: "feature and enabled required" });
+      }
+      
+      const validFeatures = Object.values(AI_FEATURES);
+      if (!validFeatures.includes(feature)) {
+        return res.status(400).json({ ok: false, error: `Invalid feature. Valid: ${validFeatures.join(", ")}` });
+      }
+      
+      setFeatureEnabled(feature, enabled);
+      
+      res.json({ ok: true, features: getAllFeatureStatus(), requestId: req.requestId });
+    } catch (e: any) {
+      console.error("[Feature Flag] error:", e);
+      res.status(500).json({ ok: false, error: "Failed to update feature flag", requestId: req.requestId });
+    }
+  });
+
+  app.post("/api/admin/acknowledge-alert", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { alertId } = req.body;
+      const { acknowledgeAlert, getUnacknowledgedAlerts } = await import("./ai");
+      
+      if (!alertId) {
+        return res.status(400).json({ ok: false, error: "alertId required" });
+      }
+      
+      const acknowledged = acknowledgeAlert(alertId);
+      
+      res.json({ 
+        ok: acknowledged, 
+        unacknowledged: getUnacknowledgedAlerts(),
+        requestId: req.requestId,
+      });
+    } catch (e: any) {
+      console.error("[Acknowledge Alert] error:", e);
+      res.status(500).json({ ok: false, error: "Failed to acknowledge alert", requestId: req.requestId });
+    }
+  });
+
   app.post("/api/analytics/event", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user?.id;

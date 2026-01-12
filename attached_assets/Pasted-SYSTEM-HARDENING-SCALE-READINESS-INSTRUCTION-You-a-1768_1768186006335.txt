@@ -1,0 +1,172 @@
+SYSTEM HARDENING + SCALE READINESS INSTRUCTION
+==============================================
+
+You are instructed to perform a full production-hardening pass on the Civilla application.
+
+This is NOT feature development.
+This is reliability, safety, and scale enforcement.
+
+DO NOT change marketing pages.
+DO NOT change UX copy unless required for safety messaging.
+DO NOT remove any existing functionality.
+
+----------------------------------------------
+1) AI PATHWAY LOCK-IN (CRITICAL)
+----------------------------------------------
+
+For every AI-powered feature (Lexi chat, OCR extraction, AI analysis, claims, patterns, documents):
+
+- Add a deterministic contract:
+  - Explicit inputs
+  - Explicit outputs
+  - Explicit failure modes
+
+- No feature may silently fail.
+- No feature may block the UI on error.
+- All failures must return:
+  { status, human_readable_message, retry_allowed }
+
+- Add unit-level guards so:
+  - OCR failure does NOT break AI analysis
+  - AI analysis failure does NOT break document compile
+  - Lexi failure does NOT break navigation or threads
+
+- Add a shared aiExecutionGuard wrapper:
+  - Enforces timeouts
+  - Enforces concurrency
+  - Enforces retries
+  - Logs failures
+
+----------------------------------------------
+2) GLOBAL RATE LIMITS (SOFT, NOT PUNITIVE)
+----------------------------------------------
+
+Implement SOFT limits (queue instead of block):
+
+Per User:
+- OCR jobs: max 2 concurrent documents
+- OCR pages: max 3 pages concurrently per document
+- AI analysis jobs: max 2 concurrent
+- Claims suggestion: 1 per evidence file
+- Pattern analysis: 1 per case per 10 minutes
+- Document compile: max 3 per hour per case
+- Lexi chat: unlimited, burst-smoothed
+
+If limits exceeded:
+- Queue the job
+- Show “Processing queued — this may take longer”
+- NEVER show “limit exceeded” during beta
+
+----------------------------------------------
+3) USER PHASE AWARENESS (INTAKE SAFE MODE)
+----------------------------------------------
+
+Detect early-stage users (first 14 days OR <3 cases):
+
+- Automatically enable:
+  - Slower AI pacing
+  - Larger queues
+  - Calmer messaging
+  - No scary warnings
+
+Never block uploads.
+Never block evidence ingestion.
+
+----------------------------------------------
+4) COST & ABUSE PROTECTION
+----------------------------------------------
+
+Implement:
+
+- Cloudflare Turnstile on:
+  - account creation
+  - bulk uploads
+  - public endpoints
+
+- Per-user daily AI budget (soft):
+  - Track usage
+  - Do NOT block
+  - De-prioritize background jobs if exceeded
+
+- Reject:
+  - anonymous OCR abuse
+  - scripted bot usage
+  - non-authenticated AI calls
+
+----------------------------------------------
+5) DATABASE & FILE HARDENING
+----------------------------------------------
+
+- Ensure all writes are idempotent
+- Ensure retries do not duplicate records
+- Ensure all AI jobs store:
+  - status
+  - started_at
+  - completed_at
+  - error_code
+  - retry_count
+
+- File uploads must:
+  - be resumable
+  - never corrupt on retry
+  - survive server restarts
+
+----------------------------------------------
+6) ADMIN DIAGNOSTICS & ALERTS
+----------------------------------------------
+
+Extend Admin Dashboard to include:
+
+- Active AI jobs
+- Queue depth
+- OCR backlog
+- AI failure rates
+- Average processing time
+- Cost anomaly detection
+
+Add alerts (Slack or email-ready hooks):
+- AI failures spike
+- OCR backlog > threshold
+- OpenAI / Vision auth errors
+- Database latency spikes
+
+----------------------------------------------
+7) REGRESSION PREVENTION (THIS IS WHY THINGS BROKE)
+----------------------------------------------
+
+Implement the following protections:
+
+- Feature flags for ALL AI features
+- Contract tests:
+  - “Lexi must respond”
+  - “Extraction must complete or fail cleanly”
+  - “Claims must be attached to evidence”
+- Snapshot tests for:
+  - Document compile output
+  - Pattern analysis output
+- Lock interfaces between modules
+
+If a new change breaks an existing contract:
+- Fail loudly
+- Log clearly
+- Do NOT silently degrade
+
+----------------------------------------------
+8) FINAL VERIFICATION PASS
+----------------------------------------------
+
+After implementation:
+
+- Run a simulated load test:
+  - 100 users uploading PDFs
+  - 1,000 pages OCR
+  - Concurrent Lexi chats
+- Confirm:
+  - No crashes
+  - No deadlocks
+  - No lost jobs
+  - No silent failures
+
+----------------------------------------------
+END INSTRUCTION
+==============================================
