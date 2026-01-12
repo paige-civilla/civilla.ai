@@ -169,7 +169,8 @@ export default function AppOnboarding() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/onboarding/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
-      setLocation(`/app/dashboard/${result.caseId}`);
+      localStorage.setItem("selectedCaseId", result.caseId);
+      setLocation("/app/start-here");
     },
     onError: (err: any) => {
       setErrors({ submit: err.message || "Failed to complete onboarding" });
