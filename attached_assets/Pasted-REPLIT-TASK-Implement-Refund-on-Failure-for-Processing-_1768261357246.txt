@@ -1,0 +1,165 @@
+REPLIT TASK: Implement “Refund on Failure” for Processing Pack credits (robust + idempotent)
+
+GOAL
+When a user spends a processing credit (OCR / AI analysis / claim-suggest / pattern / compile) and the job FAILS, automatically refund that exact credit. Must be safe against retries, double-clicks, and webhook/event duplication.
+
+NON-GOALS
+- Do NOT refund for user-cancelled actions (unless explicitly defined).
+- Do NOT apply processing-pack credits to Lexi chat unless already designed that way (Lexi chat should remain separate).
+
+DEFINITIONS
+- “Credit” = one unit of processing that can be consumed by a qualifying job.
+- “Job” = a single OCR run, AI analysis run, claim suggestion run, pattern analysis run/export, or compile-from-claims run.
+- “Refund on failure” = if the job ends in failed state, restore exactly the amount consumed for that job.
+
+STEP 0 — FIND CURRENT CREDIT MODEL
+Search repo for:
+- “analysis credits”, “processing credits”, “usage_events”, “quota”, “limits”, “usage_bytes_month”
+- the pack description says: “Includes 200 additional analysis credits”
+Confirm:
+1) Where credit balance is stored (user_profiles? separate table? usage_events aggregation?)
+2) How credits are currently deducted (middleware? direct decrement? event log?)
+
+If credits are currently only enforced via quota counters (daily/monthly), implement a *separate* “processing_credits_balance” ledger/balance so packs can be tracked independently from monthly quota.
+(We can still keep quotas, but packs should top-up a balance.)
+
+STEP 1 — ADD A DURABLE LEDGER FOR CREDIT DEBIT/REFUND (IDEMPOTENT)
+Create new tables (or equivalent) if not already present:
+
+A) processing_credit_ledger
+- id (uuid pk)
+- user_id (uuid, indexed)
+- case_id (uuid nullable, indexed)
+- job_type (text enum: ocr, ai_analysis, claim_suggest, pattern, doc_compile, export)
+- job_key (text UNIQUE)  ← REQUIRED for idempotency (see below)
+- delta (int)            ← -1 for consume, +1 for refund, +200 for pack
+- reason (text)          ← “consume”, “refund_failure”, “pack_purchase”, “admin_grant”
+- created_at
+
+B) ai_jobs (if not already durable) OR extend existing job tables
+Every processing action must have a durable job record with:
+- job_key UNIQUE (text)
+- user_id, case_id
+- job_type
+- status (queued/processing/complete/failed)
+- error (text nullable)
+- credit_consumed_ledger_id (uuid nullable)
+- credit_refunded_ledger_id (uuid nullable)
+- started_at, completed_at
+
+JOB_KEY STANDARD (IMPORTANT)
+Derive a stable unique key per job run. Examples:
+- OCR: `ocr:${evidenceId}:${extractionId}` OR `ocr:${evidenceId}:${attemptNumber}`
+- AI analysis: `analysis:${evidenceId}:${analysisId}`
+- Claim suggest: `claims:${evidenceId}:${runId}`
+- Pattern run/export: `pattern:${caseId}:${runId}`
+- Doc compile: `compile:${caseId}:${docId}`
+
+Make sure the same job cannot create multiple consumes.
+
+STEP 2 — CENTRALIZE CREDIT CHARGE + REFUND HELPERS
+Create server/services/credits.ts (or similar) with:
+
+1) consumeCreditOrThrow({ userId, caseId, jobType, jobKey })
+- In a DB transaction:
+  - Check if a consume ledger row already exists for jobKey (reason=consume). If yes: return it (idempotent).
+  - Check user credit balance (packs) OR quota allowance (whichever applies for this jobType).
+  - Insert ledger row delta=-1 reason=consume jobKey
+  - Return ledger id
+
+2) refundCreditIfNeeded({ userId, caseId, jobType, jobKey, error })
+- In a DB transaction:
+  - Check if consume exists for jobKey.
+  - Check if refund already exists for jobKey (reason=refund_failure). If yes: return.
+  - Insert ledger row delta=+1 reason=refund_failure jobKey
+  - Return refund id
+
+3) getCreditBalance(userId)
+- Balance = SUM(delta) from processing_credit_ledger (or keep a cached column + periodic reconcile).
+- Return numeric balance.
+
+STEP 3 — WRAP EACH PROCESSING PIPELINE WITH “CONSUME ON START, REFUND ON FAIL”
+For each endpoint / background job that consumes credits, do:
+
+A) OCR extraction run
+- Right before switching extraction status -> processing:
+  - call consumeCreditOrThrow(jobKey=ocr:...)
+- If OCR completes: do nothing (credit stays spent)
+- If OCR fails (catch):
+  - set extraction status=failed + error
+  - call refundCreditIfNeeded(jobKey=ocr:..., error)
+  - rethrow/return error
+
+B) AI analysis run
+Same pattern.
+
+C) Claims suggest run (manual + auto)
+Same pattern.
+
+D) Pattern analysis run/export
+Same pattern.
+
+E) Document compile-from-claims (if it consumes credits)
+Same pattern.
+
+Ensure refunds happen both for:
+- synchronous endpoint errors
+- async background job failures (job runner)
+
+STEP 4 — PREVENT DOUBLE-SPEND ON DOUBLE-CLICK / RETRIES
+- Enforce UNIQUE(job_key) on ledger consume rows OR UNIQUE(job_key, reason=consume) via partial unique index.
+- If the user double-clicks “Run”, the second attempt should:
+  - detect job already processing OR consume already exists for jobKey
+  - reuse the same job record OR reject with “already running”
+  - MUST NOT create a second debit.
+
+STEP 5 — WEBHOOK / PURCHASE CREDITING (PACKS)
+In Stripe webhook handler:
+- On checkout.session.completed (or invoice paid for one-time):
+  - Create ledger entry delta=+200 (or +X) reason=pack_purchase jobKey=`stripe_session:${sessionId}`
+  - Make that jobKey UNIQUE so webhook retries don’t add credits twice.
+- If you add a $50 pack:
+  - Create a second Stripe price
+  - Map price_id -> credits (e.g., 200 for $19.99, 600 for $50) in server/billing config
+
+Refund flow:
+- On charge.refunded (or payment_intent.refunded):
+  - Decide behavior:
+    - If pack is refunded, subtract remaining credits from that purchase (don’t go below 0)
+  - Implement safely with ledger jobKey=`stripe_refund:${refundId}`
+
+STEP 6 — UI: SHOW CREDIT BALANCE + CLEAR ERROR COPY
+Account Settings:
+- Show “Processing Credits Balance: N”
+- Show recent credit events (optional, last 10 ledger rows with reason + date)
+
+When blocked:
+- Message: “You’re out of processing credits. Add a one-time processing pack to continue.”
+When failed + refunded:
+- Message: “That run failed. Your processing credit was refunded. You can retry.”
+
+STEP 7 — TESTS / SMOKE CHECKS (MANDATORY)
+Add smoke script script/smokeCredits.ts that:
+1) Gives a test user +5 credits (ledger +5)
+2) Starts an OCR job with a forced failure (simulate bad Vision key or throw)
+3) Verifies:
+   - consume ledger exists (-1)
+   - refund ledger exists (+1)
+   - final balance unchanged
+4) Re-run same jobKey:
+   - verifies no second consume row is created
+
+STEP 8 — REPORT BACK
+After implementation, respond with:
+- Files changed
+- Where credits are stored and how balance is computed
+- Which endpoints consume credits
+- Proof of idempotency (unique jobKey strategy)
+- Smoke test output showing debit then refund on failure
+
+IMPORTANT SECURITY
+- Never log API keys
+- Humanize errors and redact secrets
+- Refund should happen even if user disconnects; rely on job runner finalization
+
+START NOW.
