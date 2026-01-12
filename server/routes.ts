@@ -57,10 +57,13 @@ import { getUncachableStripeClient } from "./stripeClient";
 import { 
   createCheckoutSession, 
   createPortalSession, 
+  createProcessingPackCheckout,
   getBillingStatus, 
   handleWebhookEvent, 
   getEntitlements,
-  isCompedEmail 
+  isCompedEmail,
+  getUserCredits,
+  ProcessingPackType
 } from "./billing";
 import { requireAnalysis, requireDownloads, checkCaseLimit, loadEntitlements, PaywallRequest } from "./middleware/paywall";
 import { requireQuota, recordUsageAfter } from "./middleware/quota";
@@ -662,6 +665,52 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Billing portal error:", error);
       res.status(500).json({ error: "Failed to create portal session" });
+    }
+  });
+
+  // POST /api/billing/processing-pack/checkout - Purchase processing pack credits
+  app.post("/api/billing/processing-pack/checkout", requireAuth, async (req, res) => {
+    try {
+      const { packType } = req.body;
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      if (!packType || !["mini", "premium"].includes(packType)) {
+        return res.status(400).json({ error: "Valid pack type required (mini or premium)" });
+      }
+
+      const origin = req.headers.origin || `https://${req.headers.host}`;
+      const result = await createProcessingPackCheckout(
+        userId,
+        user.email,
+        packType as ProcessingPackType,
+        origin
+      );
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({ url: result.url });
+    } catch (error) {
+      console.error("Processing pack checkout error:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // GET /api/billing/credits - Get user's remaining pack credits
+  app.get("/api/billing/credits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const credits = await getUserCredits(userId);
+      res.json(credits);
+    } catch (error) {
+      console.error("Get credits error:", error);
+      res.status(500).json({ error: "Failed to get credits" });
     }
   });
 
