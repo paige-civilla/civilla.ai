@@ -63,6 +63,16 @@ import {
   isCompedEmail 
 } from "./billing";
 import { requireAnalysis, requireDownloads, checkCaseLimit, loadEntitlements, PaywallRequest } from "./middleware/paywall";
+import { requireQuota, recordUsageAfter } from "./middleware/quota";
+import { getQuotaRemaining, getUserUsage, TIER_QUOTAS } from "./usage/limits";
+import { 
+  getExtractionJobCounts, 
+  getAiAnalysisJobCounts, 
+  getClaimSuggestionJobCounts, 
+  getRecentFailures as getJobRecentFailures,
+  getJobStats,
+  requeueAllStaleJobs
+} from "./jobs/jobRunner";
 import Stripe from "stripe";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
@@ -1459,7 +1469,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, requireAnalysis(), async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, requireAnalysis(), requireQuota("ocr_page"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -8366,7 +8376,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   });
 
   const analysisLimiter = createLimiter(2);
-  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run", requireAuth, requireAnalysis(), requireQuota("ai_call"), async (req, res) => {
     const userId = req.session.userId as string;
     const { caseId, evidenceId } = req.params;
     const refresh = req.body.refresh === true;
@@ -8497,7 +8507,7 @@ Return a JSON object with this structure:
   });
 
   const claimSuggestionLimiter = createLimiter(2);
-  app.post("/api/cases/:caseId/evidence/:evidenceId/claims/suggest", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/claims/suggest", requireAuth, requireAnalysis(), requireQuota("ai_call"), async (req, res) => {
     const userId = req.session.userId as string;
     const { caseId, evidenceId } = req.params;
     const refresh = req.body.refresh === true;
@@ -11733,6 +11743,136 @@ Top 3 selection criteria:
     } catch (error) {
       console.error("Court template compile error:", error);
       res.status(500).json({ error: "Failed to compile document" });
+    }
+  });
+
+  // ============================================================
+  // AI JOBS STATUS ENDPOINTS
+  // ============================================================
+  
+  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+      
+      const caseRecord = await storage.getCase(caseId, userId);
+      if (!caseRecord) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+      
+      const [extraction, aiAnalyses, claimsSuggest, recentFailures, quotasRemaining] = await Promise.all([
+        getExtractionJobCounts(caseId),
+        getAiAnalysisJobCounts(caseId),
+        getClaimSuggestionJobCounts(caseId),
+        getJobRecentFailures(caseId, 10),
+        getQuotaRemaining(userId),
+      ]);
+      
+      res.json({
+        extraction,
+        aiAnalyses,
+        claimsSuggest,
+        recentFailures,
+        quotasRemaining: {
+          ocrPagesToday: quotasRemaining.ocrPagesRemainingToday,
+          ocrPagesMonth: quotasRemaining.ocrPagesRemainingMonth,
+          aiCallsToday: quotasRemaining.aiCallsRemainingToday,
+          aiCallsMonth: quotasRemaining.aiCallsRemainingMonth,
+          isComped: quotasRemaining.isComped,
+        },
+      });
+    } catch (error) {
+      console.error("AI jobs status error:", error);
+      res.status(500).json({ error: "Failed to get AI jobs status" });
+    }
+  });
+
+  app.get("/api/admin/ai-jobs", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const jobStats = getJobStats();
+      
+      const [extractionBacklog, analysisBacklog, claimBacklog] = await Promise.all([
+        pool.query(`SELECT status, COUNT(*)::int as count FROM evidence_extractions WHERE status IN ('queued', 'processing') GROUP BY status`),
+        pool.query(`SELECT status, COUNT(*)::int as count FROM evidence_ai_analyses WHERE status IN ('queued', 'processing') GROUP BY status`),
+        pool.query(`SELECT status, COUNT(*)::int as count FROM claim_suggestion_runs WHERE status IN ('queued', 'processing') GROUP BY status`),
+      ]);
+      
+      const [recentExtractionFails, recentAnalysisFails, recentClaimFails] = await Promise.all([
+        pool.query(`
+          SELECT COUNT(*)::int as count, 
+                 COALESCE(SUBSTRING(error FROM 1 FOR 50), 'unknown') as error_prefix
+          FROM evidence_extractions 
+          WHERE status = 'failed' AND created_at > NOW() - INTERVAL '24 hours'
+          GROUP BY error_prefix
+          ORDER BY count DESC LIMIT 5
+        `),
+        pool.query(`
+          SELECT COUNT(*)::int as count,
+                 COALESCE(SUBSTRING(error FROM 1 FOR 50), 'unknown') as error_prefix
+          FROM evidence_ai_analyses
+          WHERE status = 'failed' AND created_at > NOW() - INTERVAL '24 hours'
+          GROUP BY error_prefix
+          ORDER BY count DESC LIMIT 5
+        `),
+        pool.query(`
+          SELECT COUNT(*)::int as count,
+                 COALESCE(SUBSTRING(error FROM 1 FOR 50), 'unknown') as error_prefix
+          FROM claim_suggestion_runs
+          WHERE status IN ('failed', 'rate_limited') AND created_at > NOW() - INTERVAL '24 hours'
+          GROUP BY error_prefix
+          ORDER BY count DESC LIMIT 5
+        `),
+      ]);
+      
+      const latencyQuery = await pool.query(`
+        SELECT 
+          'extraction' as job_type,
+          PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at))) as p95_seconds
+        FROM evidence_extractions
+        WHERE status = 'complete' AND completed_at IS NOT NULL AND started_at IS NOT NULL
+          AND created_at > NOW() - INTERVAL '24 hours'
+        UNION ALL
+        SELECT 
+          'ai_analysis' as job_type,
+          PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (updated_at - created_at))) as p95_seconds
+        FROM evidence_ai_analyses
+        WHERE status = 'complete' AND updated_at IS NOT NULL
+          AND created_at > NOW() - INTERVAL '24 hours'
+      `);
+      
+      const latencyMap: Record<string, number | null> = {};
+      for (const row of latencyQuery.rows) {
+        latencyMap[row.job_type] = row.p95_seconds ? parseFloat(row.p95_seconds) : null;
+      }
+      
+      res.json({
+        jobRunner: jobStats,
+        backlogs: {
+          extraction: extractionBacklog.rows,
+          aiAnalysis: analysisBacklog.rows,
+          claimSuggestion: claimBacklog.rows,
+        },
+        failuresLast24h: {
+          extraction: recentExtractionFails.rows,
+          aiAnalysis: recentAnalysisFails.rows,
+          claimSuggestion: recentClaimFails.rows,
+        },
+        p95LatencySeconds: latencyMap,
+        tierQuotas: TIER_QUOTAS,
+      });
+    } catch (error) {
+      console.error("Admin AI jobs error:", error);
+      res.status(500).json({ error: "Failed to get admin AI jobs data" });
+    }
+  });
+
+  app.post("/api/admin/ai-jobs/requeue-stale", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const result = await requeueAllStaleJobs();
+      res.json({ ok: true, requeued: result });
+    } catch (error) {
+      console.error("Requeue stale jobs error:", error);
+      res.status(500).json({ error: "Failed to requeue stale jobs" });
     }
   });
 

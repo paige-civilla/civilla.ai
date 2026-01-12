@@ -1,0 +1,156 @@
+REPLIT TASK (single prompt): Production Hardening Pack — Rate Limits, Quotas, Durable Jobs, Admin Diagnostics, Alerts
+
+Context
+We are now live-ish (Stripe/paywalls exist). We need to prevent “AI stampede” and make OCR/AI jobs reliable under traffic. Implement this as a cohesive hardening pass, not piecemeal.
+
+GOALS (deliverables)
+1) Per-user rate limits + daily/monthly quotas for expensive operations (OCR + AI)
+2) Durable background job queue behavior (no lost work on restart) for:
+   - Evidence extraction (already durable — keep)
+   - AI analysis runs
+   - Claims auto-suggest / suggest
+3) Centralized “AI Jobs Status” + “Failures” admin diagnostics
+4) Alerting for spikes/failures (Slack webhook optional + email fallback)
+5) Developer-proofing: tests + CI smoke checks so fixes don’t break other features
+
+A) ADD USAGE LIMITS (server-side enforcement)
+A1. Define “expensive actions”:
+- OCR_PAGES (pages OCR’d)
+- AI_TOKENS (approx via character count conversion OR model usage response)
+- AI_RUNS (count of AI calls)
+- FILE_BYTES (uploads)
+
+A2. Add a single usage ledger table (append-only):
+Table: usage_events
+Columns:
+- id (uuid)
+- user_id
+- case_id (nullable)
+- event_type (enum: ocr_page, ai_call, ai_tokens, upload_bytes)
+- quantity (int)
+- metadata (jsonb)
+- created_at
+
+A3. Add a resolver in server/entitlements.ts (or a new server/usage/limits.ts):
+- getUserLimits(userId): returns limits based on subscription tier (free/core/pro/premium) + add-ons + comped/lifetime bypass
+- getUserUsage(userId, window): sums usage_events by type in current month + current day
+
+A4. Create middleware guards:
+- requireQuota({type, quantityEstimator}):
+  - checks user tier entitlements
+  - checks daily + monthly remaining
+  - if exceeded: return 429 with code QUOTA_EXCEEDED and human message
+  - otherwise allow; AFTER job completes, record actual usage_events
+- Include safe defaults:
+  - Free: very small (or blocked if we want OCR/AI behind paywall)
+  - Core/Pro/Premium: increasing limits
+  - Comped/lifetime: bypass quota checks but STILL record usage for analytics
+
+A5. Apply guards to the real endpoints:
+- POST /api/cases/:caseId/evidence/:evidenceId/extraction/run  => requireQuota({type:"ocr_page"}) (estimate pages <= OCR_MAX_PAGES)
+- POST /api/cases/:caseId/evidence/:evidenceId/ai-analyses/run => requireQuota({type:"ai_call"})
+- POST /api/cases/:caseId/evidence/:evidenceId/claims/suggest  => requireQuota({type:"ai_call"})
+- Any background auto-suggest job trigger => enforce same quota inside job runner (not just HTTP)
+
+B) DURABLE JOBS FOR AI ANALYSIS + CLAIMS (like extraction)
+B1. Add job status tables (or reuse existing analysis tables):
+- evidence_ai_analyses already has status fields: use it as truth.
+- For claim suggestion, add a table:
+  claim_suggestion_runs
+  - id, user_id, case_id, evidence_id
+  - status (queued/processing/complete/failed/rate_limited)
+  - error, started_at, completed_at, updated_at
+  - unique (user_id, evidence_id) to prevent duplicates
+
+B2. Implement a shared job runner utility:
+server/jobs/jobRunner.ts
+- Global concurrency limit (e.g., 2) for all AI jobs (analysis + claims)
+- Per-evidence lock map as secondary guard
+- Jittered exponential retry for 429/5xx
+- Marks stale processing jobs back to queued on startup (15 min)
+
+B3. On server startup:
+- Requeue stale AI analyses (status=processing older than 15 min)
+- Requeue stale claim_suggestion_runs
+- Log counts requeued
+
+B4. Update the endpoints to enqueue jobs rather than doing work inline:
+- /ai-analyses/run should:
+  - create analysis row if needed with status=queued
+  - enqueue a job
+  - return quickly with {ok:true, status:"queued"}
+- /claims/suggest should:
+  - require extraction complete
+  - create run row with queued
+  - enqueue
+  - return quickly
+
+B5. Update frontend UI to reflect async:
+- EvidenceViewer / AppEvidence:
+  - show queued/processing badges
+  - allow “Retry” on failed
+  - poll status endpoint
+
+C) SINGLE STATUS ENDPOINT (for users + admin diagnostics)
+C1. Add: GET /api/cases/:caseId/ai-jobs/status (if not already final)
+Return:
+- extraction: queued/processing/complete/failed counts
+- aiAnalyses: queued/processing/complete/failed counts
+- claimsSuggest: queued/processing/complete/failed counts
+- recentFailures: last 10 with humanized error
+- quotasRemaining: for current user (daily/monthly remaining)
+
+C2. Add: GET /api/admin/ai-jobs (admin only)
+Return global:
+- backlog sizes
+- failures by type last 24h
+- top error codes
+- p95 latency for each job type (approx based on started/completed times)
+
+D) ALERTING (Slack/email)
+D1. Add env vars:
+- SLACK_WEBHOOK_URL (optional)
+- ALERT_EMAIL_TO (optional)
+- ALERT_EMAIL_FROM (optional) + SendGrid later OR just log fallback
+
+D2. Implement server/alerts/alerting.ts
+- sendAlert(type, payload)
+- throttle alerts (same error type only once per 15 min)
+Triggers:
+- backlog > threshold (e.g., 20 queued)
+- failures spike (e.g., >10 failures in 10 min)
+- OpenAI invalid key / Vision forbidden (immediate)
+
+E) “FIXES DON’T BREAK OTHER FEATURES” SAFETY NETS
+E1. Add a minimal test runner:
+- unit tests for:
+  - quota calculation
+  - humanizeError redaction
+  - jobRunner retry/backoff
+E2. Add “smoke test script” command:
+- npm run smoke
+Checks:
+- server boots
+- /api/ai/health returns ok when keys present
+- creates a dummy case (or uses a fixture)
+- enqueues an AI analysis job (mock OpenAI in tests)
+E3. Add CI step (if present) or at least a local script callable from Replit:
+- runs typecheck + lint + smoke
+
+F) REPORT BACK (required)
+After implementing, respond with:
+1) Files changed
+2) Exact limits used per tier (Free/Core/Pro/Premium) for:
+   - AI calls/day + /month
+   - OCR pages/day + /month
+   - upload bytes/month (optional)
+3) List of endpoints now protected by quota middleware
+4) Job runner behavior (global concurrency, stale requeue minutes, retry policy)
+5) Screenshots not needed — just confirm what UI states now show (queued/processing/failed/complete)
+6) Confirm admin endpoints are gated and privacy-safe
+
+IMPORTANT RULES
+- Do NOT store or expose user evidence text in admin/grant dashboards.
+- Comped/lifetime bypass paywalls, but usage events still recorded.
+- All enforcement must be server-side (frontend is display only).
+- Keep changes additive + idempotent; don’t drop tables.

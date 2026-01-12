@@ -1466,14 +1466,56 @@ export async function initDbTables(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS resource_field_maps_resource_idx ON resource_field_maps(resource_id)`
   ]);
 
+  await initTable("usage_events", `
+    CREATE TABLE IF NOT EXISTS usage_events (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) REFERENCES cases(id),
+      event_type TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS usage_events_user_idx ON usage_events(user_id)`,
+    `CREATE INDEX IF NOT EXISTS usage_events_type_idx ON usage_events(event_type)`,
+    `CREATE INDEX IF NOT EXISTS usage_events_created_at_idx ON usage_events(created_at)`,
+    `CREATE INDEX IF NOT EXISTS usage_events_user_type_created_idx ON usage_events(user_id, event_type, created_at)`
+  ]);
+
+  await initTable("claim_suggestion_runs", `
+    CREATE TABLE IF NOT EXISTS claim_suggestion_runs (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id),
+      evidence_id VARCHAR(255) NOT NULL REFERENCES evidence_files(id),
+      status TEXT NOT NULL DEFAULT 'queued',
+      error TEXT,
+      started_at TIMESTAMP,
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_user_idx ON claim_suggestion_runs(user_id)`,
+    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_case_idx ON claim_suggestion_runs(case_id)`,
+    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_evidence_idx ON claim_suggestion_runs(evidence_id)`,
+    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_status_idx ON claim_suggestion_runs(status)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS claim_suggestion_runs_unique_idx ON claim_suggestion_runs(user_id, evidence_id)`
+  ]);
+
   const analyticsExists = await tableExists("analytics_events");
   const auditExists = await tableExists("admin_audit_logs");
   const draftOutlinesExists = await tableExists("draft_outlines");
   const draftOutlineClaimsExists = await tableExists("draft_outline_claims");
+  const usageEventsExists = await tableExists("usage_events");
+  const claimSuggestionRunsExists = await tableExists("claim_suggestion_runs");
   console.log(`[DB MIGRATION] Verification: analytics_events table present: ${analyticsExists}`);
   console.log(`[DB MIGRATION] Verification: admin_audit_logs table present: ${auditExists}`);
   console.log(`[DB MIGRATION] Verification: draft_outlines table present: ${draftOutlinesExists}`);
   console.log(`[DB MIGRATION] Verification: draft_outline_claims table present: ${draftOutlineClaimsExists}`);
+  console.log(`[DB MIGRATION] Verification: usage_events table present: ${usageEventsExists}`);
+  console.log(`[DB MIGRATION] Verification: claim_suggestion_runs table present: ${claimSuggestionRunsExists}`);
 
   await ensureSchemaMigrations();
   

@@ -2445,3 +2445,49 @@ export const updateResourceFieldMapSchema = z.object({
 export type InsertResourceFieldMap = z.infer<typeof insertResourceFieldMapSchema>;
 export type UpdateResourceFieldMap = z.infer<typeof updateResourceFieldMapSchema>;
 export type ResourceFieldMap = typeof resourceFieldMaps.$inferSelect;
+
+// Usage Events - append-only ledger for quota tracking
+export const usageEventTypes = ["ocr_page", "ai_call", "ai_tokens", "upload_bytes"] as const;
+export type UsageEventType = typeof usageEventTypes[number];
+
+export const usageEvents = pgTable("usage_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").references(() => cases.id),
+  eventType: text("event_type").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("usage_events_user_idx").on(table.userId),
+  typeIdx: index("usage_events_type_idx").on(table.eventType),
+  createdAtIdx: index("usage_events_created_at_idx").on(table.createdAt),
+  userTypeCreatedIdx: index("usage_events_user_type_created_idx").on(table.userId, table.eventType, table.createdAt),
+}));
+
+export type UsageEvent = typeof usageEvents.$inferSelect;
+
+// Claim Suggestion Runs - durable job tracking for claim suggestion jobs
+export const claimSuggestionRunStatuses = ["queued", "processing", "complete", "failed", "rate_limited"] as const;
+export type ClaimSuggestionRunStatus = typeof claimSuggestionRunStatuses[number];
+
+export const claimSuggestionRuns = pgTable("claim_suggestion_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: varchar("case_id").notNull().references(() => cases.id),
+  evidenceId: varchar("evidence_id").notNull().references(() => evidenceFiles.id),
+  status: text("status").notNull().default("queued"),
+  error: text("error"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("claim_suggestion_runs_user_idx").on(table.userId),
+  caseIdx: index("claim_suggestion_runs_case_idx").on(table.caseId),
+  evidenceIdx: index("claim_suggestion_runs_evidence_idx").on(table.evidenceId),
+  statusIdx: index("claim_suggestion_runs_status_idx").on(table.status),
+  uniqueUserEvidence: uniqueIndex("claim_suggestion_runs_unique_idx").on(table.userId, table.evidenceId),
+}));
+
+export type ClaimSuggestionRun = typeof claimSuggestionRuns.$inferSelect;
