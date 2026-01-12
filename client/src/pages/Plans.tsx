@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "wouter";
-import { Check, ChevronRight, ChevronUp, ChevronDown, Home, X, ArrowDownRight } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Check, ChevronRight, ChevronUp, ChevronDown, Home, X, ArrowDownRight, Loader2 } from "lucide-react";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import PlansFaqSection from "@/components/PlansFaqSection";
 import { Brand, BrandText } from "@/components/Brand";
 import BrandMark from "@/components/BrandMark";
+import { useToast } from "@/hooks/use-toast";
 
 export const PRICING_PLANS = [
   {
@@ -225,6 +226,48 @@ function MostPopularSection({ billingPeriod, setBillingPeriod }: { billingPeriod
 function PricingCardsSection() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
   const [mobilePlan, setMobilePlan] = useState<"trial" | "core" | "pro" | "premium">("core");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  const handleSelectPlan = async (planId: string) => {
+    if (planId === "trial") {
+      navigate("/auth");
+      return;
+    }
+
+    setLoadingPlan(planId);
+    try {
+      const response = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          planId,
+          billingPeriod,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to start checkout");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Unable to start checkout",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   const plans = [
     {
@@ -602,11 +645,19 @@ function PricingCardsSection() {
 
               <button
                 type="button"
-                className="mt-auto w-full rounded-full bg-[#0F3B2E] px-5 py-3 text-center text-sm font-semibold text-white hover:opacity-95"
-                onClick={() => console.log("Selected plan:", plan.id)}
+                className="mt-auto w-full rounded-full bg-[#0F3B2E] px-5 py-3 text-center text-sm font-semibold text-white hover:opacity-95 disabled:opacity-70"
+                onClick={() => handleSelectPlan(plan.id)}
+                disabled={loadingPlan !== null}
                 data-testid={`button-${plan.cta.toLowerCase().replace(/\s+/g, "-")}`}
               >
-                {plan.cta}
+                {loadingPlan === plan.id ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  plan.cta
+                )}
               </button>
             </div>
           ))}

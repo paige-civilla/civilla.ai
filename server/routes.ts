@@ -53,6 +53,7 @@ import { isAiTestMode, getMockLexiResponse, getMockStreamChunks } from "./lexi/t
 import { applyEntitlementsForUser, applyAllEntitlements, LIFETIME_PREMIUM_EMAILS, ADMIN_EMAILS, GRANT_VIEWER_EMAILS } from "./entitlements";
 import { verifyTurnstile, isTurnstileConfigured, getClientIp } from "./turnstile";
 import { idempotentOperation, createAiJob, updateAiJobProgress, completeAiJob, getAiJob, getActiveAiJobs, getAiJobStats } from "./utils/dbHardening";
+import { getUncachableStripeClient } from "./stripeClient";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -580,6 +581,77 @@ export async function registerRoutes(
       res.clearCookie("connect.sid");
       res.json({ message: "Logged out" });
     });
+  });
+
+  // Stripe price ID mapping
+  const STRIPE_PRICE_IDS: Record<string, { monthly: string; yearly: string }> = {
+    core: {
+      monthly: process.env.STRIPE_PRICE_CORE_MONTHLY || "",
+      yearly: process.env.STRIPE_PRICE_CORE_YEARLY || "",
+    },
+    pro: {
+      monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || "",
+      yearly: process.env.STRIPE_PRICE_PRO_YEARLY || "",
+    },
+    premium: {
+      monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || "",
+      yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY || "",
+    },
+  };
+
+  app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    try {
+      const { planId, billingPeriod } = req.body;
+
+      if (!planId || !billingPeriod) {
+        return res.status(400).json({ error: "Plan and billing period are required" });
+      }
+
+      if (planId === "trial") {
+        return res.status(400).json({ error: "Trial does not require payment", redirect: "/auth" });
+      }
+
+      const priceMapping = STRIPE_PRICE_IDS[planId as keyof typeof STRIPE_PRICE_IDS];
+      if (!priceMapping) {
+        return res.status(400).json({ error: "Invalid plan selected" });
+      }
+
+      const priceId = billingPeriod === "yearly" ? priceMapping.yearly : priceMapping.monthly;
+      if (!priceId) {
+        return res.status(500).json({ error: "Stripe price not configured for this plan" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      
+      const successUrl = `${req.headers.origin || "https://" + req.headers.host}/app/dashboard?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${req.headers.origin || "https://" + req.headers.host}/plans`;
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        customer_email: req.session.userId
+          ? (await storage.getUser(req.session.userId))?.email
+          : undefined,
+        metadata: {
+          planId,
+          billingPeriod,
+          userId: req.session.userId || "",
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Stripe checkout error:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
   });
 
   app.get("/api/auth/me", async (req, res) => {
