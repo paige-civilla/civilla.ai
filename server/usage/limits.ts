@@ -185,9 +185,10 @@ export type QuotaCheckType = "ocr_page" | "ai_call" | "upload_bytes";
 export interface QuotaCheckResult {
   allowed: boolean;
   reason?: string;
-  code?: "QUOTA_EXCEEDED" | "DAILY_LIMIT" | "MONTHLY_LIMIT" | "PLAN_REQUIRED" | "CREDITS_CONSUMED";
+  code?: "QUOTA_EXCEEDED" | "DAILY_LIMIT" | "MONTHLY_LIMIT" | "PLAN_REQUIRED" | "CREDITS_CONSUMED" | "NEEDS_PROCESSING_PACK";
   remaining?: number;
   usedCredit?: boolean;
+  packSuggested?: "overlimit_200" | "plus_600";
 }
 
 function isAnalysisAction(quotaType: QuotaCheckType): boolean {
@@ -230,20 +231,13 @@ export async function checkQuota(
       const remainingToday = limits.ocrPagesPerDay - usage.ocrPagesToday;
       const remainingMonth = limits.ocrPagesPerMonth - usage.ocrPagesMonth;
       
-      if (quantity > remainingToday) {
+      if (quantity > remainingToday || quantity > remainingMonth) {
         return {
           allowed: false,
-          reason: `Daily OCR limit reached (${limits.ocrPagesPerDay} pages/day). Resets at midnight.`,
-          code: "DAILY_LIMIT",
-          remaining: remainingToday,
-        };
-      }
-      if (quantity > remainingMonth) {
-        return {
-          allowed: false,
-          reason: `Monthly OCR limit reached (${limits.ocrPagesPerMonth} pages/month). Upgrade for more.`,
-          code: "MONTHLY_LIMIT",
-          remaining: remainingMonth,
+          reason: "Processing limit reached. Purchase a processing pack to continue.",
+          code: "NEEDS_PROCESSING_PACK",
+          remaining: Math.min(remainingToday, remainingMonth),
+          packSuggested: "overlimit_200",
         };
       }
       return { allowed: true, remaining: Math.min(remainingToday, remainingMonth) };
@@ -253,20 +247,13 @@ export async function checkQuota(
       const remainingToday = limits.aiCallsPerDay - usage.aiCallsToday;
       const remainingMonth = limits.aiCallsPerMonth - usage.aiCallsMonth;
       
-      if (quantity > remainingToday) {
+      if (quantity > remainingToday || quantity > remainingMonth) {
         return {
           allowed: false,
-          reason: `Daily AI limit reached (${limits.aiCallsPerDay} calls/day). Resets at midnight.`,
-          code: "DAILY_LIMIT",
-          remaining: remainingToday,
-        };
-      }
-      if (quantity > remainingMonth) {
-        return {
-          allowed: false,
-          reason: `Monthly AI limit reached (${limits.aiCallsPerMonth} calls/month). Upgrade for more.`,
-          code: "MONTHLY_LIMIT",
-          remaining: remainingMonth,
+          reason: "Processing limit reached. Purchase a processing pack to continue.",
+          code: "NEEDS_PROCESSING_PACK",
+          remaining: Math.min(remainingToday, remainingMonth),
+          packSuggested: "overlimit_200",
         };
       }
       return { allowed: true, remaining: Math.min(remainingToday, remainingMonth) };

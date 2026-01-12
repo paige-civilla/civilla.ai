@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ProcessingPackProvider } from "@/components/app/ProcessingPackModal";
 import ScrollToTop from "@/components/ScrollToTop";
 import Home from "@/pages/Home";
 import HowCivillaWorks from "@/pages/HowCivillaWorks";
@@ -134,9 +135,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <ScrollToTop />
-          <Toaster />
-          <Router />
+          <ProcessingPackProvider>
+            <ScrollToTop />
+            <Toaster />
+            <Router />
+          </ProcessingPackProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

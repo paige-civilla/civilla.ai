@@ -15,7 +15,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useModuleView } from "@/hooks/useModuleView";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, isProcessingPackError, ApiError } from "@/lib/queryClient";
+import { useProcessingPackModal } from "@/components/app/ProcessingPackModal";
 import type { Case, EvidenceFile, ExhibitList, Exhibit, EvidenceNote, EvidenceProcessingJob, EvidenceOcrPage, EvidenceAnchor, EvidenceAiAnalysis, ExhibitSnippet } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +100,7 @@ export default function AppEvidence() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
   const { toast } = useToast();
+  const { showPackModal } = useProcessingPackModal();
   useModuleView("evidence", caseId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -203,7 +205,11 @@ export default function AppEvidence() {
       toast({ title: "Extraction started", description: "Text extraction is now processing." });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message || "Failed to start extraction", variant: "destructive" });
+      if (isProcessingPackError(error)) {
+        showPackModal((error as ApiError).packSuggested);
+      } else {
+        toast({ title: "Error", description: error.message || "Failed to start extraction", variant: "destructive" });
+      }
     },
   });
 
@@ -305,7 +311,9 @@ export default function AppEvidence() {
       toast({ title: "Analysis started", description: "AI is analyzing your document..." });
     },
     onError: (error: Error & { status?: number }) => {
-      if (error.status === 409) {
+      if (isProcessingPackError(error)) {
+        showPackModal((error as ApiError).packSuggested);
+      } else if (error.status === 409) {
         toast({ title: "Analysis exists", description: "Use the Brain icon to view existing analysis." });
       } else if (error.status === 400) {
         toast({ title: "Extraction required", description: "Run text extraction first before AI analysis.", variant: "destructive" });

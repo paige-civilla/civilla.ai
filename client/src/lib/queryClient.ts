@@ -1,10 +1,33 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+export interface ApiError extends Error {
+  status: number;
+  code?: string;
+  packSuggested?: "overlimit_200" | "plus_600";
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = await res.text();
+    let parsed: { error?: string; code?: string; packSuggested?: string } | null = null;
+    try {
+      parsed = JSON.parse(text);
+    } catch {}
+    
+    const error = new Error(parsed?.error || text || res.statusText) as ApiError;
+    error.status = res.status;
+    error.code = parsed?.code;
+    error.packSuggested = parsed?.packSuggested as "overlimit_200" | "plus_600" | undefined;
+    throw error;
   }
+}
+
+export function isProcessingPackError(error: unknown): error is ApiError {
+  return (
+    error instanceof Error && 
+    "code" in error && 
+    (error as ApiError).code === "NEEDS_PROCESSING_PACK"
+  );
 }
 
 export async function apiRequest(

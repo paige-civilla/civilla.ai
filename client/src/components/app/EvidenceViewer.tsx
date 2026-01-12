@@ -13,7 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, isProcessingPackError } from "@/lib/queryClient";
+import { useProcessingPackModal } from "@/components/app/ProcessingPackModal";
 import type { EvidenceFile, EvidenceNoteFull, ExhibitList, CaseClaim, CitationPointer } from "@shared/schema";
 import LinkToTimelineButton from "./LinkToTimelineButton";
 
@@ -96,6 +97,7 @@ function getCreatedFromLabel(createdFrom: string): string {
 
 export default function EvidenceViewer({ caseId, evidence, onClose, extractedText, extractionStatus }: EvidenceViewerProps) {
   const { toast } = useToast();
+  const { showPackModal } = useProcessingPackModal();
   const [currentPage, setCurrentPage] = useState(1);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
@@ -379,7 +381,10 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to suggest claims");
+        const error = new Error(err.error || "Failed to suggest claims") as Error & { code?: string; packSuggested?: string };
+        error.code = err.code;
+        error.packSuggested = err.packSuggested;
+        throw error;
       }
       return res.json();
     },
@@ -395,9 +400,13 @@ export default function EvidenceViewer({ caseId, evidence, onClose, extractedTex
         toast({ title: "Claims suggested" });
       }
     },
-    onError: (err: Error) => {
+    onError: (err: Error & { code?: string; packSuggested?: string }) => {
       setSuggestingClaims(false);
-      toast({ title: "Failed to suggest claims", description: err.message, variant: "destructive" });
+      if (err.code === "NEEDS_PROCESSING_PACK") {
+        showPackModal(err.packSuggested as "overlimit_200" | "plus_600" | undefined);
+      } else {
+        toast({ title: "Failed to suggest claims", description: err.message, variant: "destructive" });
+      }
     },
   });
 

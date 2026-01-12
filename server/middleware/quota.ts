@@ -36,11 +36,13 @@ export function requireQuota(
     };
 
     if (!result.allowed) {
-      return res.status(429).json({
+      const statusCode = result.code === "NEEDS_PROCESSING_PACK" ? 402 : 429;
+      return res.status(statusCode).json({
         error: result.reason || "Quota exceeded",
         code: result.code || "QUOTA_EXCEEDED",
         quotaType: type,
         remaining: result.remaining,
+        packSuggested: result.packSuggested,
       });
     }
 
