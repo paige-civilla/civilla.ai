@@ -189,6 +189,18 @@ async function ensureUserProfileColumns(): Promise<void> {
   await addColumnIfMissing("user_profiles", "is_lifetime", "BOOLEAN NOT NULL DEFAULT false");
   await addColumnIfMissing("user_profiles", "comped_reason", "TEXT");
   await addColumnIfMissing("user_profiles", "drafting_disclaimer_accepted_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "stripe_customer_id", "TEXT");
+  await addColumnIfMissing("user_profiles", "stripe_subscription_id", "TEXT");
+  await addColumnIfMissing("user_profiles", "stripe_price_id", "TEXT");
+  await addColumnIfMissing("user_profiles", "subscription_status", "TEXT NOT NULL DEFAULT 'none'");
+  await addColumnIfMissing("user_profiles", "add_on_second_case", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "add_on_archive_mode", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing("user_profiles", "usage_bytes_month", "BIGINT NOT NULL DEFAULT 0");
+  await addColumnIfMissing("user_profiles", "data_cap_overage_paid_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "last_overage_invoice_id", "TEXT");
+  await addColumnIfMissing("user_profiles", "trial_ends_at", "TIMESTAMP");
+  await addIndexIfMissing("idx_user_profiles_stripe_customer", 
+    "CREATE INDEX IF NOT EXISTS idx_user_profiles_stripe_customer ON user_profiles(stripe_customer_id)");
 }
 
 async function ensureEvidenceFilesColumns(): Promise<void> {
@@ -316,6 +328,13 @@ export async function ensureSchemaMigrations(): Promise<void> {
   console.log(`[DB MIGRATION] Verification: lexi_threads.case_id nullable: ${lexiThreadsCaseIdNullable}`);
   console.log(`[DB MIGRATION] Verification: evidence_extractions.status present: ${evidenceExtractionsStatus}`);
   console.log(`[DB MIGRATION] Verification: case_rule_terms.module_key present: ${caseRuleTermsModuleKey}`);
+  
+  const billingStripeCustomerId = await columnExists("user_profiles", "stripe_customer_id");
+  const billingSubscriptionStatus = await columnExists("user_profiles", "subscription_status");
+  const billingAddOnSecondCase = await columnExists("user_profiles", "add_on_second_case");
+  console.log(`[DB MIGRATION] Verification: user_profiles.stripe_customer_id present: ${billingStripeCustomerId}`);
+  console.log(`[DB MIGRATION] Verification: user_profiles.subscription_status present: ${billingSubscriptionStatus}`);
+  console.log(`[DB MIGRATION] Verification: user_profiles.add_on_second_case present: ${billingAddOnSecondCase}`);
   console.log("[DB MIGRATION] Schema migrations complete");
 }
 

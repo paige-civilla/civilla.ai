@@ -494,17 +494,19 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-  if (!invoice.subscription) return;
-  console.log(`[BILLING WEBHOOK] Invoice paid for subscription ${invoice.subscription}`);
+  const subscriptionId = (invoice as any).subscription;
+  if (!subscriptionId) return;
+  console.log(`[BILLING WEBHOOK] Invoice paid for subscription ${subscriptionId}`);
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-  if (!invoice.subscription) return;
+  const subscriptionId = (invoice as any).subscription as string;
+  if (!subscriptionId) return;
   
   const profile = await db
     .select({ userId: userProfiles.userId })
     .from(userProfiles)
-    .where(eq(userProfiles.stripeSubscriptionId, invoice.subscription as string))
+    .where(eq(userProfiles.stripeSubscriptionId, subscriptionId))
     .limit(1);
 
   if (profile.length > 0) {

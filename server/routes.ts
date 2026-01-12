@@ -54,6 +54,16 @@ import { applyEntitlementsForUser, applyAllEntitlements, LIFETIME_PREMIUM_EMAILS
 import { verifyTurnstile, isTurnstileConfigured, getClientIp } from "./turnstile";
 import { idempotentOperation, createAiJob, updateAiJobProgress, completeAiJob, getAiJob, getActiveAiJobs, getAiJobStats } from "./utils/dbHardening";
 import { getUncachableStripeClient } from "./stripeClient";
+import { 
+  createCheckoutSession, 
+  createPortalSession, 
+  getBillingStatus, 
+  handleWebhookEvent, 
+  getEntitlements,
+  isCompedEmail 
+} from "./billing";
+import { requireAnalysis, requireDownloads, checkCaseLimit, loadEntitlements, PaywallRequest } from "./middleware/paywall";
+import Stripe from "stripe";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
@@ -583,22 +593,81 @@ export async function registerRoutes(
     });
   });
 
-  // Stripe price ID mapping
-  const STRIPE_PRICE_IDS: Record<string, { monthly: string; yearly: string }> = {
-    core: {
-      monthly: process.env.STRIPE_PRICE_CORE_MONTHLY || "",
-      yearly: process.env.STRIPE_PRICE_CORE_YEARLY || "",
-    },
-    pro: {
-      monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || "",
-      yearly: process.env.STRIPE_PRICE_PRO_YEARLY || "",
-    },
-    premium: {
-      monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || "",
-      yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY || "",
-    },
-  };
+  // ===========================================
+  // BILLING API ENDPOINTS
+  // ===========================================
+  
+  // POST /api/billing/checkout - Create Stripe checkout session
+  app.post("/api/billing/checkout", requireAuth, async (req, res) => {
+    try {
+      const { plan, billingPeriod, addSecondCase, archiveMode } = req.body;
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
 
+      if (!plan || !["core", "pro", "premium"].includes(plan)) {
+        return res.status(400).json({ error: "Valid plan required (core, pro, or premium)" });
+      }
+
+      const period = billingPeriod === "yearly" ? "yearly" : "monthly";
+      const origin = req.headers.origin || `https://${req.headers.host}`;
+
+      const result = await createCheckoutSession(
+        userId,
+        user.email,
+        plan,
+        period,
+        addSecondCase,
+        archiveMode,
+        origin
+      );
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({ url: result.url });
+    } catch (error) {
+      console.error("Billing checkout error:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // POST /api/billing/portal - Create Stripe customer portal session
+  app.post("/api/billing/portal", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const origin = req.headers.origin || `https://${req.headers.host}`;
+
+      const result = await createPortalSession(userId, origin);
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({ url: result.url });
+    } catch (error) {
+      console.error("Billing portal error:", error);
+      res.status(500).json({ error: "Failed to create portal session" });
+    }
+  });
+
+  // GET /api/billing/status - Get billing status and entitlements
+  app.get("/api/billing/status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const status = await getBillingStatus(userId);
+      res.json(status);
+    } catch (error) {
+      console.error("Billing status error:", error);
+      res.status(500).json({ error: "Failed to get billing status" });
+    }
+  });
+
+  // Legacy endpoint for Plans.tsx compatibility
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
     try {
       const { planId, billingPeriod } = req.body;
@@ -611,43 +680,31 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Trial does not require payment", redirect: "/auth" });
       }
 
-      const priceMapping = STRIPE_PRICE_IDS[planId as keyof typeof STRIPE_PRICE_IDS];
-      if (!priceMapping) {
+      if (!["core", "pro", "premium"].includes(planId)) {
         return res.status(400).json({ error: "Invalid plan selected" });
       }
 
-      const priceId = billingPeriod === "yearly" ? priceMapping.yearly : priceMapping.monthly;
-      if (!priceId) {
-        return res.status(500).json({ error: "Stripe price not configured for this plan" });
+      const userId = req.session.userId;
+      if (!userId) {
+        // Redirect to auth first if not logged in
+        return res.status(401).json({ error: "Please sign in first", redirect: "/auth" });
       }
 
-      const stripe = await getUncachableStripeClient();
-      
-      const successUrl = `${req.headers.origin || "https://" + req.headers.host}/app/dashboard?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${req.headers.origin || "https://" + req.headers.host}/plans`;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
 
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        customer_email: req.session.userId
-          ? (await storage.getUser(req.session.userId))?.email
-          : undefined,
-        metadata: {
-          planId,
-          billingPeriod,
-          userId: req.session.userId || "",
-        },
-      });
+      const origin = req.headers.origin || `https://${req.headers.host}`;
+      const period = billingPeriod === "yearly" ? "yearly" : "monthly";
 
-      res.json({ url: session.url });
+      const result = await createCheckoutSession(userId, user.email, planId, period, false, false, origin);
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({ url: result.url });
     } catch (error) {
       console.error("Stripe checkout error:", error);
       res.status(500).json({ error: "Failed to create checkout session" });
@@ -805,12 +862,9 @@ export async function registerRoutes(
       }
 
       const caseCount = await storage.getCaseCountByUserId(userId);
-      if (caseCount >= user.casesAllowed) {
-        return res.status(403).json({ 
-          error: "Case limit reached", 
-          message: `You can only create ${user.casesAllowed} case(s). Upgrade to create more.`,
-          code: "CASE_LIMIT_REACHED"
-        });
+      const caseLimitCheck = await checkCaseLimit(userId, caseCount);
+      if (!caseLimitCheck.allowed) {
+        return res.status(402).json(caseLimitCheck.error);
       }
 
       const parseResult = insertCaseSchema.safeParse(req.body);
@@ -1405,7 +1459,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, requireAnalysis(), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -3436,7 +3490,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/documents/compile-claims", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/compile-claims", requireAuth, requireDownloads(), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -11602,7 +11656,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.post("/api/cases/:caseId/documents/compile-template", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/compile-template", requireAuth, requireDownloads(), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
