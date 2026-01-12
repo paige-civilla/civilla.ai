@@ -1556,6 +1556,9 @@ export async function registerRoutes(
         return res.json({ ok: true, message: "Extraction already in progress" });
       }
 
+      const quotaReq = req as import("./middleware/quota").QuotaRequest;
+      const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
+
       enqueueEvidenceExtraction({
         userId,
         caseId,
@@ -1563,9 +1566,10 @@ export async function registerRoutes(
         storageKey: file.storageKey,
         mimeType: file.mimeType,
         originalFilename: file.originalName,
+        useCredit,
       });
 
-      res.json({ ok: true, message: "Extraction started" });
+      res.json({ ok: true, message: "Extraction started", useCredit });
     } catch (error) {
       console.error("Run extraction error:", error);
       const message = error instanceof Error ? error.message : "Failed to start extraction";

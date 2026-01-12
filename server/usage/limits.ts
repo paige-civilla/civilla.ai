@@ -1,7 +1,8 @@
 import { db } from "../db";
 import { usageEvents, userProfiles, users } from "@shared/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
-import { getEntitlements, isCompedEmail, SubscriptionTier, getAnalysisCredits, consumeAnalysisCredit } from "../billing";
+import { getEntitlements, isCompedEmail, SubscriptionTier, getAnalysisCredits } from "../billing";
+import { getCreditBalance } from "../services/credits";
 
 export type UsageType = "ocr_page" | "ai_call" | "ai_tokens" | "upload_bytes";
 
@@ -203,7 +204,7 @@ export async function checkQuota(
   const [{ limits, isComped, tier }, usage, analysisCredits] = await Promise.all([
     getUserLimits(userId),
     getUserUsage(userId),
-    getAnalysisCredits(userId),
+    getCreditBalance(userId),
   ]);
 
   if (isComped) {
@@ -211,11 +212,8 @@ export async function checkQuota(
   }
 
   if (isAnalysisAction(type) && analysisCredits >= quantity) {
-    const result = await consumeAnalysisCredit(userId, quantity);
-    if (result.consumed) {
-      console.log(`[QUOTA] User ${userId} consumed ${quantity} analysis credit(s), ${result.remaining} remaining`);
-      return { allowed: true, remaining: result.remaining, usedCredit: true, code: "CREDITS_CONSUMED" };
-    }
+    console.log(`[QUOTA] User ${userId} has ${analysisCredits} credits available, allowing action (credits will be consumed by pipeline)`);
+    return { allowed: true, remaining: analysisCredits, usedCredit: true, code: "CREDITS_CONSUMED" };
   }
 
   if (tier === "free") {

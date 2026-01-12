@@ -3,6 +3,7 @@ import { extractEvidenceText } from "./evidenceExtraction";
 import { getSignedDownloadUrl } from "../r2";
 import { triggerClaimsSuggestionForEvidence } from "../claims/autoSuggest";
 import { triggerFactExtractionForEvidence } from "./factExtraction";
+import { consumeCreditOrThrow, refundCreditIfNeeded } from "./credits";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -55,6 +56,7 @@ interface EnqueueOptions {
   storageKey: string;
   mimeType: string;
   originalFilename: string;
+  useCredit?: boolean;
 }
 
 async function downloadToTempFile(storageKey: string): Promise<string> {
@@ -73,8 +75,10 @@ async function downloadToTempFile(storageKey: string): Promise<string> {
 }
 
 async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
-  const { userId, caseId, evidenceId, storageKey, mimeType, originalFilename } = opts;
+  const { userId, caseId, evidenceId, storageKey, mimeType, originalFilename, useCredit } = opts;
   let tempFilePath: string | null = null;
+  const jobKey = `ocr_extraction:${evidenceId}`;
+  let creditConsumed = false;
 
   if (processingLocks.has(evidenceId)) {
     console.log(`[ExtractionJob] Lock already held for evidence ${evidenceId}, skipping`);
@@ -106,6 +110,26 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
     if (extraction.status === "complete") {
       console.log(`[ExtractionJob] Extraction ${evidenceId} already complete, skipping`);
       return;
+    }
+
+    if (useCredit) {
+      const consumeResult = await consumeCreditOrThrow({
+        userId,
+        caseId,
+        jobType: "ocr",
+        jobKey,
+      });
+      
+      if (!consumeResult.consumed) {
+        console.error(`[ExtractionJob] Failed to consume credit for evidence ${evidenceId}, insufficient credits`);
+        await storage.updateEvidenceExtraction(userId, extraction.id, {
+          status: "failed",
+          error: "Insufficient processing credits",
+        });
+        return;
+      }
+      creditConsumed = true;
+      console.log(`[ExtractionJob] Consumed 1 credit for evidence ${evidenceId}, remaining=${consumeResult.remaining}`);
     }
 
     await storage.updateEvidenceExtraction(userId, extraction.id, {
@@ -157,18 +181,36 @@ async function runExtractionJob(opts: EnqueueOptions): Promise<void> {
     });
   } catch (error) {
     console.error(`[ExtractionJob] Error for evidence ${evidenceId}:`, error);
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+
+    if (creditConsumed) {
+      try {
+        await refundCreditIfNeeded({
+          userId,
+          caseId,
+          jobType: "ocr",
+          jobKey,
+          error: errorMsg,
+        });
+        console.log(`[ExtractionJob] Refunded credit for failed extraction ${evidenceId}`);
+      } catch (refundError) {
+        console.error(`[ExtractionJob] Failed to refund credit for ${evidenceId}:`, refundError);
+      }
+    }
 
     try {
       const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
       if (extraction) {
+        const refundNote = creditConsumed ? " (credit refunded)" : "";
         await storage.updateEvidenceExtraction(userId, extraction.id, {
           status: "failed",
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: errorMsg + refundNote,
         });
         
         await storage.createLexiFeedbackEvent(userId, caseId, "evidence_extraction_failed", {
           evidenceId,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: errorMsg,
+          creditRefunded: creditConsumed,
         });
       }
     } catch (updateError) {
