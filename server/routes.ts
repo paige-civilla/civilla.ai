@@ -8434,6 +8434,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     const { caseId, evidenceId } = req.params;
     const refresh = req.body.refresh === true;
     
+    const quotaReq = req as import("./middleware/quota").QuotaRequest;
+    const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
+    
     try {
       const caseRecord = await storage.getCase(caseId, userId);
       if (!caseRecord) {
@@ -8481,8 +8484,31 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         model: "gpt-4o",
       });
       
-      console.log(`[AI_ANALYSIS] start { caseId: ${caseId}, evidenceId: ${evidenceId}, analysisId: ${analysis.id} }`);
-      res.status(202).json({ analysis, message: "Analysis started" });
+      const jobKey = `ai_analysis:${analysis.id}`;
+      let creditConsumed = false;
+      
+      if (useCredit) {
+        const { consumeCreditOrThrow } = await import("./services/credits");
+        const consumeResult = await consumeCreditOrThrow({
+          userId,
+          caseId,
+          jobType: "ai_analysis",
+          jobKey,
+        });
+        
+        if (!consumeResult.consumed) {
+          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+            status: "failed",
+            error: "Insufficient processing credits",
+          });
+          return res.status(402).json({ error: "Insufficient processing credits", code: "INSUFFICIENT_CREDITS" });
+        }
+        creditConsumed = true;
+        console.log(`[AI_ANALYSIS] Consumed 1 credit for analysis ${analysis.id}, remaining=${consumeResult.remaining}`);
+      }
+      
+      console.log(`[AI_ANALYSIS] start { caseId: ${caseId}, evidenceId: ${evidenceId}, analysisId: ${analysis.id}, useCredit: ${useCredit} }`);
+      res.status(202).json({ analysis, message: "Analysis started", useCredit });
       
       analysisLimiter(async () => {
         try {
@@ -8540,15 +8566,34 @@ Return a JSON object with this structure:
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
           const code = (error as any)?.code || "ANALYSIS_ERROR";
           console.error(`[AI_ANALYSIS] failed { analysisId: ${analysis.id}, code: ${code}, message: ${errorMsg} }`);
+          
+          if (creditConsumed) {
+            try {
+              const { refundCreditIfNeeded } = await import("./services/credits");
+              await refundCreditIfNeeded({
+                userId,
+                caseId,
+                jobType: "ai_analysis",
+                jobKey,
+                error: errorMsg,
+              });
+              console.log(`[AI_ANALYSIS] Refunded credit for failed analysis ${analysis.id}`);
+            } catch (refundError) {
+              console.error(`[AI_ANALYSIS] Failed to refund credit for ${analysis.id}:`, refundError);
+            }
+          }
+          
+          const refundNote = creditConsumed ? " (credit refunded)" : "";
           await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
             status: "failed",
-            error: errorMsg.slice(0, 500),
+            error: errorMsg.slice(0, 500) + refundNote,
           });
           
           await triggerCaseMemoryRebuild(userId, caseId, "evidence_ai_analysis_failed", {
             evidenceId,
             analysisId: analysis.id,
             error: errorMsg.slice(0, 200),
+            creditRefunded: creditConsumed,
           });
         }
       });
@@ -8565,6 +8610,9 @@ Return a JSON object with this structure:
     const { caseId, evidenceId } = req.params;
     const refresh = req.body.refresh === true;
     const limit = typeof req.body.limit === "number" ? Math.min(req.body.limit, 20) : 10;
+    
+    const quotaReq = req as import("./middleware/quota").QuotaRequest;
+    const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
     
     try {
       const caseRecord = await storage.getCase(caseId, userId);
@@ -8621,7 +8669,26 @@ Return a JSON object with this structure:
           .map(c => c.claimText.toLowerCase().trim().replace(/\s+/g, " "))
       );
       
-      res.status(202).json({ ok: true, message: "Generating claim suggestions..." });
+      const jobKey = `claim_suggest:${evidenceId}:${Date.now()}`;
+      let creditConsumed = false;
+      
+      if (useCredit) {
+        const { consumeCreditOrThrow } = await import("./services/credits");
+        const consumeResult = await consumeCreditOrThrow({
+          userId,
+          caseId,
+          jobType: "claims",
+          jobKey,
+        });
+        
+        if (!consumeResult.consumed) {
+          return res.status(402).json({ error: "Insufficient processing credits", code: "INSUFFICIENT_CREDITS" });
+        }
+        creditConsumed = true;
+        console.log(`[CLAIM_SUGGEST] Consumed 1 credit for evidence ${evidenceId}, remaining=${consumeResult.remaining}`);
+      }
+      
+      res.status(202).json({ ok: true, message: "Generating claim suggestions...", useCredit });
       
       claimSuggestionLimiter(async () => {
         try {
@@ -8736,6 +8803,22 @@ Limit to ${limit} most important claims.`;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
           console.error(`[CLAIM_SUGGEST] failed { caseId: ${caseId}, evidenceId: ${evidenceId}, error: ${errorMsg} }`);
+          
+          if (creditConsumed) {
+            try {
+              const { refundCreditIfNeeded } = await import("./services/credits");
+              await refundCreditIfNeeded({
+                userId,
+                caseId,
+                jobType: "claims",
+                jobKey,
+                error: errorMsg,
+              });
+              console.log(`[CLAIM_SUGGEST] Refunded credit for failed suggestion ${evidenceId}`);
+            } catch (refundError) {
+              console.error(`[CLAIM_SUGGEST] Failed to refund credit for ${evidenceId}:`, refundError);
+            }
+          }
         }
       });
     } catch (error) {
