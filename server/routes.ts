@@ -12032,5 +12032,265 @@ Top 3 selection criteria:
     }
   });
 
+  // ============================================================
+  // ATTORNEY ACCESS ENDPOINTS
+  // ============================================================
+  const { getUserCaseRole, requireCaseAccess, blockAttorneyMutations } = await import("./middleware/caseAccess");
+  const { caseCollaborators, caseInvites, activityLogs, users } = await import("@shared/schema");
+  const { and, eq, isNull, gt, desc } = await import("drizzle-orm");
+
+  app.post("/api/cases/:caseId/attorney/invites", requireAuth, requireCaseAccess("owner"), async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const caseId = req.params.caseId;
+      const { email, expiresInDays = 30 } = req.body;
+
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email required" });
+      }
+      const validDays = [7, 30, 90];
+      if (!validDays.includes(expiresInDays)) {
+        return res.status(400).json({ error: "Invalid expiry period" });
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+
+      await db.insert(caseInvites).values({
+        caseId,
+        email: email.toLowerCase().trim(),
+        role: "attorney_viewer",
+        tokenHash,
+        expiresAt,
+        createdByUserId: userId,
+      });
+
+      await db.insert(activityLogs).values({
+        userId,
+        caseId,
+        type: "attorney_invite_created",
+        moduleKey: "attorney_access",
+        metadata: { email, expiresAt: expiresAt.toISOString() },
+      });
+
+      const baseUrl = process.env.APP_BASE_URL || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+      const inviteUrl = `${baseUrl}/attorney/accept?token=${token}`;
+
+      res.json({ inviteUrl, expiresAt: expiresAt.toISOString() });
+    } catch (error) {
+      console.error("[Attorney Invite] Error:", error);
+      res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
+
+  app.post("/api/attorney/accept", async (req, res) => {
+    try {
+      const { token } = req.body;
+      if (!token) return res.status(400).json({ error: "Token required" });
+
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.json({ needsLogin: true });
+      }
+
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      const inviteRows = await db
+        .select()
+        .from(caseInvites)
+        .where(
+          and(
+            eq(caseInvites.tokenHash, tokenHash),
+            isNull(caseInvites.usedAt),
+            isNull(caseInvites.revokedAt),
+            gt(caseInvites.expiresAt, new Date())
+          )
+        )
+        .limit(1);
+
+      if (inviteRows.length === 0) {
+        return res.status(400).json({ error: "Invalid or expired invite" });
+      }
+
+      const invite = inviteRows[0];
+
+      const existingCollab = await db
+        .select()
+        .from(caseCollaborators)
+        .where(and(eq(caseCollaborators.caseId, invite.caseId), eq(caseCollaborators.userId, userId)))
+        .limit(1);
+
+      if (existingCollab.length > 0) {
+        await db
+          .update(caseCollaborators)
+          .set({ revokedAt: null, role: invite.role })
+          .where(eq(caseCollaborators.id, existingCollab[0].id));
+      } else {
+        await db.insert(caseCollaborators).values({
+          caseId: invite.caseId,
+          userId,
+          role: invite.role,
+        });
+      }
+
+      await db.update(caseInvites).set({ usedAt: new Date() }).where(eq(caseInvites.id, invite.id));
+
+      await db.insert(activityLogs).values({
+        userId,
+        caseId: invite.caseId,
+        type: "attorney_invite_accepted",
+        moduleKey: "attorney_access",
+        metadata: { inviteId: invite.id },
+      });
+
+      res.json({ ok: true, caseId: invite.caseId });
+    } catch (error) {
+      console.error("[Attorney Accept] Error:", error);
+      res.status(500).json({ error: "Failed to accept invite" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/attorney/access", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const caseId = req.params.caseId;
+      const role = await getUserCaseRole(userId, caseId);
+      res.json({
+        role,
+        canDownload: role === "owner" || role === "attorney_viewer",
+        readOnly: role === "attorney_viewer",
+      });
+    } catch (error) {
+      console.error("[Attorney Access] Error:", error);
+      res.status(500).json({ error: "Failed to check access" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/attorney/collaborators", requireAuth, requireCaseAccess("owner"), async (req, res) => {
+    try {
+      const caseId = req.params.caseId;
+      const collabs = await db
+        .select({
+          id: caseCollaborators.id,
+          userId: caseCollaborators.userId,
+          role: caseCollaborators.role,
+          createdAt: caseCollaborators.createdAt,
+          email: users.email,
+        })
+        .from(caseCollaborators)
+        .leftJoin(users, eq(caseCollaborators.userId, users.id))
+        .where(and(eq(caseCollaborators.caseId, caseId), isNull(caseCollaborators.revokedAt)));
+
+      res.json({
+        collaborators: collabs.map((c) => ({
+          id: c.id,
+          userId: c.userId,
+          role: c.role,
+          email: c.email ? `${c.email.substring(0, 3)}***@***` : "Unknown",
+          createdAt: c.createdAt,
+        })),
+      });
+    } catch (error) {
+      console.error("[Attorney Collaborators] Error:", error);
+      res.status(500).json({ error: "Failed to list collaborators" });
+    }
+  });
+
+  app.delete("/api/cases/:caseId/attorney/collaborators/:collaboratorUserId", requireAuth, requireCaseAccess("owner"), async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { caseId, collaboratorUserId } = req.params;
+
+      await db
+        .update(caseCollaborators)
+        .set({ revokedAt: new Date() })
+        .where(and(eq(caseCollaborators.caseId, caseId), eq(caseCollaborators.userId, collaboratorUserId)));
+
+      await db.insert(activityLogs).values({
+        userId,
+        caseId,
+        type: "attorney_access_revoked",
+        moduleKey: "attorney_access",
+        metadata: { collaboratorUserId },
+      });
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("[Attorney Revoke] Error:", error);
+      res.status(500).json({ error: "Failed to revoke access" });
+    }
+  });
+
+  app.get("/api/cases/:caseId/attorney/invites", requireAuth, requireCaseAccess("owner"), async (req, res) => {
+    try {
+      const caseId = req.params.caseId;
+      const invites = await db
+        .select()
+        .from(caseInvites)
+        .where(
+          and(
+            eq(caseInvites.caseId, caseId),
+            isNull(caseInvites.usedAt),
+            isNull(caseInvites.revokedAt),
+            gt(caseInvites.expiresAt, new Date())
+          )
+        )
+        .orderBy(desc(caseInvites.createdAt));
+
+      res.json({
+        invites: invites.map((i) => ({
+          id: i.id,
+          email: i.email,
+          expiresAt: i.expiresAt,
+          createdAt: i.createdAt,
+        })),
+      });
+    } catch (error) {
+      console.error("[Attorney Invites List] Error:", error);
+      res.status(500).json({ error: "Failed to list invites" });
+    }
+  });
+
+  app.delete("/api/cases/:caseId/attorney/invites/:inviteId", requireAuth, requireCaseAccess("owner"), async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { caseId, inviteId } = req.params;
+
+      await db.update(caseInvites).set({ revokedAt: new Date() }).where(eq(caseInvites.id, inviteId));
+
+      await db.insert(activityLogs).values({
+        userId,
+        caseId,
+        type: "attorney_invite_revoked",
+        moduleKey: "attorney_access",
+        metadata: { inviteId },
+      });
+
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("[Attorney Invite Revoke] Error:", error);
+      res.status(500).json({ error: "Failed to revoke invite" });
+    }
+  });
+
+  app.get("/api/attorney/shared-cases", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const sharedCases = await db
+        .select({
+          caseId: caseCollaborators.caseId,
+          role: caseCollaborators.role,
+          createdAt: caseCollaborators.createdAt,
+        })
+        .from(caseCollaborators)
+        .where(and(eq(caseCollaborators.userId, userId), isNull(caseCollaborators.revokedAt)));
+
+      res.json({ sharedCases });
+    } catch (error) {
+      console.error("[Attorney Shared Cases] Error:", error);
+      res.status(500).json({ error: "Failed to list shared cases" });
+    }
+  });
+
   return httpServer;
 }
