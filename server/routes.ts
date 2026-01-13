@@ -896,6 +896,33 @@ export async function registerRoutes(
     }
   });
 
+  // Tour state endpoints
+  app.get("/api/user/tour-state", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const tourState = await storage.getUserTourState(userId);
+      res.json({ tourState });
+    } catch (error) {
+      console.error("Get tour state error:", error);
+      res.status(500).json({ error: "Failed to fetch tour state" });
+    }
+  });
+
+  app.patch("/api/user/tour-state", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { patch } = req.body;
+      if (!patch || typeof patch !== "object") {
+        return res.status(400).json({ error: "Invalid patch data" });
+      }
+      const tourState = await storage.updateUserTourState(userId, patch);
+      res.json({ tourState });
+    } catch (error) {
+      console.error("Update tour state error:", error);
+      res.status(500).json({ error: "Failed to update tour state" });
+    }
+  });
+
   app.get("/api/cases", requireAuth, async (req, res) => {
     try {
       const cases = await storage.getCasesByUserId(req.session.userId!);
