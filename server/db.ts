@@ -205,6 +205,7 @@ async function ensureUserProfileColumns(): Promise<void> {
   await addColumnIfMissing("user_profiles", "credits_ocr_pages_remaining", "INTEGER NOT NULL DEFAULT 0");
   await addColumnIfMissing("user_profiles", "analysis_credits_remaining", "INTEGER NOT NULL DEFAULT 0");
   await addColumnIfMissing("user_profiles", "last_processing_pack_purchase_at", "TIMESTAMP");
+  await addColumnIfMissing("user_profiles", "tour_state_json", "JSONB NOT NULL DEFAULT '{}'::jsonb");
   await addIndexIfMissing("idx_user_profiles_stripe_customer", 
     "CREATE INDEX IF NOT EXISTS idx_user_profiles_stripe_customer ON user_profiles(stripe_customer_id)");
 }

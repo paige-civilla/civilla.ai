@@ -258,6 +258,8 @@ export interface IStorage {
 
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   upsertUserProfile(userId: string, data: UpsertUserProfile): Promise<UserProfile>;
+  getUserTourState(userId: string): Promise<Record<string, unknown>>;
+  updateUserTourState(userId: string, patch: Record<string, unknown>): Promise<Record<string, unknown>>;
 
   listGeneratedDocuments(userId: string, caseId: string): Promise<GeneratedDocument[]>;
   createGeneratedDocument(userId: string, caseId: string, templateType: string, title: string, payloadJson: GenerateDocumentPayload): Promise<GeneratedDocument>;
@@ -964,6 +966,26 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getUserTourState(userId: string): Promise<Record<string, unknown>> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) {
+      return {};
+    }
+    return (profile.tourStateJson as Record<string, unknown>) || {};
+  }
+
+  async updateUserTourState(userId: string, patch: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const existing = await this.getUserTourState(userId);
+    const merged = { ...existing, ...patch };
+    
+    await db
+      .update(userProfiles)
+      .set({ tourStateJson: merged, updatedAt: new Date() })
+      .where(eq(userProfiles.userId, userId));
+    
+    return merged;
   }
 
   async listGeneratedDocuments(userId: string, caseId: string): Promise<GeneratedDocument[]> {
