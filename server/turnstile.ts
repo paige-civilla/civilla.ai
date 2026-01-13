@@ -28,6 +28,10 @@ export async function verifyTurnstile(
   token: string | undefined,
   ip?: string
 ): Promise<{ ok: boolean; error?: string }> {
+  // DISABLED: Captcha verification turned off during build phase
+  console.log("[Turnstile] Verification disabled - bypassing");
+  return { ok: true };
+  
   const secretKey = process.env.TURNSTILE_SECRET_KEY;
   
   // If Turnstile is not configured, allow all requests (dev mode)
