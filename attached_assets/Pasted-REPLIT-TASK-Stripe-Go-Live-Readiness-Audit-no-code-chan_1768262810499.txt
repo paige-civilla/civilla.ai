@@ -1,0 +1,115 @@
+REPLIT TASK: Stripe “Go-Live Readiness” Audit (no code changes yet)
+
+Goal
+Audit the Civilla codebase + Replit Secrets + Stripe wiring to confirm EVERYTHING needed for Stripe to work end-to-end:
+- Plans (subscriptions)
+- One-time Processing Packs ($19.99 exists; confirm; and confirm what’s needed for a $49.99 pack)
+- Checkout + Portal
+- Webhooks updating user entitlements
+- Refund-on-failure hooks (where they would live)
+Return a clear “Missing / Present” checklist and exact next actions.
+
+IMPORTANT RULES
+- DO NOT print any secret values.
+- Only list secret NAMES and whether they are present.
+- Do not change any files in this audit task (report only).
+- If you find conflicting implementations, call it out.
+
+Step 1) Repo Search: Identify all Stripe billing entrypoints
+Search the repo for:
+- "stripe"
+- "checkout"
+- "portal"
+- "webhook"
+- "STRIPE_"
+- "price_" "PRICE"
+- "processing pack" "analysis credits" "credits"
+Report:
+- Files + line ranges where billing is implemented
+- Which endpoints exist (checkout, portal, webhook, billing/status, etc.)
+- What feature gates / paywalls exist (and which endpoints use them)
+
+Step 2) Replit Secrets Audit (names only)
+Check Replit Secrets for presence of:
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- STRIPE_PUBLISHABLE_KEY (only required if frontend uses Stripe.js)
+- Any STRIPE_PRICE_* env vars referenced in the code
+- Any STRIPE_PRODUCT_* env vars referenced in the code
+Also list any “legacy” Stripe secret names or fallbacks (e.g., STRIPE_KEY) that the code might still read.
+
+Output a table:
+Secret Name | Required by Code? (yes/no) | Present? (yes/no) | Where Referenced
+
+Step 3) Price ID Mapping Audit
+From the code, extract the expected Price IDs:
+- Core / Pro / Premium subscription prices
+- Processing Pack $19.99 price
+- (Potential) Processing Pack $49.99 price (if referenced already)
+Report:
+- Exactly which env var names are expected (e.g., STRIPE_PRICE_PROCESSING_PACK_20)
+- Which are missing
+- Whether the frontend Plans page lists anything that isn’t wired to backend checkout
+
+Step 4) Webhook Coverage Audit
+Inspect webhook handler(s) and report:
+- Webhook route path (exact)
+- Whether the route is excluded from auth middleware (webhooks must be unauthenticated)
+- Which Stripe events are handled (list)
+- For each handled event: what DB columns are updated and how entitlements change
+- Confirm idempotency: does it safely handle the same event twice?
+- Confirm signature verification using STRIPE_WEBHOOK_SECRET
+
+Step 5) Customer Portal Audit
+Confirm:
+- Endpoint exists (POST /api/billing/portal or similar)
+- It requires auth
+- It uses stripe_customer_id (or creates a customer if missing)
+- It returns a URL and redirects properly on frontend
+Report any missing pieces.
+
+Step 6) Entitlements + Paywall Enforcement Audit
+List all feature gates and confirm they are enforced server-side:
+- Case creation limits
+- OCR/extraction
+- AI analyses / claim suggestion / pattern export
+- Document compile/export
+- Video upload gate (if any)
+Also confirm comped/lifetime bypass works for:
+- paigelindibella@gmail.com
+- jetdocllc@gmail.com
+- paige@civilla.ai
+- bryan@civilla.ai
+
+Step 7) Processing Pack Credits Logic Audit
+Verify:
+- Where “analysis credits” are stored (DB columns)
+- How they decrement
+- Which actions consume them (OCR pages? AI calls? doc compile? pattern? claims?)
+- How the $19.99 pack increases credits
+- Whether credits expire or roll over
+- How to add the $49.99 pack (what code change would be required)
+
+Step 8) Refund on Failure Hooks (Audit + recommendation only)
+Identify the correct place(s) to implement:
+- When to trigger refund vs credit restore
+- What constitutes “failure” (e.g., OCR failed, AI failed, rate limit)
+Report:
+- Which Stripe objects you’d refund (PaymentIntent/Charge)
+- What telemetry you’d log in activity_logs / usage_events
+
+Step 9) Output: Final Readiness Report
+Produce a single report with:
+A) ✅ Present / ❌ Missing checklist
+B) Exact next actions in order (smallest → largest)
+C) Specific list of what is required to add a $49.99 pack:
+   - Which Stripe Price must be created
+   - Exact env var name to add
+   - Which backend mapping to extend
+   - Which frontend tile/button to add/update
+D) “Top 5 Failure Modes” and how to detect them from logs
+
+Deliverable format:
+- Use headings + bullet lists (no walls of text)
+- Include file paths and line numbers where possible
+- Never include secret values
