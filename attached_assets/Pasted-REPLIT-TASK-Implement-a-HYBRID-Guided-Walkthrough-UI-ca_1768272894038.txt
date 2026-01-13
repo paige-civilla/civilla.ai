@@ -1,0 +1,193 @@
+REPLIT TASK: Implement a HYBRID Guided Walkthrough (UI callouts + “Ask Lexi” contextual help) — phase-based, optional, re-openable, and remembers dismissals.
+
+GOAL
+Add a calm, non-intrusive, phase-based tour system that:
+- Shows 1–3 gentle callouts per module (not a giant forced tour)
+- Lets users click “Ask Lexi about this” inside a callout (opens Lexi + auto-sends a suggested question)
+- Can be re-opened anytime from the app navbar dropdown (“Guided Walkthrough”)
+- Remembers what the user dismissed/completed (per-user, not just per-device)
+- Never blocks scrolling or usage
+
+DO NOT add a new module page. This should live in the existing app UI and navbar dropdown.
+
+========================
+1) BACKEND: STORE TOUR PROGRESS PER USER
+========================
+
+A) Add a new JSON column to user_profiles:
+- tour_state_json JSONB DEFAULT '{}' (stores per-module: { seen: true, dismissedAt, completedStepIds: [] })
+
+B) Add migration in server/db.ts (ensureSchemaMigrations):
+- ensureUserProfilesTourStateColumns(): addColumnIfMissing('user_profiles','tour_state_json','JSONB DEFAULT \'{}\'::jsonb')
+
+C) Add storage methods in server/storage.ts:
+- getUserTourState(userId) -> returns tour_state_json
+- updateUserTourState(userId, patch) -> merges patch into existing JSON (server-side merge)
+
+D) Add routes in server/routes.ts (requireAuth):
+- GET  /api/user/tour-state -> returns { tourState }
+- PATCH /api/user/tour-state -> body: { patch } (merge) -> returns { tourState }
+
+SECURITY: Only the authenticated user can read/write their own tour state.
+
+========================
+2) FRONTEND: TOUR SYSTEM (LIGHTWEIGHT CALLOUTS)
+========================
+
+Create these NEW files:
+
+A) client/src/components/tour/tours.ts
+Define a simple config map keyed by “moduleKey”:
+Example modules:
+- dashboard
+- start-here
+- evidence
+- claims
+- documents
+- pattern-analysis
+- trial-prep
+
+Each module has 1–3 steps:
+step = {
+  id: "evidence-1",
+  anchorId: "tour-evidence-upload",   // DOM data attribute target
+  title: "Upload evidence first",
+  body: "Add files here. Civilla extracts text and turns evidence into usable facts.",
+  lexiPrompt: "Explain what happens after I upload evidence, in simple steps."
+}
+
+B) client/src/components/tour/TourProvider.tsx
+Provider responsibilities:
+- Fetch tour state from GET /api/user/tour-state on app load
+- Expose:
+  - startTour(moduleKey)
+  - dismissStep(moduleKey, stepId)
+  - completeStep(moduleKey, stepId)
+  - markModuleSeen(moduleKey)
+  - isStepDone(moduleKey, stepId)
+- Persist updates to server via PATCH /api/user/tour-state (debounce 500ms)
+- Also cache in localStorage as a fallback if API fails
+
+C) client/src/components/tour/TourCallout.tsx
+A calm callout UI component that:
+- Positions itself near an anchor element found by:
+  document.querySelector(`[data-tour-id="${anchorId}"]`)
+- Is NOT modal; does not block usage.
+- Contains:
+  - Title
+  - Body (short, readable)
+  - Buttons:
+    1) “Got it” (completes step)
+    2) “Skip” (dismisses module)
+    3) “Ask Lexi” (opens Lexi + auto-sends lexiPrompt)
+- Automatically hides if anchor not found (fails gracefully)
+
+D) client/src/components/tour/TourLauncherModal.tsx
+Opened from navbar dropdown.
+Shows buttons:
+- “Resume tour” (current page’s moduleKey)
+- “Start Dashboard tour”
+- “Start Evidence tour”
+- etc.
+Also a “Turn tours off” toggle that sets a flag in tour_state_json (globalDisable=true)
+
+E) client/src/components/tour/useTour.ts
+Simple hook to access provider.
+
+========================
+3) FRONTEND: LEXI INTEGRATION (ASK LEXI BUTTON)
+========================
+
+A) Add a small helper (NEW):
+client/src/lib/openLexi.ts
+
+Implement:
+- openLexiAndSend(message: string, moduleKey?: string)
+Behavior:
+- Ensures Lexi panel is opened
+- Ensures thread exists (use existing auto-create behavior)
+- Sends message immediately (same path as suggested questions)
+
+If your Lexi panel uses local state only, refactor minimally:
+- Add a small global event bus (window.dispatchEvent / CustomEvent) OR a tiny Zustand store if already used.
+- LexiPanel listens for event “lexi:send” with { message, moduleKey } and runs its send flow.
+
+IMPORTANT:
+- If the user is not logged in, do nothing except show a toast: “Log in to use Lexi.”
+
+========================
+4) ADD ANCHORS TO THE UI (DATA ATTRIBUTES)
+========================
+
+Add data-tour-id anchors in the EXISTING pages/components:
+
+- Dashboard main module tiles wrapper:
+  data-tour-id="tour-dashboard-modules"
+
+- Start Here primary action area:
+  data-tour-id="tour-start-here-next"
+
+- Evidence upload button area:
+  data-tour-id="tour-evidence-upload"
+
+- Claims panel header (where suggested/accepted claims appear):
+  data-tour-id="tour-claims-accept"
+
+- Document Creator “Compile from Claims” tab area:
+  data-tour-id="tour-docs-compile"
+
+- Pattern Analysis key cards section:
+  data-tour-id="tour-patterns-themes"
+
+- Trial Prep binder export area:
+  data-tour-id="tour-trialprep-export"
+
+Keep changes minimal: just add data-tour-id to existing elements.
+
+========================
+5) WIRE PROVIDER + DISPLAY LOGIC
+========================
+
+A) Wrap the authenticated app layout with <TourProvider>:
+- client/src/components/layout/AppLayout.tsx (or wherever your app shell is)
+Place provider high enough that navbar/pages can use it.
+
+B) Show callouts based on route/moduleKey:
+- In each page component, call:
+  useEffect(() => markModuleSeen(moduleKey), [moduleKey])
+- Render <TourCallout moduleKey="evidence" /> etc. once per page.
+TourCallout chooses the next unfinished step in that module.
+
+C) Add navbar dropdown item:
+- “Guided Walkthrough”
+Opens <TourLauncherModal />
+
+========================
+6) UX RULES (VERY IMPORTANT)
+========================
+
+- Never block clicks or scrolling (no full-screen overlays).
+- Only show ONE callout at a time.
+- Keep paragraphs short (max ~2 lines) and use bullets where helpful.
+- Default behavior:
+  - show 1st step the first time a user visits that module
+  - if they click “Skip,” don’t show again unless they manually restart from modal
+- Add a global disable toggle stored in tour_state_json.
+
+========================
+7) VERIFY
+========================
+
+Manual checks:
+1) First visit to Evidence page shows the Evidence step 1 callout near upload.
+2) Clicking “Ask Lexi” opens Lexi and sends the prompt automatically.
+3) Clicking “Got it” advances to next step (if exists).
+4) “Guided Walkthrough” in navbar opens modal and lets you start/resume tours.
+5) Reload app: progress is remembered (server-side) and does not reset.
+6) Tours do not appear for logged-out marketing pages.
+
+Deliverable requirement:
+After implementation, output:
+- Files created/modified
+- Example of tour_state_json structure stored for a user
+- Confirm Lexi “Ask Lexi” event path works end-to-end
