@@ -1,0 +1,171 @@
+REPLIT TASK: Implement “Attorney Access (Read-Only, Case-Scoped)” with invite links, revocation, and audit logs.
+
+GOAL
+From Account Settings (or Case Settings), a user can invite an attorney to view + download a specific case’s materials (read-only). Attorney can NOT edit/add/delete anything. All access is enforced server-side. Include full audit logging.
+
+SCOPE (MUST)
+- Case-scoped sharing only (NOT whole-account access)
+- Read-only role: “attorney_viewer”
+- Invite links are time-limited and revocable
+- Audit logs for: invite created, invite accepted, portal accessed, file downloaded, export triggered, access revoked
+
+DATABASE / MIGRATIONS
+1) Add new tables (Drizzle schema + db.ts ensure migrations):
+A) case_collaborators
+- id UUID PK
+- case_id UUID NOT NULL FK -> cases.id ON DELETE CASCADE
+- user_id UUID NOT NULL FK -> users.id ON DELETE CASCADE (the attorney’s user)
+- role TEXT NOT NULL DEFAULT 'attorney_viewer'
+- created_at TIMESTAMP NOT NULL DEFAULT now()
+- revoked_at TIMESTAMP NULL
+- UNIQUE(case_id, user_id)
+
+B) case_invites
+- id UUID PK
+- case_id UUID NOT NULL FK -> cases.id ON DELETE CASCADE
+- email TEXT NOT NULL
+- role TEXT NOT NULL DEFAULT 'attorney_viewer'
+- token_hash TEXT NOT NULL UNIQUE
+- expires_at TIMESTAMP NOT NULL
+- created_by_user_id UUID NOT NULL FK -> users.id
+- created_at TIMESTAMP NOT NULL DEFAULT now()
+- used_at TIMESTAMP NULL
+- revoked_at TIMESTAMP NULL
+- metadata JSONB NULL (optional)
+Indexes: (case_id), (email), (expires_at)
+
+C) activity_logs (already exists in your build) – use it.
+If not present, ensure it exists with: id, user_id, event_type, metadata JSONB, created_at.
+
+SECURITY / ACCESS MODEL
+2) Implement a single unified case access checker:
+Create server/middleware/caseAccess.ts with:
+- getUserCaseRole(userId, caseId) => 'owner' | 'attorney_viewer' | null
+  - owner if cases.user_id == userId
+  - attorney_viewer if case_collaborators has row (revoked_at is null)
+- requireCaseAccess(minRole)
+  - minRole = 'viewer' allows owner OR attorney_viewer
+  - minRole = 'owner' allows only owner
+- requireReadOnlyViewer() helper for explicitly restricting mutations:
+  - If role == attorney_viewer, block POST/PATCH/DELETE (except auth endpoints and invite acceptance)
+  - Return 403 { error: "Read-only access" }
+
+API ROUTES (server/routes.ts)
+3) Add case-scoped attorney access endpoints (ALL requireAuth except accept):
+A) POST /api/cases/:caseId/attorney/invites
+- requireAuth
+- requireCaseAccess('owner')
+Body: { email, expiresInDays?: 7|30|90 }
+- Generate secure random token (32+ bytes)
+- Store only token_hash = sha256(token)
+- expires_at = now + expiresInDays (default 30)
+- Insert invite row
+- Log activity: event_type="attorney_invite_created", metadata={caseId,email,expiresAt}
+- Return { inviteUrl } where inviteUrl = `${APP_BASE_URL}/attorney/accept?token=${token}`
+
+B) POST /api/attorney/accept
+- NO auth required initially (but if not logged in, respond with { needsLogin: true } and keep token in URL)
+- If logged in, proceed:
+  - sha256(token) lookup in case_invites where revoked_at is null and used_at is null and expires_at > now
+  - Create/Upsert case_collaborators row for this case + current user_id with role attorney_viewer
+  - Set invites.used_at=now
+  - Log activity: "attorney_invite_accepted" metadata={caseId,inviteId}
+  - Return { ok:true, caseId }
+
+C) GET /api/cases/:caseId/attorney/access
+- requireAuth
+- returns { role: 'owner'|'attorney_viewer'|null, canDownload:true/false, readOnly:true/false }
+
+D) GET /api/cases/:caseId/attorney/collaborators
+- requireAuth
+- requireCaseAccess('owner')
+- List active collaborators (role, created_at) with masked email if you can map it; otherwise list user ids
+- Return { collaborators: [...] }
+
+E) DELETE /api/cases/:caseId/attorney/collaborators/:collaboratorUserId
+- requireAuth
+- requireCaseAccess('owner')
+- Set case_collaborators.revoked_at=now
+- Log activity: "attorney_access_revoked" metadata={caseId,collaboratorUserId}
+- Return { ok:true }
+
+F) DELETE /api/cases/:caseId/attorney/invites/:inviteId
+- requireAuth
+- requireCaseAccess('owner')
+- Set invites.revoked_at=now
+- Log activity: "attorney_invite_revoked" metadata={caseId,inviteId}
+- Return { ok:true }
+
+READ-ONLY ENFORCEMENT
+4) Apply requireCaseAccess + read-only blocking consistently:
+- For ALL existing case routes:
+  - GET routes should use requireCaseAccess('viewer') instead of owner-only so attorney can view.
+  - Mutation routes (POST/PATCH/DELETE) should requireCaseAccess('owner') OR call requireReadOnlyViewer() to hard-block attorney viewers.
+Minimum required right now:
+- Evidence list + download + extraction status (GET only)
+- Documents list + download/export (GET only)
+- Exhibits list + export (GET only)
+- Trial prep view + export (GET only)
+- Timeline view (GET only)
+- Pattern analysis view + export (GET only)
+BLOCK attorney_viewer from:
+- Upload evidence
+- Run extraction / AI analysis
+- Create/edit notes, claims, snippets, exhibits, timeline events, docs
+- Any billing/account changes
+
+DOWNLOADS & EXPORTS
+5) Ensure downloads enforce viewer access:
+- Any download endpoint (evidence file download, exhibits ZIP, binder ZIP, pattern export, doc export):
+  - must use requireCaseAccess('viewer')
+  - log activity: event_type="attorney_download" or "attorney_export"
+    metadata={caseId, type:'evidence'|'doc'|'exhibits'|'binder'|'pattern', id/fileName}
+
+FRONTEND UI
+6) Add “Attorney Access” card to Account Settings (client/src/pages/AppAccountSettings.tsx):
+- Shows explanation: “Invite an attorney to view this case read-only. You can revoke anytime.”
+- Case selector dropdown if multiple cases; default to selectedCaseId
+- Input: attorney email
+- Select: expiry 7/30/90 days
+- Button: “Generate Invite Link”
+- After creation, show copy-to-clipboard invite link and “Done” message
+- Section: “Active Attorney Access”
+  - list collaborator(s) with role and “Revoke” button
+- Section: “Pending Invites”
+  - list pending invites (email + expires) + “Revoke invite” button
+
+7) Add Attorney Portal route:
+- New page: client/src/pages/AppAttorneyPortal.tsx
+- Route: /app/attorney/case/:caseId
+- UI: simplified read-only navigation tabs:
+  Evidence | Documents | Exhibits | Timeline | Trial Prep | Pattern
+- Each tab loads existing pages/components in read-only mode OR lightweight list views that call the same GET endpoints.
+- Show a “Read-only Attorney Access” badge at top.
+
+8) Add Accept Invite page:
+- Route: /attorney/accept?token=...
+- If not logged in: show “Please log in or create an account to accept access” and keep token in URL (don’t lose it)
+- After login, auto-call POST /api/attorney/accept and then redirect to /app/attorney/case/:caseId
+
+AUDIT LOG VIEW (optional but recommended)
+9) In Account Settings add a “Access Logs” section:
+- Reuse existing /api/activity-logs
+- Filter and display attorney-related events:
+  attorney_invite_created, attorney_invite_accepted, attorney_download, attorney_export, attorney_access_revoked, attorney_invite_revoked
+
+PRIVACY REQUIREMENTS (MUST)
+- Do NOT expose any other cases to attorney
+- Do NOT expose user profile PII beyond what is already visible in-case
+- Never show Lexi threads/messages to attorney by default
+- Never show raw evidence extracted text if you consider it sensitive; if you DO show it, it must still be case-scoped and read-only.
+
+TEST PLAN (RUN)
+- As owner: generate invite, open link in incognito, create/login as attorney, accept.
+- Attorney can view case pages and download exports.
+- Attorney cannot POST/PATCH/DELETE (expect 403).
+- Owner can revoke; attorney instantly loses access (403 on refresh).
+- Expired token cannot be used.
+- Activity logs show all events.
+
+DELIVERABLE
+- Provide a short summary of files changed and confirm: case-scoped, read-only enforced server-side, revocation works, logs recorded.

@@ -1530,6 +1530,42 @@ export async function initDbTables(): Promise<void> {
     `CREATE UNIQUE INDEX IF NOT EXISTS processing_credit_ledger_job_key_reason_idx ON processing_credit_ledger(job_key, reason)`
   ]);
 
+  await initTable("case_collaborators", `
+    CREATE TABLE IF NOT EXISTS case_collaborators (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role TEXT NOT NULL DEFAULT 'attorney_viewer',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      revoked_at TIMESTAMP
+    )
+  `, [
+    `CREATE UNIQUE INDEX IF NOT EXISTS case_collaborators_case_user_idx ON case_collaborators(case_id, user_id)`,
+    `CREATE INDEX IF NOT EXISTS case_collaborators_case_idx ON case_collaborators(case_id)`,
+    `CREATE INDEX IF NOT EXISTS case_collaborators_user_idx ON case_collaborators(user_id)`
+  ]);
+
+  await initTable("case_invites", `
+    CREATE TABLE IF NOT EXISTS case_invites (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      case_id VARCHAR(255) NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      email TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'attorney_viewer',
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TIMESTAMP NOT NULL,
+      created_by_user_id VARCHAR(255) NOT NULL REFERENCES users(id),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      used_at TIMESTAMP,
+      revoked_at TIMESTAMP,
+      metadata JSONB
+    )
+  `, [
+    `CREATE INDEX IF NOT EXISTS case_invites_case_idx ON case_invites(case_id)`,
+    `CREATE INDEX IF NOT EXISTS case_invites_email_idx ON case_invites(email)`,
+    `CREATE INDEX IF NOT EXISTS case_invites_expires_idx ON case_invites(expires_at)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS case_invites_token_hash_idx ON case_invites(token_hash)`
+  ]);
+
   const analyticsExists = await tableExists("analytics_events");
   const auditExists = await tableExists("admin_audit_logs");
   const draftOutlinesExists = await tableExists("draft_outlines");

@@ -2524,3 +2524,64 @@ export const processingCreditLedger = pgTable("processing_credit_ledger", {
 }));
 
 export type ProcessingCreditLedger = typeof processingCreditLedger.$inferSelect;
+
+// Case Collaborators - for attorney access (read-only case sharing)
+export const collaboratorRoles = ["attorney_viewer"] as const;
+export type CollaboratorRole = typeof collaboratorRoles[number];
+
+export const caseCollaborators = pgTable("case_collaborators", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseId: varchar("case_id").notNull().references(() => cases.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("attorney_viewer"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => ({
+  caseUserUnique: uniqueIndex("case_collaborators_case_user_idx").on(table.caseId, table.userId),
+  caseIdx: index("case_collaborators_case_idx").on(table.caseId),
+  userIdx: index("case_collaborators_user_idx").on(table.userId),
+}));
+
+export type CaseCollaborator = typeof caseCollaborators.$inferSelect;
+
+export const insertCaseCollaboratorSchema = createInsertSchema(caseCollaborators).pick({
+  caseId: true,
+  userId: true,
+  role: true,
+});
+
+export type InsertCaseCollaborator = z.infer<typeof insertCaseCollaboratorSchema>;
+
+// Case Invites - for attorney access invitations
+export const caseInvites = pgTable("case_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  caseId: varchar("case_id").notNull().references(() => cases.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("attorney_viewer"),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  usedAt: timestamp("used_at"),
+  revokedAt: timestamp("revoked_at"),
+  metadata: jsonb("metadata"),
+}, (table) => ({
+  caseIdx: index("case_invites_case_idx").on(table.caseId),
+  emailIdx: index("case_invites_email_idx").on(table.email),
+  expiresIdx: index("case_invites_expires_idx").on(table.expiresAt),
+  tokenHashIdx: uniqueIndex("case_invites_token_hash_idx").on(table.tokenHash),
+}));
+
+export type CaseInvite = typeof caseInvites.$inferSelect;
+
+export const insertCaseInviteSchema = createInsertSchema(caseInvites).pick({
+  caseId: true,
+  email: true,
+  role: true,
+  tokenHash: true,
+  expiresAt: true,
+  createdByUserId: true,
+  metadata: true,
+});
+
+export type InsertCaseInvite = z.infer<typeof insertCaseInviteSchema>;
