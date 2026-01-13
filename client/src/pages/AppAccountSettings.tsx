@@ -289,7 +289,7 @@ function ProcessingCreditsCard() {
           disabled={loadingPack !== null}
           data-testid="button-buy-plus-pack"
         >
-          {loadingPack === "plus_600" ? "Processing..." : "600 Credits ($50)"}
+          {loadingPack === "plus_600" ? "Processing..." : "600 Credits ($49.99)"}
         </Button>
       </div>
     </div>

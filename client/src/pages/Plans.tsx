@@ -411,7 +411,7 @@ function PricingCardsSection() {
     {
       id: "plus_600" as const,
       title: "Processing Pack Plus",
-      price: "$50",
+      price: "$49.99",
       priceNote: "one-time",
       credits: 600,
       bullets: [

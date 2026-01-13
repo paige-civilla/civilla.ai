@@ -144,7 +144,7 @@ function ProcessingPackModalContent({ open, onClose, suggestedPack }: Processing
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-semibold">$50.00</div>
+                <div className="font-semibold">$49.99</div>
                 <div className="text-xs text-muted-foreground">one-time</div>
               </div>
             </div>
@@ -162,7 +162,7 @@ function ProcessingPackModalContent({ open, onClose, suggestedPack }: Processing
             disabled={loadingPack !== null}
             data-testid="button-buy-suggested-pack"
           >
-            {loadingPack ? "Processing..." : suggestedPack === "overlimit_200" ? "Add Over-Limit Pack — $19.99" : "Add Plus Pack — $50"}
+            {loadingPack ? "Processing..." : suggestedPack === "overlimit_200" ? "Add Over-Limit Pack — $19.99" : "Add Plus Pack — $49.99"}
           </Button>
           <Button 
             variant="ghost" 

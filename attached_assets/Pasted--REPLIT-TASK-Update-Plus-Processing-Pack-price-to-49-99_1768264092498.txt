@@ -1,0 +1,56 @@
+# REPLIT TASK: Update "Plus Processing Pack" price to $49.99 everywhere (Stripe + app)
+# Goal: The Plus Processing Pack (600 credits) is $49.99, not $50.00.
+# Do all steps below. Report back with: files changed + grep results + confirmation Stripe price updated.
+
+set -e
+
+echo "1) FIND ALL $50 / 50.00 REFERENCES (UI COPY + BACKEND COPY)"
+rg -n "\$50\b|\$50\.00\b|50\.00\b|Plus Processing Pack" . || true
+
+echo ""
+echo "2) FRONTEND: Update display price to $49.99"
+# Common places: Plans.tsx, ProcessingPackModal, pricing tiles, etc.
+# Replace ONLY the Plus pack price copy (do not change unrelated '50' values like counts).
+# Use targeted edits. Examples:
+# - "$50.00 one-time" -> "$49.99 one-time"
+# - "$50 / 600 credits" -> "$49.99 / 600 credits"
+# If you find a single source-of-truth constant, update it there instead.
+
+# NOTE: Replit agent should open and edit the files rg found that match Plus pack UI.
+
+echo ""
+echo "3) BACKEND: Ensure Plus pack label is $49.99 if shown anywhere server-side"
+# If server/billing.ts or any response includes display strings for pack pricing, update those strings too.
+# DO NOT change credit amounts (600) unless explicitly requested.
+
+echo ""
+echo "4) STRIPE (IMPORTANT): Stripe controls the actual charge amount."
+echo "   - Create a NEW Stripe one-time Price for the existing 'Plus Processing Pack' product:"
+echo "       Amount: 49.99 USD (one-time)"
+echo "       (Keep metadata consistent if used, e.g., pack_key=plus_600)"
+echo "   - Copy the new price_XXXXX id."
+echo "   - Update Replit Secrets: STRIPE_PRICE_PLUS_PACK_ONETIME = <new price id>"
+echo ""
+echo "   IMPORTANT: You CANNOT 'edit' an existing Stripe Price amount. You must create a new Price."
+
+echo ""
+echo "5) VERIFY backend uses STRIPE_PRICE_PLUS_PACK_ONETIME for plus_600"
+# Confirm billing mapping references STRIPE_PRICE_PLUS_PACK_ONETIME in server/billing.ts
+rg -n "STRIPE_PRICE_PLUS_PACK_ONETIME|plus_600|PROCESSING_PACK" server || true
+
+echo ""
+echo "6) VERIFY frontend shows $49.99 after edits"
+echo "   - Run the app"
+echo "   - Open Plans & Pricing"
+echo "   - Confirm Plus Processing Pack shows $49.99"
+echo "   - Click checkout for Plus pack and confirm Stripe Checkout shows $49.99"
+
+echo ""
+echo "7) FINAL AUDIT: ensure no lingering $50 references remain for Plus pack"
+rg -n "\$50\b|\$50\.00\b|50\.00\b" client server shared || true
+
+echo ""
+echo "DONE: Report back with:"
+echo " - Stripe new price id used for STRIPE_PRICE_PLUS_PACK_ONETIME"
+echo " - Files changed"
+echo " - Confirmation checkout shows $49.99"
