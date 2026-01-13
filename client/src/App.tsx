@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProcessingPackProvider } from "@/components/app/ProcessingPackModal";
+import { TourProvider } from "@/components/tour/TourProvider";
 import ScrollToTop from "@/components/ScrollToTop";
 import Home from "@/pages/Home";
 import HowCivillaWorks from "@/pages/HowCivillaWorks";
@@ -139,11 +140,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <ProcessingPackProvider>
-            <ScrollToTop />
-            <Toaster />
-            <Router />
-          </ProcessingPackProvider>
+          <TourProvider>
+            <ProcessingPackProvider>
+              <ScrollToTop />
+              <Toaster />
+              <Router />
+            </ProcessingPackProvider>
+          </TourProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
