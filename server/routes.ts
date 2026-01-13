@@ -4655,6 +4655,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       } else {
         targetCase = await storage.createCase(userId, {
           title: caseData.title,
+          startingPoint: "not_sure",
           state: caseData.state,
           county: caseData.county,
           caseNumber: caseNumberValue,
