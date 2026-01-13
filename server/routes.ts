@@ -68,6 +68,7 @@ import {
 import { requireAnalysis, requireDownloads, checkCaseLimit, loadEntitlements, PaywallRequest } from "./middleware/paywall";
 import { requireQuota, recordUsageAfter } from "./middleware/quota";
 import { getQuotaRemaining, getUserUsage, TIER_QUOTAS } from "./usage/limits";
+import { requireCaseAccess, blockAttorneyMutations } from "./middleware/caseAccess";
 import { 
   getExtractionJobCounts, 
   getAiAnalysisJobCounts, 
@@ -945,7 +946,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -962,7 +963,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/cases/:caseId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1003,7 +1004,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/search", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/search", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const caseId = req.params.caseId;
@@ -1037,7 +1038,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/timeline", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/timeline", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1055,7 +1056,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/timeline", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/timeline", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1190,7 +1191,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/evidence", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1208,7 +1209,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence", requireAuth, upload.single("file"), async (req, res) => {
+  app.post("/api/cases/:caseId/evidence", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, upload.single("file"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1295,7 +1296,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/cases/:caseId/evidence/:evidenceId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/evidence/:evidenceId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -1363,7 +1364,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, fileId } = req.params;
@@ -1386,7 +1387,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, fileId } = req.params;
@@ -1473,7 +1474,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -1518,7 +1519,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, requireAnalysis(), requireQuota("ocr_page"), async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, requireAnalysis(), requireQuota("ocr_page"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -1577,7 +1578,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/background-ai-status", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/background-ai-status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1616,7 +1617,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1681,7 +1682,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/transparency-log", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/transparency-log", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const caseId = req.params.caseId;
@@ -1722,7 +1723,7 @@ export async function registerRoutes(
   });
 
   // Case readiness score endpoint
-  app.get("/api/cases/:caseId/readiness", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/readiness", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const caseId = req.params.caseId;
@@ -1777,7 +1778,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/retry", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/retry", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -1824,7 +1825,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -1911,7 +1912,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/cases/:caseId/claims/retry", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/claims/retry", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -1946,7 +1947,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/facts", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/facts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -1980,7 +1981,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/facts/run", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/facts/run", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, evidenceId } = req.params;
@@ -2064,7 +2065,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/facts", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/facts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2118,7 +2119,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/evidence-notes", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence-notes", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2356,7 +2357,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/timeline/categories", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/timeline/categories", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2380,7 +2381,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/cases/:caseId/timeline/categories", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/timeline/categories", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2403,7 +2404,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.patch("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, categoryId } = req.params;
@@ -2426,7 +2427,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.delete("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, async (req, res) => {
+  app.delete("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, categoryId } = req.params;
@@ -2448,7 +2449,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/cases/:caseId/timeline/categories/seed", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/timeline/categories/seed", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2466,7 +2467,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/parenting-plan", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/parenting-plan", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2486,7 +2487,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/cases/:caseId/parenting-plan", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/parenting-plan", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2707,7 +2708,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/parenting-plan/research", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/parenting-plan/research", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2737,7 +2738,7 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/cases/:caseId/parenting-plan/research", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/parenting-plan/research", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2829,7 +2830,7 @@ This is educational and research information only. It is NOT legal advice. Paren
   });
 
 // Child Support Research endpoints
-  app.get("/api/cases/:caseId/child-support/research", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/child-support/research", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2859,7 +2860,7 @@ This is educational and research information only. It is NOT legal advice. Paren
     }
   });
 
-  app.post("/api/cases/:caseId/child-support/research", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/child-support/research", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -2953,7 +2954,7 @@ This is educational and research information only. It is NOT legal advice. Child
   });
 
   // Child Support Educational Estimate endpoint
-  app.post("/api/cases/:caseId/child-support/estimate", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/child-support/estimate", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3185,7 +3186,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     res.json({ templates });
   });
 
-  app.get("/api/cases/:caseId/documents", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/documents", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3203,7 +3204,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/documents", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3385,7 +3386,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/generated-documents", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/generated-documents", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3403,7 +3404,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/documents/generate", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/generate", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3440,7 +3441,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/documents/:documentId/acknowledge", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/:documentId/acknowledge", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId, documentId } = req.params;
@@ -3481,7 +3482,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/documents/compile-claims/preflight", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/documents/compile-claims/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3763,7 +3764,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/children", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/children", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3781,7 +3782,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/children", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/children", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3859,7 +3860,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/tasks", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/tasks", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3877,7 +3878,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/tasks", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/tasks", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3949,7 +3950,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/deadlines", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/deadlines", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -3967,7 +3968,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/deadlines", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/deadlines", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4039,7 +4040,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/calendar", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/calendar", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4124,7 +4125,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/calendar/categories", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/calendar/categories", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4142,7 +4143,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/calendar/categories", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/calendar/categories", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4170,7 +4171,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/calendar/items", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/calendar/items", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4188,7 +4189,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/calendar/items", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/calendar/items", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4260,7 +4261,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/dashboard/calendar", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/dashboard/calendar", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4667,7 +4668,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/contacts", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/contacts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4685,7 +4686,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/contacts", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/contacts", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4757,7 +4758,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/communications", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/communications", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4775,7 +4776,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/communications", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/communications", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4964,7 +4965,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/exhibit-lists", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/exhibit-lists", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -4982,7 +4983,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/exhibit-lists", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/exhibit-lists", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -5447,7 +5448,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/rule-terms", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/rule-terms", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -5466,7 +5467,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/rule-terms", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/rule-terms", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -5670,7 +5671,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     res.json({ ok: true, context: null });
   });
 
-  app.get("/api/cases/:caseId/lexi/context", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/lexi/context", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -5718,7 +5719,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/lexi/threads", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/lexi/threads", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -5736,7 +5737,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/lexi/threads", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/lexi/threads", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const { caseId } = req.params;
@@ -6425,7 +6426,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/lexi/memory", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/lexi/memory", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -6441,7 +6442,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.patch("/api/cases/:caseId/lexi/memory", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/lexi/memory", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -6461,7 +6462,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/lexi/memory/rebuild", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/lexi/memory/rebuild", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -6988,7 +6989,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/trial-prep/sections", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/trial-prep/sections", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7004,7 +7005,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/trial-prep/items", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/trial-prep/items", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7020,7 +7021,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/trial-prep/items", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/trial-prep/items", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7040,7 +7041,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.patch("/api/cases/:caseId/trial-prep/items/:itemId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/trial-prep/items/:itemId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, itemId } = req.params;
@@ -7082,7 +7083,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.delete("/api/cases/:caseId/trial-prep/items/:itemId", requireAuth, async (req, res) => {
+  app.delete("/api/cases/:caseId/trial-prep/items/:itemId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, itemId } = req.params;
@@ -7101,7 +7102,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/exhibit-packets", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/exhibit-packets", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7117,7 +7118,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/exhibit-packets", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/exhibit-packets", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7342,7 +7343,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/generated-exhibit-packets", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/generated-exhibit-packets", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7380,7 +7381,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -7420,7 +7421,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -7442,7 +7443,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/ocr-pages", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/ocr-pages", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -7478,7 +7479,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -7496,7 +7497,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -7560,7 +7561,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/pattern-analysis/input", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/pattern-analysis/input", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7587,7 +7588,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/pattern-analysis", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/pattern-analysis", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -7828,7 +7829,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/pattern-analysis/export", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/pattern-analysis/export", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8125,7 +8126,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/anchors", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/anchors", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8143,7 +8144,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -8161,7 +8162,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -8194,7 +8195,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -8212,7 +8213,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -8276,7 +8277,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -8294,7 +8295,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -8318,7 +8319,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/ai-analyses", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/ai-analyses", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8336,7 +8337,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/ai/status", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/ai/status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8827,7 +8828,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/exhibit-snippets", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/exhibit-snippets", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8846,7 +8847,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/exhibit-snippets", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/exhibit-snippets", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8910,7 +8911,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/trial-prep-shortlist", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/trial-prep-shortlist", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -8928,7 +8929,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/trial-prep-shortlist", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/trial-prep-shortlist", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9029,7 +9030,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/citations", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/citations", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9053,7 +9054,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/citations", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/evidence/:evidenceId/citations", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, evidenceId } = req.params;
@@ -9071,7 +9072,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/claims", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/claims", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9098,7 +9099,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/draft-readiness", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/draft-readiness", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9144,7 +9145,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/claims", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/claims", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9374,7 +9375,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/issues", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/issues", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9392,7 +9393,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/issues", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/issues", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9509,7 +9510,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // Phase 3A: Cross-Module Links - Timeline Event Links
-  app.get("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, eventId } = req.params;
@@ -9556,7 +9557,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, eventId } = req.params;
@@ -9622,7 +9623,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // Phase 3A: Cross-Module Links - Claim Links
-  app.get("/api/cases/:caseId/claims/:claimId/links", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/claims/:claimId/links", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, claimId } = req.params;
@@ -9668,7 +9669,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/claims/:claimId/links", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/claims/:claimId/links", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, claimId } = req.params;
@@ -9733,7 +9734,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // Phase 3: Draft Outlines API
-  app.get("/api/cases/:caseId/draft-outlines", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/draft-outlines", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9769,7 +9770,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/draft-outlines", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/draft-outlines", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -9973,7 +9974,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/draft-readiness", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/draft-readiness", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -10000,7 +10001,7 @@ Limit to ${limit} most important claims.`;
   // ───────────────────────────────────────────────────────────────
   // Task 2: Case Resources (Form Pack Finder)
   // ───────────────────────────────────────────────────────────────
-  app.get("/api/cases/:caseId/resources", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/resources", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -10023,7 +10024,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/resources", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/resources", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -10053,7 +10054,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.patch("/api/cases/:caseId/resources/:resourceId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/resources/:resourceId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, resourceId } = req.params;
@@ -10081,7 +10082,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.delete("/api/cases/:caseId/resources/:resourceId", requireAuth, async (req, res) => {
+  app.delete("/api/cases/:caseId/resources/:resourceId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, resourceId } = req.params;
@@ -10115,7 +10116,7 @@ Limit to ${limit} most important claims.`;
 
   // Resource Field Maps - Task 3 (Phase 2)
   // GET field maps for a resource
-  app.get("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, resourceId } = req.params;
@@ -10139,7 +10140,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // POST create field map for a resource
-  app.post("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, resourceId } = req.params;
@@ -10169,7 +10170,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // POST bulk create field maps with claim suggestions
-  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/bulk", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/bulk", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, resourceId } = req.params;
@@ -10254,7 +10255,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // PATCH update field map
-  app.patch("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, async (req, res) => {
+  app.patch("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, fieldMapId } = req.params;
@@ -10283,7 +10284,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // DELETE field map
-  app.delete("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, async (req, res) => {
+  app.delete("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, fieldMapId } = req.params;
@@ -10306,7 +10307,7 @@ Limit to ${limit} most important claims.`;
   });
 
   // POST suggest claims for a field based on keyword matching
-  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/suggest", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/suggest", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -10413,7 +10414,7 @@ Limit to ${limit} most important claims.`;
     { title: "PACER - Court Records", url: "https://www.pacer.uscourts.gov/", description: "Public Access to Court Electronic Records", category: "federal" },
   ];
 
-  app.post("/api/cases/:caseId/form-packs/search", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/form-packs/search", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -10516,7 +10517,7 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/trial-prep/export", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/trial-prep/export", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -10650,7 +10651,7 @@ Top 3 selection criteria:
   });
 
   // Phase 2F: Case Facts CRUD
-  app.get("/api/cases/:caseId/facts", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/facts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.user!.id;
       const { caseId } = req.params;
@@ -10668,7 +10669,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.post("/api/cases/:caseId/facts", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/facts", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.user!.id;
       const { caseId } = req.params;
@@ -10725,7 +10726,7 @@ Top 3 selection criteria:
   });
 
   // Phase 2F: Auto-suggest facts from existing data
-  app.post("/api/cases/:caseId/facts/suggest", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/facts/suggest", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.user!.id;
       const { caseId } = req.params;
@@ -10882,7 +10883,7 @@ Top 3 selection criteria:
   });
 
   // Phase 2F Task D: Template Auto-Fill - get pre-filled payload from accepted facts
-  app.get("/api/cases/:caseId/template-autofill", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/template-autofill", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = (req as any).user!.id;
       const { caseId } = req.params;
@@ -11015,7 +11016,7 @@ Top 3 selection criteria:
   // ───────────────────────────────────────────────────────────────
   // Task 1: Template-to-Field Auto-Population (cited claims only)
   // ───────────────────────────────────────────────────────────────
-  app.post("/api/cases/:caseId/documents/autofill", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/autofill", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11215,7 +11216,7 @@ Top 3 selection criteria:
   // SPEC 1 Block 1: Assistive Field Mapping (NO AUTO-FILL)
   // Suggests which template sections each claim fits, without inserting text
   // ───────────────────────────────────────────────────────────────
-  app.post("/api/cases/:caseId/documents/field-mapping", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/field-mapping", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11358,7 +11359,7 @@ Top 3 selection criteria:
   // Returns flags for conflicting dates, uncited claims, orphan evidence, incomplete claims
   // No recommendations, no legal language, flags only
   // ───────────────────────────────────────────────────────────────
-  app.get("/api/cases/:caseId/quality-check", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/quality-check", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11499,7 +11500,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.post("/api/cases/:caseId/documents/templates/:templateKey/preflight", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/documents/templates/:templateKey/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId, templateKey } = req.params;
@@ -11573,7 +11574,7 @@ Top 3 selection criteria:
   // Phase Status API (Modification Flow Gates)
   // ───────────────────────────────────────────────────────────────
 
-  app.get("/api/cases/:caseId/phase-status", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/phase-status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11703,7 +11704,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.get("/api/cases/:caseId/templates/preflight", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/templates/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11738,7 +11739,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.get("/api/cases/:caseId/templates/field-mapping", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/templates/field-mapping", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11767,7 +11768,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.get("/api/cases/:caseId/court-templates/preflight", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/court-templates/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11840,7 +11841,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.post("/api/cases/:caseId/court-templates/compile", requireAuth, async (req, res) => {
+  app.post("/api/cases/:caseId/court-templates/compile", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -11886,7 +11887,7 @@ Top 3 selection criteria:
   // AI JOBS STATUS ENDPOINTS
   // ============================================================
   
-  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { caseId } = req.params;
@@ -12035,7 +12036,7 @@ Top 3 selection criteria:
   // ============================================================
   // ATTORNEY ACCESS ENDPOINTS
   // ============================================================
-  const { getUserCaseRole, requireCaseAccess, blockAttorneyMutations } = await import("./middleware/caseAccess");
+  const { getUserCaseRole } = await import("./middleware/caseAccess");
   const { caseCollaborators, caseInvites, activityLogs, users } = await import("@shared/schema");
   const { and, eq, isNull, gt, desc } = await import("drizzle-orm");
 
@@ -12150,7 +12151,7 @@ Top 3 selection criteria:
     }
   });
 
-  app.get("/api/cases/:caseId/attorney/access", requireAuth, async (req, res) => {
+  app.get("/api/cases/:caseId/attorney/access", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = (req as any).user.id;
       const caseId = req.params.caseId;
