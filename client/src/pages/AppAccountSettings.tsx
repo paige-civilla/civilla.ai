@@ -17,6 +17,7 @@ import ModuleIntro from "@/components/app/ModuleIntro";
 import { UnknownControls, UNKNOWN_VALUE, PREFER_NOT_VALUE, isFieldDeferred, isDeferredValue } from "@/components/onboarding/UnknownControls";
 import ActivityLogsViewer from "@/components/app/ActivityLogsViewer";
 import AiStatusCard from "@/components/app/AiStatusCard";
+import AttorneyAccessCard from "@/components/app/AttorneyAccessCard";
 
 interface UserProfile {
   fullName: string | null;
@@ -841,6 +842,8 @@ export default function AppAccountSettings() {
           </Card>
 
           <AiStatusCard />
+
+          <AttorneyAccessCard />
 
           <Card className="bg-white">
             <CardHeader className="pb-4">

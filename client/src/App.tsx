@@ -51,6 +51,8 @@ import AppAdminPolicy from "@/pages/AppAdminPolicy";
 import AppGrantDashboard from "@/pages/AppGrantDashboard";
 import AppGrantDashboardPrint from "@/pages/AppGrantDashboardPrint";
 import AppCourtForms from "@/pages/AppCourtForms";
+import AttorneyAcceptInvite from "@/pages/AttorneyAcceptInvite";
+import AttorneyPortal from "@/pages/AttorneyPortal";
 import CaseRedirect from "@/components/CaseRedirect";
 import NotFound from "@/pages/not-found";
 
@@ -76,6 +78,8 @@ function Router() {
       <Route path="/careers" component={Careers} />
       <Route path="/wall-of-wins" component={WallOfWins} />
       <Route path="/faq" component={FAQPage} />
+      <Route path="/attorney/accept" component={AttorneyAcceptInvite} />
+      <Route path="/app/attorney/case/:caseId" component={AttorneyPortal} />
       <Route path="/app/onboarding" component={AppOnboarding} />
       <Route path="/app/start-here" component={AppStartHere} />
       <Route path="/app/admin" component={AppAdminDashboard} />
