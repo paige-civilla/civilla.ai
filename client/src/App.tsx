@@ -40,7 +40,8 @@ import AppChildSupport from "@/pages/AppChildSupport";
 import AppChildren from "@/pages/AppChildren";
 import AppCaseSettings from "@/pages/AppCaseSettings";
 import AppAccountSettings from "@/pages/AppAccountSettings";
-import AppOnboarding from "@/pages/AppOnboarding";
+import OnboardingLite from "@/pages/OnboardingLite";
+import LexiIntake from "@/pages/LexiIntake";
 import AppDocumentLibrary from "@/pages/AppDocumentLibrary";
 import AppDisclosures from "@/pages/AppDisclosures";
 import AppTrialPrep from "@/pages/AppTrialPrep";
@@ -81,7 +82,8 @@ function Router() {
       <Route path="/faq" component={FAQPage} />
       <Route path="/attorney/accept" component={AttorneyAcceptInvite} />
       <Route path="/app/attorney/case/:caseId" component={AttorneyPortal} />
-      <Route path="/app/onboarding" component={AppOnboarding} />
+      <Route path="/app/onboarding" component={OnboardingLite} />
+      <Route path="/app/lexi-intake" component={LexiIntake} />
       <Route path="/app/start-here" component={AppStartHere} />
       <Route path="/app/admin" component={AppAdminDashboard} />
       <Route path="/app/admin/policy" component={AppAdminPolicy} />

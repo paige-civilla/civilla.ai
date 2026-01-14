@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, bigint, timestamp, uniqueIndex, index, boolean, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -2586,3 +2586,39 @@ export const insertCaseInviteSchema = createInsertSchema(caseInvites).pick({
 });
 
 export type InsertCaseInvite = z.infer<typeof insertCaseInviteSchema>;
+
+// Intake Sessions - for Lexi intake routing
+export const lexiIntentTypes = [
+  "SERVED_PAPERS",
+  "FILE_OR_SERVE",
+  "CHILD_SUPPORT_MODIFICATION",
+  "DIVORCE_FILING",
+  "DIVORCE_RESPONSE",
+  "UNKNOWN",
+] as const;
+
+export type LexiIntentType = typeof lexiIntentTypes[number];
+
+export const intakeSessions = pgTable("intake_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  caseId: varchar("case_id").references(() => cases.id, { onDelete: "set null" }),
+  rawIntakeText: text("raw_intake_text").notNull(),
+  intent: text("intent").notNull().default("UNKNOWN"),
+  confidence: real("confidence").default(0),
+  routingJson: jsonb("routing_json").notNull().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index("intake_sessions_user_idx").on(table.userId),
+  caseIdx: index("intake_sessions_case_idx").on(table.caseId),
+}));
+
+export type IntakeSession = typeof intakeSessions.$inferSelect;
+
+export const insertIntakeSessionSchema = z.object({
+  rawIntakeText: z.string().min(1, "Intake text is required"),
+  state: z.string().optional(),
+});
+
+export type InsertIntakeSession = z.infer<typeof insertIntakeSessionSchema>;

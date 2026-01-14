@@ -15,7 +15,7 @@ export interface LexiClassification {
 const norm = (s: string) =>
   s
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 

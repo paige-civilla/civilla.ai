@@ -4696,6 +4696,152 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
+  // Lite Onboarding endpoint (minimal: state + consents only)
+  const liteOnboardingSchema = z.object({
+    state: z.string().min(1, "State is required"),
+    tosAccepted: z.boolean().refine(v => v === true, "Terms of Service must be accepted"),
+    privacyAccepted: z.boolean().refine(v => v === true, "Privacy Policy must be accepted"),
+    notLawFirmAccepted: z.boolean().refine(v => v === true, "UPL acknowledgment must be accepted"),
+    commsConsent: z.boolean().optional(),
+  });
+
+  app.post("/api/onboarding/lite", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const parseResult = liteOnboardingSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        const fields: Record<string, string> = {};
+        for (const err of parseResult.error.errors) {
+          const path = err.path.join(".");
+          fields[path] = err.message;
+        }
+        return res.status(422).json({ error: "Validation failed", fields });
+      }
+
+      const { state, commsConsent } = parseResult.data;
+      const now = new Date();
+
+      // Update profile with minimal info + consents
+      await storage.upsertUserProfile(userId, {
+        state,
+        onboardingCompleted: true,
+        onboardingCompletedAt: now,
+        tosAcceptedAt: now,
+        privacyAcceptedAt: now,
+        disclaimersAcceptedAt: now,
+        tosVersion: POLICY_VERSIONS.tos,
+        privacyVersion: POLICY_VERSIONS.privacy,
+        disclaimersVersion: POLICY_VERSIONS.disclaimers,
+        onboardingStatus: "lite",
+        commsConsent: commsConsent || false,
+      });
+
+      // Create a stub case if user doesn't have one
+      const existingCases = await storage.getCasesByUserId(userId);
+      let caseId: string | null = null;
+      
+      if (existingCases.length === 0) {
+        const stubCase = await storage.createCase(userId, {
+          title: "My Case",
+          startingPoint: "not_sure",
+          state,
+          county: "",
+          caseNumber: null,
+          caseType: "family",
+          hasChildren: false,
+        });
+        caseId = stubCase?.id || null;
+      } else {
+        caseId = existingCases[0].id;
+      }
+
+      res.json({ ok: true, caseId });
+    } catch (error: any) {
+      console.error("[Lite Onboarding] failed", { userId: req.session?.userId, error: error?.message });
+      res.status(400).json({ error: "Lite onboarding failed", detail: error?.message?.slice(0, 200) });
+    }
+  });
+
+  // Lexi Intent Classifier (deterministic v1)
+  function classifyLexiIntent(raw: string): { intent: string; confidence: number; reasons: string[] } {
+    const text = (raw || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    if (!text) return { intent: "UNKNOWN", confidence: 0, reasons: ["empty_input"] };
+
+    const hasAny = (phrases: string[]) => phrases.some(p => text.includes(p));
+    
+    const served = hasAny(["served", "got served", "served papers", "summons", "complaint", "petition", "divorce papers", "papers i received"]);
+    const respond = hasAny(["answer", "respond", "response", "court date", "hearing", "deadline"]);
+    const file = hasAny(["file", "filing", "start divorce", "initiate", "serve someone", "serve my spouse"]);
+    const divorce = hasAny(["divorce", "dissolution", "separation"]);
+    const childSupport = hasAny(["child support", "support modification", "modify support", "change child support", "arrears"]);
+
+    if (served) return { intent: "SERVED_PAPERS", confidence: respond ? 0.85 : 0.75, reasons: ["mentions_served_or_received_papers"] };
+    if (childSupport) return { intent: "CHILD_SUPPORT_MODIFICATION", confidence: 0.8, reasons: ["mentions_child_support_modification"] };
+    if (file && divorce) return { intent: "DIVORCE_FILING", confidence: 0.75, reasons: ["mentions_filing_divorce"] };
+    if (respond && divorce) return { intent: "DIVORCE_RESPONSE", confidence: 0.75, reasons: ["mentions_responding_divorce"] };
+    if (file) return { intent: "FILE_OR_SERVE", confidence: 0.65, reasons: ["mentions_file_or_serve"] };
+    return { intent: "UNKNOWN", confidence: 0.4, reasons: ["no_strong_keywords"] };
+  }
+
+  // Intake Start endpoint - creates case stub + intake session
+  const intakeStartSchema = z.object({
+    rawIntakeText: z.string().min(1, "Intake text is required"),
+    state: z.string().optional(),
+  });
+
+  app.post("/api/intake/start", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const parseResult = intakeStartSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(422).json({ error: "Validation failed", issues: parseResult.error.issues });
+      }
+
+      const { rawIntakeText, state } = parseResult.data;
+      const classification = classifyLexiIntent(rawIntakeText);
+
+      // Get or create a case for this user
+      let existingCases = await storage.getCasesByUserId(userId);
+      let caseId: string;
+      
+      if (existingCases.length === 0) {
+        const newCase = await storage.createCase(userId, {
+          title: "My Case",
+          startingPoint: "not_sure",
+          state: state || "",
+          county: "",
+          caseNumber: null,
+          caseType: "family",
+          hasChildren: false,
+        });
+        caseId = newCase!.id;
+      } else {
+        caseId = existingCases[0].id;
+      }
+
+      // Store intake session (using raw SQL since we just added this table)
+      const intakeId = crypto.randomUUID();
+      await db.execute(sql`
+        INSERT INTO intake_sessions (id, user_id, case_id, raw_intake_text, intent, confidence, routing_json, created_at, updated_at)
+        VALUES (${intakeId}, ${userId}, ${caseId}, ${rawIntakeText}, ${classification.intent}, ${classification.confidence}, ${JSON.stringify({ reasons: classification.reasons })}::jsonb, now(), now())
+      `);
+
+      res.json({
+        ok: true,
+        caseId,
+        intakeId,
+        intent: classification.intent,
+        confidence: classification.confidence,
+        reasons: classification.reasons,
+      });
+    } catch (error: any) {
+      console.error("[Intake Start] failed", { userId: req.session?.userId, error: error?.message });
+      res.status(400).json({ error: "Intake start failed", detail: error?.message?.slice(0, 200) });
+    }
+  });
+
   app.get("/api/cases/:caseId/contacts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
     try {
       const userId = req.session.userId!;
