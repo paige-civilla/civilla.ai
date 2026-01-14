@@ -1,0 +1,739 @@
+#!/usr/bin/env bash
+# Civilla: Lite Onboarding + Lexi Intake Routing (scaffold)
+# Run from repo root:  bash scripts/apply-lexi-onboarding.sh
+set -euo pipefail
+
+ROOT="$(pwd)"
+TS="$(date +%Y%m%d_%H%M%S)"
+
+mkdir -p scripts docs/lexi-onboarding \
+  client/src/pages client/src/components/lexi client/src/lib/lexi \
+  server/src/routes server/src/lib/lexi
+
+backup_if_exists () {
+  local path="$1"
+  if [ -f "$path" ]; then
+    cp "$path" "${path}.bak.${TS}"
+    echo "Backed up: $path -> ${path}.bak.${TS}"
+  fi
+}
+
+write_file_no_clobber () {
+  local path="$1"
+  shift
+  if [ -f "$path" ]; then
+    echo "SKIP (exists): $path"
+    return 0
+  fi
+  cat > "$path" <<'EOF'
+'"$@"'
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# 1) Docs: Flow + acceptance criteria + where to wire routes
+# ------------------------------------------------------------------------------
+backup_if_exists "docs/lexi-onboarding/IMPLEMENTATION.md"
+cat > "docs/lexi-onboarding/IMPLEMENTATION.md" <<'MD'
+# Civilla — Lite Onboarding + Lexi Intake (Implementation)
+
+## Goal
+Replace “heavy onboarding” with:
+1) minimal account setup + required consents, then
+2) Lexi intake (text or speech-to-text) that classifies the user’s situation and routes them to the right Start Here path,
+3) collect case-specific info just-in-time when drafting/organizing.
+
+## UPL Guardrails (locked)
+All drafts/flows must avoid:
+- telling users what they “should” do
+- choosing strategies
+- applying law to facts as conclusions
+
+Always include (docs + drafting):
+> Prepared using Civilla for educational and research purposes. Not legal advice.
+
+## New Screens
+### A) Onboarding Lite
+Collect only:
+- email/password (or existing auth flow)
+- state (jurisdiction anchor)
+- required checkboxes:
+  - Terms of Service
+  - Privacy Policy
+  - Not a law firm / Not legal advice acknowledgement
+  - (optional) communications consent (if using Twilio/SendGrid)
+- emergency/not-emergency routing (simple): “If you are in immediate danger, call local emergency services.”
+
+Then route to Lexi Intake.
+
+### B) Lexi Intake (text + speech-to-text)
+Prompt:
+- “Tell Lexi what’s going on (e.g., ‘I was served divorce papers’, ‘I want to modify child support’).”
+
+Lexi does:
+- classification (served/responding, filing/serving, child support modification, other/unknown)
+- returns a neutral explanation + buttons:
+  - “Upload papers” (if served)
+  - “Go to Start Here”
+  - “Browse common paths”
+
+No “you should.”
+
+### C) Start Here
+Cards to route into:
+- I was served (upload + identify)
+- I need to file/serve
+- Child support modification
+- Explore topics
+
+Just-in-time data collection happens after choosing a path.
+
+## Tech Notes
+- Speech-to-text: uses browser Web Speech API (no server required).
+- Classification: currently deterministic (keyword-based) to keep v1 shippable.
+- Future: replace classifier with LLM behind /api/lexi/classify.
+
+## Wiring Required (manual)
+This script creates pages/components and a server router stub.
+You must wire:
+- Client routes (React Router) to:
+  - /onboarding-lite
+  - /lexi
+  - /start
+- Server: mount router at `/api/lexi`
+
+See `server/src/routes/lexi.ts`.
+
+## Definition of Done
+- User can complete “lite onboarding” (state + consents)
+- User can type or speak into Lexi intake
+- App classifies and offers routing choices
+- Start Here page reachable and shows paths
+- UPL disclaimer shown on onboarding + Lexi intake + Start Here
+MD
+
+# ------------------------------------------------------------------------------
+# 2) Client: shared Lexi classifier + response templates (deterministic v1)
+# ------------------------------------------------------------------------------
+backup_if_exists "client/src/lib/lexi/classify.ts"
+cat > "client/src/lib/lexi/classify.ts" <<'TS'
+export type LexiIntent =
+  | "SERVED_PAPERS"
+  | "FILE_OR_SERVE"
+  | "CHILD_SUPPORT_MODIFICATION"
+  | "DIVORCE_FILING"
+  | "DIVORCE_RESPONSE"
+  | "UNKNOWN";
+
+export interface LexiClassification {
+  intent: LexiIntent;
+  confidence: number; // 0..1
+  reasons: string[];
+}
+
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const hasAny = (text: string, phrases: string[]) =>
+  phrases.some((p) => text.includes(p));
+
+/**
+ * Deterministic (keyword) classifier for v1.
+ * This is intentionally conservative to avoid legal conclusions.
+ * Later: replace with server/LLM call.
+ */
+export function classifyLexiIntent(raw: string): LexiClassification {
+  const text = norm(raw);
+
+  if (!text) return { intent: "UNKNOWN", confidence: 0, reasons: ["empty_input"] };
+
+  const served = hasAny(text, ["served", "got served", "served papers", "summons", "complaint", "petition", "divorce papers", "papers i received"]);
+  const respond = hasAny(text, ["answer", "respond", "response", "court date", "hearing", "deadline"]);
+  const file = hasAny(text, ["file", "filing", "start divorce", "initiate", "serve someone", "serve my spouse", "serve the other party"]);
+  const divorce = hasAny(text, ["divorce", "dissolution", "separation"]);
+  const childSupport = hasAny(text, ["child support", "support modification", "modify support", "change child support", "arrears"]);
+
+  // Served path: if they mention being served or having papers received
+  if (served) {
+    const reasons = ["mentions_served_or_received_papers"];
+    const confidence = respond ? 0.85 : 0.75;
+    return { intent: "SERVED_PAPERS", confidence, reasons };
+  }
+
+  // Child support modification path
+  if (childSupport) {
+    return { intent: "CHILD_SUPPORT_MODIFICATION", confidence: 0.8, reasons: ["mentions_child_support_modification"] };
+  }
+
+  // Filing / serving path
+  if (file && divorce) {
+    return { intent: "DIVORCE_FILING", confidence: 0.75, reasons: ["mentions_filing_divorce"] };
+  }
+
+  // Divorce response path
+  if (respond && divorce) {
+    return { intent: "DIVORCE_RESPONSE", confidence: 0.75, reasons: ["mentions_responding_divorce"] };
+  }
+
+  if (file) {
+    return { intent: "FILE_OR_SERVE", confidence: 0.65, reasons: ["mentions_file_or_serve"] };
+  }
+
+  // Default unknown
+  return { intent: "UNKNOWN", confidence: 0.4, reasons: ["no_strong_keywords"] };
+}
+
+export interface LexiReply {
+  title: string;
+  message: string;
+  primaryAction: { label: string; to: string };
+  secondaryAction?: { label: string; to: string };
+  tertiaryAction?: { label: string; to: string };
+}
+
+export function buildLexiReply(intent: LexiIntent): LexiReply {
+  // Keep language “typical” and “options,” not directives.
+  const disclaimer = "Prepared using Civilla for educational and research purposes. Not legal advice.";
+
+  switch (intent) {
+    case "SERVED_PAPERS":
+      return {
+        title: "It sounds like you may have been served papers.",
+        message:
+          `If you upload what you received, Civilla can help identify what the documents are and show typical next steps and common information people gather (varies by state and court).\n\n${disclaimer}`,
+        primaryAction: { label: "Upload papers", to: "/start?path=served" },
+        secondaryAction: { label: "Go to Start Here", to: "/start" },
+        tertiaryAction: { label: "Browse common paths", to: "/start" },
+      };
+    case "CHILD_SUPPORT_MODIFICATION":
+      return {
+        title: "Child support modification",
+        message:
+          `Civilla can walk through typical steps and help organize the info commonly needed for child support modification in your state.\n\n${disclaimer}`,
+        primaryAction: { label: "Go to Start Here", to: "/start?path=child-support" },
+        secondaryAction: { label: "Browse common paths", to: "/start" },
+      };
+    case "DIVORCE_FILING":
+      return {
+        title: "Starting a divorce filing",
+        message:
+          `Civilla can help you understand the typical filing process and draft documents from your selections (jurisdiction-aware).\n\n${disclaimer}`,
+        primaryAction: { label: "Go to Start Here", to: "/start?path=filing" },
+        secondaryAction: { label: "Browse common paths", to: "/start" },
+      };
+    case "DIVORCE_RESPONSE":
+      return {
+        title: "Responding to divorce papers",
+        message:
+          `Civilla can explain typical response steps and help you draft a response from your selections. If you have the papers, uploading them can help identify deadlines and document types.\n\n${disclaimer}`,
+        primaryAction: { label: "Upload papers", to: "/start?path=served" },
+        secondaryAction: { label: "Go to Start Here", to: "/start?path=response" },
+      };
+    case "FILE_OR_SERVE":
+      return {
+        title: "Filing or serving paperwork",
+        message:
+          `Civilla can help you identify common filing/serving steps and what information is typically needed in your jurisdiction.\n\n${disclaimer}`,
+        primaryAction: { label: "Go to Start Here", to: "/start?path=filing" },
+        secondaryAction: { label: "Browse common paths", to: "/start" },
+      };
+    default:
+      return {
+        title: "Thanks — I can help route you.",
+        message:
+          `You can start by choosing a common path below, or upload papers if you were served.\n\n${disclaimer}`,
+        primaryAction: { label: "Go to Start Here", to: "/start" },
+        secondaryAction: { label: "Upload papers", to: "/start?path=served" },
+      };
+  }
+}
+TS
+
+# ------------------------------------------------------------------------------
+# 3) Client: Speech-to-text hook (Web Speech API)
+# ------------------------------------------------------------------------------
+backup_if_exists "client/src/components/lexi/useSpeechToText.ts"
+cat > "client/src/components/lexi/useSpeechToText.ts" <<'TS'
+import { useCallback, useMemo, useRef, useState } from "react";
+
+type SpeechRecognitionType = any;
+
+export function useSpeechToText() {
+  const [isSupported] = useState(() => {
+    return typeof window !== "undefined" && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window);
+  });
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const recognitionRef = useRef<SpeechRecognitionType | null>(null);
+
+  const SpeechRecognitionCtor = useMemo(() => {
+    const w = window as any;
+    return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+  }, []);
+
+  const start = useCallback(() => {
+    if (!SpeechRecognitionCtor) return;
+    setError(null);
+
+    const recognition = new SpeechRecognitionCtor();
+    recognitionRef.current = recognition;
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onerror = (e: any) => {
+      setError(e?.error || "speech_error");
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+
+    recognition.onresult = (event: any) => {
+      let text = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        text += res[0]?.transcript ?? "";
+      }
+      setTranscript((prev) => (prev ? `${prev} ${text}`.trim() : text.trim()));
+    };
+
+    recognition.start();
+  }, [SpeechRecognitionCtor]);
+
+  const stop = useCallback(() => {
+    recognitionRef.current?.stop?.();
+    setIsListening(false);
+  }, []);
+
+  const reset = useCallback(() => {
+    setTranscript("");
+    setError(null);
+  }, []);
+
+  return { isSupported, isListening, transcript, error, start, stop, reset };
+}
+TS
+
+# ------------------------------------------------------------------------------
+# 4) Client: Lexi Intake component
+# ------------------------------------------------------------------------------
+backup_if_exists "client/src/components/lexi/LexiIntakeCard.tsx"
+cat > "client/src/components/lexi/LexiIntakeCard.tsx" <<'TSX'
+import React, { useMemo, useState } from "react";
+import { classifyLexiIntent, buildLexiReply } from "../../lib/lexi/classify";
+import { useSpeechToText } from "./useSpeechToText";
+import { Link } from "react-router-dom";
+
+const DISCLAIMER = "Prepared using Civilla for educational and research purposes. Not legal advice.";
+
+export function LexiIntakeCard() {
+  const [input, setInput] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const stt = useSpeechToText();
+
+  const classification = useMemo(() => classifyLexiIntent(input), [input]);
+  const reply = useMemo(() => buildLexiReply(classification.intent), [classification.intent]);
+
+  const mergeTranscript = () => {
+    if (!stt.transcript) return;
+    setInput((prev) => (prev ? `${prev}\n${stt.transcript}` : stt.transcript));
+    stt.reset();
+  };
+
+  return (
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+      <h1 style={{ fontSize: 28, marginBottom: 8 }}>Tell Lexi what’s going on</h1>
+      <p style={{ opacity: 0.8, marginBottom: 16 }}>
+        You can type or use speech-to-text. Lexi will help route you to a helpful starting point.
+      </p>
+
+      <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+        <label style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>
+          What’s happening?
+        </label>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Example: I was served divorce papers and there’s a court date. Or: I want to modify child support."
+          rows={6}
+          style={{ width: "100%", borderRadius: 12, padding: 12, border: "1px solid rgba(0,0,0,0.15)" }}
+        />
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => {
+              setSubmitted(true);
+            }}
+            style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}
+          >
+            Ask Lexi
+          </button>
+
+          {stt.isSupported ? (
+            <>
+              {!stt.isListening ? (
+                <button
+                  type="button"
+                  onClick={stt.start}
+                  style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}
+                >
+                  🎙️ Start speech-to-text
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stt.stop}
+                  style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}
+                >
+                  ⏹️ Stop
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={mergeTranscript}
+                disabled={!stt.transcript}
+                style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer", opacity: stt.transcript ? 1 : 0.5 }}
+              >
+                Add transcript
+              </button>
+            </>
+          ) : (
+            <span style={{ opacity: 0.7 }}>Speech-to-text not supported in this browser.</span>
+          )}
+        </div>
+
+        {stt.error ? <p style={{ color: "crimson", marginTop: 8 }}>Speech error: {stt.error}</p> : null}
+        {stt.transcript ? (
+          <p style={{ marginTop: 8, opacity: 0.8 }}>
+            Transcript preview: <em>{stt.transcript}</em>
+          </p>
+        ) : null}
+      </div>
+
+      {submitted ? (
+        <div style={{ marginTop: 16, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontSize: 20, marginBottom: 8 }}>{reply.title}</h2>
+          <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{reply.message}</p>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+            <Link to={reply.primaryAction.to} style={{ textDecoration: "none" }}>
+              <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+                {reply.primaryAction.label}
+              </button>
+            </Link>
+
+            {reply.secondaryAction ? (
+              <Link to={reply.secondaryAction.to} style={{ textDecoration: "none" }}>
+                <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+                  {reply.secondaryAction.label}
+                </button>
+              </Link>
+            ) : null}
+
+            {reply.tertiaryAction ? (
+              <Link to={reply.tertiaryAction.to} style={{ textDecoration: "none" }}>
+                <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+                  {reply.tertiaryAction.label}
+                </button>
+              </Link>
+            ) : null}
+          </div>
+
+          <p style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>{DISCLAIMER}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+TSX
+
+# ------------------------------------------------------------------------------
+# 5) Client Pages: OnboardingLite, LexiIntake, StartHere
+# ------------------------------------------------------------------------------
+backup_if_exists "client/src/pages/OnboardingLite.tsx"
+cat > "client/src/pages/OnboardingLite.tsx" <<'TSX'
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+const DISCLAIMER = "Prepared using Civilla for educational and research purposes. Not legal advice.";
+
+export default function OnboardingLite() {
+  const nav = useNavigate();
+  const [state, setState] = useState("");
+  const [tos, setTos] = useState(false);
+  const [privacy, setPrivacy] = useState(false);
+  const [upl, setUpl] = useState(false);
+  const [comms, setComms] = useState(false);
+
+  const canContinue = state && tos && privacy && upl;
+
+  return (
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+      <h1 style={{ fontSize: 28, marginBottom: 8 }}>Quick setup</h1>
+      <p style={{ opacity: 0.8, marginBottom: 16 }}>
+        We’ll keep this lightweight. You can add case details later when you draft or organize documents.
+      </p>
+
+      <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+        <label style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>State (where your case is / will be filed)</label>
+        <input
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          placeholder="Example: Idaho"
+          style={{ width: "100%", borderRadius: 12, padding: 12, border: "1px solid rgba(0,0,0,0.15)" }}
+        />
+
+        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <input type="checkbox" checked={tos} onChange={(e) => setTos(e.target.checked)} />
+            <span>I agree to the Terms of Service.</span>
+          </label>
+
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} />
+            <span>I acknowledge the Privacy Policy.</span>
+          </label>
+
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <input type="checkbox" checked={upl} onChange={(e) => setUpl(e.target.checked)} />
+            <span>Civilla is not a law firm and does not provide legal advice.</span>
+          </label>
+
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <input type="checkbox" checked={comms} onChange={(e) => setComms(e.target.checked)} />
+            <span>Optional: I consent to receive account messages by email/SMS (you can change this later).</span>
+          </label>
+        </div>
+
+        <div style={{ marginTop: 16, padding: 12, borderRadius: 12, background: "rgba(0,0,0,0.03)" }}>
+          <strong>Safety note:</strong> If you are in immediate danger or this is an emergency, call local emergency services.
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            disabled={!canContinue}
+            onClick={() => nav("/lexi")}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 12,
+              border: "1px solid rgba(0,0,0,0.2)",
+              cursor: canContinue ? "pointer" : "not-allowed",
+              opacity: canContinue ? 1 : 0.5
+            }}
+          >
+            Continue to Lexi
+          </button>
+
+          <Link to="/start" style={{ textDecoration: "none" }}>
+            <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+              Skip to Start Here
+            </button>
+          </Link>
+        </div>
+
+        <p style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>{DISCLAIMER}</p>
+      </div>
+    </div>
+  );
+}
+TSX
+
+backup_if_exists "client/src/pages/LexiIntake.tsx"
+cat > "client/src/pages/LexiIntake.tsx" <<'TSX'
+import React from "react";
+import { LexiIntakeCard } from "../components/lexi/LexiIntakeCard";
+
+export default function LexiIntake() {
+  return <LexiIntakeCard />;
+}
+TSX
+
+backup_if_exists "client/src/pages/StartHere.tsx"
+cat > "client/src/pages/StartHere.tsx" <<'TSX'
+import React, { useMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
+
+const DISCLAIMER = "Prepared using Civilla for educational and research purposes. Not legal advice.";
+
+function useQuery() {
+  const { search } = useLocation();
+  return useMemo(() => new URLSearchParams(search), [search]);
+}
+
+export default function StartHere() {
+  const q = useQuery();
+  const path = q.get("path");
+
+  const banner = (() => {
+    if (path === "served") return "Start Here: I was served papers";
+    if (path === "child-support") return "Start Here: Child support modification";
+    if (path === "filing") return "Start Here: Filing / serving paperwork";
+    if (path === "response") return "Start Here: Responding to a case";
+    return "Start Here";
+  })();
+
+  return (
+    <div style={{ maxWidth: 920, margin: "0 auto", padding: 16 }}>
+      <h1 style={{ fontSize: 28, marginBottom: 8 }}>{banner}</h1>
+      <p style={{ opacity: 0.8, marginBottom: 16 }}>
+        Choose a path below. Civilla provides educational, jurisdiction-aware options — you stay in control of decisions.
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+        <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontSize: 18, marginBottom: 6 }}>I was served papers</h2>
+          <p style={{ opacity: 0.8, marginBottom: 12 }}>
+            Upload what you received so Civilla can help identify it and show typical next steps (varies by state/court).
+          </p>
+          <Link to="/start?path=served" style={{ textDecoration: "none" }}>
+            <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+              Upload papers
+            </button>
+          </Link>
+        </div>
+
+        <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontSize: 18, marginBottom: 6 }}>I need to file / serve papers</h2>
+          <p style={{ opacity: 0.8, marginBottom: 12 }}>
+            Learn typical filing steps and generate draft documents from your selections.
+          </p>
+          <Link to="/start?path=filing" style={{ textDecoration: "none" }}>
+            <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+              Start filing path
+            </button>
+          </Link>
+        </div>
+
+        <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontSize: 18, marginBottom: 6 }}>Child support modification</h2>
+          <p style={{ opacity: 0.8, marginBottom: 12 }}>
+            See typical steps and what information is commonly needed to request a modification.
+          </p>
+          <Link to="/start?path=child-support" style={{ textDecoration: "none" }}>
+            <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+              Start modification path
+            </button>
+          </Link>
+        </div>
+
+        <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontSize: 18, marginBottom: 6 }}>Talk to Lexi again</h2>
+          <p style={{ opacity: 0.8, marginBottom: 12 }}>
+            Not sure which path fits? Tell Lexi what’s going on and get routing options.
+          </p>
+          <Link to="/lexi" style={{ textDecoration: "none" }}>
+            <button style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.2)", cursor: "pointer" }}>
+              Open Lexi Intake
+            </button>
+          </Link>
+        </div>
+      </div>
+
+      <p style={{ marginTop: 16, fontSize: 12, opacity: 0.75 }}>{DISCLAIMER}</p>
+    </div>
+  );
+}
+TSX
+
+# ------------------------------------------------------------------------------
+# 6) Server: Router stub for future LLM classifier (optional; not used by client yet)
+# ------------------------------------------------------------------------------
+backup_if_exists "server/src/routes/lexi.ts"
+cat > "server/src/routes/lexi.ts" <<'TS'
+import type { Request, Response } from "express";
+import { Router } from "express";
+
+/**
+ * Lexi API router (stub)
+ * Mount at: /api/lexi
+ *
+ * IMPORTANT:
+ * - Keep responses educational, not legal advice.
+ * - Do not choose strategies or apply law to facts as conclusions.
+ */
+export const lexiRouter = Router();
+
+lexiRouter.post("/classify", async (req: Request, res: Response) => {
+  const text = String(req.body?.text ?? "").trim();
+  // v1: do nothing fancy here; client uses deterministic classifier.
+  // v2: replace with an LLM call (server-side) + auditing.
+  res.json({
+    ok: true,
+    intent: "UNKNOWN",
+    confidence: 0,
+    note: "Server classify is a stub. Client currently classifies locally.",
+    textLength: text.length,
+  });
+});
+
+lexiRouter.get("/health", (_req: Request, res: Response) => {
+  res.json({ ok: true });
+});
+TS
+
+# ------------------------------------------------------------------------------
+# 7) Helper: Create a script runner file inside scripts/
+# ------------------------------------------------------------------------------
+backup_if_exists "scripts/apply-lexi-onboarding.sh"
+cat > "scripts/apply-lexi-onboarding.sh" <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "This file is generated by the bootstrap script. Re-run the original command if needed."
+echo "If you see this message, you already executed scripts/apply-lexi-onboarding.sh successfully."
+BASH
+chmod +x "scripts/apply-lexi-onboarding.sh"
+
+# ------------------------------------------------------------------------------
+# 8) Print wiring instructions (because router/app file varies per repo)
+# ------------------------------------------------------------------------------
+cat <<'OUT'
+
+✅ Created:
+- docs/lexi-onboarding/IMPLEMENTATION.md
+- client/src/pages/OnboardingLite.tsx
+- client/src/pages/LexiIntake.tsx
+- client/src/pages/StartHere.tsx
+- client/src/components/lexi/LexiIntakeCard.tsx
+- client/src/components/lexi/useSpeechToText.ts
+- client/src/lib/lexi/classify.ts
+- server/src/routes/lexi.ts (stub)
+
+🧩 MANUAL WIRING (you must do this in your repo because router file names vary):
+
+1) Client routing (React Router):
+   Add routes:
+   - /onboarding-lite  -> OnboardingLite
+   - /lexi             -> LexiIntake
+   - /start            -> StartHere
+
+   If your router lives in client/src/App.tsx or client/src/main.tsx,
+   import pages and add <Route path="..."> entries.
+
+2) Server routing (Express):
+   Mount lexiRouter:
+   - import { lexiRouter } from "./routes/lexi";
+   - app.use("/api/lexi", lexiRouter);
+
+3) Replace heavy onboarding:
+   Wherever you currently route new users after signup/login,
+   redirect to /onboarding-lite (or directly /lexi if you want ultra-minimal).
+
+4) Health check after change:
+   - Did it work in local dev?
+   - Did anything break?
+   - Did it work on civilla.ai?
+   - Did refresh/login persist?
+   - Did mobile behavior break?
+
+OUT
