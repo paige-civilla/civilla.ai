@@ -238,7 +238,7 @@ async function testCaseCreation(): Promise<boolean> {
     title: 'QA Audit Test Case',
     state: 'California',
     hasChildren: true,
-    startingPoint: 'new_filing',
+    startingPoint: 'starting_case',
   });
   
   if (result.ok && result.data?.id) {

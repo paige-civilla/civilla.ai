@@ -77,6 +77,7 @@ const COMPED_EMAILS = [
   "jetdocllc@gmail.com",
   "paige@civilla.ai",
   "bryan@civilla.ai",
+  "qa.test@civilla.ai",
 ];
 
 export function isCompedEmail(email: string): boolean {

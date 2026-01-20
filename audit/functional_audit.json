@@ -1,5 +1,5 @@
 {
-  "generated": "2026-01-20T04:06:26.304Z",
+  "generated": "2026-01-20T06:06:23.551Z",
   "authStatus": "PASS",
   "results": [
     {
@@ -19,21 +19,26 @@
       ],
       "status": "PASS",
       "details": "Logged in as qa.test@civilla.ai",
-      "duration": 474
+      "duration": 537
     },
     {
       "category": "Case",
-      "test": "Create Case",
+      "test": "List Cases",
       "endpoint": "/api/cases",
-      "status": "FAIL",
-      "error": "HTTP 402",
-      "duration": 238
+      "dbTables": [
+        "cases"
+      ],
+      "status": "PASS",
+      "details": "Found 1 existing case(s), using: 6817726b-974c-4776-95b0-6a0f1f7542d4",
+      "duration": 133
     },
     {
       "category": "Evidence",
       "test": "List Evidence",
-      "status": "SKIP",
-      "error": "No auth or case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/evidence",
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 85
     },
     {
       "category": "Extraction",
@@ -53,7 +58,7 @@
       "endpoint": "/api/ai/health",
       "status": "PASS",
       "details": "OpenAI: true, Vision: true",
-      "duration": 834
+      "duration": 720
     },
     {
       "category": "AI Pipeline",
@@ -64,44 +69,78 @@
     {
       "category": "AI Pipeline",
       "test": "List AI Analyses",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/ai-analyses",
+      "dbTables": [
+        "evidence_ai_analyses"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 86
     },
     {
       "category": "Claims",
       "test": "Suggest Claims",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/claims/suggest",
+      "dbTables": [
+        "case_claims",
+        "claim_citations"
+      ],
+      "status": "PASS",
+      "details": "Endpoint responsive (200)",
+      "duration": 433
     },
     {
       "category": "Claims",
       "test": "List Claims",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/claims",
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 288
     },
     {
       "category": "Claims",
       "test": "Compile Claims Preflight",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/documents/compile-claims/preflight",
+      "dbTables": [
+        "case_claims",
+        "claim_citations"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 4377
     },
     {
       "category": "Documents",
       "test": "List Documents",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/documents",
+      "dbTables": [
+        "case_documents"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 590
     },
     {
       "category": "Exports",
-      "test": "Pattern Analysis Export",
-      "status": "SKIP",
-      "error": "No case ID"
+      "test": "Pattern Analysis",
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/pattern-analysis",
+      "dbTables": [
+        "case_patterns"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 264
     },
     {
       "category": "Exports",
       "test": "Trial Prep Export",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/trial-prep/export",
+      "dbTables": [
+        "case_outlines"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 447
     },
     {
       "category": "Lexi",
@@ -112,7 +151,7 @@
       ],
       "status": "PASS",
       "details": "Found 0 threads",
-      "duration": 139
+      "duration": 378
     },
     {
       "category": "Lexi",
@@ -122,8 +161,8 @@
         "lexi_threads"
       ],
       "status": "PASS",
-      "details": "Created thread: 3a2207fd-5ab7-490b-9421-7092e5806618",
-      "duration": 140
+      "details": "Created thread: 6912f698-189d-49dc-9a4e-adccf60a7c90",
+      "duration": 224
     },
     {
       "category": "Lexi",
@@ -134,44 +173,69 @@
       ],
       "status": "PASS",
       "details": "Got response: Lexi provides education, organization, and researc...",
-      "duration": 3904
+      "duration": 3759
     },
     {
       "category": "Timeline",
       "test": "Get Timeline",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/timeline",
+      "dbTables": [
+        "timeline_events"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 90
     },
     {
       "category": "Contacts",
       "test": "List Contacts",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/contacts",
+      "dbTables": [
+        "case_contacts"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 88
     },
     {
       "category": "Deadlines",
       "test": "List Deadlines",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/deadlines",
+      "dbTables": [
+        "case_deadlines"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 86
     },
     {
       "category": "Communications",
       "test": "List Communications",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/communications",
+      "dbTables": [
+        "case_communications"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 87
     },
     {
       "category": "Children",
       "test": "List Children",
-      "status": "SKIP",
-      "error": "No case ID"
+      "endpoint": "/api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/children",
+      "dbTables": [
+        "case_children"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 401",
+      "duration": 89
     }
   ],
   "summary": {
     "total": 23,
-    "passed": 6,
-    "failed": 1,
-    "skipped": 16
+    "passed": 8,
+    "failed": 12,
+    "skipped": 3
   },
   "coverage": {
     "tested": [],

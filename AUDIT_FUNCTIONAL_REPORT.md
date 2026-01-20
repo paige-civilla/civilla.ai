@@ -1,6 +1,6 @@
 # Functional Audit Report
 
-Generated: 2026-01-20T04:06:26.304Z
+Generated: 2026-01-20T06:06:23.551Z
 
 ## Summary
 
@@ -9,34 +9,34 @@ Generated: 2026-01-20T04:06:26.304Z
 | **Auth Status** | PASS |
 | **Test Case ID** | N/A |
 | **Total Tests** | 23 |
-| **Passed** | 6 |
-| **Failed** | 1 |
-| **Skipped** | 16 |
-| **Pass Rate** | 26.1% |
+| **Passed** | 8 |
+| **Failed** | 12 |
+| **Skipped** | 3 |
+| **Pass Rate** | 34.8% |
 
 ## Button-to-Endpoint Mapping
 
 | Feature/Button | UI Location | API Endpoint | DB Tables | Result |
 |----------------|-------------|--------------|-----------|--------|
 | Login | /login | /api/auth/login | users, sessions | PASS |
-| Create Case | /app/cases | /api/cases | cases | FAIL |
-| Upload Evidence | /app/evidence/:id | /api/cases/:id/evidence | evidence | NOT TESTED |
-| Run Extraction | /app/evidence/:id | /api/cases/:id/evidence/:id/extract | evidence_extractions | SKIP |
-| Retry Extraction | /app/evidence/:id | /api/cases/:id/evidence/:id/retry | evidence_extractions | SKIP |
-| Run AI Analysis | /app/evidence/:id | /api/cases/:id/evidence/:id/analyze | evidence_ai_analyses | SKIP |
-| Suggest Claims | /app/patterns/:id | /api/cases/:id/claims/suggest | case_claims, claim_citations | SKIP |
+| Create Case | /app/cases | /api/cases | cases | PASS |
+| Upload Evidence | /app/evidence/:id | /api/cases/:id/evidence | evidence | FAIL |
+| Run Extraction | /app/evidence/:id | /api/cases/:id/evidence/:id/extract | evidence_extractions | FAIL |
+| Retry Extraction | /app/evidence/:id | /api/cases/:id/evidence/:id/retry | evidence_extractions | FAIL |
+| Run AI Analysis | /app/evidence/:id | /api/cases/:id/evidence/:id/analyze | evidence_ai_analyses | FAIL |
+| Suggest Claims | /app/patterns/:id | /api/cases/:id/claims/suggest | case_claims, claim_citations | FAIL |
 | Accept/Reject Claim | /app/patterns/:id | PATCH /api/claims/:id | case_claims | NOT TESTED |
-| Compile Claims | /app/documents/:id | /api/cases/:id/documents/compile-claims | case_documents | SKIP |
-| Export Document | /app/documents/:id | /api/cases/:id/documents/:id/export | case_documents | SKIP |
-| Pattern Analysis | /app/patterns/:id | /api/cases/:id/pattern-analysis | case_patterns | SKIP |
-| Trial Prep Export | /app/trial-prep/:id | /api/cases/:id/trial-prep/export | case_outlines | SKIP |
-| Create Lexi Thread | /app (Lexi panel) | /api/lexi/threads | lexi_threads | FAIL |
+| Compile Claims | /app/documents/:id | /api/cases/:id/documents/compile-claims | case_documents | FAIL |
+| Export Document | /app/documents/:id | /api/cases/:id/documents/:id/export | case_documents | FAIL |
+| Pattern Analysis | /app/patterns/:id | /api/cases/:id/pattern-analysis | case_patterns | FAIL |
+| Trial Prep Export | /app/trial-prep/:id | /api/cases/:id/trial-prep/export | case_outlines | FAIL |
+| Create Lexi Thread | /app (Lexi panel) | /api/lexi/threads | lexi_threads | PASS |
 | Send Lexi Message | /app (Lexi panel) | /api/lexi/chat | lexi_messages | PASS |
-| Timeline Events | /app/timeline/:id | /api/cases/:id/timeline | timeline_events | SKIP |
-| Contacts | /app/contacts/:id | /api/cases/:id/contacts | case_contacts | SKIP |
-| Deadlines | /app/deadlines/:id | /api/cases/:id/deadlines | case_deadlines | SKIP |
-| Communications | /app/communications/:id | /api/cases/:id/communications | case_communications | SKIP |
-| Children | /app/children/:id | /api/cases/:id/children | case_children | SKIP |
+| Timeline Events | /app/timeline/:id | /api/cases/:id/timeline | timeline_events | FAIL |
+| Contacts | /app/contacts/:id | /api/cases/:id/contacts | case_contacts | FAIL |
+| Deadlines | /app/deadlines/:id | /api/cases/:id/deadlines | case_deadlines | FAIL |
+| Communications | /app/communications/:id | /api/cases/:id/communications | case_communications | FAIL |
+| Children | /app/children/:id | /api/cases/:id/children | case_children | FAIL |
 
 ## Detailed Test Results
 
@@ -51,13 +51,13 @@ Generated: 2026-01-20T04:06:26.304Z
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| Create Case | /api/cases | FAIL | HTTP 402 |
+| List Cases | /api/cases | PASS | Found 1 existing case(s), using: 6817726b-974c-4776-95b0-6a0 |
 
 ### Evidence
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| List Evidence | - | SKIP | No auth or case ID |
+| List Evidence | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/evidence | FAIL | HTTP 401 |
 
 ### Extraction
 
@@ -72,97 +72,97 @@ Generated: 2026-01-20T04:06:26.304Z
 |------|----------|--------|----------|
 | AI Health Check | /api/ai/health | PASS | OpenAI: true, Vision: true |
 | Run AI Analysis | - | SKIP | No evidence to analyze |
-| List AI Analyses | - | SKIP | No case ID |
+| List AI Analyses | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/ai-analyses | FAIL | HTTP 401 |
 
 ### Claims
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| Suggest Claims | - | SKIP | No case ID |
-| List Claims | - | SKIP | No case ID |
-| Compile Claims Preflight | - | SKIP | No case ID |
+| Suggest Claims | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/claims/suggest | PASS | Endpoint responsive (200) |
+| List Claims | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/claims | FAIL | HTTP 401 |
+| Compile Claims Preflight | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/documents/compile-claims/preflight | FAIL | HTTP 401 |
 
 ### Documents
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| List Documents | - | SKIP | No case ID |
+| List Documents | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/documents | FAIL | HTTP 401 |
 
 ### Exports
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| Pattern Analysis Export | - | SKIP | No case ID |
-| Trial Prep Export | - | SKIP | No case ID |
+| Pattern Analysis | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/pattern-analysis | FAIL | HTTP 401 |
+| Trial Prep Export | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/trial-prep/export | FAIL | HTTP 401 |
 
 ### Lexi
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
 | List Threads | /api/lexi/threads | PASS | Found 0 threads |
-| Create Thread | /api/lexi/threads | PASS | Created thread: 3a2207fd-5ab7-490b-9421-7092e5806618 |
+| Create Thread | /api/lexi/threads | PASS | Created thread: 6912f698-189d-49dc-9a4e-adccf60a7c90 |
 | Send Message (General Thread) | /api/lexi/chat | PASS | Got response: Lexi provides education, organization, and res |
 
 ### Timeline
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| Get Timeline | - | SKIP | No case ID |
+| Get Timeline | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/timeline | FAIL | HTTP 401 |
 
 ### Contacts
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| List Contacts | - | SKIP | No case ID |
+| List Contacts | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/contacts | FAIL | HTTP 401 |
 
 ### Deadlines
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| List Deadlines | - | SKIP | No case ID |
+| List Deadlines | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/deadlines | FAIL | HTTP 401 |
 
 ### Communications
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| List Communications | - | SKIP | No case ID |
+| List Communications | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/communications | FAIL | HTTP 401 |
 
 ### Children
 
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
-| List Children | - | SKIP | No case ID |
+| List Children | /api/cases/6817726b-974c-4776-95b0-6a0f1f7542d4/children | FAIL | HTTP 401 |
 
 ## Coverage Analysis
 
 ### Features Tested
 - ✓ Auth: Environment Variables
 - ✓ Auth: Login API
+- ✓ Case: List Cases
 - ✓ AI Pipeline: AI Health Check
+- ✓ Claims: Suggest Claims
 - ✓ Lexi: List Threads
 - ✓ Lexi: Create Thread
 - ✓ Lexi: Send Message (General Thread)
 
 ### Features Skipped (Need Prerequisites)
-- – Evidence: List Evidence (No auth or case ID)
 - – Extraction: Check Extraction Status (No evidence to check)
 - – Extraction: Retry Extraction Endpoint (No evidence to retry)
 - – AI Pipeline: Run AI Analysis (No evidence to analyze)
-- – AI Pipeline: List AI Analyses (No case ID)
-- – Claims: Suggest Claims (No case ID)
-- – Claims: List Claims (No case ID)
-- – Claims: Compile Claims Preflight (No case ID)
-- – Documents: List Documents (No case ID)
-- – Exports: Pattern Analysis Export (No case ID)
-- – Exports: Trial Prep Export (No case ID)
-- – Timeline: Get Timeline (No case ID)
-- – Contacts: List Contacts (No case ID)
-- – Deadlines: List Deadlines (No case ID)
-- – Communications: List Communications (No case ID)
-- – Children: List Children (No case ID)
 
 ### Features Failed
-- ✗ Case: Create Case - HTTP 402
+- ✗ Evidence: List Evidence - HTTP 401
+- ✗ AI Pipeline: List AI Analyses - HTTP 401
+- ✗ Claims: List Claims - HTTP 401
+- ✗ Claims: Compile Claims Preflight - HTTP 401
+- ✗ Documents: List Documents - HTTP 401
+- ✗ Exports: Pattern Analysis - HTTP 401
+- ✗ Exports: Trial Prep Export - HTTP 401
+- ✗ Timeline: Get Timeline - HTTP 401
+- ✗ Contacts: List Contacts - HTTP 401
+- ✗ Deadlines: List Deadlines - HTTP 401
+- ✗ Communications: List Communications - HTTP 401
+- ✗ Children: List Children - HTTP 401
 
 ### Not Tested (Requires UI/File Upload)
 - Evidence file upload (requires multipart/form-data)
