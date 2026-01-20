@@ -1,17 +1,7 @@
 // Stripe client - uses environment variables for credentials
 import Stripe from 'stripe';
 
-// STRIPE SUSPENDED - Set to true to disable all Stripe API calls
-export const STRIPE_SUSPENDED = true;
-
 function getCredentials() {
-  if (STRIPE_SUSPENDED) {
-    return {
-      publishableKey: '',
-      secretKey: '',
-    };
-  }
-  
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const publishableKey = process.env.VITE_STRIPE_PUBLIC_KEY;
 
@@ -25,11 +15,7 @@ function getCredentials() {
   };
 }
 
-export async function getUncachableStripeClient(): Promise<Stripe | null> {
-  if (STRIPE_SUSPENDED) {
-    return null;
-  }
-  
+export async function getUncachableStripeClient() {
   const { secretKey } = getCredentials();
 
   return new Stripe(secretKey, {

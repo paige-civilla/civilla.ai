@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { userProfiles, users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { getUncachableStripeClient, STRIPE_SUSPENDED } from "./stripeClient";
+import { getUncachableStripeClient } from "./stripeClient";
 import Stripe from "stripe";
 
 export type SubscriptionTier = "free" | "trial" | "core" | "pro" | "premium";
@@ -208,10 +208,6 @@ export function createPaywallError(
 }
 
 export async function getOrCreateStripeCustomer(userId: string, email: string): Promise<string> {
-  if (STRIPE_SUSPENDED) {
-    throw new Error("Stripe is suspended");
-  }
-  
   const profile = await db
     .select({ stripeCustomerId: userProfiles.stripeCustomerId })
     .from(userProfiles)
@@ -223,9 +219,6 @@ export async function getOrCreateStripeCustomer(userId: string, email: string): 
   }
 
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    throw new Error("Stripe is suspended");
-  }
   const customer = await stripe.customers.create({
     email,
     metadata: { userId },
@@ -297,9 +290,6 @@ export async function createCheckoutSession(
 
   const customerId = await getOrCreateStripeCustomer(userId, email);
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    return { url: null, error: "Billing is temporarily unavailable" };
-  }
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     { price: priceId, quantity: 1 },
@@ -351,9 +341,6 @@ export async function createPortalSession(userId: string, origin?: string): Prom
   }
 
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    return { url: null, error: "Billing is temporarily unavailable" };
-  }
   const baseUrl = origin || "https://civilla.ai";
 
   const session = await stripe.billingPortal.sessions.create({
@@ -377,9 +364,6 @@ export async function createProcessingPackCheckout(
 
   const customerId = await getOrCreateStripeCustomer(userId, email);
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    return { url: null, error: "Billing is temporarily unavailable" };
-  }
 
   const baseUrl = origin || "https://civilla.ai";
   const session = await stripe.checkout.sessions.create({
