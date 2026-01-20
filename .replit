@@ -44,8 +44,8 @@ waitForPort = 5000
 [userenv.shared]
 PSQL = "psql 'postgresql://neondb_owner:npg_9C5ObexrwojV@ep-muddy-rain-afb6ypj2-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'"
 PSQLPASSAUTH = "psql -h pg.neon.tech"
-STRIPE_SECRET_KEY = "sk_test_"
-STRIPE_PUBLISHABLE_KEY = "pk_test_"
+STRIPE_SECRET_KEY = "mk_1SL41XHryF2iXYidPZI8kniB"
+STRIPE_PUBLISHABLE_KEY = "mk_1SL41BHryF2iXYidhzmZP3T1"
 STRIPE_WEBHOOK_SECRET = "whsec_..."
 STRIPE_MODE = "test"
 STRIPE_PRICE_CORE_MONTHLY = "price_1Sm6pZHryF2iXYid5CMlH0Cs"
