@@ -327,6 +327,7 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                       key={item.label}
                       type="button"
                       onClick={() => {
+                        console.log("[MENU CLICK]", { label: item.label, href: item.href, disabled: item.disabled, selectedCaseId });
                         if (item.disabled) return;
                         setIsMenuOpen(false);
                         setLocation(item.href);
