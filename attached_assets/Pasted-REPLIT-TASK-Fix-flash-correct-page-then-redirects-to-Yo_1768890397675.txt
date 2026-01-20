@@ -1,0 +1,137 @@
+REPLIT TASK: Fix “flash correct page then redirects to Your Case” for ALL app menu links
+
+Important note:
+The Stripe log error is unrelated. Do NOT chase Stripe for this bug. This is a frontend redirect loop.
+
+GOAL:
+When user clicks a menu item (Evidence, Timeline, Documents, etc), the app must STAY on that page.
+The app should ONLY auto-redirect to the active case dashboard when:
+- user visits /app (root)
+- user visits /app/dashboard (without caseId)
+- user visits a case-required module route WITHOUT a caseId (e.g., /app/evidence)
+
+Step 1 — FIND the redirect loop (this is the real cause)
+Search for any code that navigates to dashboard or “your case” on route change.
+
+Run these commands in Replit Shell:
+
+grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude=*.map "setLocation\\(|useLocation\\(|navigate\\(|router\\.push\\(|window\\.location" client/src | head -n 200
+grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude=*.map "dashboard/\\$\\{|/app/dashboard|/app\\b\\s*\\)|your case|activeCaseId|selectedCaseId|lastCaseId|caseRedirect|CaseRedirect" client/src | head -n 200
+grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude=*.map "useEffect\\(\\(\\)\\s*=>\\s*\\{[\\s\\S]{0,400}setLocation|useEffect\\(\\(\\)\\s*=>\\s*\\{[\\s\\S]{0,400}navigate" client/src | head -n 200
+
+You are looking for:
+- a useEffect that runs when activeCaseId changes and calls setLocation(`/app/dashboard/${activeCaseId}`) (or similar)
+- a CaseRedirect component/hook that runs on every page mount
+- a “sync url with selected case” effect that mistakenly runs for EVERY route
+
+Step 2 — ADD TEMP DEBUG LOGGING (so we can prove what triggers the redirect)
+Wherever the redirect effect is (usually in AppLayout.tsx, a CaseProvider, or a “useCaseRedirect” hook),
+add a console log RIGHT BEFORE it redirects, like:
+
+console.log("[CASE REDIRECT]", { from: location, to: targetUrl, activeCaseId });
+
+Do NOT leave the logging forever; it’s just to confirm we found the culprit.
+
+Step 3 — FIX THE REDIRECT EFFECT (this is the permanent fix)
+Replace any unconditional redirect like:
+  if (activeCaseId) setLocation(`/app/dashboard/${activeCaseId}`)
+
+with THIS guarded logic:
+
+1) Determine current pathname:
+   const pathname = location.split("?")[0];
+
+2) Only redirect when:
+   - pathname === "/app"
+   - OR pathname === "/app/dashboard"
+   - OR the pathname is a case-required module route but missing the caseId segment
+
+Use this exact logic (adapt variable names only):
+
+const CASE_REQUIRED_PREFIXES = [
+  "/app/dashboard",
+  "/app/document-library",
+  "/app/evidence",
+  "/app/timeline",
+  "/app/communications",
+  "/app/patterns",
+  "/app/disclosures",
+  "/app/documents",
+  "/app/exhibits",
+  "/app/deadlines",
+  "/app/tasks",
+  "/app/contacts",
+  "/app/children",
+  "/app/child-support",
+  "/app/trial-prep",
+  "/app/parenting-plan",
+  "/app/case-settings",
+];
+
+function isCaseRequiredRoute(pathname: string) {
+  return CASE_REQUIRED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
+function hasCaseIdSegment(pathname: string) {
+  // expects /app/<module>/<caseId>
+  const parts = pathname.split("/").filter(Boolean);
+  return parts.length >= 3 && parts[0] === "app" && !!parts[2];
+}
+
+useEffect(() => {
+  if (!activeCaseId) return;
+
+  const pathname = location.split("?")[0];
+
+  const isRoot = pathname === "/app";
+  const isDashboardNoId = pathname === "/app/dashboard";
+  const needsCaseId = isCaseRequiredRoute(pathname) && !hasCaseIdSegment(pathname);
+
+  if (isRoot || isDashboardNoId) {
+    const to = `/app/dashboard/${activeCaseId}`;
+    console.log("[CASE REDIRECT]", { from: location, to, activeCaseId });
+    setLocation(to, { replace: true });
+    return;
+  }
+
+  if (needsCaseId) {
+    const base = pathname.replace(/\/$/, "");
+    const to = `${base}/${activeCaseId}`;
+    console.log("[CASE REDIRECT]", { from: location, to, activeCaseId });
+    setLocation(to, { replace: true });
+    return;
+  }
+
+  // IMPORTANT: do nothing for all valid routes
+}, [activeCaseId, location, setLocation]);
+
+Step 4 — CHECK THE APP NAVBAR MENU HANDLER (common hidden cause)
+In AppNavbar (or wherever the dropdown menu items are clicked), verify the click handler does ONLY ONE navigation.
+Make sure it does NOT also call a “goToCaseHome()” / “ensureCaseSelected()” function after navigating.
+
+If you see code like:
+  setLocation(item.href);
+  setOpen(false);
+  setLocation(`/app/dashboard/${activeCaseId}`);  <-- remove this
+or any function that navigates again after item click, remove the second navigation.
+
+Step 5 — CHECK FOR A WILDCARD ROUTE THAT CATCHES TOO MUCH
+In the main router (often App.tsx), ensure there is NOT a catch-all route like:
+  /app/:rest*
+that redirects to dashboard and runs BEFORE module routes.
+If it exists, move it to the very bottom and restrict it to only /app.
+
+Step 6 — VERIFY
+After applying the fix:
+- Click Evidence / Timeline / Documents / etc: should stay on the selected page (no snap back).
+- Visit /app: should redirect to /app/dashboard/:caseId (correct).
+- Visit /app/evidence (no caseId): should redirect to /app/evidence/:caseId (correct).
+
+Step 7 — REPORT BACK IN REPLIT SUMMARY
+Reply with:
+- File path(s) where the redirect was found
+- The exact redirect code before/after
+- Confirmation that only /app, /app/dashboard, and missing-caseId routes redirect now
+
+Do NOT change backend routes for this bug.
+Do NOT touch Stripe for this bug.
