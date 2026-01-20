@@ -53,7 +53,7 @@ import { isAiTestMode, getMockLexiResponse, getMockStreamChunks } from "./lexi/t
 import { applyEntitlementsForUser, applyAllEntitlements, LIFETIME_PREMIUM_EMAILS, ADMIN_EMAILS, GRANT_VIEWER_EMAILS } from "./entitlements";
 import { verifyTurnstile, isTurnstileConfigured, getClientIp } from "./turnstile";
 import { idempotentOperation, createAiJob, updateAiJobProgress, completeAiJob, getAiJob, getActiveAiJobs, getAiJobStats } from "./utils/dbHardening";
-import { getUncachableStripeClient } from "./stripeClient";
+import { getUncachableStripeClient, STRIPE_SUSPENDED } from "./stripeClient";
 import { 
   createCheckoutSession, 
   createPortalSession, 
@@ -613,6 +613,9 @@ export async function registerRoutes(
   
   // POST /api/billing/checkout - Create Stripe checkout session
   app.post("/api/billing/checkout", requireAuth, async (req, res) => {
+    if (STRIPE_SUSPENDED) {
+      return res.status(503).json({ error: "Billing is temporarily unavailable", suspended: true });
+    }
     try {
       const { plan, billingPeriod, addSecondCase, archiveMode } = req.body;
       const userId = req.session.userId!;
@@ -652,6 +655,9 @@ export async function registerRoutes(
 
   // POST /api/billing/portal - Create Stripe customer portal session
   app.post("/api/billing/portal", requireAuth, async (req, res) => {
+    if (STRIPE_SUSPENDED) {
+      return res.status(503).json({ error: "Billing is temporarily unavailable", suspended: true });
+    }
     try {
       const userId = req.session.userId!;
       const origin = req.headers.origin || `https://${req.headers.host}`;
@@ -671,6 +677,9 @@ export async function registerRoutes(
 
   // POST /api/billing/processing-pack/checkout - Purchase processing pack credits
   app.post("/api/billing/processing-pack/checkout", requireAuth, async (req, res) => {
+    if (STRIPE_SUSPENDED) {
+      return res.status(503).json({ error: "Billing is temporarily unavailable", suspended: true });
+    }
     try {
       const { packType } = req.body;
       const userId = req.session.userId!;
@@ -729,6 +738,9 @@ export async function registerRoutes(
 
   // Legacy endpoint for Plans.tsx compatibility
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    if (STRIPE_SUSPENDED) {
+      return res.status(503).json({ error: "Billing is temporarily unavailable", suspended: true });
+    }
     try {
       const { planId, billingPeriod } = req.body;
 
