@@ -154,7 +154,42 @@ Most errors are TypeScript type mismatches that don't block runtime:
 
 ---
 
-## 8. BLOCKING ISSUES
+## 8. API SMOKE TEST RESULTS
+
+**Run:** `npx tsx script/apiSmoke.ts`
+
+| Endpoint | Method | Status | Time |
+|----------|--------|--------|------|
+| /api/health | GET | PASS | 46ms |
+| /api/health/db | GET | PASS | 353ms |
+| /api/health/session | GET | PASS | 2ms |
+| /api/health/timeline | GET | PASS | 53ms |
+| /api/health/evidence | GET | PASS | 51ms |
+| /api/health/documents | GET | PASS | 50ms |
+| /api/health/docx | GET | PASS | 2ms |
+| /api/auth/me (unauth) | GET | PASS | 2ms |
+| /api/profile (unauth) | GET | PASS | 2ms |
+| /api/cases (unauth) | GET | PASS | 2ms |
+| /api/turnstile/site-key | GET | PASS | 2ms |
+| /api/auth/turnstile-status | GET | PASS | 4ms |
+| /api/auth/login (invalid) | POST | PASS | 64ms |
+
+**Total: 13 PASS, 0 FAIL, 0 SKIP**
+
+---
+
+## 9. TEST STRUCTURE CREATED
+
+| File | Purpose |
+|------|---------|
+| tests/ui-smoke.spec.ts | Playwright UI test cases (requires installation) |
+| tests/helpers/login.ts | Authentication helper for tests |
+| script/auditRoutes.ts | Route verification script |
+| script/apiSmoke.ts | API endpoint smoke tests |
+
+---
+
+## 10. BLOCKING ISSUES
 
 | Issue | Severity | Status |
 |-------|----------|--------|
@@ -164,7 +199,7 @@ Most errors are TypeScript type mismatches that don't block runtime:
 
 ---
 
-## 9. FINAL VERDICT
+## 11. FINAL VERDICT
 
 **Ready for testing tomorrow:** YES
 
