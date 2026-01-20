@@ -755,7 +755,7 @@ async function testLexiChat(): Promise<boolean> {
   if (!authCookie || !testThreadId) {
     addResult({
       category: 'Lexi',
-      test: 'Send Message',
+      test: 'Send Message (General Thread)',
       status: 'SKIP',
       error: 'No thread ID',
     });
@@ -763,23 +763,24 @@ async function testLexiChat(): Promise<boolean> {
   }
   
   const start = Date.now();
+  // Test WITHOUT caseId - this is the critical "general thread" test
   const result = await apiCall('POST', '/api/lexi/chat', {
     threadId: testThreadId,
-    message: 'Hello, this is a functional audit test.',
-    caseId: testCaseId || undefined,
+    message: 'Hello, what is family law?',
   });
   
-  // Accept 200 (success) or 400 (validation) as responsive
-  const isValid = result.status === 200 || result.status === 400 || result.status === 202;
+  // Check for successful response with assistant message
+  const hasAssistantMessage = result.data?.assistantMessage?.content;
+  const isValid = result.status === 200 && hasAssistantMessage;
   
   addResult({
     category: 'Lexi',
-    test: 'Send Message',
+    test: 'Send Message (General Thread)',
     endpoint: '/api/lexi/chat',
     dbTables: ['lexi_messages'],
     status: isValid ? 'PASS' : 'FAIL',
-    details: isValid ? `Endpoint responsive (${result.status})` : undefined,
-    error: isValid ? undefined : result.error,
+    details: isValid ? `Got response: ${hasAssistantMessage?.substring(0, 50)}...` : undefined,
+    error: isValid ? undefined : result.error || `HTTP ${result.status}`,
     duration: Date.now() - start,
   });
   return isValid;

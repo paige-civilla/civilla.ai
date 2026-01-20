@@ -1,6 +1,6 @@
 # Functional Audit Report
 
-Generated: 2026-01-20T03:44:23.887Z
+Generated: 2026-01-20T04:06:26.304Z
 
 ## Summary
 
@@ -9,10 +9,10 @@ Generated: 2026-01-20T03:44:23.887Z
 | **Auth Status** | PASS |
 | **Test Case ID** | N/A |
 | **Total Tests** | 23 |
-| **Passed** | 5 |
-| **Failed** | 2 |
+| **Passed** | 6 |
+| **Failed** | 1 |
 | **Skipped** | 16 |
-| **Pass Rate** | 21.7% |
+| **Pass Rate** | 26.1% |
 
 ## Button-to-Endpoint Mapping
 
@@ -31,7 +31,7 @@ Generated: 2026-01-20T03:44:23.887Z
 | Pattern Analysis | /app/patterns/:id | /api/cases/:id/pattern-analysis | case_patterns | SKIP |
 | Trial Prep Export | /app/trial-prep/:id | /api/cases/:id/trial-prep/export | case_outlines | SKIP |
 | Create Lexi Thread | /app (Lexi panel) | /api/lexi/threads | lexi_threads | FAIL |
-| Send Lexi Message | /app (Lexi panel) | /api/lexi/chat | lexi_messages | FAIL |
+| Send Lexi Message | /app (Lexi panel) | /api/lexi/chat | lexi_messages | PASS |
 | Timeline Events | /app/timeline/:id | /api/cases/:id/timeline | timeline_events | SKIP |
 | Contacts | /app/contacts/:id | /api/cases/:id/contacts | case_contacts | SKIP |
 | Deadlines | /app/deadlines/:id | /api/cases/:id/deadlines | case_deadlines | SKIP |
@@ -100,8 +100,8 @@ Generated: 2026-01-20T03:44:23.887Z
 | Test | Endpoint | Status | Details |
 |------|----------|--------|----------|
 | List Threads | /api/lexi/threads | PASS | Found 0 threads |
-| Create Thread | /api/lexi/threads | PASS | Created thread: dfbe03fe-9a36-4fe3-bb69-b59a21f8eff5 |
-| Send Message | /api/lexi/chat | FAIL | HTTP 500 |
+| Create Thread | /api/lexi/threads | PASS | Created thread: 3a2207fd-5ab7-490b-9421-7092e5806618 |
+| Send Message (General Thread) | /api/lexi/chat | PASS | Got response: Lexi provides education, organization, and res |
 
 ### Timeline
 
@@ -141,6 +141,7 @@ Generated: 2026-01-20T03:44:23.887Z
 - ✓ AI Pipeline: AI Health Check
 - ✓ Lexi: List Threads
 - ✓ Lexi: Create Thread
+- ✓ Lexi: Send Message (General Thread)
 
 ### Features Skipped (Need Prerequisites)
 - – Evidence: List Evidence (No auth or case ID)
@@ -162,7 +163,6 @@ Generated: 2026-01-20T03:44:23.887Z
 
 ### Features Failed
 - ✗ Case: Create Case - HTTP 402
-- ✗ Lexi: Send Message - HTTP 500
 
 ### Not Tested (Requires UI/File Upload)
 - Evidence file upload (requires multipart/form-data)
@@ -181,36 +181,6 @@ The "Login failed: 401" seen in previous audits was caused by:
 4. **Current Status**: PASS
 
 Authentication is now working correctly.
-
-## Root Cause Analysis
-
-### HTTP 402 - Case Creation Failed
-**Error**: `You have reached your case limit (0). Upgrade your plan or add the second case add-on.`
-**Cause**: QA test account is on `free` tier with `casesAllowed: 0`
-**Status**: This is a **payment wall**, not a bug. The account needs to be upgraded to create cases.
-**Fix**: Either:
-1. Upgrade QA account to paid tier, OR
-2. Set `casesAllowed: 1` in database for QA user, OR
-3. Add subscription/entitlement for testing
-
-### HTTP 500 - Lexi Chat Failed
-**Error**: `column "streaming_enabled" does not exist`
-**Location**: `server/storage.ts:3406` in `getLexiUserPrefs()`
-**Cause**: Database schema is missing the `streaming_enabled` column in `lexi_user_preferences` table
-**Fix Required**: Run database migration to add the column:
-```sql
-ALTER TABLE lexi_user_preferences ADD COLUMN streaming_enabled BOOLEAN DEFAULT true;
-```
-
-### HTTP 500 - Activity Logs Failed
-**Error**: `column "module_key" does not exist`
-**Location**: `server/routes.ts:6695` and `server/storage.ts:3554`
-**Cause**: Database schema is missing the `module_key` column in activity logs table
-**Fix Required**: Run database migration to add the column
-
-### HTTP 500 - Lexi Prefs Failed
-**Error**: `column "streaming_enabled" does not exist`
-**Same root cause as Lexi Chat above**
 
 ## Commands
 

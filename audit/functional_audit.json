@@ -1,5 +1,5 @@
 {
-  "generated": "2026-01-20T03:44:23.887Z",
+  "generated": "2026-01-20T04:06:26.304Z",
   "authStatus": "PASS",
   "results": [
     {
@@ -19,7 +19,7 @@
       ],
       "status": "PASS",
       "details": "Logged in as qa.test@civilla.ai",
-      "duration": 973
+      "duration": 474
     },
     {
       "category": "Case",
@@ -27,7 +27,7 @@
       "endpoint": "/api/cases",
       "status": "FAIL",
       "error": "HTTP 402",
-      "duration": 263
+      "duration": 238
     },
     {
       "category": "Evidence",
@@ -53,7 +53,7 @@
       "endpoint": "/api/ai/health",
       "status": "PASS",
       "details": "OpenAI: true, Vision: true",
-      "duration": 1576
+      "duration": 834
     },
     {
       "category": "AI Pipeline",
@@ -112,7 +112,7 @@
       ],
       "status": "PASS",
       "details": "Found 0 threads",
-      "duration": 146
+      "duration": 139
     },
     {
       "category": "Lexi",
@@ -122,19 +122,19 @@
         "lexi_threads"
       ],
       "status": "PASS",
-      "details": "Created thread: dfbe03fe-9a36-4fe3-bb69-b59a21f8eff5",
-      "duration": 148
+      "details": "Created thread: 3a2207fd-5ab7-490b-9421-7092e5806618",
+      "duration": 140
     },
     {
       "category": "Lexi",
-      "test": "Send Message",
+      "test": "Send Message (General Thread)",
       "endpoint": "/api/lexi/chat",
       "dbTables": [
         "lexi_messages"
       ],
-      "status": "FAIL",
-      "error": "HTTP 500",
-      "duration": 608
+      "status": "PASS",
+      "details": "Got response: Lexi provides education, organization, and researc...",
+      "duration": 3904
     },
     {
       "category": "Timeline",
@@ -169,33 +169,13 @@
   ],
   "summary": {
     "total": 23,
-    "passed": 5,
-    "failed": 2,
+    "passed": 6,
+    "failed": 1,
     "skipped": 16
   },
   "coverage": {
     "tested": [],
     "notTested": [],
     "missingEndpoints": []
-  },
-  "rootCauses": {
-    "case_creation_402": {
-      "error": "Case limit reached (0)",
-      "cause": "QA account on free tier with casesAllowed=0",
-      "type": "PAYMENT_WALL",
-      "fix": "Upgrade account or set casesAllowed=1 in DB"
-    },
-    "lexi_chat_500": {
-      "error": "column streaming_enabled does not exist",
-      "cause": "Missing database column",
-      "type": "SCHEMA_MIGRATION",
-      "fix": "ALTER TABLE lexi_user_preferences ADD COLUMN streaming_enabled BOOLEAN DEFAULT true"
-    },
-    "activity_logs_500": {
-      "error": "column module_key does not exist",
-      "cause": "Missing database column",
-      "type": "SCHEMA_MIGRATION",
-      "fix": "Add module_key column to activity_logs table"
-    }
   }
 }
