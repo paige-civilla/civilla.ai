@@ -1,0 +1,1338 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/activity-logs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/activity/module-view"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/acknowledge-alert"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/ai-jobs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/ai-jobs/requeue-stale"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/ai-status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/audit"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/contracts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/diagnostics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/entitlements"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/feature-flag"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/metrics"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/refresh-entitlements"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/smoke"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/system-health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/users"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/users/:userId/roles"
+  },
+  {
+    "method": "GET",
+    "path": "/api/ai/diagnostics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/ai/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/analytics/case-overview/:caseId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/analytics/event"
+  },
+  {
+    "method": "GET",
+    "path": "/api/analytics/user-overview"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/anchors/:anchorId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/anchors/:anchorId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/attorney/accept"
+  },
+  {
+    "method": "GET",
+    "path": "/api/attorney/shared-cases"
+  },
+  {
+    "method": "GET",
+    "path": "/api/audit/run"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/login"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/logout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/auth/me"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/register"
+  },
+  {
+    "method": "GET",
+    "path": "/api/auth/turnstile-status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/billing/checkout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing/credits"
+  },
+  {
+    "method": "POST",
+    "path": "/api/billing/portal"
+  },
+  {
+    "method": "POST",
+    "path": "/api/billing/processing-pack/checkout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing/status"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/calendar/items/:itemId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/calendar/items/:itemId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/ai-analyses"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/ai-jobs/status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/ai-jobs/status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/ai/status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/anchors"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/attorney/access"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/attorney/collaborators"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cases/:caseId/attorney/collaborators/:collaboratorUserId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/attorney/invites"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/attorney/invites"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cases/:caseId/attorney/invites/:inviteId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/background-ai-status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/calendar"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/calendar/categories"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/calendar/categories"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/calendar/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/calendar/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/child-support/estimate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/child-support/research"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/child-support/research"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/children"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/children"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/citations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/claims"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/claims"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/claims/:claimId/links"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/claims/:claimId/links"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/claims/retry"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/communications"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/communications"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/contacts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/contacts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/court-templates/compile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/court-templates/preflight"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/dashboard/calendar"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/deadlines"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/deadlines"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/documents"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/:documentId/acknowledge"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/autofill"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/compile-claims"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/documents/compile-claims/preflight"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/compile-template"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/field-mapping"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/generate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/documents/templates/:templateKey/preflight"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/draft-outlines"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/draft-outlines"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/draft-readiness"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/draft-readiness"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence-notes"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId/evidence/:evidenceId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/ai-analyses"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/ai-analyses"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/anchors"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/anchors"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/citations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/claims/suggest"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/extraction"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/extraction"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/extraction"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/extraction/retry"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/extraction/run"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/facts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/facts/run"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/notes-full"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/notes-full"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/ocr-pages"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/process"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:evidenceId/process"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/evidence/:fileId/notes"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/evidence/:fileId/notes"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/exhibit-lists"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/exhibit-lists"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/exhibit-packets"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/exhibit-packets"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/exhibit-snippets"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/exhibit-snippets"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/facts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/facts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/facts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/facts/suggest"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/form-packs/search"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/generated-documents"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/generated-exhibit-packets"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/issues"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/issues"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/lexi/context"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/lexi/memory"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId/lexi/memory"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/lexi/memory/rebuild"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/lexi/threads"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/lexi/threads"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/parenting-plan"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/parenting-plan"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/parenting-plan/research"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/parenting-plan/research"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/pattern-analysis"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/pattern-analysis/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/pattern-analysis/input"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/phase-status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/quality-check"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/readiness"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/resources"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/resources"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId/resources/:resourceId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cases/:caseId/resources/:resourceId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/resources/:resourceId/field-maps"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/resources/:resourceId/field-maps"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/resources/:resourceId/field-maps/bulk"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/resources/:resourceId/field-maps/suggest"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/rule-terms"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/rule-terms"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/search"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/tasks"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/tasks"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/template-autofill"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/templates/field-mapping"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/templates/preflight"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/timeline"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/timeline"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/timeline/categories"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/timeline/categories"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId/timeline/categories/:categoryId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cases/:caseId/timeline/categories/:categoryId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/timeline/categories/seed"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/timeline/events/:eventId/links"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/timeline/events/:eventId/links"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/transparency-log"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/trial-prep-shortlist"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/trial-prep-shortlist"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/trial-prep/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/trial-prep/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/cases/:caseId/trial-prep/items"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/cases/:caseId/trial-prep/items/:itemId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cases/:caseId/trial-prep/items/:itemId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/cases/:caseId/trial-prep/sections"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/children/:childId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/children/:childId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/claim-links/:linkId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/claims/:claimId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/claims/:claimId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/claims/:claimId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/claims/:claimId/citations/:citationId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/claims/:claimId/citations/:citationId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/claims/:claimId/citations/auto"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/claims/:claimId/lock"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/claims/:claimId/unlock"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/communications/:commId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/communications/:commId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/communications/:commId/mark-resolved"
+  },
+  {
+    "method": "POST",
+    "path": "/api/communications/:commId/push-to-calendar"
+  },
+  {
+    "method": "POST",
+    "path": "/api/communications/:commId/push-to-timeline"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/contacts/:contactId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/contacts/:contactId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/court-templates"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/deadlines/:deadlineId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/deadlines/:deadlineId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/document-templates"
+  },
+  {
+    "method": "GET",
+    "path": "/api/documents/:docId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/documents/:docId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/documents/:docId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/documents/:docId/duplicate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/documents/:docId/export/docx"
+  },
+  {
+    "method": "GET",
+    "path": "/api/draft-outlines/:outlineId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/draft-outlines/:outlineId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/draft-outlines/:outlineId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/draft-outlines/:outlineId/claims"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/draft-outlines/:outlineId/claims/:claimId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/draft-outlines/:outlineId/claims/bulk"
+  },
+  {
+    "method": "POST",
+    "path": "/api/draft-outlines/:outlineId/compile"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/evidence-ai-analyses/:analysisId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/evidence-ai-analyses/:analysisId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/evidence-notes/:noteId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/evidence-notes/:noteId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/evidence-notes/:noteId/create-timeline-event"
+  },
+  {
+    "method": "POST",
+    "path": "/api/evidence-notes/:noteId/link-exhibit"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/evidence-notes/:noteId/unlink-exhibit/:exhibitListId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/evidence/:evidenceId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/evidence/:evidenceId/add-to-exhibit"
+  },
+  {
+    "method": "GET",
+    "path": "/api/evidence/:evidenceId/download"
+  },
+  {
+    "method": "GET",
+    "path": "/api/evidence/:evidenceId/exhibits"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/exhibit-lists/:listId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/exhibit-lists/:listId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-lists/:listId/evidence"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/exhibit-lists/:listId/evidence/:evidenceFileId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/exhibit-lists/:listId/exhibits"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-lists/:listId/exhibits"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-lists/:listId/exhibits/reorder"
+  },
+  {
+    "method": "GET",
+    "path": "/api/exhibit-lists/:listId/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/exhibit-lists/:listId/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-lists/:listId/notes"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/exhibit-lists/:listId/notes/:evidenceNoteId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-lists/:listId/reorder"
+  },
+  {
+    "method": "GET",
+    "path": "/api/exhibit-packets/:packetId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/exhibit-packets/:packetId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/exhibit-packets/:packetId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-packets/:packetId/generate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/exhibit-packets/:packetId/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-packets/:packetId/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibit-packets/:packetId/items/reorder"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/exhibit-snippets/:snippetId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/exhibit-snippets/:snippetId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/exhibits/:exhibitId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/exhibits/:exhibitId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/exhibits/:exhibitId/evidence"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibits/:exhibitId/evidence/attach"
+  },
+  {
+    "method": "POST",
+    "path": "/api/exhibits/:exhibitId/evidence/detach"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/facts/:factId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/facts/:factId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/facts/:factId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/facts/:factId/citations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/facts/:factId/citations/:citationId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/facts/:factId/citations/:citationId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/facts/:factId/promote-to-claim"
+  },
+  {
+    "method": "GET",
+    "path": "/api/form-packs/states"
+  },
+  {
+    "method": "GET",
+    "path": "/api/generated-documents/:docId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/grants/metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/grants/metrics.csv"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health/db"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health/documents"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health/docx"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health/evidence"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health/session"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health/timeline"
+  },
+  {
+    "method": "POST",
+    "path": "/api/intake/start"
+  },
+  {
+    "method": "GET",
+    "path": "/api/issues/:issueId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/issues/:issueId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/issues/:issueId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/issues/:issueId/claims/:claimId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/issues/:issueId/claims/:claimId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/lexi/chat"
+  },
+  {
+    "method": "POST",
+    "path": "/api/lexi/chat/stream"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/context"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/disclaimer"
+  },
+  {
+    "method": "POST",
+    "path": "/api/lexi/feedback"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/feedback"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/prefs"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/lexi/prefs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/threads"
+  },
+  {
+    "method": "POST",
+    "path": "/api/lexi/threads"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/lexi/threads/:threadId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/lexi/threads/:threadId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/lexi/threads/:threadId/messages"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/notes-full/:noteId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/notes-full/:noteId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/ocr-pages/:ocrPageId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/onboarding/complete"
+  },
+  {
+    "method": "POST",
+    "path": "/api/onboarding/lite"
+  },
+  {
+    "method": "GET",
+    "path": "/api/onboarding/policies"
+  },
+  {
+    "method": "GET",
+    "path": "/api/onboarding/status"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/packet-items/:itemId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/packet-items/:itemId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/packet-items/:itemId/evidence"
+  },
+  {
+    "method": "POST",
+    "path": "/api/packet-items/:itemId/evidence/attach"
+  },
+  {
+    "method": "POST",
+    "path": "/api/packet-items/:itemId/evidence/detach"
+  },
+  {
+    "method": "POST",
+    "path": "/api/packet-items/:itemId/evidence/reorder"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/parenting-plan/:planId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/parenting-plan/:planId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/parenting-plan/:planId/export-docx"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/parenting-plan/:planId/sections/:sectionKey"
+  },
+  {
+    "method": "GET",
+    "path": "/api/profile"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/profile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/search"
+  },
+  {
+    "method": "POST",
+    "path": "/api/stripe/create-checkout-session"
+  },
+  {
+    "method": "GET",
+    "path": "/api/system/health-ai"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/tasks/:taskId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/tasks/:taskId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/template-fields/:templateType"
+  },
+  {
+    "method": "GET",
+    "path": "/api/templates"
+  },
+  {
+    "method": "POST",
+    "path": "/api/templates/docx"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/timeline/:eventId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/timeline/:eventId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/timeline/event-links/:linkId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/trial-prep-shortlist/:itemId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/trial-prep-shortlist/:itemId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/turnstile/site-key"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/accept-drafting-disclaimer"
+  },
+  {
+    "method": "GET",
+    "path": "/api/user/tour-state"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/user/tour-state"
+  },
+  {
+    "method": "GET",
+    "path": "/api/user/transparency-log"
+  },
+  {
+    "method": "GET",
+    "path": "/api/vision/health"
+  }
+]
