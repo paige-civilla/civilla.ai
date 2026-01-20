@@ -88,11 +88,11 @@
     "path": "/api/analytics/user-overview"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/anchors/:anchorId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/anchors/:anchorId"
   },
   {
@@ -108,8 +108,16 @@
     "path": "/api/audit/run"
   },
   {
+    "method": "GET",
+    "path": "/api/auth/login"
+  },
+  {
     "method": "POST",
     "path": "/api/auth/login"
+  },
+  {
+    "method": "GET",
+    "path": "/api/auth/logout"
   },
   {
     "method": "POST",
@@ -118,6 +126,10 @@
   {
     "method": "GET",
     "path": "/api/auth/me"
+  },
+  {
+    "method": "GET",
+    "path": "/api/auth/register"
   },
   {
     "method": "POST",
@@ -148,11 +160,11 @@
     "path": "/api/billing/status"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/calendar/items/:itemId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/calendar/items/:itemId"
   },
   {
@@ -204,11 +216,11 @@
     "path": "/api/cases/:caseId/attorney/collaborators/:collaboratorUserId"
   },
   {
-    "method": "POST",
+    "method": "GET",
     "path": "/api/cases/:caseId/attorney/invites"
   },
   {
-    "method": "GET",
+    "method": "POST",
     "path": "/api/cases/:caseId/attorney/invites"
   },
   {
@@ -464,11 +476,11 @@
     "path": "/api/cases/:caseId/evidence/:evidenceId/ocr-pages"
   },
   {
-    "method": "POST",
+    "method": "GET",
     "path": "/api/cases/:caseId/evidence/:evidenceId/process"
   },
   {
-    "method": "GET",
+    "method": "POST",
     "path": "/api/cases/:caseId/evidence/:evidenceId/process"
   },
   {
@@ -612,11 +624,11 @@
     "path": "/api/cases/:caseId/resources"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/cases/:caseId/resources/:resourceId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/cases/:caseId/resources/:resourceId"
   },
   {
@@ -628,11 +640,11 @@
     "path": "/api/cases/:caseId/resources/:resourceId/field-maps"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId"
   },
   {
@@ -692,11 +704,11 @@
     "path": "/api/cases/:caseId/timeline/categories"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/cases/:caseId/timeline/categories/:categoryId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/cases/:caseId/timeline/categories/:categoryId"
   },
   {
@@ -736,11 +748,11 @@
     "path": "/api/cases/:caseId/trial-prep/items"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/cases/:caseId/trial-prep/items/:itemId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/cases/:caseId/trial-prep/items/:itemId"
   },
   {
@@ -748,16 +760,20 @@
     "path": "/api/cases/:caseId/trial-prep/sections"
   },
   {
+    "method": "DELETE",
+    "path": "/api/children/:childId"
+  },
+  {
     "method": "PATCH",
     "path": "/api/children/:childId"
   },
   {
     "method": "DELETE",
-    "path": "/api/children/:childId"
+    "path": "/api/claim-links/:linkId"
   },
   {
     "method": "DELETE",
-    "path": "/api/claim-links/:linkId"
+    "path": "/api/claims/:claimId"
   },
   {
     "method": "GET",
@@ -769,14 +785,10 @@
   },
   {
     "method": "DELETE",
-    "path": "/api/claims/:claimId"
-  },
-  {
-    "method": "POST",
     "path": "/api/claims/:claimId/citations/:citationId"
   },
   {
-    "method": "DELETE",
+    "method": "POST",
     "path": "/api/claims/:claimId/citations/:citationId"
   },
   {
@@ -792,11 +804,11 @@
     "path": "/api/claims/:claimId/unlock"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/communications/:commId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/communications/:commId"
   },
   {
@@ -812,11 +824,11 @@
     "path": "/api/communications/:commId/push-to-timeline"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/contacts/:contactId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/contacts/:contactId"
   },
   {
@@ -824,11 +836,11 @@
     "path": "/api/court-templates"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/deadlines/:deadlineId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/deadlines/:deadlineId"
   },
   {
@@ -836,15 +848,15 @@
     "path": "/api/document-templates"
   },
   {
+    "method": "DELETE",
+    "path": "/api/documents/:docId"
+  },
+  {
     "method": "GET",
     "path": "/api/documents/:docId"
   },
   {
     "method": "PATCH",
-    "path": "/api/documents/:docId"
-  },
-  {
-    "method": "DELETE",
     "path": "/api/documents/:docId"
   },
   {
@@ -856,15 +868,15 @@
     "path": "/api/documents/:docId/export/docx"
   },
   {
+    "method": "DELETE",
+    "path": "/api/draft-outlines/:outlineId"
+  },
+  {
     "method": "GET",
     "path": "/api/draft-outlines/:outlineId"
   },
   {
     "method": "PATCH",
-    "path": "/api/draft-outlines/:outlineId"
-  },
-  {
-    "method": "DELETE",
     "path": "/api/draft-outlines/:outlineId"
   },
   {
@@ -884,19 +896,19 @@
     "path": "/api/draft-outlines/:outlineId/compile"
   },
   {
-    "method": "PATCH",
-    "path": "/api/evidence-ai-analyses/:analysisId"
-  },
-  {
     "method": "DELETE",
     "path": "/api/evidence-ai-analyses/:analysisId"
   },
   {
     "method": "PATCH",
+    "path": "/api/evidence-ai-analyses/:analysisId"
+  },
+  {
+    "method": "DELETE",
     "path": "/api/evidence-notes/:noteId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/evidence-notes/:noteId"
   },
   {
@@ -928,11 +940,11 @@
     "path": "/api/evidence/:evidenceId/exhibits"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/exhibit-lists/:listId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/exhibit-lists/:listId"
   },
   {
@@ -976,15 +988,15 @@
     "path": "/api/exhibit-lists/:listId/reorder"
   },
   {
+    "method": "DELETE",
+    "path": "/api/exhibit-packets/:packetId"
+  },
+  {
     "method": "GET",
     "path": "/api/exhibit-packets/:packetId"
   },
   {
     "method": "PATCH",
-    "path": "/api/exhibit-packets/:packetId"
-  },
-  {
-    "method": "DELETE",
     "path": "/api/exhibit-packets/:packetId"
   },
   {
@@ -1004,19 +1016,19 @@
     "path": "/api/exhibit-packets/:packetId/items/reorder"
   },
   {
-    "method": "PATCH",
-    "path": "/api/exhibit-snippets/:snippetId"
-  },
-  {
     "method": "DELETE",
     "path": "/api/exhibit-snippets/:snippetId"
   },
   {
     "method": "PATCH",
+    "path": "/api/exhibit-snippets/:snippetId"
+  },
+  {
+    "method": "DELETE",
     "path": "/api/exhibits/:exhibitId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/exhibits/:exhibitId"
   },
   {
@@ -1036,11 +1048,11 @@
     "path": "/api/facts/:factId"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/facts/:factId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/facts/:factId"
   },
   {
@@ -1048,11 +1060,11 @@
     "path": "/api/facts/:factId/citations"
   },
   {
-    "method": "POST",
+    "method": "DELETE",
     "path": "/api/facts/:factId/citations/:citationId"
   },
   {
-    "method": "DELETE",
+    "method": "POST",
     "path": "/api/facts/:factId/citations/:citationId"
   },
   {
@@ -1108,6 +1120,10 @@
     "path": "/api/intake/start"
   },
   {
+    "method": "DELETE",
+    "path": "/api/issues/:issueId"
+  },
+  {
     "method": "GET",
     "path": "/api/issues/:issueId"
   },
@@ -1117,14 +1133,10 @@
   },
   {
     "method": "DELETE",
-    "path": "/api/issues/:issueId"
-  },
-  {
-    "method": "POST",
     "path": "/api/issues/:issueId/claims/:claimId"
   },
   {
-    "method": "DELETE",
+    "method": "POST",
     "path": "/api/issues/:issueId/claims/:claimId"
   },
   {
@@ -1144,11 +1156,11 @@
     "path": "/api/lexi/disclaimer"
   },
   {
-    "method": "POST",
+    "method": "GET",
     "path": "/api/lexi/feedback"
   },
   {
-    "method": "GET",
+    "method": "POST",
     "path": "/api/lexi/feedback"
   },
   {
@@ -1172,11 +1184,11 @@
     "path": "/api/lexi/threads"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/lexi/threads/:threadId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/lexi/threads/:threadId"
   },
   {
@@ -1184,11 +1196,11 @@
     "path": "/api/lexi/threads/:threadId/messages"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/notes-full/:noteId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/notes-full/:noteId"
   },
   {
@@ -1212,11 +1224,11 @@
     "path": "/api/onboarding/status"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/packet-items/:itemId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/packet-items/:itemId"
   },
   {
@@ -1236,11 +1248,11 @@
     "path": "/api/packet-items/:itemId/evidence/reorder"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/parenting-plan/:planId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/parenting-plan/:planId"
   },
   {
@@ -1272,11 +1284,11 @@
     "path": "/api/system/health-ai"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/tasks/:taskId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/tasks/:taskId"
   },
   {
@@ -1292,11 +1304,11 @@
     "path": "/api/templates/docx"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/timeline/:eventId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/timeline/:eventId"
   },
   {
@@ -1304,11 +1316,11 @@
     "path": "/api/timeline/event-links/:linkId"
   },
   {
-    "method": "PATCH",
+    "method": "DELETE",
     "path": "/api/trial-prep-shortlist/:itemId"
   },
   {
-    "method": "DELETE",
+    "method": "PATCH",
     "path": "/api/trial-prep-shortlist/:itemId"
   },
   {

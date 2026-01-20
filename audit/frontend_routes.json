@@ -1,352 +1,730 @@
-[
-  {
-    "path": "/",
-    "component": "Home",
-    "type": "page"
-  },
-  {
-    "path": "/how-civilla-works",
-    "component": "HowCivillaWorks",
-    "type": "page"
-  },
-  {
-    "path": "/meet-the-founders",
-    "component": "MeetTheFounders",
-    "type": "page"
-  },
-  {
-    "path": "/our-mission",
-    "component": "OurMission",
-    "type": "page"
-  },
-  {
-    "path": "/plans",
-    "component": "Plans",
-    "type": "page"
-  },
-  {
-    "path": "/legal-compliance",
-    "component": "LegalCompliance",
-    "type": "page"
-  },
-  {
-    "path": "/privacy-policy",
-    "component": "PrivacyPolicy",
-    "type": "page"
-  },
-  {
-    "path": "/safety-support",
-    "component": "SafetySupport",
-    "type": "page"
-  },
-  {
-    "path": "/accessibility",
-    "component": "Accessibility",
-    "type": "page"
-  },
-  {
-    "path": "/contact",
-    "component": "Contact",
-    "type": "page"
-  },
-  {
-    "path": "/terms",
-    "component": "TermsOfService",
-    "type": "page"
-  },
-  {
-    "path": "/login",
-    "component": "Login",
-    "type": "page"
-  },
-  {
-    "path": "/register",
-    "component": "Register",
-    "type": "page"
-  },
-  {
-    "path": "/admin-login",
-    "component": "AdminLogin",
-    "type": "page"
-  },
-  {
-    "path": "/careers",
-    "component": "Careers",
-    "type": "page"
-  },
-  {
-    "path": "/wall-of-wins",
-    "component": "WallOfWins",
-    "type": "page"
-  },
-  {
-    "path": "/faq",
-    "component": "FAQPage",
-    "type": "page"
-  },
-  {
-    "path": "/attorney/accept",
-    "component": "AttorneyAcceptInvite",
-    "type": "page"
-  },
-  {
-    "path": "/app/attorney/case/:caseId",
-    "component": "AttorneyPortal",
-    "type": "page"
-  },
-  {
-    "path": "/app/onboarding",
-    "component": "OnboardingLite",
-    "type": "page"
-  },
-  {
-    "path": "/app/lexi-intake",
-    "component": "LexiIntake",
-    "type": "page"
-  },
-  {
-    "path": "/app/start-here",
-    "component": "AppStartHere",
-    "type": "page"
-  },
-  {
-    "path": "/app/admin",
-    "component": "AppAdminDashboard",
-    "type": "page"
-  },
-  {
-    "path": "/app/admin/policy",
-    "component": "AppAdminPolicy",
-    "type": "page"
-  },
-  {
-    "path": "/app/grants",
-    "component": "AppGrantDashboard",
-    "type": "page"
-  },
-  {
-    "path": "/app/grants/print",
-    "component": "AppGrantDashboardPrint",
-    "type": "page"
-  },
-  {
-    "path": "/app/account",
-    "component": "AppAccountSettings",
-    "type": "page"
-  },
-  {
-    "path": "/app/cases",
-    "component": "AppCases",
-    "type": "page"
-  },
-  {
-    "path": "/app/dashboard/:caseId",
-    "component": "AppDashboard",
-    "type": "page"
-  },
-  {
-    "path": "/app/case/:caseId",
-    "component": "AppCase",
-    "type": "page"
-  },
-  {
-    "path": "/app/case-settings/:caseId",
-    "component": "AppCaseSettings",
-    "type": "page"
-  },
-  {
-    "path": "/app/documents/:caseId",
-    "component": "AppDocuments",
-    "type": "page"
-  },
-  {
-    "path": "/app/timeline/:caseId",
-    "component": "AppTimeline",
-    "type": "page"
-  },
-  {
-    "path": "/app/evidence/:caseId",
-    "component": "AppEvidence",
-    "type": "page"
-  },
-  {
-    "path": "/app/exhibits/:caseId",
-    "component": "AppExhibits",
-    "type": "page"
-  },
-  {
-    "path": "/app/tasks/:caseId",
-    "component": "AppTasks",
-    "type": "page"
-  },
-  {
-    "path": "/app/deadlines/:caseId",
-    "component": "AppDeadlines",
-    "type": "page"
-  },
-  {
-    "path": "/app/patterns/:caseId",
-    "component": "AppPatterns",
-    "type": "page"
-  },
-  {
-    "path": "/app/contacts/:caseId",
-    "component": "AppContacts",
-    "type": "page"
-  },
-  {
-    "path": "/app/communications/:caseId",
-    "component": "AppCommunications",
-    "type": "page"
-  },
-  {
-    "path": "/app/child-support/:caseId",
-    "component": "AppChildSupport",
-    "type": "page"
-  },
-  {
-    "path": "/app/children/:caseId",
-    "component": "AppChildren",
-    "type": "page"
-  },
-  {
-    "path": "/app/library/:caseId",
-    "component": "AppDocumentLibrary",
-    "type": "page"
-  },
-  {
-    "path": "/app/disclosures/:caseId",
-    "component": "AppDisclosures",
-    "type": "page"
-  },
-  {
-    "path": "/app/trial-prep/:caseId",
-    "component": "AppTrialPrep",
-    "type": "page"
-  },
-  {
-    "path": "/app/trial-prep/:caseId/print",
-    "component": "AppTrialPrepPrint",
-    "type": "page"
-  },
-  {
-    "path": "/app/parenting-plan/:caseId",
-    "component": "AppParentingPlan",
-    "type": "page"
-  },
-  {
-    "path": "/app/court-forms/:caseId",
-    "component": "AppCourtForms",
-    "type": "page"
-  },
-  {
-    "path": "/founders",
-    "component": "Redirect → /meet-the-founders",
-    "type": "redirect"
-  },
-  {
-    "path": "/mission",
-    "component": "Redirect → /our-mission",
-    "type": "redirect"
-  },
-  {
-    "path": "/app/dashboard",
-    "component": "CaseRedirect → dashboard",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/case",
-    "component": "CaseRedirect → case",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/documents",
-    "component": "CaseRedirect → documents",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/timeline",
-    "component": "CaseRedirect → timeline",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/evidence",
-    "component": "CaseRedirect → evidence",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/exhibits",
-    "component": "CaseRedirect → exhibits",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/tasks",
-    "component": "CaseRedirect → tasks",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/deadlines",
-    "component": "CaseRedirect → deadlines",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/patterns",
-    "component": "CaseRedirect → patterns",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/messages",
-    "component": "CaseRedirect → patterns",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/contacts",
-    "component": "CaseRedirect → contacts",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/communications",
-    "component": "CaseRedirect → communications",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/child-support",
-    "component": "CaseRedirect → child-support",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/children",
-    "component": "CaseRedirect → children",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/library",
-    "component": "CaseRedirect → library",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/disclosures",
-    "component": "CaseRedirect → disclosures",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/trial-prep",
-    "component": "CaseRedirect → trial-prep",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/parenting-plan",
-    "component": "CaseRedirect → parenting-plan",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app/court-forms",
-    "component": "CaseRedirect → court-forms",
-    "type": "case-redirect"
-  },
-  {
-    "path": "/app",
-    "component": "CaseRedirect → dashboard",
-    "type": "case-redirect"
-  }
-]
+{
+  "routes": [
+    {
+      "path": "/",
+      "component": "Home",
+      "type": "page"
+    },
+    {
+      "path": "/how-civilla-works",
+      "component": "HowCivillaWorks",
+      "type": "page"
+    },
+    {
+      "path": "/meet-the-founders",
+      "component": "MeetTheFounders",
+      "type": "page"
+    },
+    {
+      "path": "/our-mission",
+      "component": "OurMission",
+      "type": "page"
+    },
+    {
+      "path": "/plans",
+      "component": "Plans",
+      "type": "page"
+    },
+    {
+      "path": "/legal-compliance",
+      "component": "LegalCompliance",
+      "type": "page"
+    },
+    {
+      "path": "/privacy-policy",
+      "component": "PrivacyPolicy",
+      "type": "page"
+    },
+    {
+      "path": "/safety-support",
+      "component": "SafetySupport",
+      "type": "page"
+    },
+    {
+      "path": "/accessibility",
+      "component": "Accessibility",
+      "type": "page"
+    },
+    {
+      "path": "/contact",
+      "component": "Contact",
+      "type": "page"
+    },
+    {
+      "path": "/terms",
+      "component": "TermsOfService",
+      "type": "page"
+    },
+    {
+      "path": "/login",
+      "component": "Login",
+      "type": "page"
+    },
+    {
+      "path": "/register",
+      "component": "Register",
+      "type": "page"
+    },
+    {
+      "path": "/admin-login",
+      "component": "AdminLogin",
+      "type": "page"
+    },
+    {
+      "path": "/careers",
+      "component": "Careers",
+      "type": "page"
+    },
+    {
+      "path": "/wall-of-wins",
+      "component": "WallOfWins",
+      "type": "page"
+    },
+    {
+      "path": "/faq",
+      "component": "FAQPage",
+      "type": "page"
+    },
+    {
+      "path": "/attorney/accept",
+      "component": "AttorneyAcceptInvite",
+      "type": "page"
+    },
+    {
+      "path": "/app/attorney/case/:caseId",
+      "component": "AttorneyPortal",
+      "type": "page"
+    },
+    {
+      "path": "/app/onboarding",
+      "component": "OnboardingLite",
+      "type": "page"
+    },
+    {
+      "path": "/app/lexi-intake",
+      "component": "LexiIntake",
+      "type": "page"
+    },
+    {
+      "path": "/app/start-here",
+      "component": "AppStartHere",
+      "type": "page"
+    },
+    {
+      "path": "/app/admin",
+      "component": "AppAdminDashboard",
+      "type": "page"
+    },
+    {
+      "path": "/app/admin/policy",
+      "component": "AppAdminPolicy",
+      "type": "page"
+    },
+    {
+      "path": "/app/grants",
+      "component": "AppGrantDashboard",
+      "type": "page"
+    },
+    {
+      "path": "/app/grants/print",
+      "component": "AppGrantDashboardPrint",
+      "type": "page"
+    },
+    {
+      "path": "/app/account",
+      "component": "AppAccountSettings",
+      "type": "page"
+    },
+    {
+      "path": "/app/cases",
+      "component": "AppCases",
+      "type": "page"
+    },
+    {
+      "path": "/app/dashboard/:caseId",
+      "component": "AppDashboard",
+      "type": "page"
+    },
+    {
+      "path": "/app/case/:caseId",
+      "component": "AppCase",
+      "type": "page"
+    },
+    {
+      "path": "/app/case-settings/:caseId",
+      "component": "AppCaseSettings",
+      "type": "page"
+    },
+    {
+      "path": "/app/documents/:caseId",
+      "component": "AppDocuments",
+      "type": "page"
+    },
+    {
+      "path": "/app/timeline/:caseId",
+      "component": "AppTimeline",
+      "type": "page"
+    },
+    {
+      "path": "/app/evidence/:caseId",
+      "component": "AppEvidence",
+      "type": "page"
+    },
+    {
+      "path": "/app/exhibits/:caseId",
+      "component": "AppExhibits",
+      "type": "page"
+    },
+    {
+      "path": "/app/tasks/:caseId",
+      "component": "AppTasks",
+      "type": "page"
+    },
+    {
+      "path": "/app/deadlines/:caseId",
+      "component": "AppDeadlines",
+      "type": "page"
+    },
+    {
+      "path": "/app/patterns/:caseId",
+      "component": "AppPatterns",
+      "type": "page"
+    },
+    {
+      "path": "/app/contacts/:caseId",
+      "component": "AppContacts",
+      "type": "page"
+    },
+    {
+      "path": "/app/communications/:caseId",
+      "component": "AppCommunications",
+      "type": "page"
+    },
+    {
+      "path": "/app/child-support/:caseId",
+      "component": "AppChildSupport",
+      "type": "page"
+    },
+    {
+      "path": "/app/children/:caseId",
+      "component": "AppChildren",
+      "type": "page"
+    },
+    {
+      "path": "/app/library/:caseId",
+      "component": "AppDocumentLibrary",
+      "type": "page"
+    },
+    {
+      "path": "/app/disclosures/:caseId",
+      "component": "AppDisclosures",
+      "type": "page"
+    },
+    {
+      "path": "/app/trial-prep/:caseId",
+      "component": "AppTrialPrep",
+      "type": "page"
+    },
+    {
+      "path": "/app/trial-prep/:caseId/print",
+      "component": "AppTrialPrepPrint",
+      "type": "page"
+    },
+    {
+      "path": "/app/parenting-plan/:caseId",
+      "component": "AppParentingPlan",
+      "type": "page"
+    },
+    {
+      "path": "/app/court-forms/:caseId",
+      "component": "AppCourtForms",
+      "type": "page"
+    },
+    {
+      "path": "/founders",
+      "component": "Redirect → /meet-the-founders",
+      "type": "redirect"
+    },
+    {
+      "path": "/mission",
+      "component": "Redirect → /our-mission",
+      "type": "redirect"
+    },
+    {
+      "path": "/app/dashboard",
+      "component": "CaseRedirect → dashboard",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/case",
+      "component": "CaseRedirect → case",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/documents",
+      "component": "CaseRedirect → documents",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/timeline",
+      "component": "CaseRedirect → timeline",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/evidence",
+      "component": "CaseRedirect → evidence",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/exhibits",
+      "component": "CaseRedirect → exhibits",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/tasks",
+      "component": "CaseRedirect → tasks",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/deadlines",
+      "component": "CaseRedirect → deadlines",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/patterns",
+      "component": "CaseRedirect → patterns",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/messages",
+      "component": "CaseRedirect → patterns",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/contacts",
+      "component": "CaseRedirect → contacts",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/communications",
+      "component": "CaseRedirect → communications",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/child-support",
+      "component": "CaseRedirect → child-support",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/children",
+      "component": "CaseRedirect → children",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/library",
+      "component": "CaseRedirect → library",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/disclosures",
+      "component": "CaseRedirect → disclosures",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/trial-prep",
+      "component": "CaseRedirect → trial-prep",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/parenting-plan",
+      "component": "CaseRedirect → parenting-plan",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/court-forms",
+      "component": "CaseRedirect → court-forms",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app",
+      "component": "CaseRedirect → dashboard",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/messages/:caseId",
+      "component": "Dynamic Redirect",
+      "type": "redirect"
+    }
+  ],
+  "marketing": [
+    {
+      "path": "/",
+      "component": "Home",
+      "type": "page"
+    },
+    {
+      "path": "/how-civilla-works",
+      "component": "HowCivillaWorks",
+      "type": "page"
+    },
+    {
+      "path": "/meet-the-founders",
+      "component": "MeetTheFounders",
+      "type": "page"
+    },
+    {
+      "path": "/our-mission",
+      "component": "OurMission",
+      "type": "page"
+    },
+    {
+      "path": "/plans",
+      "component": "Plans",
+      "type": "page"
+    },
+    {
+      "path": "/legal-compliance",
+      "component": "LegalCompliance",
+      "type": "page"
+    },
+    {
+      "path": "/privacy-policy",
+      "component": "PrivacyPolicy",
+      "type": "page"
+    },
+    {
+      "path": "/safety-support",
+      "component": "SafetySupport",
+      "type": "page"
+    },
+    {
+      "path": "/accessibility",
+      "component": "Accessibility",
+      "type": "page"
+    },
+    {
+      "path": "/contact",
+      "component": "Contact",
+      "type": "page"
+    },
+    {
+      "path": "/terms",
+      "component": "TermsOfService",
+      "type": "page"
+    },
+    {
+      "path": "/login",
+      "component": "Login",
+      "type": "page"
+    },
+    {
+      "path": "/register",
+      "component": "Register",
+      "type": "page"
+    },
+    {
+      "path": "/careers",
+      "component": "Careers",
+      "type": "page"
+    },
+    {
+      "path": "/wall-of-wins",
+      "component": "WallOfWins",
+      "type": "page"
+    },
+    {
+      "path": "/faq",
+      "component": "FAQPage",
+      "type": "page"
+    },
+    {
+      "path": "/attorney/accept",
+      "component": "AttorneyAcceptInvite",
+      "type": "page"
+    },
+    {
+      "path": "/founders",
+      "component": "Redirect → /meet-the-founders",
+      "type": "redirect"
+    },
+    {
+      "path": "/mission",
+      "component": "Redirect → /our-mission",
+      "type": "redirect"
+    }
+  ],
+  "app": [
+    {
+      "path": "/app/attorney/case/:caseId",
+      "component": "AttorneyPortal",
+      "type": "page"
+    },
+    {
+      "path": "/app/onboarding",
+      "component": "OnboardingLite",
+      "type": "page"
+    },
+    {
+      "path": "/app/lexi-intake",
+      "component": "LexiIntake",
+      "type": "page"
+    },
+    {
+      "path": "/app/start-here",
+      "component": "AppStartHere",
+      "type": "page"
+    },
+    {
+      "path": "/app/admin",
+      "component": "AppAdminDashboard",
+      "type": "page"
+    },
+    {
+      "path": "/app/admin/policy",
+      "component": "AppAdminPolicy",
+      "type": "page"
+    },
+    {
+      "path": "/app/grants",
+      "component": "AppGrantDashboard",
+      "type": "page"
+    },
+    {
+      "path": "/app/grants/print",
+      "component": "AppGrantDashboardPrint",
+      "type": "page"
+    },
+    {
+      "path": "/app/account",
+      "component": "AppAccountSettings",
+      "type": "page"
+    },
+    {
+      "path": "/app/cases",
+      "component": "AppCases",
+      "type": "page"
+    },
+    {
+      "path": "/app/dashboard/:caseId",
+      "component": "AppDashboard",
+      "type": "page"
+    },
+    {
+      "path": "/app/case/:caseId",
+      "component": "AppCase",
+      "type": "page"
+    },
+    {
+      "path": "/app/case-settings/:caseId",
+      "component": "AppCaseSettings",
+      "type": "page"
+    },
+    {
+      "path": "/app/documents/:caseId",
+      "component": "AppDocuments",
+      "type": "page"
+    },
+    {
+      "path": "/app/timeline/:caseId",
+      "component": "AppTimeline",
+      "type": "page"
+    },
+    {
+      "path": "/app/evidence/:caseId",
+      "component": "AppEvidence",
+      "type": "page"
+    },
+    {
+      "path": "/app/exhibits/:caseId",
+      "component": "AppExhibits",
+      "type": "page"
+    },
+    {
+      "path": "/app/tasks/:caseId",
+      "component": "AppTasks",
+      "type": "page"
+    },
+    {
+      "path": "/app/deadlines/:caseId",
+      "component": "AppDeadlines",
+      "type": "page"
+    },
+    {
+      "path": "/app/patterns/:caseId",
+      "component": "AppPatterns",
+      "type": "page"
+    },
+    {
+      "path": "/app/contacts/:caseId",
+      "component": "AppContacts",
+      "type": "page"
+    },
+    {
+      "path": "/app/communications/:caseId",
+      "component": "AppCommunications",
+      "type": "page"
+    },
+    {
+      "path": "/app/child-support/:caseId",
+      "component": "AppChildSupport",
+      "type": "page"
+    },
+    {
+      "path": "/app/children/:caseId",
+      "component": "AppChildren",
+      "type": "page"
+    },
+    {
+      "path": "/app/library/:caseId",
+      "component": "AppDocumentLibrary",
+      "type": "page"
+    },
+    {
+      "path": "/app/disclosures/:caseId",
+      "component": "AppDisclosures",
+      "type": "page"
+    },
+    {
+      "path": "/app/trial-prep/:caseId",
+      "component": "AppTrialPrep",
+      "type": "page"
+    },
+    {
+      "path": "/app/trial-prep/:caseId/print",
+      "component": "AppTrialPrepPrint",
+      "type": "page"
+    },
+    {
+      "path": "/app/parenting-plan/:caseId",
+      "component": "AppParentingPlan",
+      "type": "page"
+    },
+    {
+      "path": "/app/court-forms/:caseId",
+      "component": "AppCourtForms",
+      "type": "page"
+    },
+    {
+      "path": "/app/dashboard",
+      "component": "CaseRedirect → dashboard",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/case",
+      "component": "CaseRedirect → case",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/documents",
+      "component": "CaseRedirect → documents",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/timeline",
+      "component": "CaseRedirect → timeline",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/evidence",
+      "component": "CaseRedirect → evidence",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/exhibits",
+      "component": "CaseRedirect → exhibits",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/tasks",
+      "component": "CaseRedirect → tasks",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/deadlines",
+      "component": "CaseRedirect → deadlines",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/patterns",
+      "component": "CaseRedirect → patterns",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/messages",
+      "component": "CaseRedirect → patterns",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/contacts",
+      "component": "CaseRedirect → contacts",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/communications",
+      "component": "CaseRedirect → communications",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/child-support",
+      "component": "CaseRedirect → child-support",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/children",
+      "component": "CaseRedirect → children",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/library",
+      "component": "CaseRedirect → library",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/disclosures",
+      "component": "CaseRedirect → disclosures",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/trial-prep",
+      "component": "CaseRedirect → trial-prep",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/parenting-plan",
+      "component": "CaseRedirect → parenting-plan",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/court-forms",
+      "component": "CaseRedirect → court-forms",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app",
+      "component": "CaseRedirect → dashboard",
+      "type": "case-redirect"
+    },
+    {
+      "path": "/app/messages/:caseId",
+      "component": "Dynamic Redirect",
+      "type": "redirect"
+    }
+  ],
+  "auth": [
+    {
+      "path": "/login",
+      "component": "Login",
+      "type": "page"
+    },
+    {
+      "path": "/register",
+      "component": "Register",
+      "type": "page"
+    },
+    {
+      "path": "/admin-login",
+      "component": "AdminLogin",
+      "type": "page"
+    }
+  ]
+}
