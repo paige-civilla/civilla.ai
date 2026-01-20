@@ -170,10 +170,10 @@ export default function AppPatterns() {
   }, [currentCase]);
 
   useEffect(() => {
-    if (!caseLoading && !currentCase && caseId) {
+    if (!caseLoading && !isError && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [caseLoading, currentCase, caseId, setLocation]);
+  }, [caseLoading, isError, currentCase, caseId, setLocation]);
 
   const now = new Date();
 

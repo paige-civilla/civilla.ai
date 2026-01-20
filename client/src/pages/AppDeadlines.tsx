@@ -106,10 +106,10 @@ export default function AppDeadlines() {
   }, [currentCase]);
 
   useEffect(() => {
-    if (!isLoading && !currentCase && caseId) {
+    if (!isLoading && !isError && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [isLoading, currentCase, caseId, setLocation]);
+  }, [isLoading, isError, currentCase, caseId, setLocation]);
 
   if (isLoading) {
     return (

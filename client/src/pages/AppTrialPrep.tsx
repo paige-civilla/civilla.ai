@@ -120,7 +120,7 @@ export default function AppTrialPrep() {
   const [isExporting, setIsExporting] = useState(false);
   const [mobileShowDetails, setMobileShowDetails] = useState(false);
 
-  const { data: caseData, isLoading: caseLoading } = useQuery<{ case: Case }>({
+  const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
     enabled: !!caseId,
   });
@@ -141,10 +141,10 @@ export default function AppTrialPrep() {
   }, [currentCase]);
 
   useEffect(() => {
-    if (!caseLoading && !currentCase && caseId) {
+    if (!caseLoading && !caseError && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [caseLoading, currentCase, caseId, setLocation]);
+  }, [caseLoading, caseError, currentCase, caseId, setLocation]);
 
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {

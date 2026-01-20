@@ -112,10 +112,10 @@ export default function AppTimeline() {
   }, [currentCase]);
 
   useEffect(() => {
-    if (!caseLoading && !currentCase && caseId) {
+    if (!caseLoading && !caseError && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [caseLoading, currentCase, caseId, setLocation]);
+  }, [caseLoading, caseError, currentCase, caseId, setLocation]);
 
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {
