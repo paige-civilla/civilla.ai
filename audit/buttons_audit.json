@@ -1,0 +1,639 @@
+[
+  {
+    "page": "Accessibility.tsx",
+    "route": "/accessibility",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppAccountSettings.tsx",
+    "route": "/app/account-settings",
+    "element": "Button",
+    "action": "redirect",
+    "destination": "/plans"
+  },
+  {
+    "page": "AppAccountSettings.tsx",
+    "route": "/app/account-settings",
+    "element": "Button",
+    "action": "API call",
+    "destination": "PATCH"
+  },
+  {
+    "page": "AppAccountSettings.tsx",
+    "route": "/app/account-settings",
+    "element": "Button",
+    "action": "API call",
+    "destination": "PUT"
+  },
+  {
+    "page": "AppAccountSettings.tsx",
+    "route": "/app/account-settings",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppAdminDashboard.tsx",
+    "route": "/admin",
+    "element": "a",
+    "action": "navigate",
+    "destination": "/app/admin/policy"
+  },
+  {
+    "page": "AppCase.tsx",
+    "route": "/app/case",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCase.tsx",
+    "route": "/app/case",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppCaseSettings.tsx",
+    "route": "/app/case-settings",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCaseSettings.tsx",
+    "route": "/app/case-settings",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppCaseSettings.tsx",
+    "route": "/app/case-settings",
+    "element": "Button",
+    "action": "API call",
+    "destination": "PATCH"
+  },
+  {
+    "page": "AppCaseSettings.tsx",
+    "route": "/app/case-settings",
+    "element": "Button",
+    "action": "API call",
+    "destination": "PATCH"
+  },
+  {
+    "page": "AppCases.tsx",
+    "route": "/app/cases",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/login"
+  },
+  {
+    "page": "AppCases.tsx",
+    "route": "/app/cases",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppChildren.tsx",
+    "route": "/app/children",
+    "element": "Button",
+    "action": "API call",
+    "destination": "PATCH"
+  },
+  {
+    "page": "AppChildren.tsx",
+    "route": "/app/children",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppChildren.tsx",
+    "route": "/app/children",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppCommunications.tsx",
+    "route": "/app/communications",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppContacts.tsx",
+    "route": "/app/contacts",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppContacts.tsx",
+    "route": "/app/contacts",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppContacts.tsx",
+    "route": "/app/contacts",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppContacts.tsx",
+    "route": "/app/contacts",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppCourtForms.tsx",
+    "route": "/app/court-forms",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppDashboard.tsx",
+    "route": "/app/dashboard",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppDashboard.tsx",
+    "route": "/app/dashboard",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppDeadlines.tsx",
+    "route": "/app/deadlines",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppDeadlines.tsx",
+    "route": "/app/deadlines",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppDeadlines.tsx",
+    "route": "/app/deadlines",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppDeadlines.tsx",
+    "route": "/app/deadlines",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppDocuments.tsx",
+    "route": "/app/documents",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppDocuments.tsx",
+    "route": "/app/documents",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppDocuments.tsx",
+    "route": "/app/documents",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppDocuments.tsx",
+    "route": "/app/documents",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppDocuments.tsx",
+    "route": "/app/documents",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppDocuments.tsx",
+    "route": "/app/documents",
+    "element": "Button",
+    "action": "API call",
+    "destination": "PATCH"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppEvidence.tsx",
+    "route": "/app/evidence",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppExhibits.tsx",
+    "route": "/app/exhibits",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppExhibits.tsx",
+    "route": "/app/exhibits",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppExhibits.tsx",
+    "route": "/app/exhibits",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppExhibits.tsx",
+    "route": "/app/exhibits",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppExhibits.tsx",
+    "route": "/app/exhibits",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppMessages.tsx",
+    "route": "/app/messages",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppParentingPlan.tsx",
+    "route": "/app/parenting-plan",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppPatterns.tsx",
+    "route": "/app/patterns",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppStartHere.tsx",
+    "route": "/app/start-here",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppTasks.tsx",
+    "route": "/app/tasks",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppTasks.tsx",
+    "route": "/app/tasks",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppTasks.tsx",
+    "route": "/app/tasks",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppTasks.tsx",
+    "route": "/app/tasks",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppTimeline.tsx",
+    "route": "/app/timeline",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppTimeline.tsx",
+    "route": "/app/timeline",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppTimeline.tsx",
+    "route": "/app/timeline",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppTimeline.tsx",
+    "route": "/app/timeline",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AppTimeline.tsx",
+    "route": "/app/timeline",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppTimeline.tsx",
+    "route": "/app/timeline",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "AppTrialPrep.tsx",
+    "route": "/app/trial-prep",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AppTrialPrep.tsx",
+    "route": "/app/trial-prep",
+    "element": "Button",
+    "action": "API call",
+    "destination": "DELETE"
+  },
+  {
+    "page": "AppTrialPrepPrint.tsx",
+    "route": "/apptrialprepprint",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/cases"
+  },
+  {
+    "page": "AttorneyAcceptInvite.tsx",
+    "route": "/attorneyacceptinvite",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/"
+  },
+  {
+    "page": "AttorneyAcceptInvite.tsx",
+    "route": "/attorneyacceptinvite",
+    "element": "Button",
+    "action": "API call",
+    "destination": "POST"
+  },
+  {
+    "page": "AttorneyPortal.tsx",
+    "route": "/attorney",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app"
+  },
+  {
+    "page": "AttorneyPortal.tsx",
+    "route": "/attorney",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app"
+  },
+  {
+    "page": "Careers.tsx",
+    "route": "/careers",
+    "element": "Button",
+    "action": "redirect",
+    "destination": "mailto:careers@civilla.ai?subject=Resume Submission"
+  },
+  {
+    "page": "Contact.tsx",
+    "route": "/contact",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "LegalCompliance.tsx",
+    "route": "/legal-compliance",
+    "element": "a",
+    "action": "external",
+    "destination": "https://www.americanbar.org/groups/legal_services/flh-home/flh-bar-directories-and-lawyer-finders/"
+  },
+  {
+    "page": "Login.tsx",
+    "route": "/login",
+    "element": "a",
+    "action": "navigate",
+    "destination": "/api/auth/google/start"
+  },
+  {
+    "page": "Login.tsx",
+    "route": "/login",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app"
+  },
+  {
+    "page": "Login.tsx",
+    "route": "/login",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  },
+  {
+    "page": "OnboardingLite.tsx",
+    "route": "/app/onboarding",
+    "element": "a",
+    "action": "navigate",
+    "destination": "/terms"
+  },
+  {
+    "page": "OnboardingLite.tsx",
+    "route": "/app/onboarding",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app/start-here"
+  },
+  {
+    "page": "Plans.tsx",
+    "route": "/plans",
+    "element": "a",
+    "action": "navigate",
+    "destination": "/contact"
+  },
+  {
+    "page": "Plans.tsx",
+    "route": "/plans",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/auth"
+  },
+  {
+    "page": "Register.tsx",
+    "route": "/register",
+    "element": "a",
+    "action": "navigate",
+    "destination": "/api/auth/google/start"
+  },
+  {
+    "page": "Register.tsx",
+    "route": "/register",
+    "element": "Button",
+    "action": "navigate (programmatic)",
+    "destination": "/app"
+  },
+  {
+    "page": "Register.tsx",
+    "route": "/register",
+    "element": "Form",
+    "action": "submit",
+    "destination": "form handler"
+  }
+]
