@@ -1,0 +1,91 @@
+REPLIT TASK: Enable FULL end-to-end audit (authenticated + button/link verification) and re-run the audit suite
+
+GOAL
+Right now our audit “passes” but isn’t truly end-to-end because authenticated flows are skipped. We need a dedicated QA test user + secrets so Playwright + AI smoke tests can log in and validate every button/route and AI pipeline.
+
+DO THIS IN ORDER (NO GUESSING):
+
+1) Create a dedicated QA test account (one-time)
+- In the Civilla app (running instance), create a brand-new user account specifically for automated testing.
+- Use an email we control, e.g. test+qa@civilla.ai (or any Gmail alias we own).
+- Set a password we control.
+- After signup, confirm the QA account can:
+  a) Log in successfully
+  b) Create a new case
+  c) Land on Start Here (or Dashboard depending on current onboarding flow)
+  d) Open Lexi panel and start a conversation
+  e) Navigate the primary nav items without errors
+
+2) Add 2 Replit Secrets (REQUIRED)
+- Open Replit → Tools → Secrets (or “Secrets” tab)
+- Add EXACTLY these keys:
+  - TEST_EMAIL = <the QA test account email>
+  - TEST_PASSWORD = <the QA test account password>
+Notes:
+- Do NOT store these in code.
+- These are only for automated QA runs.
+
+3) Ensure Playwright is installed and can run in Replit
+- In the Replit Shell, run:
+  - npm i -D @playwright/test
+  - npx playwright install
+If Playwright is already installed, still run:
+  - npx playwright install
+so browsers exist in the environment.
+
+4) Update the audit runner so it warns if auth secrets are missing (quality gate)
+- In script/generateFullAudit.ts (or the main audit runner file used by npm run audit:full):
+  a) Check process.env.TEST_EMAIL and process.env.TEST_PASSWORD
+  b) If missing, print a clear warning:
+     “Authenticated tests skipped — add TEST_EMAIL + TEST_PASSWORD to Replit Secrets.”
+  c) Still run unauthenticated audits, but the final report must clearly show:
+     Authenticated coverage: SKIPPED
+
+5) Make the authenticated tests actually use the secrets
+- In any Playwright specs and smoke scripts that currently skip auth flows:
+  - Load TEST_EMAIL/TEST_PASSWORD from process.env
+  - Implement login() helper:
+    - Navigate to login page
+    - Fill email/password
+    - Submit
+    - Confirm login success (e.g., dashboard or start-here route)
+- Ensure tests fail with a clear error if login fails.
+
+6) Re-run the full audit and generate a clean report
+Run these commands in Replit Shell:
+
+A) Route inventories:
+- npx tsx script/auditBackendRoutes.ts
+- npx tsx script/auditFrontendRoutes.ts
+
+B) API smoke:
+- npx tsx script/apiSmoke.ts
+
+C) AI pipeline smoke (AUTHENTICATED now):
+- npx tsx script/aiSmoke.ts
+
+D) Full report generator:
+- npx tsx script/generateFullAudit.ts
+
+E) Playwright end-to-end UI tests (marketing + app buttons + Lexi/AI):
+- npx playwright test
+
+7) Output required (must be included in the final assistant response)
+After running, report in ONE summary:
+
+- TEST_EMAIL/TEST_PASSWORD present: true/false
+- Authenticated test coverage: RUN / SKIPPED
+- Playwright results: PASS/FAIL with failing spec names (if any)
+- AI smoke results: PASS/FAIL and any failing endpoints
+- List any broken buttons/links found (route + screenshot path)
+- Confirm /api/ai/health behavior:
+  - logged out returns 401
+  - logged in returns { ok: true, ... }
+
+DONE CONDITION
+We are “green” only if:
+- Playwright tests pass (or failures are explicitly listed)
+- Authenticated AI tests run (not skipped)
+- Report clearly identifies any broken routes/buttons (if any)
+
+DO NOT change product behavior or UI during this task unless the tests reveal a failure; if failures are found, fix them and re-run until the suite passes.

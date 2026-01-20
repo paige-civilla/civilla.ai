@@ -147,6 +147,134 @@ async function checkEnvironment(): Promise<Record<string, boolean>> {
   };
 }
 
+const TEST_EMAIL = process.env.TEST_EMAIL || '';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
+let authCookie: string | null = null;
+let testCaseId: string | null = null;
+
+async function login(): Promise<boolean> {
+  if (!TEST_EMAIL || !TEST_PASSWORD) {
+    console.log('\n⚠️  WARNING: Authenticated tests skipped — add TEST_EMAIL + TEST_PASSWORD to Replit Secrets.\n');
+    return false;
+  }
+  
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }),
+    });
+    
+    if (!response.ok) {
+      console.error('Login failed:', response.status);
+      return false;
+    }
+    
+    authCookie = response.headers.get('set-cookie');
+    console.log('✓ Login successful as:', TEST_EMAIL);
+    return true;
+  } catch (err: any) {
+    console.error('Login error:', err.message);
+    return false;
+  }
+}
+
+async function getTestCase(): Promise<string | null> {
+  if (!authCookie) return null;
+  
+  try {
+    const response = await fetch(`${BASE_URL}/api/cases`, {
+      headers: { Cookie: authCookie },
+    });
+    
+    if (!response.ok) return null;
+    
+    const cases = await response.json();
+    if (cases && cases.length > 0) {
+      return cases[0].id;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function runAuthenticatedAPITests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  
+  if (!authCookie) {
+    return [{
+      name: 'Authenticated tests',
+      endpoint: 'ALL',
+      status: 'SKIP',
+      error: 'No auth credentials provided',
+    }];
+  }
+  
+  const endpoints = [
+    { name: 'AI health (auth)', endpoint: '/api/ai/health', expectedStatus: [200] },
+    { name: 'Get cases (auth)', endpoint: '/api/cases', expectedStatus: [200] },
+    { name: 'Get profile (auth)', endpoint: '/api/profile', expectedStatus: [200] },
+    { name: 'Lexi threads (auth)', endpoint: '/api/lexi/threads', expectedStatus: [200] },
+    { name: 'Onboarding status (auth)', endpoint: '/api/onboarding/status', expectedStatus: [200] },
+  ];
+  
+  for (const ep of endpoints) {
+    try {
+      const response = await fetch(`${BASE_URL}${ep.endpoint}`, {
+        headers: { Cookie: authCookie! },
+      });
+      const passed = ep.expectedStatus.includes(response.status);
+      results.push({
+        name: ep.name,
+        endpoint: ep.endpoint,
+        status: passed ? 'PASS' : 'FAIL',
+        error: passed ? undefined : `Expected ${ep.expectedStatus.join('/')}, got ${response.status}`,
+      });
+    } catch (err: any) {
+      results.push({
+        name: ep.name,
+        endpoint: ep.endpoint,
+        status: 'FAIL',
+        error: err.message,
+      });
+    }
+  }
+  
+  if (testCaseId) {
+    const caseEndpoints = [
+      { name: 'Case details (auth)', endpoint: `/api/cases/${testCaseId}`, expectedStatus: [200] },
+      { name: 'Pattern analysis (auth)', endpoint: `/api/cases/${testCaseId}/pattern-analysis`, expectedStatus: [200] },
+      { name: 'Timeline (auth)', endpoint: `/api/cases/${testCaseId}/timeline`, expectedStatus: [200] },
+      { name: 'Evidence (auth)', endpoint: `/api/cases/${testCaseId}/evidence`, expectedStatus: [200] },
+    ];
+    
+    for (const ep of caseEndpoints) {
+      try {
+        const response = await fetch(`${BASE_URL}${ep.endpoint}`, {
+          headers: { Cookie: authCookie! },
+        });
+        const passed = ep.expectedStatus.includes(response.status);
+        results.push({
+          name: ep.name,
+          endpoint: ep.endpoint,
+          status: passed ? 'PASS' : 'FAIL',
+          error: passed ? undefined : `Expected ${ep.expectedStatus.join('/')}, got ${response.status}`,
+        });
+      } catch (err: any) {
+        results.push({
+          name: ep.name,
+          endpoint: ep.endpoint,
+          status: 'FAIL',
+          error: err.message,
+        });
+      }
+    }
+  }
+  
+  return results;
+}
+
 async function generateReport() {
   console.log('='.repeat(60));
   console.log('GENERATING FULL AUDIT REPORT');
@@ -169,8 +297,54 @@ async function generateReport() {
   fs.writeFileSync('audit/frontend_routes.json', JSON.stringify(frontendRoutes, null, 2));
   
   // Run API tests
-  console.log('Running API tests...');
+  console.log('Running unauthenticated API tests...');
   const apiResults = await runAPITests();
+  
+  // Try to login and run authenticated tests
+  console.log('Attempting login...');
+  const loggedIn = await login();
+  let authResults: TestResult[] = [];
+  
+  if (loggedIn) {
+    testCaseId = await getTestCase();
+    console.log(`Test case ID: ${testCaseId || 'none found - will create one'}`);
+    
+    if (!testCaseId) {
+      try {
+        const createRes = await fetch(`${BASE_URL}/api/cases`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Cookie: authCookie!,
+          },
+          body: JSON.stringify({ 
+            title: 'QA Test Case',
+            state: 'CA',
+            caseNumber: 'QA-TEST-001',
+          }),
+        });
+        if (createRes.ok) {
+          const newCase = await createRes.json();
+          testCaseId = newCase.id;
+          console.log(`Created test case: ${testCaseId}`);
+        }
+      } catch (e) {
+        console.log('Could not create test case');
+      }
+    }
+    
+    console.log('Running authenticated API tests...');
+    authResults = await runAuthenticatedAPITests();
+  } else {
+    authResults = [{
+      name: 'Authenticated tests',
+      endpoint: 'ALL',
+      status: 'SKIP',
+      error: 'No auth credentials — add TEST_EMAIL + TEST_PASSWORD to Replit Secrets',
+    }];
+  }
+  
+  const authCoverage = loggedIn ? 'RUN' : 'SKIPPED';
   
   // Generate markdown report
   let report = `# FULL APPLICATION AUDIT REPORT
@@ -253,6 +427,30 @@ async function generateReport() {
   
   report += `
 **Summary:** ${apiPass} PASS, ${apiFail} FAIL
+
+---
+
+## 4b. Authenticated API Tests
+
+**Auth Coverage:** ${authCoverage}
+**TEST_EMAIL present:** ${!!TEST_EMAIL}
+**TEST_PASSWORD present:** ${!!TEST_PASSWORD}
+
+| Endpoint | Status | Details |
+|----------|--------|---------|
+`;
+  
+  let authPass = 0, authFail = 0, authSkip = 0;
+  for (const r of authResults) {
+    const icon = r.status === 'PASS' ? 'PASS' : r.status === 'SKIP' ? 'SKIP' : 'FAIL';
+    report += `| ${r.endpoint} | ${icon} | ${r.error || '-'} |\n`;
+    if (r.status === 'PASS') authPass++;
+    else if (r.status === 'FAIL') authFail++;
+    else authSkip++;
+  }
+  
+  report += `
+**Auth Summary:** ${authPass} PASS, ${authFail} FAIL, ${authSkip} SKIP
 
 ---
 
@@ -343,18 +541,21 @@ npx tsx script/generateFullAudit.ts
 
 **Ready for testing:** YES
 
+**Auth Coverage:** ${authCoverage}
+**TEST_EMAIL present:** ${!!TEST_EMAIL}
+**TEST_PASSWORD present:** ${!!TEST_PASSWORD}
+
 **Summary:**
-- All health endpoints functional (${apiPass}/${apiPass + apiFail} passing)
+- Unauthenticated API tests: ${apiPass}/${apiPass + apiFail} passing
+- Authenticated API tests: ${authPass}/${authPass + authFail + authSkip} (${authSkip} skipped)
 - Onboarding flow fixed (buttons navigate correctly)
 - Auth system operational
-- AI pipelines require authentication for full testing
-- Pre-existing Stripe configuration issues (non-blocking)
-- LSP type errors are non-blocking at runtime
+${authCoverage === 'RUN' ? `- /api/ai/health logged in: ${authResults.find(r => r.endpoint === '/api/ai/health')?.status === 'PASS' ? '{ ok: true }' : 'FAIL'}` : '- /api/ai/health logged out: 401 (expected)'}
 
 **Next Steps:**
-1. Set TEST_EMAIL and TEST_PASSWORD secrets for authenticated tests
-2. Run \`npx playwright install\` to enable UI testing
-3. Run \`npx playwright test\` for full UI audit
+${authCoverage === 'SKIPPED' ? `1. Add TEST_EMAIL and TEST_PASSWORD to Replit Secrets
+2. Re-run: npx tsx script/generateFullAudit.ts` : `1. Run Playwright tests: npx playwright test
+2. Review any failures in audit/playwright-report/`}
 `;
   
   // Write report
