@@ -1,0 +1,107 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - main [ref=e28]:
+      - generic [ref=e33]:
+        - heading "Meet The Founders" [level=1] [ref=e34]
+        - paragraph [ref=e35]: Hey y'all! We're truly glad you're here, and we hope civilla.ai supports you in the ways you need.
+      - generic [ref=e38]:
+        - generic [ref=e40]:
+          - img "Paige - Founder" [ref=e44]
+          - heading "A Note From Our Founder" [level=2] [ref=e45]
+          - generic [ref=e46]:
+            - paragraph [ref=e47]: Family court wasn't built for people like us. People who can't afford a lawyer at the rate of a used Honda every week (no offense, attorneys). People juggling work, kids, healing, and maybe three hours of sleep. People trying to raise their kids in peace while the system keeps getting pulled back into conflict.
+            - paragraph [ref=e48]: I know this world too well.
+            - paragraph [ref=e49]: I've lived the divorce, the aftermath, and the endless paperwork that feels like a thousand tiny cuts. I've done the late-night, cry-in-the-car sessions after holding it together all day. I've been in that foggy place where you're trying to parent, survive, grow, and defend yourself in the same week, while wishing someone, anyone, could explain what is actually happening.
+            - paragraph [ref=e50]: The truth is, I didn't create civilla.ai because I'm a tech founder who spotted a "market opportunity." I created it because I was a parent who felt overwhelmed, under-resourced, and expected to somehow understand a system that speaks in riddles. I needed clarity, calm, and a place to land when everything felt like too much. And I knew I wasn't the only one.
+            - paragraph [ref=e51]: All of us deserve steadiness, understanding, and a sense of direction, especially when life is pulling you in every possible direction at once.
+            - paragraph [ref=e52]:
+              - text: Go kick ass. Bring receipts.
+              - text: — P.
+            - paragraph [ref=e53]: (Single mom. Survivor. Self-represented. Builder of things that should've existed long ago.)
+            - paragraph [ref=e54]: P.S. When I say "I built it," I really mean we built this. I had the idea, and B. saw the vision and believed in me.
+        - generic [ref=e56]:
+          - img "Bryan - Co-Founder" [ref=e60]
+          - heading "A Note From Our Co-Founder" [level=2] [ref=e61]
+          - generic [ref=e62]:
+            - paragraph [ref=e63]: "A few years ago, I went through one of the hardest things a person can face: divorce. It tested my strength, my patience, and my sense of fairness. I learned that real strength isn't loud or aggressive. It's steady, grounded, and focused on what matters most: my child, and the relationship I want to protect and build with them."
+            - paragraph [ref=e64]: Like a lot of fathers, I discovered how confusing, costly, and one-sided the process can feel. But as I moved through it, I also began to understand experiences that weren't like my own. Divorce hits everyone differently. There are two sides to every ending, and most people, no matter which side they're on, are just trying to hold themselves together while navigating something they never imagined they'd be in.
+            - paragraph [ref=e65]: That's why we turned this idea into reality. So fathers, mothers, and families could finally have a tool that brings clarity, organization, and calm to a process that often feels impossible. Something that helps you stay steady and advocate for yourself and your kids when everything feels uncertain.
+            - paragraph [ref=e66]:
+              - text: I came out of that chapter stronger, calmer, and more grounded, not just for myself, but for my son.
+              - text: — B.
+            - paragraph [ref=e67]: (Dad. Rebuilder. Divorce survivor who once believed Google Docs could solve custody, adorable, I know. 10/10 do not recommend.)
+            - paragraph [ref=e68]: P.S. Yeah, yeah, I know, P.
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - heading "Add To The Wall Of Wins" [level=2] [ref=e74]
+          - paragraph [ref=e75]: Big wins, tiny wins, survival wins—we'll take them all. If something went right, we'd love to hear about it.
+        - link "Email Us" [ref=e77] [cursor=pointer]:
+          - /url: mailto:support@civilla.ai?subject=My%20Win%20for%20the%20Wall%20of%20Wins
+    - contentinfo [ref=e78]:
+      - generic [ref=e79]:
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - generic [ref=e83]: Start Here
+            - generic [ref=e84]:
+              - link "Home" [ref=e85] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e86] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e87] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e88]:
+            - generic [ref=e89]: About civilla
+            - generic [ref=e90]:
+              - link "How civilla Works" [ref=e91] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e92] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e93] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e94] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e95]:
+            - generic [ref=e96]: Trust & Safety
+            - generic [ref=e97]:
+              - link "Safety & Support" [ref=e98] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e99] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e100] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e101]:
+            - generic [ref=e102]: Support
+            - generic [ref=e103]:
+              - link "Contact" [ref=e104] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e105] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e106] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e107] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e108] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e110]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e111]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```

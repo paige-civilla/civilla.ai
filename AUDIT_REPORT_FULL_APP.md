@@ -1,6 +1,6 @@
 # FULL APPLICATION AUDIT REPORT
 
-**Generated:** 2026-01-20T02:25:11.148Z  
+**Generated:** 2026-01-20T03:12:13.055Z  
 **Base URL:** http://localhost:5000
 
 ---
@@ -17,8 +17,8 @@
 | STRIPE_PUBLISHABLE_KEY | YES |
 | TURNSTILE_SECRET_KEY | NO |
 | TURNSTILE_SITE_KEY | NO |
-| TEST_EMAIL | NO |
-| TEST_PASSWORD | NO |
+| TEST_EMAIL | YES |
+| TEST_PASSWORD | YES |
 
 ---
 
@@ -472,6 +472,24 @@
 
 ---
 
+## 4b. Authenticated API Tests
+
+**Auth Coverage:** RUN
+**TEST_EMAIL present:** true
+**TEST_PASSWORD present:** true
+
+| Endpoint | Status | Details |
+|----------|--------|---------|
+| /api/ai/health | PASS | - |
+| /api/cases | PASS | - |
+| /api/profile | PASS | - |
+| /api/lexi/threads | PASS | - |
+| /api/onboarding/status | PASS | - |
+
+**Auth Summary:** 5 PASS, 0 FAIL, 0 SKIP
+
+---
+
 ## 5. Button/Link Audit Results
 
 *Note: Run `npx playwright test` for interactive UI testing.*
@@ -559,15 +577,17 @@ npx tsx script/generateFullAudit.ts
 
 **Ready for testing:** YES
 
+**Auth Coverage:** RUN
+**TEST_EMAIL present:** true
+**TEST_PASSWORD present:** true
+
 **Summary:**
-- All health endpoints functional (12/13 passing)
+- Unauthenticated API tests: 12/13 passing
+- Authenticated API tests: 5/5 (0 skipped)
 - Onboarding flow fixed (buttons navigate correctly)
 - Auth system operational
-- AI pipelines require authentication for full testing
-- Pre-existing Stripe configuration issues (non-blocking)
-- LSP type errors are non-blocking at runtime
+- /api/ai/health logged in: { ok: true }
 
 **Next Steps:**
-1. Set TEST_EMAIL and TEST_PASSWORD secrets for authenticated tests
-2. Run `npx playwright install` to enable UI testing
-3. Run `npx playwright test` for full UI audit
+1. Run Playwright tests: npx playwright test
+2. Review any failures in audit/playwright-report/

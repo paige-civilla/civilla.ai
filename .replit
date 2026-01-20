@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["imagemagick"]
+packages = ["imagemagick", "glib", "nss", "nspr", "atk", "cups", "dbus", "expat", "xorg.libX11", "xorg.libxcb", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libXrender", "xorg.libXtst", "xorg.libXScrnSaver", "pango", "alsa-lib", "gtk3", "libdrm", "mesa", "libxkbcommon", "cairo", "libjpeg", "libpng", "freetype", "harfbuzz", "fontconfig"]
 
 [[ports]]
 localPort = 5000

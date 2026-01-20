@@ -1,0 +1,635 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - main [ref=e28]:
+      - generic [ref=e31]:
+        - heading "Plans & Pricing" [level=1] [ref=e33]
+        - paragraph [ref=e35]: Choose a plan that fits where you are. Whether you're learning the process, organizing your information, or preparing your next steps. No surprises, no hidden fees.
+      - generic [ref=e37]:
+        - heading "Most Popular" [level=2] [ref=e40]:
+          - generic [ref=e41]:
+            - text: Most Popular
+            - img [ref=e42]
+        - generic [ref=e44]:
+          - group "Billing period selection" [ref=e45]:
+            - button "Select monthly billing" [pressed] [ref=e46] [cursor=pointer]: Monthly
+            - button "Select yearly billing with 2 months free" [ref=e47] [cursor=pointer]: Yearly*
+          - paragraph [ref=e48]: "*Yearly plans include two months free — at signup and every renewal."
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]: civilla pro
+              - generic [ref=e53]:
+                - text: $29.99
+                - generic [ref=e54]: /mo
+              - paragraph [ref=e55]: For higher-conflict or higher-volume cases.
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - img [ref=e58]
+                - generic [ref=e60]: Everything in core, plus
+              - generic [ref=e61]:
+                - img [ref=e62]
+                - generic [ref=e64]: Evidence map + communication log
+              - generic [ref=e65]:
+                - img [ref=e66]
+                - generic [ref=e68]: Court Prep Packet builder (organized export-ready packet)
+              - generic [ref=e69]:
+                - img [ref=e70]
+                - generic [ref=e72]: Draft documents workspace (education-only) + export
+              - generic [ref=e73]:
+                - img [ref=e74]
+                - generic [ref=e76]: PDF + DOCX export with watermark/disclaimer enforcement
+              - generic [ref=e77]:
+                - img [ref=e78]
+                - generic [ref=e80]: Lexi in-app guidance (context + navigation help)
+              - generic [ref=e81]:
+                - img [ref=e82]
+                - generic [ref=e84]: Quick wins + case health insights
+              - generic [ref=e85]:
+                - img [ref=e86]
+                - generic [ref=e88]: Child support estimate range
+            - link "Compare plans below" [ref=e89] [cursor=pointer]:
+              - /url: /plans#compare
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - heading "Choose Your Plan" [level=2] [ref=e94]
+              - paragraph [ref=e95]:
+                - text: Educational, research, and organization tools for family
+                - text: law cases, powered by information you enter.
+              - button "See Full List Of Features" [ref=e96] [cursor=pointer]:
+                - text: See Full List Of Features
+                - img [ref=e97]
+            - generic [ref=e100]:
+              - button "Monthly" [ref=e101] [cursor=pointer]
+              - button "Yearly*" [ref=e102] [cursor=pointer]
+          - paragraph [ref=e103]: "*Yearly plans include two months free — at signup and every renewal."
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]: 3-Day Trial
+              - generic [ref=e108]:
+                - generic [ref=e110]: Free
+                - paragraph [ref=e111]: Ends after 3 days. No auto-billing.
+              - generic [ref=e113]: Highlights
+              - list [ref=e114]:
+                - listitem [ref=e115]:
+                  - img [ref=e116]
+                  - generic [ref=e118]: One family law case
+                - listitem [ref=e119]:
+                  - img [ref=e120]
+                  - generic [ref=e122]: Evidence upload (documents only)
+                - listitem [ref=e123]:
+                  - img [ref=e124]
+                  - generic [ref=e126]: Timeline (read-only)
+                - listitem [ref=e127]:
+                  - img [ref=e128]
+                  - generic [ref=e130]: Pattern insights (limited)
+                - listitem [ref=e131]:
+                  - img [ref=e132]
+                  - generic [ref=e134]: Lexi education
+                - listitem [ref=e135]:
+                  - img [ref=e136]
+                  - generic [ref=e138]: Educational document creator (watermarked, no download)
+              - button "Start Trial" [ref=e139] [cursor=pointer]
+            - generic [ref=e140]:
+              - generic [ref=e141]: civilla core
+              - generic [ref=e143]:
+                - generic [ref=e144]:
+                  - generic [ref=e145]: $19.99
+                  - generic [ref=e146]: /mo
+                - paragraph [ref=e147]: Built for one active case — full tools, downloads, and tracking.
+              - generic [ref=e149]: Highlights
+              - list [ref=e150]:
+                - listitem [ref=e151]:
+                  - img [ref=e152]
+                  - generic [ref=e154]: One active family law case
+                - listitem [ref=e155]:
+                  - img [ref=e156]
+                  - generic [ref=e158]: 30 GB storage
+                - listitem [ref=e159]:
+                  - img [ref=e160]
+                  - generic [ref=e162]: Interactive timeline
+                - listitem [ref=e163]:
+                  - img [ref=e164]
+                  - generic [ref=e166]: Lexi research with citations
+                - listitem [ref=e167]:
+                  - img [ref=e168]
+                  - generic [ref=e170]: Downloads and exports
+                - listitem [ref=e171]:
+                  - img [ref=e172]
+                  - generic [ref=e174]: Tasks and reminders
+              - button "Choose Core" [ref=e175] [cursor=pointer]
+            - generic [ref=e176]:
+              - generic [ref=e177]: Most Popular
+              - generic [ref=e178]: civilla pro
+              - generic [ref=e180]:
+                - generic [ref=e181]:
+                  - generic [ref=e182]: $29.99
+                  - generic [ref=e183]: /mo
+                - paragraph [ref=e184]: For higher-volume cases — deeper evidence workflows and court prep exports.
+              - generic [ref=e186]: Highlights
+              - list [ref=e187]:
+                - listitem [ref=e188]:
+                  - img [ref=e189]
+                  - generic [ref=e191]: 50 GB storage
+                - listitem [ref=e192]:
+                  - img [ref=e193]
+                  - generic [ref=e195]: Video uploads
+                - listitem [ref=e196]:
+                  - img [ref=e197]
+                  - generic [ref=e199]: Advanced exhibits
+                - listitem [ref=e200]:
+                  - img [ref=e201]
+                  - generic [ref=e203]: Dual OCR cross-check
+                - listitem [ref=e204]:
+                  - img [ref=e205]
+                  - generic [ref=e207]: Trial prep organization
+                - listitem [ref=e208]:
+                  - img [ref=e209]
+                  - generic [ref=e211]: Post-judgment workflows
+              - button "Choose Pro" [ref=e212] [cursor=pointer]
+            - generic [ref=e213]:
+              - generic [ref=e214]: civilla premium
+              - generic [ref=e216]:
+                - generic [ref=e217]:
+                  - generic [ref=e218]: $49.99
+                  - generic [ref=e219]: /mo
+                - paragraph [ref=e220]: For complex cases — maximum storage, tracking, and organization tools.
+              - generic [ref=e222]: Highlights
+              - list [ref=e223]:
+                - listitem [ref=e224]:
+                  - img [ref=e225]
+                  - generic [ref=e227]: 100 GB storage
+                - listitem [ref=e228]:
+                  - img [ref=e229]
+                  - generic [ref=e231]: Full exhibits management
+                - listitem [ref=e232]:
+                  - img [ref=e233]
+                  - generic [ref=e235]: Multi-issue analytics views
+                - listitem [ref=e236]:
+                  - img [ref=e237]
+                  - generic [ref=e239]: Discovery tracking
+                - listitem [ref=e240]:
+                  - img [ref=e241]
+                  - generic [ref=e243]: Escalation reminders
+                - listitem [ref=e244]:
+                  - img [ref=e245]
+                  - generic [ref=e247]: Appeals awareness
+              - button "Choose Premium" [ref=e248] [cursor=pointer]
+          - generic [ref=e249]:
+            - heading "Add-Ons" [level=3] [ref=e250]
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - generic [ref=e253]: Additional Case Slot
+                - generic [ref=e254]: $9.99 / month
+                - paragraph [ref=e255]: Add another active case without changing your base plan.
+                - list [ref=e256]:
+                  - listitem [ref=e257]:
+                    - img [ref=e258]
+                    - generic [ref=e260]: +30 GB storage for that case
+                  - listitem [ref=e261]:
+                    - img [ref=e262]
+                    - generic [ref=e264]: Same features as your current plan
+                  - listitem [ref=e265]:
+                    - img [ref=e266]
+                    - generic [ref=e268]: Helpful for cases in multiple states, or children with different parents
+              - generic [ref=e269]:
+                - generic [ref=e270]: Archive Mode
+                - generic [ref=e271]: $4.99 / month
+                - paragraph [ref=e272]: Downgrade to preserve your case between active periods.
+                - list [ref=e273]:
+                  - listitem [ref=e274]:
+                    - img [ref=e275]
+                    - generic [ref=e277]: Evidence uploads and journaling
+                  - listitem [ref=e278]:
+                    - img [ref=e279]
+                    - generic [ref=e281]: Timeline and storage preserved
+                  - listitem [ref=e282]:
+                    - img [ref=e283]
+                    - generic [ref=e285]: No new analysis while archived
+                  - listitem [ref=e286]:
+                    - img [ref=e287]
+                    - generic [ref=e289]: Reactivate full features anytime
+          - generic [ref=e290]:
+            - heading "Processing Packs" [level=3] [ref=e291]
+            - paragraph [ref=e292]: One-time credit purchases for AI-powered features. Credits are consumed before your subscription limits.
+            - generic [ref=e293]:
+              - generic [ref=e294]:
+                - generic [ref=e295]: Over-Limit Processing Pack
+                - generic [ref=e296]:
+                  - generic [ref=e297]: $19.99
+                  - generic [ref=e298]: one-time
+                - list [ref=e299]:
+                  - listitem [ref=e300]:
+                    - img [ref=e301]
+                    - generic [ref=e303]: 200 additional analysis credits
+                  - listitem [ref=e304]:
+                    - img [ref=e305]
+                    - generic [ref=e307]: Use for OCR, AI analysis, claims, patterns, document generation
+                  - listitem [ref=e308]:
+                    - img [ref=e309]
+                    - generic [ref=e311]: Credits consumed before plan limits
+                  - listitem [ref=e312]:
+                    - img [ref=e313]
+                    - generic [ref=e315]: Never expires
+                - button "Buy Over-Limit Pack" [ref=e316] [cursor=pointer]
+              - generic [ref=e317]:
+                - generic [ref=e318]: Best Value
+                - generic [ref=e319]: Processing Pack Plus
+                - generic [ref=e320]:
+                  - generic [ref=e321]: $49.99
+                  - generic [ref=e322]: one-time
+                - list [ref=e323]:
+                  - listitem [ref=e324]:
+                    - img [ref=e325]
+                    - generic [ref=e327]: 600 additional analysis credits
+                  - listitem [ref=e328]:
+                    - img [ref=e329]
+                    - generic [ref=e331]: Use for OCR, AI analysis, claims, patterns, document generation
+                  - listitem [ref=e332]:
+                    - img [ref=e333]
+                    - generic [ref=e335]: Credits consumed before plan limits
+                  - listitem [ref=e336]:
+                    - img [ref=e337]
+                    - generic [ref=e339]: Never expires
+                - button "Buy Pack Plus" [ref=e340] [cursor=pointer]
+        - generic [ref=e341]:
+          - heading "Organizations & DV Shelters" [level=3] [ref=e342]
+          - paragraph [ref=e343]: Custom pricing for domestic violence shelters, legal aid, and advocacy groups.
+          - paragraph [ref=e344]: We're actively pursuing grant and sponsor partnerships to help subsidize access where possible.
+          - list [ref=e346]:
+            - listitem [ref=e347]:
+              - generic [ref=e348]: ✓
+              - generic [ref=e349]: Custom onboarding
+            - listitem [ref=e350]:
+              - generic [ref=e351]: ✓
+              - generic [ref=e352]: Privacy-first configurations
+            - listitem [ref=e353]:
+              - generic [ref=e354]: ✓
+              - generic [ref=e355]: Non-profit pricing
+            - listitem [ref=e356]:
+              - generic [ref=e357]: ✓
+              - generic [ref=e358]: Bulk access options
+          - link "Contact Us" [ref=e360] [cursor=pointer]:
+            - /url: /contact
+        - generic [ref=e361]:
+          - generic [ref=e362]:
+            - heading "Full Feature Comparison" [level=3] [ref=e363]
+            - paragraph [ref=e364]: Features listed by where they start. Higher tiers add more checkmarks.
+          - generic [ref=e365]:
+            - generic [ref=e366]:
+              - generic [ref=e367]:
+                - paragraph [ref=e368]: 3-Day Trial
+                - paragraph [ref=e369]: Try Premium workflows first — with a few protective limits.
+              - generic [ref=e370]: Ends automatically • No auto-billing
+            - list [ref=e371]:
+              - listitem [ref=e372]:
+                - generic [ref=e373]: ✓
+                - generic [ref=e374]: Access to Premium-level features to explore the workflow.
+              - listitem [ref=e375]:
+                - generic [ref=e376]: ✓
+                - generic [ref=e377]: Includes child support estimate range using the information you enter. Not court-accurate. Not legal advice.
+              - listitem [ref=e378]:
+                - generic [ref=e379]: ×
+                - generic [ref=e380]: No audio or video uploads during trial.
+              - listitem [ref=e381]:
+                - generic [ref=e382]: ×
+                - generic [ref=e383]: No full exhibit builder access (you can generate 1 sample exhibit).
+              - listitem [ref=e384]:
+                - generic [ref=e385]: ×
+                - generic [ref=e386]: No document downloads (you can generate 1 sample educational document with a large watermark).
+              - listitem [ref=e387]:
+                - generic [ref=e388]: ✓
+                - generic [ref=e389]: Upgrade anytime to unlock full access immediately.
+          - table [ref=e391]:
+            - rowgroup [ref=e392]:
+              - row "Feature Core Pro Premium" [ref=e393]:
+                - columnheader "Feature" [ref=e394]
+                - columnheader "Core" [ref=e395]
+                - columnheader "Pro" [ref=e396]
+                - columnheader "Premium" [ref=e397]
+            - rowgroup [ref=e398]:
+              - row "Starts in Core" [ref=e399]:
+                - cell "Starts in Core" [ref=e400]
+              - row "One active family law case ✓ ✓ ✓" [ref=e401]:
+                - cell "One active family law case" [ref=e402]
+                - cell "✓" [ref=e403]:
+                  - generic [ref=e404]: ✓
+                - cell "✓" [ref=e405]:
+                  - generic [ref=e406]: ✓
+                - cell "✓" [ref=e407]:
+                  - generic [ref=e408]: ✓
+              - row "Storage (30 GB) ✓ ✓ ✓" [ref=e409]:
+                - cell "Storage (30 GB)" [ref=e410]
+                - cell "✓" [ref=e411]:
+                  - generic [ref=e412]: ✓
+                - cell "✓" [ref=e413]:
+                  - generic [ref=e414]: ✓
+                - cell "✓" [ref=e415]:
+                  - generic [ref=e416]: ✓
+              - row "Unlimited document uploads (reasonable use) ✓ ✓ ✓" [ref=e417]:
+                - cell "Unlimited document uploads (reasonable use)" [ref=e418]
+                - cell "✓" [ref=e419]:
+                  - generic [ref=e420]: ✓
+                - cell "✓" [ref=e421]:
+                  - generic [ref=e422]: ✓
+                - cell "✓" [ref=e423]:
+                  - generic [ref=e424]: ✓
+              - row "Interactive timeline ✓ ✓ ✓" [ref=e425]:
+                - cell "Interactive timeline" [ref=e426]
+                - cell "✓" [ref=e427]:
+                  - generic [ref=e428]: ✓
+                - cell "✓" [ref=e429]:
+                  - generic [ref=e430]: ✓
+                - cell "✓" [ref=e431]:
+                  - generic [ref=e432]: ✓
+              - row "Lexi research with citations ✓ ✓ ✓" [ref=e433]:
+                - cell "Lexi research with citations" [ref=e434]
+                - cell "✓" [ref=e435]:
+                  - generic [ref=e436]: ✓
+                - cell "✓" [ref=e437]:
+                  - generic [ref=e438]: ✓
+                - cell "✓" [ref=e439]:
+                  - generic [ref=e440]: ✓
+              - row "AI document analysis ✓ ✓ ✓" [ref=e441]:
+                - cell "AI document analysis" [ref=e442]
+                - cell "✓" [ref=e443]:
+                  - generic [ref=e444]: ✓
+                - cell "✓" [ref=e445]:
+                  - generic [ref=e446]: ✓
+                - cell "✓" [ref=e447]:
+                  - generic [ref=e448]: ✓
+              - row "AI deadline extraction (confirmation required) ✓ ✓ ✓" [ref=e449]:
+                - cell "AI deadline extraction (confirmation required)" [ref=e450]
+                - cell "✓" [ref=e451]:
+                  - generic [ref=e452]: ✓
+                - cell "✓" [ref=e453]:
+                  - generic [ref=e454]: ✓
+                - cell "✓" [ref=e455]:
+                  - generic [ref=e456]: ✓
+              - row "Task & deadline tracking ✓ ✓ ✓" [ref=e457]:
+                - cell "Task & deadline tracking" [ref=e458]
+                - cell "✓" [ref=e459]:
+                  - generic [ref=e460]: ✓
+                - cell "✓" [ref=e461]:
+                  - generic [ref=e462]: ✓
+                - cell "✓" [ref=e463]:
+                  - generic [ref=e464]: ✓
+              - row "Reminders (opt-in) ✓ ✓ ✓" [ref=e465]:
+                - cell "Reminders (opt-in)" [ref=e466]
+                - cell "✓" [ref=e467]:
+                  - generic [ref=e468]: ✓
+                - cell "✓" [ref=e469]:
+                  - generic [ref=e470]: ✓
+                - cell "✓" [ref=e471]:
+                  - generic [ref=e472]: ✓
+              - row "Educational document creator ✓ ✓ ✓" [ref=e473]:
+                - cell "Educational document creator" [ref=e474]
+                - cell "✓" [ref=e475]:
+                  - generic [ref=e476]: ✓
+                - cell "✓" [ref=e477]:
+                  - generic [ref=e478]: ✓
+                - cell "✓" [ref=e479]:
+                  - generic [ref=e480]: ✓
+              - row "Downloads with required acknowledgments + disclaimers ✓ ✓ ✓" [ref=e481]:
+                - cell "Downloads with required acknowledgments + disclaimers" [ref=e482]
+                - cell "✓" [ref=e483]:
+                  - generic [ref=e484]: ✓
+                - cell "✓" [ref=e485]:
+                  - generic [ref=e486]: ✓
+                - cell "✓" [ref=e487]:
+                  - generic [ref=e488]: ✓
+              - row "Audio uploads + transcription ✓ ✓ ✓" [ref=e489]:
+                - cell "Audio uploads + transcription" [ref=e490]
+                - cell "✓" [ref=e491]:
+                  - generic [ref=e492]: ✓
+                - cell "✓" [ref=e493]:
+                  - generic [ref=e494]: ✓
+                - cell "✓" [ref=e495]:
+                  - generic [ref=e496]: ✓
+              - row "Basic exhibits builder ✓ ✓ ✓" [ref=e497]:
+                - cell "Basic exhibits builder" [ref=e498]
+                - cell "✓" [ref=e499]:
+                  - generic [ref=e500]: ✓
+                - cell "✓" [ref=e501]:
+                  - generic [ref=e502]: ✓
+                - cell "✓" [ref=e503]:
+                  - generic [ref=e504]: ✓
+              - row "Parenting plan builder ✓ ✓ ✓" [ref=e505]:
+                - cell "Parenting plan builder" [ref=e506]
+                - cell "✓" [ref=e507]:
+                  - generic [ref=e508]: ✓
+                - cell "✓" [ref=e509]:
+                  - generic [ref=e510]: ✓
+                - cell "✓" [ref=e511]:
+                  - generic [ref=e512]: ✓
+              - row "Child support estimator (education only) ✓ ✓ ✓" [ref=e513]:
+                - cell "Child support estimator (education only)" [ref=e514]
+                - cell "✓" [ref=e515]:
+                  - generic [ref=e516]: ✓
+                - cell "✓" [ref=e517]:
+                  - generic [ref=e518]: ✓
+                - cell "✓" [ref=e519]:
+                  - generic [ref=e520]: ✓
+            - rowgroup [ref=e521]:
+              - row "Starts in Pro" [ref=e522]:
+                - cell "Starts in Pro" [ref=e523]
+              - row "Storage (50 GB) × ✓ ✓" [ref=e524]:
+                - cell "Storage (50 GB)" [ref=e525]
+                - cell "×" [ref=e526]:
+                  - generic [ref=e527]: ×
+                - cell "✓" [ref=e528]:
+                  - generic [ref=e529]: ✓
+                - cell "✓" [ref=e530]:
+                  - generic [ref=e531]: ✓
+              - row "Advanced exhibits builder × ✓ ✓" [ref=e532]:
+                - cell "Advanced exhibits builder" [ref=e533]
+                - cell "×" [ref=e534]:
+                  - generic [ref=e535]: ×
+                - cell "✓" [ref=e536]:
+                  - generic [ref=e537]: ✓
+                - cell "✓" [ref=e538]:
+                  - generic [ref=e539]: ✓
+              - row "Video uploads × ✓ ✓" [ref=e540]:
+                - cell "Video uploads" [ref=e541]
+                - cell "×" [ref=e542]:
+                  - generic [ref=e543]: ×
+                - cell "✓" [ref=e544]:
+                  - generic [ref=e545]: ✓
+                - cell "✓" [ref=e546]:
+                  - generic [ref=e547]: ✓
+              - row "Dual OCR verification (cross-checked) × ✓ ✓" [ref=e548]:
+                - cell "Dual OCR verification (cross-checked)" [ref=e549]
+                - cell "×" [ref=e550]:
+                  - generic [ref=e551]: ×
+                - cell "✓" [ref=e552]:
+                  - generic [ref=e553]: ✓
+                - cell "✓" [ref=e554]:
+                  - generic [ref=e555]: ✓
+              - row "Advanced pattern reporting (timeline → evidence → mapping) × ✓ ✓" [ref=e556]:
+                - cell "Advanced pattern reporting (timeline → evidence → mapping)" [ref=e557]
+                - cell "×" [ref=e558]:
+                  - generic [ref=e559]: ×
+                - cell "✓" [ref=e560]:
+                  - generic [ref=e561]: ✓
+                - cell "✓" [ref=e562]:
+                  - generic [ref=e563]: ✓
+              - row "Hearing & trial prep organization × ✓ ✓" [ref=e564]:
+                - cell "Hearing & trial prep organization" [ref=e565]
+                - cell "×" [ref=e566]:
+                  - generic [ref=e567]: ×
+                - cell "✓" [ref=e568]:
+                  - generic [ref=e569]: ✓
+                - cell "✓" [ref=e570]:
+                  - generic [ref=e571]: ✓
+            - rowgroup [ref=e572]:
+              - row "Starts in Premium" [ref=e573]:
+                - cell "Starts in Premium" [ref=e574]
+              - row "Storage (100 GB) × × ✓" [ref=e575]:
+                - cell "Storage (100 GB)" [ref=e576]
+                - cell "×" [ref=e577]:
+                  - generic [ref=e578]: ×
+                - cell "×" [ref=e579]:
+                  - generic [ref=e580]: ×
+                - cell "✓" [ref=e581]:
+                  - generic [ref=e582]: ✓
+              - row "Advanced narrative reports (still educational) × × ✓" [ref=e583]:
+                - cell "Advanced narrative reports (still educational)" [ref=e584]
+                - cell "×" [ref=e585]:
+                  - generic [ref=e586]: ×
+                - cell "×" [ref=e587]:
+                  - generic [ref=e588]: ×
+                - cell "✓" [ref=e589]:
+                  - generic [ref=e590]: ✓
+              - row "Full exhibits management × × ✓" [ref=e591]:
+                - cell "Full exhibits management" [ref=e592]
+                - cell "×" [ref=e593]:
+                  - generic [ref=e594]: ×
+                - cell "×" [ref=e595]:
+                  - generic [ref=e596]: ×
+                - cell "✓" [ref=e597]:
+                  - generic [ref=e598]: ✓
+              - row "Multi-child, multi-issue analytics × × ✓" [ref=e599]:
+                - cell "Multi-child, multi-issue analytics" [ref=e600]
+                - cell "×" [ref=e601]:
+                  - generic [ref=e602]: ×
+                - cell "×" [ref=e603]:
+                  - generic [ref=e604]: ×
+                - cell "✓" [ref=e605]:
+                  - generic [ref=e606]: ✓
+              - row "Advanced reminders + escalation tracking × × ✓" [ref=e607]:
+                - cell "Advanced reminders + escalation tracking" [ref=e608]
+                - cell "×" [ref=e609]:
+                  - generic [ref=e610]: ×
+                - cell "×" [ref=e611]:
+                  - generic [ref=e612]: ×
+                - cell "✓" [ref=e613]:
+                  - generic [ref=e614]: ✓
+              - row "Complex discovery tracking × × ✓" [ref=e615]:
+                - cell "Complex discovery tracking" [ref=e616]
+                - cell "×" [ref=e617]:
+                  - generic [ref=e618]: ×
+                - cell "×" [ref=e619]:
+                  - generic [ref=e620]: ×
+                - cell "✓" [ref=e621]:
+                  - generic [ref=e622]: ✓
+              - row "Post-judgment workflows (education only) × × ✓" [ref=e623]:
+                - cell "Post-judgment workflows (education only)" [ref=e624]
+                - cell "×" [ref=e625]:
+                  - generic [ref=e626]: ×
+                - cell "×" [ref=e627]:
+                  - generic [ref=e628]: ×
+                - cell "✓" [ref=e629]:
+                  - generic [ref=e630]: ✓
+      - generic [ref=e632]:
+        - generic [ref=e633]:
+          - heading "FAQs" [level=2] [ref=e634]
+          - paragraph [ref=e635]: Quick answers about plans, billing, trials, and upgrades.
+        - generic [ref=e638]:
+          - heading "Can I cancel anytime?" [level=3] [ref=e640]:
+            - button "Can I cancel anytime?" [ref=e641] [cursor=pointer]:
+              - text: Can I cancel anytime?
+              - img [ref=e642]
+          - heading "What payment methods do you accept?" [level=3] [ref=e645]:
+            - button "What payment methods do you accept?" [ref=e646] [cursor=pointer]:
+              - text: What payment methods do you accept?
+              - img [ref=e647]
+          - heading "Is there a free trial?" [level=3] [ref=e650]:
+            - button "Is there a free trial?" [ref=e651] [cursor=pointer]:
+              - text: Is there a free trial?
+              - img [ref=e652]
+          - heading "What happens when I upgrade?" [level=3] [ref=e655]:
+            - button "What happens when I upgrade?" [ref=e656] [cursor=pointer]:
+              - text: What happens when I upgrade?
+              - img [ref=e657]
+          - heading "Do you offer refunds?" [level=3] [ref=e660]:
+            - button "Do you offer refunds?" [ref=e661] [cursor=pointer]:
+              - text: Do you offer refunds?
+              - img [ref=e662]
+    - contentinfo [ref=e664]:
+      - generic [ref=e665]:
+        - generic [ref=e667]:
+          - generic [ref=e668]:
+            - generic [ref=e669]: Start Here
+            - generic [ref=e670]:
+              - link "Home" [ref=e671] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e672] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e673] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e674]:
+            - generic [ref=e675]: About civilla
+            - generic [ref=e676]:
+              - link "How civilla Works" [ref=e677] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e678] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e679] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e680] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e681]:
+            - generic [ref=e682]: Trust & Safety
+            - generic [ref=e683]:
+              - link "Safety & Support" [ref=e684] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e685] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e686] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e687]:
+            - generic [ref=e688]: Support
+            - generic [ref=e689]:
+              - link "Contact" [ref=e690] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e691] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e692] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e693] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e694] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e696]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e697]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```

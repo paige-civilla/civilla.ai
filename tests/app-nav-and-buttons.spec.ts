@@ -8,8 +8,8 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
-const TEST_EMAIL = process.env.TEST_EMAIL || '';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
+const TEST_EMAIL = (process.env.TEST_EMAIL || '').trim().replace(/\\n/g, '');
+const TEST_PASSWORD = (process.env.TEST_PASSWORD || '').trim().replace(/\\n/g, '');
 
 async function login(page: any): Promise<boolean> {
   if (!TEST_EMAIL || !TEST_PASSWORD) {

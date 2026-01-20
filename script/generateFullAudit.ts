@@ -147,8 +147,8 @@ async function checkEnvironment(): Promise<Record<string, boolean>> {
   };
 }
 
-const TEST_EMAIL = process.env.TEST_EMAIL || '';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
+const TEST_EMAIL = (process.env.TEST_EMAIL || '').trim().replace(/\\n/g, '');
+const TEST_PASSWORD = (process.env.TEST_PASSWORD || '').trim().replace(/\\n/g, '');
 let authCookie: string | null = null;
 let testCaseId: string | null = null;
 

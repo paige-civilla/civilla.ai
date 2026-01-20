@@ -1,0 +1,165 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - main [ref=e28]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "Legal & Compliance" [level=1] [ref=e32]
+          - paragraph [ref=e33]: Clear boundaries, plain language, and what civilla can—and cannot—do.
+        - navigation "On this page" [ref=e34]:
+          - link "Education Only" [ref=e35] [cursor=pointer]:
+            - /url: "#education"
+          - link "Helpful Examples" [ref=e36] [cursor=pointer]:
+            - /url: "#boundaries"
+          - link "Privacy Basics" [ref=e37] [cursor=pointer]:
+            - /url: "#privacy"
+          - link "Documents & Court Use" [ref=e38] [cursor=pointer]:
+            - /url: "#documents"
+          - link "FAQ" [ref=e39] [cursor=pointer]:
+            - /url: "#faq"
+      - generic [ref=e42]:
+        - img "Open book representing education" [ref=e44]
+        - generic [ref=e46]:
+          - heading "Education Only. Never Legal Advice." [level=2] [ref=e47]
+          - paragraph [ref=e48]: civilla is an educational and organizational platform. We are not a law firm, we do not provide legal advice, and we do not represent you in court. Using civilla does not create an attorney–client relationship.
+      - generic [ref=e51]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "Helpful Examples" [level=2] [ref=e55]
+            - paragraph [ref=e56]: We provide education and organization support—so you can feel informed and prepared.
+          - generic [ref=e57]:
+            - generic [ref=e58]: "We can:"
+            - generic [ref=e59]:
+              - img [ref=e61]
+              - generic [ref=e63]: Explain legal terms and common court steps
+            - generic [ref=e64]:
+              - img [ref=e66]
+              - generic [ref=e68]: Help you organize documents, timelines, and evidence
+            - generic [ref=e69]:
+              - img [ref=e71]
+              - generic [ref=e73]: Show general info and options (not recommendations)
+            - generic [ref=e74]: "We can't:"
+            - generic [ref=e75]:
+              - img [ref=e77]
+              - generic [ref=e80]: Tell you what to file, when to file, or what to say in court
+            - generic [ref=e81]:
+              - img [ref=e83]
+              - generic [ref=e86]: Recommend a legal strategy or predict outcomes
+            - generic [ref=e87]:
+              - img [ref=e89]
+              - generic [ref=e92]: Act as your attorney or contact the court for you
+          - paragraph [ref=e93]: "*Educational, Research, And Organizational Support. Not Legal Advice Or Representation.*"
+        - img "Door representing boundaries" [ref=e95]
+      - generic [ref=e97]:
+        - heading "Privacy Basics" [level=2] [ref=e98]
+        - paragraph [ref=e99]:
+          - text: We treat your information with care and limit access to what's needed to operate civilla. We do not sell your personal information. For full details, refer to our
+          - link "Privacy Policy" [ref=e100] [cursor=pointer]:
+            - /url: /privacy-policy
+          - text: .
+      - generic [ref=e102]:
+        - heading "Documents And Court Use" [level=2] [ref=e103]
+        - paragraph [ref=e104]: Documents generated in civilla are educational drafts and may include disclaimers or watermarks. You are responsible for reviewing, editing, and confirming any document meets your local court's rules and filing requirements. If you can, consult a licensed attorney for legal advice.
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - heading "civilla Is Not An Emergency Service" [level=2] [ref=e108]
+          - paragraph [ref=e109]: If you are in immediate danger, call local emergency services. If you need crisis support, contact local hotlines available in your area.
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - img [ref=e112]
+            - generic [ref=e114]: Call 911 for emergencies
+          - generic [ref=e115]:
+            - img [ref=e116]
+            - generic [ref=e118]: Call or text 988 for crisis support (24/7)
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - heading "FAQ" [level=2] [ref=e122]
+          - paragraph [ref=e123]: Answers about how civilla works and what it cannot do.
+        - generic [ref=e125]:
+          - group [ref=e126]:
+            - generic "Can civilla Give Me Legal Advice?" [ref=e127] [cursor=pointer]:
+              - generic [ref=e128]: Can civilla Give Me Legal Advice?
+              - img [ref=e129]
+          - group [ref=e131]:
+            - generic "Does Using civilla Create An Attorney-Client Relationship?" [ref=e132] [cursor=pointer]:
+              - generic [ref=e133]: Does Using civilla Create An Attorney-Client Relationship?
+              - img [ref=e134]
+          - group [ref=e136]:
+            - generic "Can I Use civilla's Documents In Court?" [ref=e137] [cursor=pointer]:
+              - generic [ref=e138]: Can I Use civilla's Documents In Court?
+              - img [ref=e139]
+          - group [ref=e141]:
+            - generic "Who Decides What I Do With My Case?" [ref=e142] [cursor=pointer]:
+              - generic [ref=e143]: Who Decides What I Do With My Case?
+              - img [ref=e144]
+        - paragraph [ref=e146]:
+          - text: Need help finding a lawyer?
+          - link "Start with your state bar or local legal aid." [ref=e147] [cursor=pointer]:
+            - /url: https://www.americanbar.org/groups/legal_services/flh-home/flh-bar-directories-and-lawyer-finders/
+    - contentinfo [ref=e148]:
+      - generic [ref=e149]:
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - generic [ref=e153]: Start Here
+            - generic [ref=e154]:
+              - link "Home" [ref=e155] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e156] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e157] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e158]:
+            - generic [ref=e159]: About civilla
+            - generic [ref=e160]:
+              - link "How civilla Works" [ref=e161] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e162] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e163] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e164] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e165]:
+            - generic [ref=e166]: Trust & Safety
+            - generic [ref=e167]:
+              - link "Safety & Support" [ref=e168] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e169] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e170] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e171]:
+            - generic [ref=e172]: Support
+            - generic [ref=e173]:
+              - link "Contact" [ref=e174] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e175] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e176] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e177] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e178] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e180]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e181]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```

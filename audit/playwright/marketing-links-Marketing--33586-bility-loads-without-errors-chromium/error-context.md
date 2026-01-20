@@ -1,0 +1,135 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - heading "Accessibility Matters" [level=1] [ref=e32]
+        - paragraph [ref=e33]: civilla is designed to be usable for as many people as possible—regardless of ability, device, or circumstance.
+      - link "Report An Accessibility Issue" [ref=e34] [cursor=pointer]:
+        - /url: "#report"
+        - text: Report An Accessibility Issue
+        - img [ref=e35]
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - heading "What We're Doing For Accessibility" [level=2] [ref=e41]
+        - paragraph [ref=e42]: We design with accessibility in mind and continually improve based on real feedback.
+      - list [ref=e43]:
+        - listitem [ref=e44]:
+          - img [ref=e46]
+          - generic [ref=e48]: Keyboard navigation support (tab, enter, escape where appropriate)
+        - listitem [ref=e49]:
+          - img [ref=e51]
+          - generic [ref=e53]: Visible focus states
+        - listitem [ref=e54]:
+          - img [ref=e56]
+          - generic [ref=e58]: Screen-reader-friendly structure (headings, labels, landmarks)
+        - listitem [ref=e59]:
+          - img [ref=e61]
+          - generic [ref=e63]: Readable typography and contrast-aware styling
+        - listitem [ref=e64]:
+          - img [ref=e66]
+          - generic [ref=e68]: Reduced-motion support when your device requests it
+      - paragraph [ref=e69]: We strive to meet WCAG 2.1 AA guidelines. If something isn't working for you, tell us—we'll fix it.
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - heading "Request Accommodations" [level=2] [ref=e74]
+        - paragraph [ref=e75]: If you need an accommodation to use civilla, email us and tell us what would help.
+      - link "Admin@civilla.ai" [ref=e76] [cursor=pointer]:
+        - /url: mailto:Admin@civilla.ai?subject=Accessibility%20accommodation%20request
+        - text: Admin@civilla.ai
+        - img [ref=e77]
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - heading "Report An Accessibility Issue" [level=2] [ref=e83]
+        - paragraph [ref=e84]: Tell us what isn't working so we can fix it.
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: Name (optional)
+          - textbox "Name (optional)" [ref=e88]
+          - generic [ref=e89]: Your name helps us follow up personally
+        - generic [ref=e90]:
+          - generic [ref=e91]: Email *
+          - textbox "Email *" [ref=e92]
+          - generic [ref=e93]: We'll use this to follow up with you
+        - generic [ref=e94]:
+          - generic [ref=e95]: Page you were on (optional)
+          - textbox "Page you were on (optional)" [ref=e96]:
+            - /placeholder: e.g., /dashboard or homepage
+            - text: http://localhost:5000/accessibility
+        - generic [ref=e97]:
+          - generic [ref=e98]: Device and browser (optional)
+          - textbox "Device and browser (optional)" [ref=e99]:
+            - /placeholder: e.g., iPhone 14, Safari
+        - generic [ref=e100]:
+          - generic [ref=e101]: What happened *
+          - textbox "What happened *" [ref=e102]:
+            - /placeholder: Describe the accessibility issue you encountered
+          - generic [ref=e103]: Include details like what you were trying to do and what went wrong
+        - button "Email This Report" [ref=e104] [cursor=pointer]
+    - contentinfo [ref=e105]:
+      - generic [ref=e106]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]: Start Here
+            - generic [ref=e111]:
+              - link "Home" [ref=e112] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e113] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e114] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e115]:
+            - generic [ref=e116]: About civilla
+            - generic [ref=e117]:
+              - link "How civilla Works" [ref=e118] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e119] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e120] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e121] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e122]:
+            - generic [ref=e123]: Trust & Safety
+            - generic [ref=e124]:
+              - link "Safety & Support" [ref=e125] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e126] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e127] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e128]:
+            - generic [ref=e129]: Support
+            - generic [ref=e130]:
+              - link "Contact" [ref=e131] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e132] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e133] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e134] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e135] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e137]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e138]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```

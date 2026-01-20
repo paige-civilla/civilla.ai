@@ -1,0 +1,239 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - heading "Family Law, Translated." [level=1] [ref=e33]:
+          - generic [ref=e34]: Family Law,
+          - generic [ref=e35]: Translated.
+        - paragraph [ref=e36]: Bring your case into one clear place, so you can understand what you are seeing, stay organized, and prepare with less stress.
+      - generic [ref=e37]:
+        - link "Sign Up" [ref=e38] [cursor=pointer]:
+          - /url: /plans
+        - generic [ref=e39] [cursor=pointer]:
+          - text: Scroll To Learn More
+          - img [ref=e40]
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - heading "What You Can Do With civilla" [level=2] [ref=e45]:
+          - text: What You Can Do With
+          - emphasis [ref=e46]: civilla
+        - generic [ref=e47]:
+          - paragraph [ref=e48]:
+            - emphasis [ref=e49]: civilla
+            - text: is a platform designed to help you learn, research, and stay organized while navigating your court case.
+          - paragraph [ref=e50]:
+            - text: With
+            - emphasis [ref=e51]: civilla
+            - text: ", you can:"
+          - list [ref=e52]:
+            - listitem [ref=e53]: Learn how court processes work and what steps are commonly involved
+            - listitem [ref=e54]: Research questions using Lexi, our AI assistant, including state-specific rules, terminology, and publicly available court information
+            - listitem [ref=e55]: Organize your case materials such as documents, evidence, timelines, deadlines, disclosures, and communications
+          - paragraph [ref=e56]:
+            - emphasis [ref=e57]: civilla
+            - text: does not act as a lawyer. We don't represent you in court, make decisions for you, or predict outcomes. Instead, we give you tools and information so you can better understand your situation and manage your case with confidence.
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - button "Your Case Journey" [expanded] [ref=e62] [cursor=pointer]:
+            - generic [ref=e63]: Your Case Journey
+            - img [ref=e64]
+          - paragraph [ref=e67]: Family court cases often follow predictable stages. civilla gives you a plain-language overview of what typically happens at each step, so you can understand what to expect.
+        - button "Your Evidence Timeline" [ref=e69] [cursor=pointer]:
+          - generic [ref=e70]: Your Evidence Timeline
+          - img [ref=e71]
+        - button "Your Pattern Analysis" [ref=e74] [cursor=pointer]:
+          - generic [ref=e75]: Your Pattern Analysis
+          - img [ref=e76]
+        - button "Your Child Support Estimator" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: Your Child Support Estimator
+          - img [ref=e81]
+        - button "Your Research Assistant" [ref=e84] [cursor=pointer]:
+          - generic [ref=e85]: Your Research Assistant
+          - img [ref=e86]
+        - button "Your Document Builder" [ref=e89] [cursor=pointer]:
+          - generic [ref=e90]: Your Document Builder
+          - img [ref=e91]
+    - generic [ref=e94]:
+      - heading "Clarity Starts Here" [level=2] [ref=e95]
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - generic [ref=e100]: Step One
+          - paragraph [ref=e102]: Choose your state and case type. Civilla surfaces educational information and typical court steps for that jurisdiction and case category.
+        - generic [ref=e103]:
+          - generic [ref=e106]: Step Two
+          - paragraph [ref=e108]: Add your documents, messages, and key events. Civilla organizes what you provide into a clear timeline so you can review everything in context.
+        - generic [ref=e109]:
+          - generic [ref=e112]: Step Three
+          - paragraph [ref=e114]: Get plain-language explanations of common stages and what information people typically prepare.
+      - generic [ref=e115]:
+        - link "Plans & Pricing" [ref=e116] [cursor=pointer]:
+          - /url: /plans
+          - button "Plans & Pricing" [ref=e117]
+        - link "How civilla Works" [ref=e118] [cursor=pointer]:
+          - /url: /how-civilla-works
+          - button "How civilla Works" [ref=e119]:
+            - text: How
+            - generic [ref=e120]: civilla
+            - text: Works
+    - generic [ref=e122]:
+      - generic [ref=e123]:
+        - heading "In Crisis?" [level=2] [ref=e124]
+        - paragraph [ref=e125]:
+          - text: If you are in immediate danger,
+          - strong [ref=e126]: ALWAYS
+          - text: call
+          - strong [ref=e127]: "911"
+          - text: (or your local emergency number), as civilla.ai is not an emergency service. We also have Quick Exit, our built-in safety feature, always located at the top right corner of every page. When pressed, it instantly redirects to a neutral website and prevents the back button from returning to civilla.
+      - generic [ref=e128]:
+        - generic [ref=e129]:
+          - img [ref=e131]
+          - generic [ref=e133]:
+            - generic [ref=e134]:
+              - heading "Resources" [level=3] [ref=e135]
+              - paragraph [ref=e136]: Learn about safety planning and find support options in your area.
+            - link "Safety & Support" [ref=e137] [cursor=pointer]:
+              - /url: /safety-support
+        - generic [ref=e138]:
+          - img [ref=e140]
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - heading "civilla Support" [level=3] [ref=e145]
+              - paragraph [ref=e146]: For account or site issues (non-emergency), email us anytime.
+            - link "support@civilla.ai" [ref=e147] [cursor=pointer]:
+              - /url: mailto:support@civilla.ai
+        - generic [ref=e148]:
+          - img [ref=e150]
+          - generic [ref=e152]:
+            - generic [ref=e153]:
+              - heading "Crisis Support (U.S.)" [level=3] [ref=e154]
+              - paragraph [ref=e155]: Call or text 988 for free, confidential support 24/7.
+            - link "988 Suicide & Crisis Lifeline" [ref=e156] [cursor=pointer]:
+              - /url: tel:988
+        - generic [ref=e157]:
+          - img [ref=e159]
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - heading "Domestic Violence Support (U.S.)" [level=3] [ref=e163]
+              - paragraph [ref=e164]: "National Domestic Violence Hotline: 1-800-799-7233. Text 'START' to 88788."
+            - link "TheHotline.org" [ref=e165] [cursor=pointer]:
+              - /url: https://www.thehotline.org
+      - paragraph [ref=e166]: civilla provides educational, research, and organizational support — not legal advice or representation.
+    - generic [ref=e168]:
+      - generic [ref=e169]:
+        - heading "Early Notes" [level=2] [ref=e170]
+        - paragraph [ref=e171]: We're in early access. Here's the kind of feedback we're hearing — and what we're building toward.
+        - paragraph [ref=e172]: We don't publish feedback without permission.
+      - generic [ref=e173]:
+        - generic [ref=e174]:
+          - paragraph [ref=e175]: "\"I needed a calmer way to understand what's typical — without feeling judged or overwhelmed.\""
+          - generic [ref=e176]: Anonymous — Early Access
+        - generic [ref=e177]:
+          - paragraph [ref=e178]: "\"Having my notes, messages, and documents in one place made it easier to stay organized.\""
+          - generic [ref=e179]: Anonymous — Early Access
+        - generic [ref=e180]:
+          - paragraph [ref=e181]: "\"The plain-language explanations helped me feel less panicked about what comes next.\""
+          - generic [ref=e182]: Anonymous — Early Access
+      - generic [ref=e183]:
+        - generic [ref=e184]:
+          - heading "Share Your Thoughts" [level=3] [ref=e185]
+          - paragraph [ref=e186]: Your feedback helps us improve civilla. No legal details needed — just what felt helpful or what felt confusing. Please don't include sensitive case details.
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - textbox "Name (optional)" [ref=e189]
+            - textbox "Email (optional)" [ref=e190]
+          - textbox "Your feedback (required)" [ref=e191]
+        - generic [ref=e192]:
+          - button "Send Feedback" [disabled]:
+            - img
+            - text: Send Feedback
+          - generic [ref=e193]: This will open your email app.
+    - generic [ref=e195]:
+      - generic [ref=e196]:
+        - heading "FAQs" [level=2] [ref=e197]
+        - paragraph [ref=e198]: Quick answers about what civilla does — and what it doesn't.
+      - generic [ref=e199]:
+        - generic [ref=e200]:
+          - button "Is civilla.ai a law firm?" [ref=e201] [cursor=pointer]:
+            - generic [ref=e202]: Is civilla.ai a law firm?
+            - img [ref=e203]
+          - paragraph [ref=e206]: No. civilla is an educational, research, and organizational platform. We don't provide legal advice, represent you in court, or replace an attorney.
+        - button "Can I use civilla.ai with an attorney?" [ref=e208] [cursor=pointer]:
+          - generic [ref=e209]: Can I use civilla.ai with an attorney?
+          - img [ref=e210]
+        - button "What states does civilla.ai cover?" [ref=e213] [cursor=pointer]:
+          - generic [ref=e214]: What states does civilla.ai cover?
+          - img [ref=e215]
+        - button "Will civilla.ai tell me what to file?" [ref=e218] [cursor=pointer]:
+          - generic [ref=e219]: Will civilla.ai tell me what to file?
+          - img [ref=e220]
+        - button "How is my information kept safe?" [ref=e223] [cursor=pointer]:
+          - generic [ref=e224]: How is my information kept safe?
+          - img [ref=e225]
+    - contentinfo [ref=e227]:
+      - generic [ref=e228]:
+        - generic [ref=e230]:
+          - generic [ref=e231]:
+            - generic [ref=e232]: Start Here
+            - generic [ref=e233]:
+              - link "Home" [ref=e234] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e235] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e236] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e237]:
+            - generic [ref=e238]: About civilla
+            - generic [ref=e239]:
+              - link "How civilla Works" [ref=e240] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e241] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e242] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e243] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e244]:
+            - generic [ref=e245]: Trust & Safety
+            - generic [ref=e246]:
+              - link "Safety & Support" [ref=e247] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e248] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e249] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e250]:
+            - generic [ref=e251]: Support
+            - generic [ref=e252]:
+              - link "Contact" [ref=e253] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e254] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e255] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e256] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e257] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e259]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e260]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```

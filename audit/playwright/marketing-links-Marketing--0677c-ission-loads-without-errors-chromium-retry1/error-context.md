@@ -1,0 +1,84 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - main [ref=e28]:
+      - generic [ref=e30]:
+        - generic [ref=e32]:
+          - heading "Our Mission" [level=1] [ref=e34]
+          - paragraph [ref=e36]: This started as a passion project for a single parent, showing up to family court scared, exhausted, confused, and determined to keep going, with no clear place to start or even who to ask. Now it's for everyone in family court who deserves tools that feel clear, calm, and human.
+        - generic [ref=e37]:
+          - heading "The Heart Of It" [level=2] [ref=e38]:
+            - text: The Heart Of It
+            - img [ref=e39]
+          - generic [ref=e41]:
+            - paragraph [ref=e42]: "At the heart of civilla is a simple goal: to make family court easier to understand and easier to move through for people doing it without a lawyer. We believe every parent, survivor, and self-represented person deserves tools that are clear, calm, accurate, and human."
+            - paragraph [ref=e43]: Family court wasn't built for people without legal teams, and the process can feel confusing, time-consuming, and isolating. civilla exists to bring clarity back to the people who often have the least margin for error.
+            - paragraph [ref=e44]: We're here to reduce overwhelm, replace guesswork with plain language, and help you stay organized, one step, one document, one decision at a time. civilla wasn't built in a boardroom. It was built with lived experience, and shaped by the people it's meant for.
+            - paragraph [ref=e45]: This mission is shared, lived, and built alongside the people who know this system firsthand and who believe we all deserve better.
+    - contentinfo [ref=e46]:
+      - generic [ref=e47]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: Start Here
+            - generic [ref=e52]:
+              - link "Home" [ref=e53] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e54] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e55] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e56]:
+            - generic [ref=e57]: About civilla
+            - generic [ref=e58]:
+              - link "How civilla Works" [ref=e59] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e60] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e61] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e62] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e63]:
+            - generic [ref=e64]: Trust & Safety
+            - generic [ref=e65]:
+              - link "Safety & Support" [ref=e66] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e67] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e68] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e69]:
+            - generic [ref=e70]: Support
+            - generic [ref=e71]:
+              - link "Contact" [ref=e72] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e73] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e74] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e75] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e76] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e78]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e79]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```

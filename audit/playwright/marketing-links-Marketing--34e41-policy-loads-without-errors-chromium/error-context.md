@@ -1,0 +1,91 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - generic [ref=e7]:
+        - link "civilla.ai" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "civilla.ai" [ref=e10]
+        - generic [ref=e11]:
+          - button "Account options" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+            - img [ref=e17]
+          - button "Open menu" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img [ref=e22]
+              - generic [ref=e23]: Menu
+          - button "Quick exit" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+    - main [ref=e28]:
+      - generic [ref=e31]:
+        - generic [ref=e33]:
+          - heading "Your privacy matters" [level=1] [ref=e34]
+          - paragraph [ref=e35]: We protect your information with the same care you deserve in this process.
+        - generic [ref=e36]:
+          - button "Read" [ref=e37] [cursor=pointer]
+          - link "Contact" [ref=e38] [cursor=pointer]:
+            - /url: /contact
+            - button "Contact" [ref=e39]
+      - generic [ref=e42]:
+        - heading "How we handle your data" [level=2] [ref=e43]
+        - generic [ref=e45]:
+          - paragraph [ref=e46]: civilla collects information to help you organize your case and understand family law processes. This includes account details like your email and name, documents you upload, messages you write, and how you use the platform. We also collect technical information such as your IP address and browser type to keep the service running smoothly and secure.
+          - paragraph [ref=e47]: Your case materials—documents, timelines, evidence, and notes—belong to you. We store them securely on encrypted servers and never share them with third parties, sell them, or use them for marketing. You can download or delete your information at any time. We keep your data only as long as your account is active, unless legal requirements ask us to retain it longer. We do not use your private content to train public or third-party artificial intelligence models without your explicit consent.
+          - paragraph [ref=e48]: civilla uses industry-standard encryption and security practices to protect your information from unauthorized access. We limit employee access to your data and conduct regular security reviews. However, no system is completely risk-free, and we encourage you to use a strong password and keep your login credentials private.
+          - paragraph [ref=e49]:
+            - text: We may update this policy as our service evolves. We will notify you of significant changes by email or through the platform. Your continued use of civilla after updates means you accept the new terms. If you have questions about how we handle your information, contact us through the
+            - link "support page" [ref=e50] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+    - contentinfo [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: Start Here
+            - generic [ref=e57]:
+              - link "Home" [ref=e58] [cursor=pointer]:
+                - /url: /
+              - link "Plans & Pricing" [ref=e59] [cursor=pointer]:
+                - /url: /plans
+              - link "Login" [ref=e60] [cursor=pointer]:
+                - /url: /login
+          - generic [ref=e61]:
+            - generic [ref=e62]: About civilla
+            - generic [ref=e63]:
+              - link "How civilla Works" [ref=e64] [cursor=pointer]:
+                - /url: /how-civilla-works
+              - link "Our Mission" [ref=e65] [cursor=pointer]:
+                - /url: /our-mission
+              - link "Meet The Founders" [ref=e66] [cursor=pointer]:
+                - /url: /meet-the-founders
+              - link "Wall Of Wins" [ref=e67] [cursor=pointer]:
+                - /url: /wall-of-wins
+          - generic [ref=e68]:
+            - generic [ref=e69]: Trust & Safety
+            - generic [ref=e70]:
+              - link "Safety & Support" [ref=e71] [cursor=pointer]:
+                - /url: /safety-support
+              - link "Legal & Compliance" [ref=e72] [cursor=pointer]:
+                - /url: /legal-compliance
+              - link "Accessibility" [ref=e73] [cursor=pointer]:
+                - /url: /accessibility
+          - generic [ref=e74]:
+            - generic [ref=e75]: Support
+            - generic [ref=e76]:
+              - link "Contact" [ref=e77] [cursor=pointer]:
+                - /url: /contact
+              - link "FAQs" [ref=e78] [cursor=pointer]:
+                - /url: /faq
+              - link "Privacy Policy" [ref=e79] [cursor=pointer]:
+                - /url: /privacy-policy
+              - link "Terms of Service" [ref=e80] [cursor=pointer]:
+                - /url: /terms
+              - link "Careers" [ref=e81] [cursor=pointer]:
+                - /url: /careers
+        - paragraph [ref=e83]: © 2025 civilla.ai. All rights reserved.
+      - paragraph [ref=e84]: Civilla helps you understand how cases typically move through family court through education, research, and organization—guided by your direction. Civilla doesn't provide legal advice or represent you in court.
+```
