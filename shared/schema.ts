@@ -111,7 +111,7 @@ export const upsertUserProfileSchema = z.object({
   calendarDeadlineColor: z.string().max(20).optional(),
   calendarTimelineColor: z.string().max(20).optional(),
   onboardingDeferred: z.record(z.boolean()).optional(),
-  onboardingStatus: z.enum(["incomplete", "partial", "complete"]).optional(),
+  onboardingStatus: z.enum(["incomplete", "partial", "complete", "lite"]).optional(),
   startHereSeen: z.boolean().optional(),
   draftingDisclaimerAcceptedAt: z.date().optional().nullable(),
 });
