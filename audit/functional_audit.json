@@ -1,0 +1,201 @@
+{
+  "generated": "2026-01-20T03:44:23.887Z",
+  "authStatus": "PASS",
+  "results": [
+    {
+      "category": "Auth",
+      "test": "Environment Variables",
+      "status": "PASS",
+      "details": "TEST_EMAIL length: 18, TEST_PASSWORD length: 14",
+      "duration": 0
+    },
+    {
+      "category": "Auth",
+      "test": "Login API",
+      "endpoint": "/api/auth/login",
+      "dbTables": [
+        "users",
+        "sessions"
+      ],
+      "status": "PASS",
+      "details": "Logged in as qa.test@civilla.ai",
+      "duration": 973
+    },
+    {
+      "category": "Case",
+      "test": "Create Case",
+      "endpoint": "/api/cases",
+      "status": "FAIL",
+      "error": "HTTP 402",
+      "duration": 263
+    },
+    {
+      "category": "Evidence",
+      "test": "List Evidence",
+      "status": "SKIP",
+      "error": "No auth or case ID"
+    },
+    {
+      "category": "Extraction",
+      "test": "Check Extraction Status",
+      "status": "SKIP",
+      "error": "No evidence to check"
+    },
+    {
+      "category": "Extraction",
+      "test": "Retry Extraction Endpoint",
+      "status": "SKIP",
+      "error": "No evidence to retry"
+    },
+    {
+      "category": "AI Pipeline",
+      "test": "AI Health Check",
+      "endpoint": "/api/ai/health",
+      "status": "PASS",
+      "details": "OpenAI: true, Vision: true",
+      "duration": 1576
+    },
+    {
+      "category": "AI Pipeline",
+      "test": "Run AI Analysis",
+      "status": "SKIP",
+      "error": "No evidence to analyze"
+    },
+    {
+      "category": "AI Pipeline",
+      "test": "List AI Analyses",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Claims",
+      "test": "Suggest Claims",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Claims",
+      "test": "List Claims",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Claims",
+      "test": "Compile Claims Preflight",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Documents",
+      "test": "List Documents",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Exports",
+      "test": "Pattern Analysis Export",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Exports",
+      "test": "Trial Prep Export",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Lexi",
+      "test": "List Threads",
+      "endpoint": "/api/lexi/threads",
+      "dbTables": [
+        "lexi_threads"
+      ],
+      "status": "PASS",
+      "details": "Found 0 threads",
+      "duration": 146
+    },
+    {
+      "category": "Lexi",
+      "test": "Create Thread",
+      "endpoint": "/api/lexi/threads",
+      "dbTables": [
+        "lexi_threads"
+      ],
+      "status": "PASS",
+      "details": "Created thread: dfbe03fe-9a36-4fe3-bb69-b59a21f8eff5",
+      "duration": 148
+    },
+    {
+      "category": "Lexi",
+      "test": "Send Message",
+      "endpoint": "/api/lexi/chat",
+      "dbTables": [
+        "lexi_messages"
+      ],
+      "status": "FAIL",
+      "error": "HTTP 500",
+      "duration": 608
+    },
+    {
+      "category": "Timeline",
+      "test": "Get Timeline",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Contacts",
+      "test": "List Contacts",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Deadlines",
+      "test": "List Deadlines",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Communications",
+      "test": "List Communications",
+      "status": "SKIP",
+      "error": "No case ID"
+    },
+    {
+      "category": "Children",
+      "test": "List Children",
+      "status": "SKIP",
+      "error": "No case ID"
+    }
+  ],
+  "summary": {
+    "total": 23,
+    "passed": 5,
+    "failed": 2,
+    "skipped": 16
+  },
+  "coverage": {
+    "tested": [],
+    "notTested": [],
+    "missingEndpoints": []
+  },
+  "rootCauses": {
+    "case_creation_402": {
+      "error": "Case limit reached (0)",
+      "cause": "QA account on free tier with casesAllowed=0",
+      "type": "PAYMENT_WALL",
+      "fix": "Upgrade account or set casesAllowed=1 in DB"
+    },
+    "lexi_chat_500": {
+      "error": "column streaming_enabled does not exist",
+      "cause": "Missing database column",
+      "type": "SCHEMA_MIGRATION",
+      "fix": "ALTER TABLE lexi_user_preferences ADD COLUMN streaming_enabled BOOLEAN DEFAULT true"
+    },
+    "activity_logs_500": {
+      "error": "column module_key does not exist",
+      "cause": "Missing database column",
+      "type": "SCHEMA_MIGRATION",
+      "fix": "Add module_key column to activity_logs table"
+    }
+  }
+}
