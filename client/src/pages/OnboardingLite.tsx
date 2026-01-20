@@ -35,11 +35,17 @@ export default function OnboardingLite() {
 
   const canContinue = state && tos && privacy && upl;
 
+  const [skipMode, setSkipMode] = useState(false);
+
   const mutation = useMutation({
     mutationFn: completeLiteOnboarding,
     onSuccess: (data) => {
       if (data.ok) {
-        navigate("/app/lexi-intake?state=" + encodeURIComponent(state));
+        if (skipMode) {
+          navigate("/app/start-here");
+        } else {
+          navigate("/app/lexi-intake?state=" + encodeURIComponent(state));
+        }
       } else {
         setError(data.error || "Failed to complete onboarding");
       }
@@ -51,6 +57,7 @@ export default function OnboardingLite() {
 
   const handleContinue = () => {
     setError(null);
+    setSkipMode(false);
     mutation.mutate({
       state,
       tosAccepted: tos,
@@ -62,6 +69,8 @@ export default function OnboardingLite() {
 
   const handleSkip = () => {
     if (canContinue) {
+      setError(null);
+      setSkipMode(true);
       mutation.mutate({
         state,
         tosAccepted: tos,
