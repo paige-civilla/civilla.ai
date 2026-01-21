@@ -1,9 +1,15 @@
-import { getStripeSync, getUncachableStripeClient } from './stripeClient';
+import { getStripeSync, getUncachableStripeClient, STRIPE_ENABLED } from './stripeClient';
 import { handleWebhookEvent } from './billing';
 import Stripe from 'stripe';
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
+    // Short-circuit if Stripe is disabled
+    if (!STRIPE_ENABLED) {
+      console.log('[Stripe] Webhook ignored — Stripe disabled');
+      return;
+    }
+
     if (!Buffer.isBuffer(payload)) {
       throw new Error(
         'STRIPE WEBHOOK ERROR: Payload must be a Buffer. ' +

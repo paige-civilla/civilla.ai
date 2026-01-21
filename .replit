@@ -44,20 +44,6 @@ waitForPort = 5000
 [userenv.shared]
 PSQL = "psql 'postgresql://neondb_owner:npg_9C5ObexrwojV@ep-muddy-rain-afb6ypj2-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'"
 PSQLPASSAUTH = "psql -h pg.neon.tech"
-STRIPE_SECRET_KEY = "sk_test_51SL41AHryF2iXYidYrvm8oyfDYiMVIEYgoH9cwX3sxuaXfE2FQF7MshZpWAc6yKXQWuVpFqEbe0FDMEX3dp1DOjz00uyKMbH0N"
-STRIPE_PUBLISHABLE_KEY = "pk_test_51SL41AHryF2iXYidA4cyYokR66XSy4d4sL2TTvlMRHnGiKjeyzbX508ClfqzJBBlmp8Dq49WrYPQkuT3MUY2nKMs00LvRLSpXm"
-STRIPE_WEBHOOK_SECRET = "whsec_WXzHsRig77AOleg4Ww0WkplN1MQt4MYc"
-STRIPE_MODE = "test"
-STRIPE_PRICE_CORE_MONTHLY = "price_1Sm6pZHryF2iXYid5CMlH0Cs"
-STRIPE_PRICE_CORE_YEARLY = "price_1Sm7wIHryF2iXYidn3eeU8kC"
-STRIPE_PRICE_PRO_MONTHLY = "price_1Sm7dFHryF2iXYidd0T2NMHy"
-STRIPE_PRICE_PRO_YEARLY = "price_1Sm7yqHryF2iXYidsGvn5Llx"
-STRIPE_PRICE_PREMIUM_MONTHLY = "price_1Sm7diHryF2iXYid9MAMLlJT"
-STRIPE_PRICE_PREMIUM_YEARLY = "price_1Sm81ZHryF2iXYidvWIStZDP"
-STRIPE_PRICE_ARCHIVE_MODE_MONTHLY = "price_1Sm7gWHryF2iXYidZPWR7Q7c"
-STRIPE_PRICE_ADDITIONAL_CASE_SLOT_MONTHLY = "price_1Sm7eCHryF2iXYidPCETMBcx"
-STRIPE_PRICE_OVERLIMIT_PACK_ONETIME = "price_1Sm7haHryF2iXYidpD70XBdu"
-VITE_STRIPE_PUBLIC_KEY = "pk_test_"
 
 [agent]
 integrations = ["javascript_openai_ai_integrations:2.0.0", "stripe:2.0.0"]

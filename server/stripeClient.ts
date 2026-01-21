@@ -1,7 +1,17 @@
 // Stripe client - uses environment variables for credentials
 import Stripe from 'stripe';
 
+// Feature flag to disable Stripe entirely for testing
+export const STRIPE_ENABLED = process.env.STRIPE_ENABLED === 'true';
+
 function getCredentials() {
+  if (!STRIPE_ENABLED) {
+    return {
+      publishableKey: '',
+      secretKey: '',
+    };
+  }
+
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const publishableKey = process.env.VITE_STRIPE_PUBLIC_KEY;
 
@@ -15,7 +25,11 @@ function getCredentials() {
   };
 }
 
-export async function getUncachableStripeClient() {
+export async function getUncachableStripeClient(): Promise<Stripe | null> {
+  if (!STRIPE_ENABLED) {
+    return null;
+  }
+  
   const { secretKey } = getCredentials();
 
   return new Stripe(secretKey, {
@@ -44,7 +58,11 @@ function getCleanDatabaseUrl(): string {
   return databaseUrl;
 }
 
-export async function getStripeSync() {
+export async function getStripeSync(): Promise<any | null> {
+  if (!STRIPE_ENABLED) {
+    return null;
+  }
+  
   if (!stripeSync) {
     const { StripeSync } = await import('stripe-replit-sync');
     const secretKey = getStripeSecretKey();

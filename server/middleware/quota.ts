@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { checkQuota, recordUsage, QuotaCheckType, getQuotaRemaining } from "../usage/limits";
 
+// Feature flag to bypass quota enforcement for testing
+const STRIPE_ENABLED = process.env.STRIPE_ENABLED === 'true';
+
 declare module "express-session" {
   interface SessionData {
     userId?: string;
@@ -22,6 +25,11 @@ export function requireQuota(
   } = {}
 ) {
   return async (req: QuotaRequest, res: Response, next: NextFunction) => {
+    // Bypass quota checks when Stripe is disabled
+    if (!STRIPE_ENABLED) {
+      return next();
+    }
+
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
