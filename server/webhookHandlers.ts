@@ -24,6 +24,10 @@ export class WebhookHandlers {
     if (webhookSecret) {
       try {
         const stripe = await getUncachableStripeClient();
+        if (!stripe) {
+          console.log('[WEBHOOK] Stripe disabled, ignoring webhook');
+          return;
+        }
         const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
         await handleWebhookEvent(event);
         console.log(`[WEBHOOK] Processed event: ${event.type}`);
@@ -34,6 +38,10 @@ export class WebhookHandlers {
     } else {
       console.log('[WEBHOOK] No STRIPE_WEBHOOK_SECRET configured, using stripe-replit-sync');
       const sync = await getStripeSync();
+      if (!sync) {
+        console.log('[WEBHOOK] Stripe disabled, ignoring webhook');
+        return;
+      }
       await sync.processWebhook(payload, signature);
     }
   }
