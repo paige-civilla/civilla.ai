@@ -6,8 +6,15 @@ export interface ApiError extends Error {
   packSuggested?: "overlimit_200" | "plus_600";
 }
 
-async function throwIfResNotOk(res: Response) {
+async function throwIfResNotOk(res: Response, redirectOn401 = true) {
   if (!res.ok) {
+    // Handle 401 centrally - redirect to login
+    if (res.status === 401 && redirectOn401) {
+      console.log("[API 401] Session expired, redirecting to login");
+      window.location.href = "/login?reason=session";
+      throw new Error("SESSION_INVALID");
+    }
+
     const text = await res.text();
     let parsed: { error?: string; code?: string; packSuggested?: string } | null = null;
     try {
@@ -56,11 +63,17 @@ export const getQueryFn: <T>(options: {
       credentials: "include",
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (res.status === 401) {
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
+      // For "throw" behavior, redirect to login
+      console.log("[API 401]", queryKey.join("/"));
+      window.location.href = "/login?reason=session";
+      throw new Error("SESSION_INVALID");
     }
 
-    await throwIfResNotOk(res);
+    await throwIfResNotOk(res, false); // Don't redirect again for 401
     return await res.json();
   };
 
