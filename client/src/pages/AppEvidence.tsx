@@ -355,12 +355,9 @@ export default function AppEvidence() {
 
   useEffect(() => {
     if (!caseLoading && !currentCase && caseId) {
-      // Check if it's a 401 error (session issue) vs case not found
       if (caseError && (caseError as ApiError).status === 401) {
-        console.log("[redirect->login] 401 on case fetch");
         setLocation("/login?reason=session");
       } else {
-        console.log("[redirect->cases] case not found or access denied");
         setLocation("/app/cases");
       }
     }

@@ -114,10 +114,8 @@ export default function AppTimeline() {
   useEffect(() => {
     if (!caseLoading && !currentCase && caseId) {
       if (caseError && (caseError as any).status === 401) {
-        console.log("[redirect->login] 401 on case fetch");
         setLocation("/login?reason=session");
       } else {
-        console.log("[redirect->cases] case not found or access denied");
         setLocation("/app/cases");
       }
     }
