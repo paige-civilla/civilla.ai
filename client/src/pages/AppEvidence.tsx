@@ -127,7 +127,7 @@ export default function AppEvidence() {
   const [snippetForm, setSnippetForm] = useState<{ title: string; snippetText: string; pageNumber: string; exhibitListId: string }>({ title: "", snippetText: "", pageNumber: "", exhibitListId: "" });
   const [viewerFileId, setViewerFileId] = useState<string | null>(null);
 
-  const { data: caseData, isLoading: caseLoading, isError: caseError } = useQuery<{ case: Case }>({
+  const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
     enabled: !!caseId,
   });
@@ -355,9 +355,16 @@ export default function AppEvidence() {
 
   useEffect(() => {
     if (!caseLoading && !currentCase && caseId) {
-      setLocation("/app/cases");
+      // Check if it's a 401 error (session issue) vs case not found
+      if (caseError && (caseError as ApiError).status === 401) {
+        console.log("[redirect->login] 401 on case fetch");
+        setLocation("/login?reason=session");
+      } else {
+        console.log("[redirect->cases] case not found or access denied");
+        setLocation("/app/cases");
+      }
     }
-  }, [caseLoading, currentCase, caseId, setLocation]);
+  }, [caseLoading, currentCase, caseId, caseError, setLocation]);
 
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {

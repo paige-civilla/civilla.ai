@@ -1,0 +1,117 @@
+REPLIT: FIX “module page flashes then redirects to Your Cases” (case endpoints return 401)
+
+Observed logs:
+- /api/auth/me 200
+- /api/profile 200
+- /api/cases 200
+- BUT /api/cases/:caseId/* = 401 Unauthorized immediately after login
+
+Conclusion:
+- Session cookie IS valid (since /api/profile and /api/cases succeed)
+- Some frontend requests ARE NOT sending cookies (credentials missing) OR are using a different API client than the working endpoints.
+- Those 401s trigger the UI redirect back to /app/cases.
+
+GOAL:
+Make ALL frontend API calls use a single shared fetch wrapper that always sends session cookies, and ensure React Query uses it too.
+
+────────────────────────────────────────
+1) Create/verify ONE shared API wrapper and force cookies
+────────────────────────────────────────
+
+Find or create: client/src/lib/apiFetch.ts (or existing apiRequest/api.ts)
+
+Implement:
+
+export async function apiFetch(path: string, init: RequestInit = {}) {
+  const res = await fetch(path, {
+    ...init,
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(init.headers || {}),
+    },
+  });
+
+  // IMPORTANT: central 401 handling
+  if (res.status === 401) {
+    // do NOT redirect to /app/cases here
+    // session is missing/expired for THIS request path
+    window.location.href = "/login?reason=session";
+    throw new Error("UNAUTHORIZED");
+  }
+
+  return res;
+}
+
+Rules:
+- Path must be RELATIVE: "/api/..."
+- Never use absolute URLs to the replit domain for API calls
+- Always include credentials: "include"
+
+────────────────────────────────────────
+2) Force React Query to use this wrapper everywhere
+────────────────────────────────────────
+
+Find queryClient setup (often client/src/lib/queryClient.ts or main.tsx)
+There is usually a default queryFn that does fetch().
+
+Replace any default queryFn fetch with apiFetch.
+
+Example pattern to fix:
+const res = await fetch(queryKey[0] as string)
+→ change to:
+const res = await apiFetch(queryKey[0] as string)
+
+Ensure all res.json() reads remain the same.
+
+────────────────────────────────────────
+3) Replace direct fetch("/api/cases/...") in module pages
+────────────────────────────────────────
+
+Search client/ for these patterns:
+- fetch("/api/cases/"
+- fetch(`/api/cases/`
+- axios.get("/api/cases/"
+- apiRequest that does NOT include credentials
+
+For EVERY one found, replace with apiFetch.
+
+This is likely where the bug is:
+Dashboard / Evidence / Timeline / Draft Readiness / Phase Status pages.
+
+────────────────────────────────────────
+4) Stop “case fallback redirect” from misfiring on 401
+────────────────────────────────────────
+
+Search for redirect logic that sends users to "/app/cases" when data fails, e.g.
+- setLocation("/app/cases")
+- navigate("/app/cases")
+- “if (!case) go cases”
+- “if query error go cases”
+
+Update it so:
+- If error is 401/UNAUTHORIZED → go to /login (session issue)
+- Only go to /app/cases if user IS authenticated AND actually has no case selected
+
+Do not treat 401 as “no case”.
+
+────────────────────────────────────────
+5) Add temporary debug logs to confirm
+────────────────────────────────────────
+
+In apiFetch:
+console.log("[apiFetch]", path, "status", res.status);
+
+In redirect code:
+console.log("[redirect->cases] reason:", reason, "path:", location.pathname);
+
+Then test:
+- Login
+- Click Evidence/Timeline/Documents from menu
+Expected:
+- No 401 spam for /api/cases/:caseId/*
+- No forced redirect to /app/cases
+- Modules stay open
+
+END

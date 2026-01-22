@@ -28,7 +28,7 @@ export default function AppTrialPrepPrint() {
   const params = useParams<{ caseId: string }>();
   const caseId = params.caseId;
 
-  const { data: caseData, isLoading: caseLoading } = useQuery<{ case: Case }>({
+  const { data: caseData, isLoading: caseLoading, error: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
     enabled: !!caseId,
   });
@@ -89,9 +89,15 @@ export default function AppTrialPrepPrint() {
 
   useEffect(() => {
     if (!caseLoading && !currentCase && caseId) {
-      setLocation("/app/cases");
+      if (caseError && (caseError as any).status === 401) {
+        console.log("[redirect->login] 401 on case fetch");
+        setLocation("/login?reason=session");
+      } else {
+        console.log("[redirect->cases] case not found or access denied");
+        setLocation("/app/cases");
+      }
     }
-  }, [caseLoading, currentCase, caseId, setLocation]);
+  }, [caseLoading, currentCase, caseId, caseError, setLocation]);
 
   function getSourceItems(sectionKey: string): SourceItem[] {
     switch (sectionKey) {

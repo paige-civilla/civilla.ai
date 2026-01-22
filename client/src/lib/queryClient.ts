@@ -47,14 +47,26 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
+// Build URL from queryKey - filter out non-string parts (like objects used for cache keys)
+function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
+  const pathParts = queryKey.filter((part): part is string => typeof part === "string");
+  return pathParts.join("/");
+}
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = buildUrlFromQueryKey(queryKey);
+    console.log("[queryFn]", url);
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
+
+    console.log("[queryFn]", url, "status", res.status);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

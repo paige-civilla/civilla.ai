@@ -98,7 +98,7 @@ export default function AppDashboard() {
 
   const currentMonth = new Date().toISOString().slice(0, 7);
 
-  const { data: caseData, isLoading } = useQuery<{ case: Case }>({
+  const { data: caseData, isLoading, error: caseError } = useQuery<{ case: Case }>({
     queryKey: ["/api/cases", caseId],
     enabled: !!caseId,
   });
@@ -315,9 +315,15 @@ export default function AppDashboard() {
 
   useEffect(() => {
     if (!isLoading && !primaryCase && caseId) {
-      setLocation("/app/cases");
+      if (caseError && (caseError as any).status === 401) {
+        console.log("[redirect->login] 401 on case fetch");
+        setLocation("/login?reason=session");
+      } else {
+        console.log("[redirect->cases] case not found or access denied");
+        setLocation("/app/cases");
+      }
     }
-  }, [isLoading, primaryCase, caseId, setLocation]);
+  }, [isLoading, primaryCase, caseId, caseError, setLocation]);
 
   useEffect(() => {
     if (casePhase && previousPhase && casePhase !== previousPhase && caseId) {
