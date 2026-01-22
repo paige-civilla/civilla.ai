@@ -106,10 +106,10 @@ export default function AppTasks() {
   }, [currentCase]);
 
   useEffect(() => {
-    if (!isLoading && !isError && !currentCase && caseId) {
+    if (!isLoading && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [isLoading, isError, currentCase, caseId, setLocation]);
+  }, [isLoading, currentCase, caseId, setLocation]);
 
   if (isLoading) {
     return (

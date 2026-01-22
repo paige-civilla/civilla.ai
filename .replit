@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["imagemagick", "glib", "nss", "nspr", "atk", "cups", "dbus", "expat", "xorg.libX11", "xorg.libxcb", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libXrender", "xorg.libXtst", "xorg.libXScrnSaver", "pango", "alsa-lib", "gtk3", "libdrm", "mesa", "libxkbcommon", "cairo", "libjpeg", "libpng", "freetype", "harfbuzz", "fontconfig"]
+packages = ["imagemagick"]
 
 [[ports]]
 localPort = 5000
@@ -44,6 +44,20 @@ waitForPort = 5000
 [userenv.shared]
 PSQL = "psql 'postgresql://neondb_owner:npg_9C5ObexrwojV@ep-muddy-rain-afb6ypj2-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'"
 PSQLPASSAUTH = "psql -h pg.neon.tech"
+STRIPE_SECRET_KEY = "sk_test_"
+STRIPE_PUBLISHABLE_KEY = "pk_test_"
+STRIPE_WEBHOOK_SECRET = "whsec_..."
+STRIPE_MODE = "test"
+STRIPE_PRICE_CORE_MONTHLY = "price_1Sm6pZHryF2iXYid5CMlH0Cs"
+STRIPE_PRICE_CORE_YEARLY = "price_1Sm7wIHryF2iXYidn3eeU8kC"
+STRIPE_PRICE_PRO_MONTHLY = "price_1Sm7dFHryF2iXYidd0T2NMHy"
+STRIPE_PRICE_PRO_YEARLY = "price_1Sm7yqHryF2iXYidsGvn5Llx"
+STRIPE_PRICE_PREMIUM_MONTHLY = "price_1Sm7diHryF2iXYid9MAMLlJT"
+STRIPE_PRICE_PREMIUM_YEARLY = "price_1Sm81ZHryF2iXYidvWIStZDP"
+STRIPE_PRICE_ARCHIVE_MODE_MONTHLY = "price_1Sm7gWHryF2iXYidZPWR7Q7c"
+STRIPE_PRICE_ADDITIONAL_CASE_SLOT_MONTHLY = "price_1Sm7eCHryF2iXYidPCETMBcx"
+STRIPE_PRICE_OVERLIMIT_PACK_ONETIME = "price_1Sm7haHryF2iXYidpD70XBdu"
+VITE_STRIPE_PUBLIC_KEY = "pk_test_"
 
 [agent]
 integrations = ["javascript_openai_ai_integrations:2.0.0", "stripe:2.0.0"]

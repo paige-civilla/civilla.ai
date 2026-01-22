@@ -84,9 +84,7 @@ export default function AppChildSupport() {
   const { data: cachedResearch, isLoading: isLoadingCached } = useQuery<ResearchResponse>({
     queryKey: ["/api/cases", caseId, "child-support", "research", state],
     queryFn: async () => {
-      const res = await fetch(`/api/cases/${caseId}/child-support/research?state=${encodeURIComponent(state)}`, {
-        credentials: "include",
-      });
+      const res = await fetch(`/api/cases/${caseId}/child-support/research?state=${encodeURIComponent(state)}`);
       if (!res.ok) throw new Error("Failed to fetch cached research");
       return res.json();
     },

@@ -396,7 +396,7 @@ export default function AppDashboard() {
     <AppLayout>
       <section className="w-full flex flex-col items-center px-4 sm:px-5 md:px-16 py-6 sm:py-10 md:py-16">
         <div className="flex flex-col items-start max-w-container w-full">
-          <div className="mb-4" data-tour-id="phase-banner">
+          <div className="mb-4">
             <PhaseStatusBar phase={casePhase} />
           </div>
 
@@ -582,7 +582,7 @@ export default function AppDashboard() {
 
                 <AiProcessingStatusCard caseId={caseId!} />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4" data-tour-id="quick-stats-panel">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {getVisibleModules({ hasChildren: primaryCase.hasChildren || false }).map((moduleKey) => {
                     const MODULE_ICONS: Record<ModuleKey, typeof BookOpen> = {
                       "start-here": HelpCircle,

@@ -118,12 +118,6 @@ app.use((req, res, next) => {
 });
 
 async function initStripe() {
-  // Stripe is disabled for now
-  if (process.env.STRIPE_ENABLED !== 'true') {
-    console.log('Stripe disabled (STRIPE_ENABLED !== true), skipping initialization');
-    return;
-  }
-
   let databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     console.log('DATABASE_URL not set, skipping Stripe initialization');

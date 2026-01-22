@@ -354,10 +354,10 @@ export default function AppEvidence() {
   }, [currentCase]);
 
   useEffect(() => {
-    if (!caseLoading && !caseError && !currentCase && caseId) {
+    if (!caseLoading && !currentCase && caseId) {
       setLocation("/app/cases");
     }
-  }, [caseLoading, caseError, currentCase, caseId, setLocation]);
+  }, [caseLoading, currentCase, caseId, setLocation]);
 
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {
@@ -858,7 +858,6 @@ export default function AppEvidence() {
                 disabled={uploading || !r2Configured}
                 className="min-h-[44px] w-full sm:w-auto"
                 data-testid="button-upload-file"
-                data-tour-id="upload-button"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 {uploading ? "Uploading..." : "Upload File"}
@@ -951,7 +950,7 @@ export default function AppEvidence() {
               </p>
             </div>
           ) : (
-            <div className="w-full space-y-3" data-tour-id="evidence-list">
+            <div className="w-full space-y-3">
               {filteredFiles.map((file) => {
                 const FileIcon = getFileIcon(file.mimeType);
                 const isExpanded = expandedId === file.id;

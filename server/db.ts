@@ -205,7 +205,6 @@ async function ensureUserProfileColumns(): Promise<void> {
   await addColumnIfMissing("user_profiles", "credits_ocr_pages_remaining", "INTEGER NOT NULL DEFAULT 0");
   await addColumnIfMissing("user_profiles", "analysis_credits_remaining", "INTEGER NOT NULL DEFAULT 0");
   await addColumnIfMissing("user_profiles", "last_processing_pack_purchase_at", "TIMESTAMP");
-  await addColumnIfMissing("user_profiles", "tour_state_json", "JSONB NOT NULL DEFAULT '{}'::jsonb");
   await addIndexIfMissing("idx_user_profiles_stripe_customer", 
     "CREATE INDEX IF NOT EXISTS idx_user_profiles_stripe_customer ON user_profiles(stripe_customer_id)");
 }
@@ -294,27 +293,6 @@ async function ensureCaseRuleTermsColumns(): Promise<void> {
     "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)");
 }
 
-async function ensureLexiUserPrefsColumns(): Promise<void> {
-  await addColumnIfMissing("lexi_user_prefs", "streaming_enabled", "BOOLEAN NOT NULL DEFAULT true");
-  await addColumnIfMissing("lexi_user_prefs", "faster_mode", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("lexi_user_prefs", "response_style", "TEXT NOT NULL DEFAULT 'bullets'");
-  await addColumnIfMissing("lexi_user_prefs", "verbosity", "INTEGER NOT NULL DEFAULT 3");
-  await addColumnIfMissing("lexi_user_prefs", "citation_strictness", "TEXT NOT NULL DEFAULT 'when_available'");
-  await addColumnIfMissing("lexi_user_prefs", "default_mode", "TEXT NOT NULL DEFAULT 'organize'");
-}
-
-async function ensureActivityLogsColumns(): Promise<void> {
-  await addColumnIfMissing("activity_logs", "module_key", "TEXT");
-  await addColumnIfMissing("activity_logs", "entity_type", "TEXT");
-  await addColumnIfMissing("activity_logs", "entity_id", "VARCHAR(255)");
-  await addIndexIfMissing("idx_activity_logs_user_created",
-    "CREATE INDEX IF NOT EXISTS idx_activity_logs_user_created ON activity_logs(user_id, created_at)");
-  await addIndexIfMissing("idx_activity_logs_case_created",
-    "CREATE INDEX IF NOT EXISTS idx_activity_logs_case_created ON activity_logs(case_id, created_at)");
-  await addIndexIfMissing("idx_activity_logs_module_created",
-    "CREATE INDEX IF NOT EXISTS idx_activity_logs_module_created ON activity_logs(module_key, created_at)");
-}
-
 export async function ensureSchemaMigrations(): Promise<void> {
   console.log("[DB MIGRATION] Running schema migrations...");
   
@@ -335,8 +313,6 @@ export async function ensureSchemaMigrations(): Promise<void> {
   await ensureLexiThreadsCaseIdNullable();
   await ensureLexiMessagesColumns();
   await ensureCaseRuleTermsColumns();
-  await ensureLexiUserPrefsColumns();
-  await ensureActivityLogsColumns();
   
   const casesStartingPoint = await columnExists("cases", "starting_point");
   const timelineCategoriesCaseId = await columnExists("timeline_categories", "case_id");
@@ -358,13 +334,6 @@ export async function ensureSchemaMigrations(): Promise<void> {
   console.log(`[DB MIGRATION] Verification: lexi_threads.case_id nullable: ${lexiThreadsCaseIdNullable}`);
   console.log(`[DB MIGRATION] Verification: evidence_extractions.status present: ${evidenceExtractionsStatus}`);
   console.log(`[DB MIGRATION] Verification: case_rule_terms.module_key present: ${caseRuleTermsModuleKey}`);
-  
-  const lexiUserPrefsStreamingEnabled = await columnExists("lexi_user_prefs", "streaming_enabled");
-  const lexiUserPrefsFasterMode = await columnExists("lexi_user_prefs", "faster_mode");
-  const activityLogsModuleKey = await columnExists("activity_logs", "module_key");
-  console.log(`[DB MIGRATION] Verification: lexi_user_prefs.streaming_enabled present: ${lexiUserPrefsStreamingEnabled}`);
-  console.log(`[DB MIGRATION] Verification: lexi_user_prefs.faster_mode present: ${lexiUserPrefsFasterMode}`);
-  console.log(`[DB MIGRATION] Verification: activity_logs.module_key present: ${activityLogsModuleKey}`);
   
   const billingStripeCustomerId = await columnExists("user_profiles", "stripe_customer_id");
   const billingSubscriptionStatus = await columnExists("user_profiles", "subscription_status");

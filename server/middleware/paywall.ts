@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { getEntitlements, createPaywallError, SubscriptionTier } from "../billing";
 
-// Feature flag to bypass paywall enforcement for testing
-const STRIPE_ENABLED = process.env.STRIPE_ENABLED === 'true';
-
 declare module "express-session" {
   interface SessionData {
     userId?: string;
@@ -16,11 +13,6 @@ export interface PaywallRequest extends Request {
 
 export function requireTier(...allowedTiers: SubscriptionTier[]) {
   return async (req: PaywallRequest, res: Response, next: NextFunction) => {
-    // Bypass all paywall checks when Stripe is disabled
-    if (!STRIPE_ENABLED) {
-      return next();
-    }
-
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -60,11 +52,6 @@ export function requireTier(...allowedTiers: SubscriptionTier[]) {
 
 export function requireAnalysis() {
   return async (req: PaywallRequest, res: Response, next: NextFunction) => {
-    // Bypass when Stripe is disabled
-    if (!STRIPE_ENABLED) {
-      return next();
-    }
-
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -104,11 +91,6 @@ export function requireAnalysis() {
 
 export function requireDownloads() {
   return async (req: PaywallRequest, res: Response, next: NextFunction) => {
-    // Bypass when Stripe is disabled
-    if (!STRIPE_ENABLED) {
-      return next();
-    }
-
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -137,11 +119,6 @@ export function requireDownloads() {
 
 export function requireVideoUploads() {
   return async (req: PaywallRequest, res: Response, next: NextFunction) => {
-    // Bypass when Stripe is disabled
-    if (!STRIPE_ENABLED) {
-      return next();
-    }
-
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -170,11 +147,6 @@ export function requireVideoUploads() {
 
 export function requireAdvancedExhibits() {
   return async (req: PaywallRequest, res: Response, next: NextFunction) => {
-    // Bypass when Stripe is disabled
-    if (!STRIPE_ENABLED) {
-      return next();
-    }
-
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -202,11 +174,6 @@ export function requireAdvancedExhibits() {
 }
 
 export async function checkCaseLimit(userId: string, currentCaseCount: number): Promise<{ allowed: boolean; error?: ReturnType<typeof createPaywallError> }> {
-  // Bypass when Stripe is disabled
-  if (!STRIPE_ENABLED) {
-    return { allowed: true };
-  }
-
   const entitlements = await getEntitlements(userId);
 
   if (entitlements.isComped || entitlements.isLifetime) {

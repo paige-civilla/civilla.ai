@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { userProfiles, users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { getUncachableStripeClient, STRIPE_ENABLED } from "./stripeClient";
+import { getUncachableStripeClient } from "./stripeClient";
 import Stripe from "stripe";
 
 export type SubscriptionTier = "free" | "trial" | "core" | "pro" | "premium";
@@ -77,7 +77,6 @@ const COMPED_EMAILS = [
   "jetdocllc@gmail.com",
   "paige@civilla.ai",
   "bryan@civilla.ai",
-  "qa.test@civilla.ai",
 ];
 
 export function isCompedEmail(email: string): boolean {
@@ -219,9 +218,6 @@ export async function getOrCreateStripeCustomer(userId: string, email: string): 
   }
 
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    throw new Error("Stripe is disabled");
-  }
   const customer = await stripe.customers.create({
     email,
     metadata: { userId },
@@ -277,10 +273,6 @@ export async function createCheckoutSession(
   archiveMode?: boolean,
   origin?: string
 ): Promise<{ url: string | null; error?: string }> {
-  if (!STRIPE_ENABLED) {
-    return { url: null, error: "Billing temporarily disabled" };
-  }
-
   if (isCompedEmail(email)) {
     return { url: null, error: "Comped users do not need to subscribe" };
   }
@@ -297,9 +289,6 @@ export async function createCheckoutSession(
 
   const customerId = await getOrCreateStripeCustomer(userId, email);
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    return { url: null, error: "Billing temporarily disabled" };
-  }
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     { price: priceId, quantity: 1 },
@@ -340,10 +329,6 @@ export async function createCheckoutSession(
 }
 
 export async function createPortalSession(userId: string, origin?: string): Promise<{ url: string | null; error?: string }> {
-  if (!STRIPE_ENABLED) {
-    return { url: null, error: "Billing temporarily disabled" };
-  }
-
   const profile = await db
     .select({ stripeCustomerId: userProfiles.stripeCustomerId })
     .from(userProfiles)
@@ -355,9 +340,6 @@ export async function createPortalSession(userId: string, origin?: string): Prom
   }
 
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    return { url: null, error: "Billing temporarily disabled" };
-  }
   const baseUrl = origin || "https://civilla.ai";
 
   const session = await stripe.billingPortal.sessions.create({
@@ -374,10 +356,6 @@ export async function createProcessingPackCheckout(
   packType: ProcessingPackType,
   origin?: string
 ): Promise<{ url: string | null; error?: string }> {
-  if (!STRIPE_ENABLED) {
-    return { url: null, error: "Billing temporarily disabled" };
-  }
-
   const priceId = PROCESSING_PACK_PRICES[packType];
   if (!priceId) {
     return { url: null, error: `Stripe price not configured for ${packType} processing pack` };
@@ -385,9 +363,6 @@ export async function createProcessingPackCheckout(
 
   const customerId = await getOrCreateStripeCustomer(userId, email);
   const stripe = await getUncachableStripeClient();
-  if (!stripe) {
-    return { url: null, error: "Billing temporarily disabled" };
-  }
 
   const baseUrl = origin || "https://civilla.ai";
   const session = await stripe.checkout.sessions.create({

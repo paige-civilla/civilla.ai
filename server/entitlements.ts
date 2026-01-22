@@ -17,7 +17,6 @@ export const LIFETIME_PREMIUM_EMAILS = [
   "jetdocllc@gmail.com",
   "paige@civilla.ai",
   "bryan@civilla.ai",
-  "qa.test@civilla.ai",
 ] as const;
 
 // ============================================================

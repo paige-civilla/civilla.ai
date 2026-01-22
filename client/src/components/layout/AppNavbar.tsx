@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar, CheckSquare, Contact, Users, Calculator, Scale, Heart, HelpCircle, Compass } from "lucide-react";
+import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar, CheckSquare, Contact, Users, Calculator, Scale, Heart, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
 import { getVisibleModules, modulePath, moduleLabel, type ModuleKey } from "@/lib/caseFlow";
 import QuickSearch from "./QuickSearch";
-import { TourLauncherModal } from "@/components/tour/TourLauncherModal";
 
 function useFixedNavShell(shellRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -56,7 +55,6 @@ interface AppNavbarProps {
 
 export default function AppNavbar({ className }: AppNavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isTourModalOpen, setIsTourModalOpen] = useState(false);
   const [, setLocation] = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -327,7 +325,6 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                       key={item.label}
                       type="button"
                       onClick={() => {
-                        console.log("[MENU CLICK]", { label: item.label, href: item.href, disabled: item.disabled, selectedCaseId });
                         if (item.disabled) return;
                         setIsMenuOpen(false);
                         setLocation(item.href);
@@ -382,18 +379,6 @@ export default function AppNavbar({ className }: AppNavbarProps) {
                     >
                       <User className="h-5 w-5 flex-shrink-0" />
                       <span>Account Settings</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setIsTourModalOpen(true);
-                      }}
-                      className="flex items-center gap-2 rounded-lg px-3 py-3 min-h-[44px] font-sans text-sm text-[#243032] hover:bg-[hsl(var(--module-tile-hover))] focus:bg-[hsl(var(--module-tile-hover))] active:bg-[hsl(var(--module-tile-border))] active:text-white transition-colors border border-transparent"
-                      data-testid="menu-link-guided-walkthrough"
-                    >
-                      <Compass className="h-5 w-5 flex-shrink-0" />
-                      <span>Guided Walkthrough</span>
                     </button>
                     {isAdmin && (
                       <button
@@ -454,10 +439,6 @@ export default function AppNavbar({ className }: AppNavbarProps) {
           </>
         )}
       </nav>
-      <TourLauncherModal 
-        open={isTourModalOpen} 
-        onOpenChange={setIsTourModalOpen} 
-      />
     </div>
   );
 }

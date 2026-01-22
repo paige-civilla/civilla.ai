@@ -7,23 +7,11 @@ export interface LexiPersonalization {
 }
 
 export async function getLexiPersonalization(userId: string, caseId: string | null): Promise<LexiPersonalization> {
-  let prefs: LexiUserPrefs | null = null;
+  const prefs = await storage.getLexiUserPrefs(userId) || null;
   let caseMemory: LexiCaseMemory | null = null;
-  
-  try {
-    prefs = await storage.getLexiUserPrefs(userId) || null;
-  } catch (err) {
-    console.warn("[Lexi] Failed to fetch user prefs (column may be missing):", (err as Error).message);
-  }
-  
   if (caseId) {
-    try {
-      caseMemory = await storage.getLexiCaseMemory(userId, caseId) || null;
-    } catch (err) {
-      console.warn("[Lexi] Failed to fetch case memory:", (err as Error).message);
-    }
+    caseMemory = await storage.getLexiCaseMemory(userId, caseId) || null;
   }
-  
   return { prefs, caseMemory };
 }
 

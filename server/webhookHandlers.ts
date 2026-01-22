@@ -1,15 +1,9 @@
-import { getStripeSync, getUncachableStripeClient, STRIPE_ENABLED } from './stripeClient';
+import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { handleWebhookEvent } from './billing';
 import Stripe from 'stripe';
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
-    // Short-circuit if Stripe is disabled
-    if (!STRIPE_ENABLED) {
-      console.log('[Stripe] Webhook ignored — Stripe disabled');
-      return;
-    }
-
     if (!Buffer.isBuffer(payload)) {
       throw new Error(
         'STRIPE WEBHOOK ERROR: Payload must be a Buffer. ' +
@@ -24,10 +18,6 @@ export class WebhookHandlers {
     if (webhookSecret) {
       try {
         const stripe = await getUncachableStripeClient();
-        if (!stripe) {
-          console.log('[WEBHOOK] Stripe disabled, ignoring webhook');
-          return;
-        }
         const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
         await handleWebhookEvent(event);
         console.log(`[WEBHOOK] Processed event: ${event.type}`);
@@ -38,10 +28,6 @@ export class WebhookHandlers {
     } else {
       console.log('[WEBHOOK] No STRIPE_WEBHOOK_SECRET configured, using stripe-replit-sync');
       const sync = await getStripeSync();
-      if (!sync) {
-        console.log('[WEBHOOK] Stripe disabled, ignoring webhook');
-        return;
-      }
       await sync.processWebhook(payload, signature);
     }
   }

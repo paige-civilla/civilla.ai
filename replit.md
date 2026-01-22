@@ -22,14 +22,6 @@ Pixel-perfect frontend implementation of the Civilla.ai website from Figma desig
 - **NavbarCream** (`client/src/components/NavbarCream.tsx`) - LOCKED
 
 ## Recent Changes
-- 2026-01-21: STRIPE DISABLED - Stripe is intentionally disabled via STRIPE_ENABLED=false during QA testing. Re-enable only after final end-to-end verification. Changes made:
-  - server/stripeClient.ts: Added STRIPE_ENABLED flag, returns null when disabled
-  - server/billing.ts: All checkout/portal functions return "Billing temporarily disabled" when STRIPE_ENABLED=false
-  - server/webhookHandlers.ts: Webhooks short-circuit and return 200 when disabled
-  - server/middleware/paywall.ts: All tier/feature checks bypassed when disabled (test mode)
-  - server/middleware/quota.ts: All quota checks bypassed when disabled (test mode)
-  - server/index.ts: Stripe initialization skipped when disabled
-  - To re-enable: Set STRIPE_ENABLED=true in Secrets, add valid STRIPE_SECRET_KEY
 - 2026-01-12: PRODUCTION HARDENING COMPLETE - Per-user quotas, durable job queues, admin diagnostics, alerting:
   - **Usage Quotas**: usage_events table (append-only ledger), tier-based quotas enforced via middleware
   - **Quota Limits by Tier**:
