@@ -59,6 +59,7 @@ const PgSession = connectPgSimple(session);
 
 app.use(
   session({
+    name: "civilla.sid",
     store: new PgSession({
       pool: pool,
       tableName: "session",
@@ -67,6 +68,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

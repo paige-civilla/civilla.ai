@@ -588,7 +588,7 @@ export async function registerRoutes(
           console.error("Session save error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
-        console.log(`login success: userId=${user.id}, sessionID=${req.sessionID}, hasUserId=${!!req.session.userId}`);
+        console.log(`[login] success: userId=${user.id}, sessionID=${req.sessionID?.slice(0,8)}..., cookie will be set`);
         res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
       });
     } catch (error) {
@@ -772,12 +772,20 @@ export async function registerRoutes(
   });
 
   app.get("/api/auth/me", async (req, res) => {
+    // Debug logging for production auth issues
+    const cookies = req.headers.cookie || "";
+    const hasSessionCookie = cookies.includes("civilla.sid") || cookies.includes("connect.sid");
+    const sessionId = req.sessionID;
+    const hasUserId = !!req.session.userId;
+    
     if (!req.session.userId) {
+      console.log(`[auth/me] 401: sid=${sessionId?.slice(0,8)}..., cookie=${hasSessionCookie}, userId=${hasUserId}, raw=${cookies.slice(0,50)}`);
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     const user = await storage.getUser(req.session.userId);
     if (!user) {
+      console.log(`[auth/me] 401: user not found for userId=${req.session.userId}`);
       return res.status(401).json({ error: "User not found" });
     }
 
