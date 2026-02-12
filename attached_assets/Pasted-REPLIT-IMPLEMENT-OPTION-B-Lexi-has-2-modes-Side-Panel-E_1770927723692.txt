@@ -1,0 +1,219 @@
+REPLIT — IMPLEMENT OPTION B (Lexi has 2 modes: Side Panel + Expand to Full Workspace)
+IMPORTANT: Do ALL edits yourself. Paige is not a developer. Provide final working code changes.
+
+GOAL
+- Keep Lexi as a normal right-side drawer by default.
+- Add an “Expand” button in Lexi header that toggles Lexi into a large modal workspace (80–90% of screen).
+- Add a “Collapse” button in expanded mode to return to side drawer.
+- Preserve ALL existing Lexi behavior: threads, rename, streaming, suggested questions, send, etc.
+
+WHAT TO CHANGE
+1) Edit: client/src/components/lexi/LexiPanel.tsx
+(If LexiPanel is in a different path, find the component that renders the slide-out Lexi UI and apply the same changes.)
+
+IMPLEMENTATION DETAILS
+
+A) Add state: expanded vs docked
+- Add a boolean state at top of LexiPanel component:
+  const [isExpanded, setIsExpanded] = useState(false);
+
+B) Wrap render with 2 layouts:
+- If isExpanded === false:
+  Render the existing right-side drawer (your current UI) with minimal changes:
+  - Keep its position (fixed right-0, top-0, etc.)
+  - Keep its width (whatever it is now)
+  - Add an Expand button in the header.
+
+- If isExpanded === true:
+  Render Lexi as a centered modal workspace:
+  - Full-screen overlay: fixed inset-0 bg-black/40 z-50
+  - Center panel: width 90vw (max 1200px), height 88vh
+  - Rounded corners, shadow, overflow hidden
+  - Same header/messages/input, just bigger.
+  - Clicking outside closes expanded (setIsExpanded(false))
+  - Clicking inside should NOT close (stopPropagation)
+
+C) Add Expand/Collapse button in header
+- In Lexi header row (where title + close button are):
+  Add a button/icon:
+   - When docked: label “Expand” (or an icon like Maximize2)
+   - When expanded: label “Collapse” (or Minimize2)
+  Clicking toggles isExpanded.
+
+D) Ensure scroll works
+- Message list container MUST remain:
+  className="flex-1 overflow-y-auto min-h-0"
+- Input footer MUST remain:
+  className="flex-shrink-0"
+
+E) Do not break the existing “close Lexi” behavior
+- Closing Lexi should still hide the panel entirely (existing close X).
+- Expand mode: X closes Lexi entirely, OR collapses first then closes—either is fine as long as it’s consistent.
+  Recommended:
+  - “X” closes Lexi (existing behavior)
+  - “Collapse” returns to docked
+
+F) Add small UX polish
+- In expanded mode, auto-focus the message input after toggling expanded.
+- Use a short setTimeout(0) or requestAnimationFrame to focus.
+
+CODE TO APPLY (DROP-IN PATCH)
+Repl.it: implement these changes directly in LexiPanel.tsx.
+
+--- START PATCH ---
+
+1) At top imports (if not already present) ensure:
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+2) Inside LexiPanel component, add:
+const [isExpanded, setIsExpanded] = useState(false);
+
+3) Add a ref for input (if you have one already, reuse it):
+const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+4) When toggling expanded, focus input:
+const toggleExpanded = (next?: boolean) => {
+  const value = typeof next === "boolean" ? next : !isExpanded;
+  setIsExpanded(value);
+  setTimeout(() => {
+    const el = inputRef.current as any;
+    if (el && typeof el.focus === "function") el.focus();
+  }, 0);
+};
+
+5) Attach the ref to the Lexi input element:
+- Find the textarea/input used for “Ask Lexi…”
+- Add: ref={inputRef}
+
+6) Replace the root return with a conditional that renders either:
+- Docked drawer
+- Expanded modal
+
+Use this structure:
+
+return (
+  <>
+    {!isExpanded ? (
+      // DOCKED DRAWER (existing drawer, keep current classes, just add Expand)
+      <div className="FIXED_DOCKED_DRAWER_CLASSES_YOU_ALREADY_HAVE">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* existing avatar/icon + title */}
+            <div className="font-semibold truncate">Lexi</div>
+            {/* optional subtitle */}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => toggleExpanded(true)}
+              className="text-xs px-2 py-1 rounded-md border hover:bg-muted"
+              aria-label="Expand Lexi"
+              title="Expand"
+            >
+              Expand
+            </button>
+
+            {/* keep your existing close button (X) */}
+            <button ...existingCloseProps />
+          </div>
+        </div>
+
+        {/* Keep your existing content layout: threads/messages/input */}
+        <div className="flex flex-col h-full min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {/* existing messages */}
+          </div>
+          <div className="flex-shrink-0">
+            {/* existing input row */}
+          </div>
+        </div>
+      </div>
+    ) : (
+      // EXPANDED MODAL WORKSPACE
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        onClick={() => toggleExpanded(false)}
+      >
+        <div
+          className="w-[90vw] max-w-[1200px] h-[88vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* existing avatar/icon + title */}
+              <div className="font-semibold truncate">Lexi</div>
+              {/* optional subtitle */}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => toggleExpanded(false)}
+                className="text-xs px-2 py-1 rounded-md border hover:bg-muted"
+                aria-label="Collapse Lexi"
+                title="Collapse"
+              >
+                Collapse
+              </button>
+
+              {/* keep your existing close button (X) if present.
+                  If your close button currently hides Lexi entirely, keep it.
+                  If close button also should collapse first, you can call toggleExpanded(false) then close.
+              */}
+              <button ...existingCloseProps />
+            </div>
+          </div>
+
+          {/* same Lexi content, but bigger */}
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 px-2">
+              {/* existing messages */}
+            </div>
+
+            <div className="flex-shrink-0 border-t px-3 py-2">
+              {/* existing input row (ensure ref is attached to input/textarea) */}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+);
+
+IMPORTANT:
+- DO NOT literally paste “FIXED_DOCKED_DRAWER_CLASSES_YOU_ALREADY_HAVE”
+  Instead, keep the existing docked drawer container className unchanged.
+- Reuse the same messages rendering and input components for both layouts.
+  The easiest approach:
+  - Extract the “Lexi body” (threads + messages + input) into a const:
+    const lexiBody = ( ...existing body... );
+  - Then render {lexiBody} in both docked and expanded containers.
+
+7) Recommended refactor (to avoid duplicating UI):
+Inside LexiPanel.tsx, define:
+
+const header = (expanded: boolean) => ( ...header JSX... );
+const body = ( ...existing body JSX... );
+
+Then:
+- Docked renders header(false) + body
+- Expanded renders header(true) + body
+
+That reduces chances of breaking Lexi features.
+
+8) Verify after change:
+- Docked Lexi opens and works normally.
+- Expand button enlarges Lexi.
+- Collapse returns to docked.
+- Clicking outside expanded closes expanded (not the whole Lexi, unless you choose to).
+- Send message works in both modes.
+- Streaming rendering works in both modes.
+- Scroll works in messages area in both modes.
+
+--- END PATCH ---
+
+DELIVERABLE
+- Commit the change.
+- Confirm Lexi now supports docked + expanded modes.
+- Provide a short “how to test” checklist in your summary.

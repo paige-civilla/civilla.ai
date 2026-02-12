@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X, HelpCircle, MessageSquare } from "lucide-react";
+import { Plus, Trash2, Loader2, Search, Lightbulb, FileText, Clock, ChevronLeft, ChevronRight, Pencil, Check, X, HelpCircle, MessageSquare, Maximize2, Minimize2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -236,9 +236,19 @@ export default function LexiPanel() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingSources, setStreamingSources] = useState<LexiSource[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const endRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleExpanded = (next?: boolean) => {
+    const value = typeof next === "boolean" ? next : !isExpanded;
+    setIsExpanded(value);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  };
   const title = "Lexi";
   const caseId = extractCaseId(location);
   const { toast } = useToast();
