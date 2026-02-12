@@ -778,15 +778,27 @@ export default function LexiPanel() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="px-3 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-neutral-light text-neutral-darkest/70 hover:text-neutral-darkest active:bg-neutral-light/20"
-              data-testid="lexi-close"
-              aria-label="Close Lexi"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => toggleExpanded()}
+                className="px-2 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-neutral-light text-neutral-darkest/70 hover:text-neutral-darkest active:bg-neutral-light/20"
+                data-testid="lexi-expand-toggle"
+                aria-label={isExpanded ? "Collapse Lexi" : "Expand Lexi"}
+                title={isExpanded ? "Collapse" : "Expand"}
+              >
+                {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsExpanded(false); setOpen(false); }}
+                className="px-3 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-neutral-light text-neutral-darkest/70 hover:text-neutral-darkest active:bg-neutral-light/20"
+                data-testid="lexi-close"
+                aria-label="Close Lexi"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {disclaimerData?.disclaimer && (
@@ -1142,6 +1154,7 @@ export default function LexiPanel() {
                     </div>
                     <div className="flex gap-2">
                       <input
+                        ref={inputRef}
                         className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
                         placeholder="Ask Lexi..."
                         value={input}
