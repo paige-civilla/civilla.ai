@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, LogOut, Briefcase, LayoutDashboard, Settings, User, BookOpen, FolderOpen, History, MessageSquare, BarChart3, FileSearch, FileEdit, FileStack, Calendar, CheckSquare, Contact, Users, Calculator, Scale, Heart, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import logoSymbol from "@assets/symbol_1767301386741.png";
 import { getVisibleModules, modulePath, moduleLabel, type ModuleKey } from "@/lib/caseFlow";
 import QuickSearch from "./QuickSearch";
@@ -100,8 +100,9 @@ export default function AppNavbar({ className }: AppNavbarProps) {
   // Cleanup timers on unmount
   useEffect(() => () => clearTimers(), []);
 
-  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } } | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const { data: profileData } = useQuery<{ profile: { fullName: string | null; email: string | null; isAdmin?: boolean; isGrantViewer?: boolean } }>({

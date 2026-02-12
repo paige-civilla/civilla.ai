@@ -4,13 +4,74 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool, checkAiTableColumns } from "./db";
 import oauthRouter from "./oauth";
-import { insertCaseSchema, insertTimelineEventSchema, timelineEvents, allowedEvidenceMimeTypes, evidenceFiles, updateEvidenceMetadataSchema, insertDocumentSchema, updateDocumentSchema, documentTemplateKeys, upsertUserProfileSchema, insertGeneratedDocumentSchema, generateDocumentPayloadSchema, generatedDocumentTemplateTypes, type GenerateDocumentPayload, insertCaseChildSchema, updateCaseChildSchema, insertTaskSchema, updateTaskSchema, insertDeadlineSchema, updateDeadlineSchema, insertCalendarCategorySchema, insertCaseCalendarItemSchema, updateCaseCalendarItemSchema, insertContactSchema, updateContactSchema, insertCommunicationSchema, updateCommunicationSchema, insertExhibitListSchema, updateExhibitListSchema, insertExhibitSchema, updateExhibitSchema, attachEvidenceToExhibitSchema, createLexiThreadSchema, renameLexiThreadSchema, lexiChatRequestSchema, upsertCaseRuleTermSchema, upsertTrialBinderItemSchema, updateTrialBinderItemSchema, insertExhibitPacketSchema, updateExhibitPacketSchema, insertExhibitPacketItemSchema, updateExhibitPacketItemSchema, insertEvidenceNoteSchema, updateEvidenceNoteSchema, insertCaseFactSchema, updateCaseFactSchema, listCaseFactsSchema, type FactStatus, factStatuses } from "@shared/schema";
-import { POLICY_VERSIONS, TOS_TEXT, PRIVACY_TEXT, NOT_LAW_FIRM_TEXT, RESPONSIBILITY_TEXT } from "./policyVersions";
+import {
+  insertCaseSchema,
+  insertTimelineEventSchema,
+  timelineEvents,
+  allowedEvidenceMimeTypes,
+  evidenceFiles,
+  updateEvidenceMetadataSchema,
+  insertDocumentSchema,
+  updateDocumentSchema,
+  documentTemplateKeys,
+  upsertUserProfileSchema,
+  insertGeneratedDocumentSchema,
+  generateDocumentPayloadSchema,
+  generatedDocumentTemplateTypes,
+  type GenerateDocumentPayload,
+  insertCaseChildSchema,
+  updateCaseChildSchema,
+  insertTaskSchema,
+  updateTaskSchema,
+  insertDeadlineSchema,
+  updateDeadlineSchema,
+  insertCalendarCategorySchema,
+  insertCaseCalendarItemSchema,
+  updateCaseCalendarItemSchema,
+  insertContactSchema,
+  updateContactSchema,
+  insertCommunicationSchema,
+  updateCommunicationSchema,
+  insertExhibitListSchema,
+  updateExhibitListSchema,
+  insertExhibitSchema,
+  updateExhibitSchema,
+  attachEvidenceToExhibitSchema,
+  createLexiThreadSchema,
+  renameLexiThreadSchema,
+  lexiChatRequestSchema,
+  upsertCaseRuleTermSchema,
+  upsertTrialBinderItemSchema,
+  updateTrialBinderItemSchema,
+  insertExhibitPacketSchema,
+  updateExhibitPacketSchema,
+  insertExhibitPacketItemSchema,
+  updateExhibitPacketItemSchema,
+  insertEvidenceNoteSchema,
+  updateEvidenceNoteSchema,
+  insertCaseFactSchema,
+  updateCaseFactSchema,
+  listCaseFactsSchema,
+  type FactStatus,
+  factStatuses,
+} from "@shared/schema";
+import {
+  POLICY_VERSIONS,
+  TOS_TEXT,
+  PRIVACY_TEXT,
+  NOT_LAW_FIRM_TEXT,
+  RESPONSIBILITY_TEXT,
+} from "./policyVersions";
 import { z } from "zod";
 import { db } from "./db";
 import multer from "multer";
 import crypto from "crypto";
-import { isR2Configured, uploadToR2, getSignedDownloadUrl, deleteFromR2 } from "./r2";
+import {
+  isR2Configured,
+  uploadToR2,
+  getSignedDownloadUrl,
+  deleteFromR2,
+} from "./r2";
 import { buildCourtDocx, type CourtDocxPayload } from "./courtDocx";
 import {
   Document as DocxDocument,
@@ -22,79 +83,170 @@ import {
 } from "docx";
 import OpenAI from "openai";
 import { buildLexiSystemPrompt } from "./lexi/systemPrompt";
-import { getLexiPersonalization, buildPersonalizationPrompt } from "./lexi/lexiMemory";
-import { SAFETY_TEMPLATES, detectUPLRequest, shouldBlockMessage } from "./lexi/safetyTemplates";
-import { LEXI_BANNER_DISCLAIMER, LEXI_WELCOME_MESSAGE } from "./lexi/disclaimer";
-import { classifyIntent, isDisallowed, DISALLOWED_RESPONSE, type LexiIntent } from "./lexi/policy";
+import {
+  getLexiPersonalization,
+  buildPersonalizationPrompt,
+} from "./lexi/lexiMemory";
+import {
+  SAFETY_TEMPLATES,
+  detectUPLRequest,
+  shouldBlockMessage,
+} from "./lexi/safetyTemplates";
+import {
+  LEXI_BANNER_DISCLAIMER,
+  LEXI_WELCOME_MESSAGE,
+} from "./lexi/disclaimer";
+import {
+  classifyIntent,
+  isDisallowed,
+  DISALLOWED_RESPONSE,
+  type LexiIntent,
+} from "./lexi/policy";
 import { prependDisclaimerIfNeeded } from "./lexi/format";
-import { formatLexiResponse, sanitizeLegalLanguage } from "./lexi/responseFormatter";
-import { extractSourcesFromContent, normalizeUrlsInContent, type LexiSource } from "./lexi/sources";
-import { verifySources, extractKeyTermsFromText, extractTopicFromContext, type VerifiedSource } from "./lexi/sourceVerifier";
+import {
+  formatLexiResponse,
+  sanitizeLegalLanguage,
+} from "./lexi/responseFormatter";
+import {
+  extractSourcesFromContent,
+  normalizeUrlsInContent,
+  type LexiSource,
+} from "./lexi/sources";
+import {
+  verifySources,
+  extractKeyTermsFromText,
+  extractTopicFromContext,
+  type VerifiedSource,
+} from "./lexi/sourceVerifier";
 import { scheduleMemoryRebuild } from "./lexi/memoryDebounce";
 import { rebuildCaseMemory } from "./lexi/rebuildMemory";
 import { triggerCaseMemoryRebuild } from "./lexi/triggerCaseMemory";
 import { generateExhibitPacketZip } from "./exhibitPacketExport";
 import archiver from "archiver";
-import { enqueueEvidenceExtraction, isExtractionRunning } from "./services/evidenceJobs";
-import { isGcvConfigured, checkVisionHealth } from "./services/evidenceExtraction";
+import {
+  enqueueEvidenceExtraction,
+  isExtractionRunning,
+} from "./services/evidenceJobs";
+import {
+  isGcvConfigured,
+  checkVisionHealth,
+} from "./services/evidenceExtraction";
 import { createLimiter } from "./utils/concurrency";
-import { buildLexiContext, formatContextForPrompt } from "./services/lexiContext";
+import {
+  buildLexiContext,
+  formatContextForPrompt,
+} from "./services/lexiContext";
 import { searchCaseWide } from "./services/search";
-import { isAutoSuggestPending, getAutoSuggestStats, triggerClaimsSuggestionForEvidence } from "./claims/autoSuggest";
-import { runFactExtractionForEvidence, promoteFactToClaim, getFactTypeLabel, getFactTypeColor } from "./services/factExtraction";
+import {
+  isAutoSuggestPending,
+  getAutoSuggestStats,
+  triggerClaimsSuggestionForEvidence,
+} from "./claims/autoSuggest";
+import {
+  runFactExtractionForEvidence,
+  promoteFactToClaim,
+  getFactTypeLabel,
+  getFactTypeColor,
+} from "./services/factExtraction";
 import { requireAdmin } from "./middleware/admin";
-import { getAdminMetrics, getSystemHealth, searchUsers, setUserRoles, createAdminAuditLog, listAdminAuditLogs, createAnalyticsEvent } from "./admin/adminMetrics";
+import {
+  getAdminMetrics,
+  getSystemHealth,
+  searchUsers,
+  setUserRoles,
+  createAdminAuditLog,
+  listAdminAuditLogs,
+  createAnalyticsEvent,
+} from "./admin/adminMetrics";
 import { requireGrantViewer } from "./middleware/grantViewer";
 import { getGrantMetrics } from "./services/grantMetrics";
-import { runSmokeChecks, type SmokeCheckReport } from "./diagnostics/smokeChecks";
+import {
+  runSmokeChecks,
+  type SmokeCheckReport,
+} from "./diagnostics/smokeChecks";
 import { serverStartTime } from "./index";
-import { EvidenceExtractionSchema, EvidenceAiAnalysisSchema, AiHealthResponseSchema } from "@shared/aiContracts";
-import { isAiTestMode, getMockLexiResponse, getMockStreamChunks } from "./lexi/testMode";
-import { applyEntitlementsForUser, applyAllEntitlements, LIFETIME_PREMIUM_EMAILS, ADMIN_EMAILS, GRANT_VIEWER_EMAILS } from "./entitlements";
-import { verifyTurnstile, isTurnstileConfigured, getClientIp } from "./turnstile";
-import { idempotentOperation, createAiJob, updateAiJobProgress, completeAiJob, getAiJob, getActiveAiJobs, getAiJobStats } from "./utils/dbHardening";
+import {
+  EvidenceExtractionSchema,
+  EvidenceAiAnalysisSchema,
+  AiHealthResponseSchema,
+} from "@shared/aiContracts";
+import {
+  isAiTestMode,
+  getMockLexiResponse,
+  getMockStreamChunks,
+} from "./lexi/testMode";
+import {
+  applyEntitlementsForUser,
+  applyAllEntitlements,
+  LIFETIME_PREMIUM_EMAILS,
+  ADMIN_EMAILS,
+  GRANT_VIEWER_EMAILS,
+} from "./entitlements";
+import {
+  verifyTurnstile,
+  isTurnstileConfigured,
+  getClientIp,
+} from "./turnstile";
+import {
+  idempotentOperation,
+  createAiJob,
+  updateAiJobProgress,
+  completeAiJob,
+  getAiJob,
+  getActiveAiJobs,
+  getAiJobStats,
+} from "./utils/dbHardening";
 import { getUncachableStripeClient } from "./stripeClient";
-import { 
-  createCheckoutSession, 
-  createPortalSession, 
+import {
+  createCheckoutSession,
+  createPortalSession,
   createProcessingPackCheckout,
-  getBillingStatus, 
-  handleWebhookEvent, 
+  getBillingStatus,
+  handleWebhookEvent,
   getEntitlements,
   isCompedEmail,
   getAnalysisCredits,
-  ProcessingPackType
+  ProcessingPackType,
 } from "./billing";
-import { requireAnalysis, requireDownloads, checkCaseLimit, loadEntitlements, PaywallRequest } from "./middleware/paywall";
+import {
+  requireAnalysis,
+  requireDownloads,
+  checkCaseLimit,
+  loadEntitlements,
+  PaywallRequest,
+} from "./middleware/paywall";
 import { requireQuota, recordUsageAfter } from "./middleware/quota";
 import { getQuotaRemaining, getUserUsage, TIER_QUOTAS } from "./usage/limits";
-import { requireCaseAccess, blockAttorneyMutations } from "./middleware/caseAccess";
-import { 
-  getExtractionJobCounts, 
-  getAiAnalysisJobCounts, 
-  getClaimSuggestionJobCounts, 
+import {
+  requireCaseAccess,
+  blockAttorneyMutations,
+} from "./middleware/caseAccess";
+import {
+  getExtractionJobCounts,
+  getAiAnalysisJobCounts,
+  getClaimSuggestionJobCounts,
   getRecentFailures as getJobRecentFailures,
   getJobStats,
-  requeueAllStaleJobs
+  requeueAllStaleJobs,
 } from "./jobs/jobRunner";
 import Stripe from "stripe";
 
 const DEFAULT_THREAD_TITLES: Record<string, string> = {
   "start-here": "Start Here",
-  "dashboard": "Dashboard",
-  "cases": "Cases",
-  "evidence": "Evidence",
-  "timeline": "Timeline",
-  "messages": "Messages & Call Log",
+  dashboard: "Dashboard",
+  cases: "Cases",
+  evidence: "Evidence",
+  timeline: "Timeline",
+  messages: "Messages & Call Log",
   "document-library": "Document Library",
-  "documents": "Document Creator",
-  "deadlines": "Deadlines",
+  documents: "Document Creator",
+  deadlines: "Deadlines",
   "case-todo": "Case To-Do",
-  "disclosures": "Disclosures & Discovery",
-  "exhibits": "Exhibits",
+  disclosures: "Disclosures & Discovery",
+  exhibits: "Exhibits",
   "trial-prep": "Trial Prep",
   "parenting-plan": "Parenting Plan",
-  "children": "Children",
+  children: "Children",
   "child-support": "Child Support",
   "pattern-analysis": "Pattern Analysis",
 };
@@ -459,7 +611,7 @@ function sanitizeFileName(name: string): string {
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express
+  app: Express,
 ): Promise<Server> {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: new Date().toISOString() });
@@ -509,19 +661,30 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { email, password, turnstileToken } = req.body;
-      
+
       // Verify Turnstile CAPTCHA (if configured)
-      const turnstileResult = await verifyTurnstile(turnstileToken, getClientIp(req));
+      const turnstileResult = await verifyTurnstile(
+        turnstileToken,
+        getClientIp(req),
+      );
       if (!turnstileResult.ok) {
-        return res.status(400).json({ error: turnstileResult.error || "CAPTCHA verification failed" });
+        return res
+          .status(400)
+          .json({
+            error: turnstileResult.error || "CAPTCHA verification failed",
+          });
       }
-      
+
       if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
+        return res
+          .status(400)
+          .json({ error: "Email and password are required" });
       }
 
       if (password.length < 8) {
-        return res.status(400).json({ error: "Password must be at least 8 characters" });
+        return res
+          .status(400)
+          .json({ error: "Password must be at least 8 characters" });
       }
 
       const existingUser = await storage.getUserByEmail(email);
@@ -535,7 +698,9 @@ export async function registerRoutes(
       // Apply entitlements (lifetime premium, admin, grant viewer)
       const entitlements = await applyEntitlementsForUser(email);
       if (entitlements.lifetimePremium.applied) {
-        console.log(`[ENTITLEMENTS] Applied lifetime premium to new user ${email}`);
+        console.log(
+          `[ENTITLEMENTS] Applied lifetime premium to new user ${email}`,
+        );
       }
       if (entitlements.admin.applied) {
         console.log(`[ROLES] Applied admin role to new user ${email}`);
@@ -545,14 +710,22 @@ export async function registerRoutes(
       }
 
       req.session.userId = user.id;
-      
+
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
           return res.status(500).json({ error: "Registration failed" });
         }
-        console.log(`register success: userId=${user.id}, sessionID=${req.sessionID}, hasUserId=${!!req.session.userId}`);
-        res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+        console.log(
+          `register success: userId=${user.id}, sessionID=${req.sessionID}, hasUserId=${!!req.session.userId}`,
+        );
+        res.json({
+          user: {
+            id: user.id,
+            email: user.email,
+            casesAllowed: user.casesAllowed,
+          },
+        });
       });
     } catch (error) {
       console.error("Register error:", error);
@@ -565,7 +738,9 @@ export async function registerRoutes(
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
+        return res
+          .status(400)
+          .json({ error: "Email and password are required" });
       }
 
       const user = await storage.getUserByEmail(email);
@@ -588,8 +763,16 @@ export async function registerRoutes(
           console.error("Session save error:", err);
           return res.status(500).json({ error: "Login failed" });
         }
-        console.log(`[login] success: userId=${user.id}, sessionID=${req.sessionID?.slice(0,8)}..., cookie will be set`);
-        res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+        console.log(
+          `[login] success: userId=${user.id}, sessionID=${req.sessionID?.slice(0, 8)}..., cookie will be set`,
+        );
+        res.json({
+          user: {
+            id: user.id,
+            email: user.email,
+            casesAllowed: user.casesAllowed,
+          },
+        });
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -602,6 +785,7 @@ export async function registerRoutes(
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
       }
+      res.clearCookie("civilla.sid");
       res.clearCookie("connect.sid");
       res.json({ message: "Logged out" });
     });
@@ -610,20 +794,22 @@ export async function registerRoutes(
   // ===========================================
   // BILLING API ENDPOINTS
   // ===========================================
-  
+
   // POST /api/billing/checkout - Create Stripe checkout session
   app.post("/api/billing/checkout", requireAuth, async (req, res) => {
     try {
       const { plan, billingPeriod, addSecondCase, archiveMode } = req.body;
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
 
       if (!plan || !["core", "pro", "premium"].includes(plan)) {
-        return res.status(400).json({ error: "Valid plan required (core, pro, or premium)" });
+        return res
+          .status(400)
+          .json({ error: "Valid plan required (core, pro, or premium)" });
       }
 
       const period = billingPeriod === "yearly" ? "yearly" : "monthly";
@@ -636,7 +822,7 @@ export async function registerRoutes(
         period,
         addSecondCase,
         archiveMode,
-        origin
+        origin,
       );
 
       if (result.error) {
@@ -670,38 +856,46 @@ export async function registerRoutes(
   });
 
   // POST /api/billing/processing-pack/checkout - Purchase processing pack credits
-  app.post("/api/billing/processing-pack/checkout", requireAuth, async (req, res) => {
-    try {
-      const { packType } = req.body;
-      const userId = req.session.userId!;
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(401).json({ error: "User not found" });
+  app.post(
+    "/api/billing/processing-pack/checkout",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { packType } = req.body;
+        const userId = req.session.userId!;
+        const user = await storage.getUser(userId);
+
+        if (!user) {
+          return res.status(401).json({ error: "User not found" });
+        }
+
+        if (!packType || !["overlimit_200", "plus_600"].includes(packType)) {
+          return res
+            .status(400)
+            .json({
+              error: "Valid pack type required (overlimit_200 or plus_600)",
+            });
+        }
+
+        const origin = req.headers.origin || `https://${req.headers.host}`;
+        const result = await createProcessingPackCheckout(
+          userId,
+          user.email,
+          packType as ProcessingPackType,
+          origin,
+        );
+
+        if (result.error) {
+          return res.status(400).json({ error: result.error });
+        }
+
+        res.json({ url: result.url });
+      } catch (error) {
+        console.error("Processing pack checkout error:", error);
+        res.status(500).json({ error: "Failed to create checkout session" });
       }
-
-      if (!packType || !["overlimit_200", "plus_600"].includes(packType)) {
-        return res.status(400).json({ error: "Valid pack type required (overlimit_200 or plus_600)" });
-      }
-
-      const origin = req.headers.origin || `https://${req.headers.host}`;
-      const result = await createProcessingPackCheckout(
-        userId,
-        user.email,
-        packType as ProcessingPackType,
-        origin
-      );
-
-      if (result.error) {
-        return res.status(400).json({ error: result.error });
-      }
-
-      res.json({ url: result.url });
-    } catch (error) {
-      console.error("Processing pack checkout error:", error);
-      res.status(500).json({ error: "Failed to create checkout session" });
-    }
-  });
+    },
+  );
 
   // GET /api/billing/credits - Get user's remaining analysis credits
   app.get("/api/billing/credits", requireAuth, async (req, res) => {
@@ -733,11 +927,15 @@ export async function registerRoutes(
       const { planId, billingPeriod } = req.body;
 
       if (!planId || !billingPeriod) {
-        return res.status(400).json({ error: "Plan and billing period are required" });
+        return res
+          .status(400)
+          .json({ error: "Plan and billing period are required" });
       }
 
       if (planId === "trial") {
-        return res.status(400).json({ error: "Trial does not require payment", redirect: "/auth" });
+        return res
+          .status(400)
+          .json({ error: "Trial does not require payment", redirect: "/auth" });
       }
 
       if (!["core", "pro", "premium"].includes(planId)) {
@@ -747,7 +945,9 @@ export async function registerRoutes(
       const userId = req.session.userId;
       if (!userId) {
         // Redirect to auth first if not logged in
-        return res.status(401).json({ error: "Please sign in first", redirect: "/auth" });
+        return res
+          .status(401)
+          .json({ error: "Please sign in first", redirect: "/auth" });
       }
 
       const user = await storage.getUser(userId);
@@ -758,7 +958,15 @@ export async function registerRoutes(
       const origin = req.headers.origin || `https://${req.headers.host}`;
       const period = billingPeriod === "yearly" ? "yearly" : "monthly";
 
-      const result = await createCheckoutSession(userId, user.email, planId, period, false, false, origin);
+      const result = await createCheckoutSession(
+        userId,
+        user.email,
+        planId,
+        period,
+        false,
+        false,
+        origin,
+      );
 
       if (result.error) {
         return res.status(400).json({ error: result.error });
@@ -774,22 +982,29 @@ export async function registerRoutes(
   app.get("/api/auth/me", async (req, res) => {
     // Debug logging for production auth issues
     const cookies = req.headers.cookie || "";
-    const hasSessionCookie = cookies.includes("civilla.sid") || cookies.includes("connect.sid");
+    const hasSessionCookie =
+      cookies.includes("civilla.sid") || cookies.includes("connect.sid");
     const sessionId = req.sessionID;
     const hasUserId = !!req.session.userId;
-    
+
     if (!req.session.userId) {
-      console.log(`[auth/me] 401: sid=${sessionId?.slice(0,8)}..., cookie=${hasSessionCookie}, userId=${hasUserId}, raw=${cookies.slice(0,50)}`);
+      console.log(
+        `[auth/me] 401: sid=${sessionId?.slice(0, 8)}..., cookie=${hasSessionCookie}, userId=${hasUserId}, raw=${cookies.slice(0, 50)}`,
+      );
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     const user = await storage.getUser(req.session.userId);
     if (!user) {
-      console.log(`[auth/me] 401: user not found for userId=${req.session.userId}`);
+      console.log(
+        `[auth/me] 401: user not found for userId=${req.session.userId}`,
+      );
       return res.status(401).json({ error: "User not found" });
     }
 
-    res.json({ user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed } });
+    res.json({
+      user: { id: user.id, email: user.email, casesAllowed: user.casesAllowed },
+    });
   });
 
   app.get("/api/profile", requireAuth, async (req, res) => {
@@ -864,10 +1079,18 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const parseResult = upsertUserProfileSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ error: "Invalid profile data", details: parseResult.error.errors });
+        return res
+          .status(400)
+          .json({
+            error: "Invalid profile data",
+            details: parseResult.error.errors,
+          });
       }
 
-      const updatedProfile = await storage.upsertUserProfile(userId, parseResult.data);
+      const updatedProfile = await storage.upsertUserProfile(
+        userId,
+        parseResult.data,
+      );
       const user = await storage.getUser(userId);
 
       res.json({
@@ -891,18 +1114,22 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/user/accept-drafting-disclaimer", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      await storage.upsertUserProfile(userId, {
-        draftingDisclaimerAcceptedAt: new Date(),
-      });
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("Accept drafting disclaimer error:", error);
-      res.status(500).json({ error: "Failed to save acknowledgement" });
-    }
-  });
+  app.post(
+    "/api/user/accept-drafting-disclaimer",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        await storage.upsertUserProfile(userId, {
+          draftingDisclaimerAcceptedAt: new Date(),
+        });
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("Accept drafting disclaimer error:", error);
+        res.status(500).json({ error: "Failed to save acknowledgement" });
+      }
+    },
+  );
 
   app.get("/api/cases", requireAuth, async (req, res) => {
     try {
@@ -925,8 +1152,15 @@ export async function registerRoutes(
     try {
       const user = await storage.getUser(userId);
       if (!user) {
-        console.error("[CreateCase] SESSION_INVALID - userId not in DB", { userId });
-        return res.status(401).json({ error: "Session expired. Please sign in again.", code: "SESSION_INVALID" });
+        console.error("[CreateCase] SESSION_INVALID - userId not in DB", {
+          userId,
+        });
+        return res
+          .status(401)
+          .json({
+            error: "Session expired. Please sign in again.",
+            code: "SESSION_INVALID",
+          });
       }
 
       const caseCount = await storage.getCaseCountByUserId(userId);
@@ -942,99 +1176,141 @@ export async function registerRoutes(
           const field = err.path[0]?.toString() || "unknown";
           fields[field] = err.message;
         }
-        console.error("[CreateCase] validation failed", { userId, body: req.body, errors: parseResult.error.errors });
-        return res.status(400).json({ error: "Invalid case data", fields, code: "VALIDATION_FAILED" });
+        console.error("[CreateCase] validation failed", {
+          userId,
+          body: req.body,
+          errors: parseResult.error.errors,
+        });
+        return res
+          .status(400)
+          .json({
+            error: "Invalid case data",
+            fields,
+            code: "VALIDATION_FAILED",
+          });
       }
 
       const newCase = await storage.createCase(userId, parseResult.data);
       res.status(201).json({ case: newCase });
     } catch (error) {
       console.error("[CreateCase] failed", { userId, body: req.body }, error);
-      res.status(500).json({ error: "Failed to create case", code: "CREATE_CASE_FAILED" });
+      res
+        .status(500)
+        .json({ error: "Failed to create case", code: "CREATE_CASE_FAILED" });
     }
   });
 
-  app.get("/api/cases/:caseId", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        res.json({ case: caseRecord });
+      } catch (error) {
+        console.error("Get case error:", error);
+        res.status(500).json({ error: "Failed to get case" });
       }
+    },
+  );
 
-      res.json({ case: caseRecord });
-    } catch (error) {
-      console.error("Get case error:", error);
-      res.status(500).json({ error: "Failed to get case" });
-    }
-  });
+  app.patch(
+    "/api/cases/:caseId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.patch("/api/cases/:caseId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+        const existingCase = await storage.getCase(caseId, userId);
+        if (!existingCase) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const existingCase = await storage.getCase(caseId, userId);
-      if (!existingCase) {
-        return res.status(404).json({ error: "Case not found" });
+        const {
+          title,
+          nickname,
+          state,
+          county,
+          caseType,
+          caseNumber,
+          hasChildren,
+        } = req.body;
+
+        if (title !== undefined && typeof title !== "string") {
+          return res.status(400).json({ error: "Invalid title" });
+        }
+
+        if (
+          nickname !== undefined &&
+          nickname !== null &&
+          typeof nickname !== "string"
+        ) {
+          return res.status(400).json({ error: "Invalid nickname" });
+        }
+
+        if (hasChildren !== undefined && typeof hasChildren !== "boolean") {
+          return res.status(400).json({ error: "Invalid hasChildren value" });
+        }
+
+        const updatedCase = await storage.updateCase(caseId, userId, {
+          title: title || existingCase.title,
+          nickname: nickname !== undefined ? nickname : existingCase.nickname,
+          state,
+          county,
+          caseType,
+          caseNumber:
+            caseNumber !== undefined ? caseNumber : existingCase.caseNumber,
+          hasChildren:
+            hasChildren !== undefined ? hasChildren : existingCase.hasChildren,
+        });
+
+        res.json({ case: updatedCase });
+      } catch (error) {
+        console.error("Update case error:", error);
+        res.status(500).json({ error: "Failed to update case" });
       }
+    },
+  );
 
-      const { title, nickname, state, county, caseType, caseNumber, hasChildren } = req.body;
-      
-      if (title !== undefined && typeof title !== "string") {
-        return res.status(400).json({ error: "Invalid title" });
+  app.get(
+    "/api/cases/:caseId/search",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const caseId = req.params.caseId;
+        const q = String(req.query.q || "").trim();
+        const limit = Math.min(50, Math.max(1, Number(req.query.limit || 5)));
+
+        if (!q || q.length < 2) {
+          return res.json({ results: [] });
+        }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const results = await storage.searchCase(userId, caseId, q, limit);
+        return res.json({ results });
+      } catch (error) {
+        console.error("Case search error:", error);
+        res.status(500).json({ error: "Failed to search case" });
       }
-
-      if (nickname !== undefined && nickname !== null && typeof nickname !== "string") {
-        return res.status(400).json({ error: "Invalid nickname" });
-      }
-
-      if (hasChildren !== undefined && typeof hasChildren !== "boolean") {
-        return res.status(400).json({ error: "Invalid hasChildren value" });
-      }
-
-      const updatedCase = await storage.updateCase(caseId, userId, {
-        title: title || existingCase.title,
-        nickname: nickname !== undefined ? nickname : existingCase.nickname,
-        state,
-        county,
-        caseType,
-        caseNumber: caseNumber !== undefined ? caseNumber : existingCase.caseNumber,
-        hasChildren: hasChildren !== undefined ? hasChildren : existingCase.hasChildren,
-      });
-
-      res.json({ case: updatedCase });
-    } catch (error) {
-      console.error("Update case error:", error);
-      res.status(500).json({ error: "Failed to update case" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/search", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const caseId = req.params.caseId;
-      const q = String(req.query.q || "").trim();
-      const limit = Math.min(50, Math.max(1, Number(req.query.limit || 5)));
-
-      if (!q || q.length < 2) {
-        return res.json({ results: [] });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const results = await storage.searchCase(userId, caseId, q, limit);
-      return res.json({ results });
-    } catch (error) {
-      console.error("Case search error:", error);
-      res.status(500).json({ error: "Failed to search case" });
-    }
-  });
+    },
+  );
 
   app.get("/api/health/timeline", async (_req, res) => {
     try {
@@ -1046,61 +1322,83 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/timeline", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/timeline",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const events = await storage.listTimelineEvents(caseId, userId);
-      res.json({ events });
-    } catch (error) {
-      console.error("Get timeline events error:", error);
-      res.status(500).json({ error: "Failed to fetch timeline events" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/timeline", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertTimelineEventSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      if (parseResult.data.notes && parseResult.data.notes.length > 10000) {
-        return res.status(400).json({ error: "Validation failed", fields: { notes: "Notes must be 10,000 characters or less" } });
+        const events = await storage.listTimelineEvents(caseId, userId);
+        res.json({ events });
+      } catch (error) {
+        console.error("Get timeline events error:", error);
+        res.status(500).json({ error: "Failed to fetch timeline events" });
       }
+    },
+  );
 
-      const event = await storage.createTimelineEvent(caseId, userId, parseResult.data);
-      
-      const caseIdNum = parseInt(caseId, 10);
-      if (!isNaN(caseIdNum)) {
-        scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, caseId));
+  app.post(
+    "/api/cases/:caseId/timeline",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertTimelineEventSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        if (parseResult.data.notes && parseResult.data.notes.length > 10000) {
+          return res
+            .status(400)
+            .json({
+              error: "Validation failed",
+              fields: { notes: "Notes must be 10,000 characters or less" },
+            });
+        }
+
+        const event = await storage.createTimelineEvent(
+          caseId,
+          userId,
+          parseResult.data,
+        );
+
+        const caseIdNum = parseInt(caseId, 10);
+        if (!isNaN(caseIdNum)) {
+          scheduleMemoryRebuild(caseIdNum, () =>
+            rebuildCaseMemory(userId, caseId),
+          );
+        }
+
+        res.status(201).json({ event });
+      } catch (error) {
+        console.error("Create timeline event error:", error);
+        res.status(500).json({ error: "Failed to create timeline event" });
       }
-      
-      res.status(201).json({ event });
-    } catch (error) {
-      console.error("Create timeline event error:", error);
-      res.status(500).json({ error: "Failed to create timeline event" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/timeline/:eventId", requireAuth, async (req, res) => {
     try {
@@ -1114,12 +1412,14 @@ export async function registerRoutes(
 
       const caseRecord = await storage.getCase(existingEvent.caseId, userId);
       if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found or access denied" });
+        return res
+          .status(404)
+          .json({ error: "Case not found or access denied" });
       }
 
       const { eventDate, title, category, notes } = req.body;
       const fields: Record<string, string> = {};
-      
+
       if (title !== undefined) {
         if (typeof title !== "string" || title.length === 0) {
           fields.title = "Title is required";
@@ -1135,12 +1435,26 @@ export async function registerRoutes(
         }
       }
 
-      const validCategories = ["court", "filing", "communication", "incident", "parenting_time", "expense", "medical", "school", "other"];
+      const validCategories = [
+        "court",
+        "filing",
+        "communication",
+        "incident",
+        "parenting_time",
+        "expense",
+        "medical",
+        "school",
+        "other",
+      ];
       if (category !== undefined && !validCategories.includes(category)) {
         fields.category = "Invalid category";
       }
 
-      if (notes !== undefined && typeof notes === "string" && notes.length > 10000) {
+      if (
+        notes !== undefined &&
+        typeof notes === "string" &&
+        notes.length > 10000
+      ) {
         fields.notes = "Notes must be 10,000 characters or less";
       }
 
@@ -1174,7 +1488,9 @@ export async function registerRoutes(
 
       const caseRecord = await storage.getCase(existingEvent.caseId, userId);
       if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found or access denied" });
+        return res
+          .status(404)
+          .json({ error: "Case not found or access denied" });
       }
 
       const deleted = await storage.deleteTimelineEvent(eventId, userId);
@@ -1199,147 +1515,195 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/evidence", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/evidence",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const files = await storage.listEvidenceFiles(caseId, userId);
+        res.json({ files, r2Configured: isR2Configured() });
+      } catch (error) {
+        console.error("List evidence error:", error);
+        res.status(500).json({ error: "Failed to list evidence files" });
       }
+    },
+  );
 
-      const files = await storage.listEvidenceFiles(caseId, userId);
-      res.json({ files, r2Configured: isR2Configured() });
-    } catch (error) {
-      console.error("List evidence error:", error);
-      res.status(500).json({ error: "Failed to list evidence files" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/evidence",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    upload.single("file"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.post("/api/cases/:caseId/evidence", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, upload.single("file"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        if (!isR2Configured()) {
+          return res.status(503).json({ error: "Uploads not configured" });
+        }
 
-      if (!isR2Configured()) {
-        return res.status(503).json({ error: "Uploads not configured" });
-      }
+        if (!req.file) {
+          return res
+            .status(400)
+            .json({
+              error: "Validation failed",
+              fields: { file: "File is required" },
+            });
+        }
 
-      if (!req.file) {
-        return res.status(400).json({ error: "Validation failed", fields: { file: "File is required" } });
-      }
+        if (req.file.size > MAX_FILE_SIZE) {
+          return res
+            .status(400)
+            .json({
+              error: "Validation failed",
+              fields: { file: "File must be 25MB or less" },
+            });
+        }
 
-      if (req.file.size > MAX_FILE_SIZE) {
-        return res.status(400).json({ error: "Validation failed", fields: { file: "File must be 25MB or less" } });
-      }
+        const mimeType = req.file.mimetype;
+        if (!allowedEvidenceMimeTypes.includes(mimeType as any)) {
+          return res.status(400).json({
+            error: "Validation failed",
+            fields: {
+              file: "File type not allowed. Allowed: PDF, images, Word documents, text, CSV, ZIP",
+            },
+          });
+        }
 
-      const mimeType = req.file.mimetype;
-      if (!allowedEvidenceMimeTypes.includes(mimeType as any)) {
-        return res.status(400).json({ 
-          error: "Validation failed", 
-          fields: { file: "File type not allowed. Allowed: PDF, images, Word documents, text, CSV, ZIP" } 
+        const fileId = crypto.randomUUID();
+        const sanitizedName = sanitizeFileName(req.file.originalname);
+        const storageKey = `${userId}/${caseId}/${fileId}-${sanitizedName}`;
+
+        const sha256 = crypto
+          .createHash("sha256")
+          .update(req.file.buffer)
+          .digest("hex");
+
+        await uploadToR2(storageKey, req.file.buffer, mimeType);
+
+        const notes =
+          typeof req.body.notes === "string"
+            ? req.body.notes.slice(0, 10000)
+            : undefined;
+
+        const file = await storage.createEvidenceFile(caseId, userId, {
+          originalName: req.file.originalname,
+          storageKey,
+          mimeType,
+          sizeBytes: req.file.size,
+          sha256,
+          notes,
         });
-      }
 
-      const fileId = crypto.randomUUID();
-      const sanitizedName = sanitizeFileName(req.file.originalname);
-      const storageKey = `${userId}/${caseId}/${fileId}-${sanitizedName}`;
-
-      const sha256 = crypto.createHash("sha256").update(req.file.buffer).digest("hex");
-
-      await uploadToR2(storageKey, req.file.buffer, mimeType);
-
-      const notes = typeof req.body.notes === "string" ? req.body.notes.slice(0, 10000) : undefined;
-
-      const file = await storage.createEvidenceFile(caseId, userId, {
-        originalName: req.file.originalname,
-        storageKey,
-        mimeType,
-        sizeBytes: req.file.size,
-        sha256,
-        notes,
-      });
-
-      enqueueEvidenceExtraction({
-        userId,
-        caseId,
-        evidenceId: file.id,
-        storageKey,
-        mimeType,
-        originalFilename: req.file.originalname,
-      });
-
-      res.status(201).json({ file });
-    } catch (error) {
-      console.error("Upload evidence error:", error);
-      res.status(500).json({ error: "Failed to upload evidence file" });
-    }
-  });
-
-  app.get("/api/evidence/:evidenceId/download", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { evidenceId } = req.params;
-
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file) {
-        return res.status(404).json({ error: "File not found" });
-      }
-
-      if (!isR2Configured()) {
-        return res.status(503).json({ error: "Downloads not configured" });
-      }
-
-      const signedUrl = await getSignedDownloadUrl(file.storageKey, 300);
-      res.redirect(302, signedUrl);
-    } catch (error) {
-      console.error("Download evidence error:", error);
-      res.status(500).json({ error: "Failed to download evidence file" });
-    }
-  });
-
-  app.patch("/api/cases/:caseId/evidence/:evidenceId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "File not found" });
-      }
-
-      const parseResult = updateEvidenceMetadataSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fieldErrors: Record<string, string> = {};
-        parseResult.error.errors.forEach((err) => {
-          const field = err.path[0] as string;
-          fieldErrors[field] = err.message;
+        enqueueEvidenceExtraction({
+          userId,
+          caseId,
+          evidenceId: file.id,
+          storageKey,
+          mimeType,
+          originalFilename: req.file.originalname,
         });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
-      }
 
-      const updated = await storage.updateEvidenceMetadata(evidenceId, userId, parseResult.data);
-      if (!updated) {
-        return res.status(500).json({ error: "Failed to update file metadata" });
+        res.status(201).json({ file });
+      } catch (error) {
+        console.error("Upload evidence error:", error);
+        res.status(500).json({ error: "Failed to upload evidence file" });
       }
+    },
+  );
 
-      res.json({ file: updated });
-    } catch (error) {
-      console.error("Update evidence metadata error:", error);
-      res.status(500).json({ error: "Failed to update file metadata" });
-    }
-  });
+  app.get(
+    "/api/evidence/:evidenceId/download",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { evidenceId } = req.params;
+
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file) {
+          return res.status(404).json({ error: "File not found" });
+        }
+
+        if (!isR2Configured()) {
+          return res.status(503).json({ error: "Downloads not configured" });
+        }
+
+        const signedUrl = await getSignedDownloadUrl(file.storageKey, 300);
+        res.redirect(302, signedUrl);
+      } catch (error) {
+        console.error("Download evidence error:", error);
+        res.status(500).json({ error: "Failed to download evidence file" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/cases/:caseId/evidence/:evidenceId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "File not found" });
+        }
+
+        const parseResult = updateEvidenceMetadataSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fieldErrors: Record<string, string> = {};
+          parseResult.error.errors.forEach((err) => {
+            const field = err.path[0] as string;
+            fieldErrors[field] = err.message;
+          });
+          return res
+            .status(400)
+            .json({ error: "Validation failed", fields: fieldErrors });
+        }
+
+        const updated = await storage.updateEvidenceMetadata(
+          evidenceId,
+          userId,
+          parseResult.data,
+        );
+        if (!updated) {
+          return res
+            .status(500)
+            .json({ error: "Failed to update file metadata" });
+        }
+
+        res.json({ file: updated });
+      } catch (error) {
+        console.error("Update evidence metadata error:", error);
+        res.status(500).json({ error: "Failed to update file metadata" });
+      }
+    },
+  );
 
   app.delete("/api/evidence/:evidenceId", requireAuth, async (req, res) => {
     try {
@@ -1356,7 +1720,9 @@ export async function registerRoutes(
           await deleteFromR2(file.storageKey);
         } catch (r2Error) {
           console.error("R2 delete error:", r2Error);
-          return res.status(500).json({ error: "Failed to delete file from storage" });
+          return res
+            .status(500)
+            .json({ error: "Failed to delete file from storage" });
         }
       }
 
@@ -1372,61 +1738,79 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, fileId } = req.params;
+  app.get(
+    "/api/cases/:caseId/evidence/:fileId/notes",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, fileId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const file = await storage.getEvidenceFile(fileId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "File not found" });
+        }
+
+        const notes = await storage.listEvidenceNotes(userId, caseId, fileId);
+        res.json({ notes });
+      } catch (error) {
+        console.error("List evidence notes error:", error);
+        res.status(500).json({ error: "Failed to list evidence notes" });
       }
+    },
+  );
 
-      const file = await storage.getEvidenceFile(fileId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "File not found" });
+  app.post(
+    "/api/cases/:caseId/evidence/:fileId/notes",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, fileId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const file = await storage.getEvidenceFile(fileId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "File not found" });
+        }
+
+        const parseResult = insertEvidenceNoteSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fieldErrors: Record<string, string> = {};
+          parseResult.error.errors.forEach((err) => {
+            const field = err.path[0] as string;
+            fieldErrors[field] = err.message;
+          });
+          return res
+            .status(400)
+            .json({ error: "Validation failed", fields: fieldErrors });
+        }
+
+        const note = await storage.createEvidenceNote(
+          userId,
+          caseId,
+          fileId,
+          parseResult.data,
+        );
+        res.status(201).json({ note });
+      } catch (error) {
+        console.error("Create evidence note error:", error);
+        res.status(500).json({ error: "Failed to create evidence note" });
       }
-
-      const notes = await storage.listEvidenceNotes(userId, caseId, fileId);
-      res.json({ notes });
-    } catch (error) {
-      console.error("List evidence notes error:", error);
-      res.status(500).json({ error: "Failed to list evidence notes" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/evidence/:fileId/notes", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, fileId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const file = await storage.getEvidenceFile(fileId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "File not found" });
-      }
-
-      const parseResult = insertEvidenceNoteSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fieldErrors: Record<string, string> = {};
-        parseResult.error.errors.forEach((err) => {
-          const field = err.path[0] as string;
-          fieldErrors[field] = err.message;
-        });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
-      }
-
-      const note = await storage.createEvidenceNote(userId, caseId, fileId, parseResult.data);
-      res.status(201).json({ note });
-    } catch (error) {
-      console.error("Create evidence note error:", error);
-      res.status(500).json({ error: "Failed to create evidence note" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/evidence-notes/:noteId", requireAuth, async (req, res) => {
     try {
@@ -1445,10 +1829,16 @@ export async function registerRoutes(
           const field = err.path[0] as string;
           fieldErrors[field] = err.message;
         });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+        return res
+          .status(400)
+          .json({ error: "Validation failed", fields: fieldErrors });
       }
 
-      const updated = await storage.updateEvidenceNote(userId, noteId, parseResult.data);
+      const updated = await storage.updateEvidenceNote(
+        userId,
+        noteId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(500).json({ error: "Failed to update note" });
       }
@@ -1482,172 +1872,219 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/extraction",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
 
-      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
-      if (!extraction) {
-        const isProcessing = isExtractionRunning(evidenceId);
-        return res.json({
-          status: isProcessing ? "processing" : "not_started",
-          extractedTextPreview: null,
-          meta: null,
-          errorMessage: null,
-          updatedAt: null,
+        const extraction = await storage.getEvidenceExtraction(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        if (!extraction) {
+          const isProcessing = isExtractionRunning(evidenceId);
+          return res.json({
+            status: isProcessing ? "processing" : "not_started",
+            extractedTextPreview: null,
+            meta: null,
+            errorMessage: null,
+            updatedAt: null,
+          });
+        }
+
+        const textPreview = extraction.extractedText
+          ? extraction.extractedText.slice(0, 2000)
+          : null;
+
+        res.json({
+          status: extraction.status,
+          extractedTextPreview: textPreview,
+          extractedTextFull: extraction.extractedText,
+          meta: extraction.metadata,
+          errorMessage: extraction.error,
+          updatedAt: extraction.updatedAt,
         });
+      } catch (error) {
+        console.error("Get extraction error:", error);
+        res.status(500).json({ error: "Failed to get extraction" });
       }
+    },
+  );
 
-      const textPreview = extraction.extractedText
-        ? extraction.extractedText.slice(0, 2000)
-        : null;
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/extraction/run",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    requireAnalysis(),
+    requireQuota("ocr_page"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
 
-      res.json({
-        status: extraction.status,
-        extractedTextPreview: textPreview,
-        extractedTextFull: extraction.extractedText,
-        meta: extraction.metadata,
-        errorMessage: extraction.error,
-        updatedAt: extraction.updatedAt,
-      });
-    } catch (error) {
-      console.error("Get extraction error:", error);
-      res.status(500).json({ error: "Failed to get extraction" });
-    }
-  });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res
+            .status(404)
+            .json({ error: "Case not found", code: "CASE_NOT_FOUND" });
+        }
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/run", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, requireAnalysis(), requireQuota("ocr_page"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res
+            .status(400)
+            .json({
+              error: "Evidence file not found",
+              code: "EVIDENCE_NOT_FOUND",
+            });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found", code: "CASE_NOT_FOUND" });
-      }
+        if (!file.storageKey) {
+          return res
+            .status(400)
+            .json({
+              error: "Evidence file has no storage key",
+              code: "NO_STORAGE_KEY",
+            });
+        }
 
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(400).json({ error: "Evidence file not found", code: "EVIDENCE_NOT_FOUND" });
-      }
+        const requiresOcr =
+          file.mimeType.startsWith("image/") ||
+          file.mimeType === "application/pdf";
+        if (requiresOcr && !isGcvConfigured()) {
+          return res.status(503).json({
+            error:
+              "OCR not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets.",
+            code: "VISION_NOT_CONFIGURED",
+          });
+        }
 
-      if (!file.storageKey) {
-        return res.status(400).json({ error: "Evidence file has no storage key", code: "NO_STORAGE_KEY" });
-      }
+        if (!isR2Configured()) {
+          return res.status(503).json({
+            error: "File storage not configured",
+            code: "R2_NOT_CONFIGURED",
+          });
+        }
 
-      const requiresOcr = file.mimeType.startsWith("image/") || file.mimeType === "application/pdf";
-      if (requiresOcr && !isGcvConfigured()) {
-        return res.status(503).json({ 
-          error: "OCR not configured. Add GOOGLE_CLOUD_VISION_API_KEY in Replit Secrets.",
-          code: "VISION_NOT_CONFIGURED"
+        if (isExtractionRunning(evidenceId)) {
+          return res.json({
+            ok: true,
+            message: "Extraction already in progress",
+          });
+        }
+
+        const quotaReq = req as import("./middleware/quota").QuotaRequest;
+        const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
+
+        enqueueEvidenceExtraction({
+          userId,
+          caseId,
+          evidenceId,
+          storageKey: file.storageKey,
+          mimeType: file.mimeType,
+          originalFilename: file.originalName,
+          useCredit,
         });
-      }
 
-      if (!isR2Configured()) {
-        return res.status(503).json({ 
-          error: "File storage not configured",
-          code: "R2_NOT_CONFIGURED"
+        res.json({ ok: true, message: "Extraction started", useCredit });
+      } catch (error) {
+        console.error("Run extraction error:", error);
+        const message =
+          error instanceof Error ? error.message : "Failed to start extraction";
+        res.status(500).json({ error: message, code: "EXTRACTION_ERROR" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/background-ai-status",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const claimsSuggestionPending = isAutoSuggestPending(caseId);
+        const stats = getAutoSuggestStats();
+
+        const recentLogs = await storage.listActivityLogs(userId, 10, 0);
+        const backgroundLogs = recentLogs.filter(
+          (log) =>
+            log.caseId === caseId &&
+            (log.eventType === "claims_suggesting" ||
+              log.eventType === "claims_suggested"),
+        );
+        const latestBackgroundLog = backgroundLogs[0] || null;
+
+        res.json({
+          claimsSuggestionPending,
+          globalStats: stats,
+          latestActivity: latestBackgroundLog
+            ? {
+                eventType: latestBackgroundLog.eventType,
+                description: latestBackgroundLog.description,
+                metadata: latestBackgroundLog.metadata,
+                createdAt: latestBackgroundLog.createdAt,
+              }
+            : null,
         });
+      } catch (error) {
+        console.error("Background AI status error:", error);
+        res.status(500).json({ error: "Failed to get background AI status" });
       }
+    },
+  );
 
-      if (isExtractionRunning(evidenceId)) {
-        return res.json({ ok: true, message: "Extraction already in progress" });
+  app.get(
+    "/api/cases/:caseId/ai-jobs/status",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { getAiJobsStatus } = await import("./services/aiJobsStatus");
+        const status = await getAiJobsStatus(userId, caseId);
+        res.json(status);
+      } catch (error) {
+        console.error("AI jobs status error:", error);
+        res.status(500).json({ error: "Failed to get AI jobs status" });
       }
-
-      const quotaReq = req as import("./middleware/quota").QuotaRequest;
-      const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
-
-      enqueueEvidenceExtraction({
-        userId,
-        caseId,
-        evidenceId,
-        storageKey: file.storageKey,
-        mimeType: file.mimeType,
-        originalFilename: file.originalName,
-        useCredit,
-      });
-
-      res.json({ ok: true, message: "Extraction started", useCredit });
-    } catch (error) {
-      console.error("Run extraction error:", error);
-      const message = error instanceof Error ? error.message : "Failed to start extraction";
-      res.status(500).json({ error: message, code: "EXTRACTION_ERROR" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/background-ai-status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const claimsSuggestionPending = isAutoSuggestPending(caseId);
-      const stats = getAutoSuggestStats();
-
-      const recentLogs = await storage.listActivityLogs(userId, 10, 0);
-      const backgroundLogs = recentLogs.filter(
-        (log) =>
-          log.caseId === caseId &&
-          (log.eventType === "claims_suggesting" || log.eventType === "claims_suggested")
-      );
-      const latestBackgroundLog = backgroundLogs[0] || null;
-
-      res.json({
-        claimsSuggestionPending,
-        globalStats: stats,
-        latestActivity: latestBackgroundLog
-          ? {
-              eventType: latestBackgroundLog.eventType,
-              description: latestBackgroundLog.description,
-              metadata: latestBackgroundLog.metadata,
-              createdAt: latestBackgroundLog.createdAt,
-            }
-          : null,
-      });
-    } catch (error) {
-      console.error("Background AI status error:", error);
-      res.status(500).json({ error: "Failed to get background AI status" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { getAiJobsStatus } = await import("./services/aiJobsStatus");
-      const status = await getAiJobsStatus(userId, caseId);
-      res.json(status);
-    } catch (error) {
-      console.error("AI jobs status error:", error);
-      res.status(500).json({ error: "Failed to get AI jobs status" });
-    }
-  });
+    },
+  );
 
   // User transparency log - filtered for user-visible events only
   const USER_VISIBLE_EVENT_TYPES = [
     "evidence_upload",
-    "evidence_extracted", 
+    "evidence_extracted",
     "claims_suggested",
     "claim_accept",
     "claim_reject",
@@ -1664,22 +2101,25 @@ export async function registerRoutes(
       const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
 
       const allLogs = await storage.listActivityLogs(userId, limit * 2, 0);
-      
+
       // Filter to only user-visible events, exclude internal/admin notes
       const visibleLogs = allLogs
-        .filter(log => USER_VISIBLE_EVENT_TYPES.includes(log.eventType))
-        .map(log => ({
+        .filter((log) => USER_VISIBLE_EVENT_TYPES.includes(log.eventType))
+        .map((log) => ({
           id: log.id,
           eventType: log.eventType,
           description: log.description,
           createdAt: log.createdAt,
           caseId: log.caseId,
           // Exclude internal metadata, only include safe fields
-          metadata: log.metadata ? {
-            count: (log.metadata as Record<string, unknown>).count,
-            filename: (log.metadata as Record<string, unknown>).filename,
-            templateName: (log.metadata as Record<string, unknown>).templateName,
-          } : undefined,
+          metadata: log.metadata
+            ? {
+                count: (log.metadata as Record<string, unknown>).count,
+                filename: (log.metadata as Record<string, unknown>).filename,
+                templateName: (log.metadata as Record<string, unknown>)
+                  .templateName,
+              }
+            : undefined,
         }))
         .slice(0, limit);
 
@@ -1690,191 +2130,253 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/cases/:caseId/transparency-log", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const caseId = req.params.caseId;
-      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+  app.get(
+    "/api/cases/:caseId/transparency-log",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const caseId = req.params.caseId;
+        const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const allLogs = await storage.listActivityLogs(userId, limit * 2, 0);
+
+        // Filter to case-specific, user-visible events only
+        const visibleLogs = allLogs
+          .filter(
+            (log) =>
+              log.caseId === caseId &&
+              USER_VISIBLE_EVENT_TYPES.includes(log.eventType),
+          )
+          .map((log) => ({
+            id: log.id,
+            eventType: log.eventType,
+            description: log.description,
+            createdAt: log.createdAt,
+            caseId: log.caseId,
+            metadata: log.metadata
+              ? {
+                  count: (log.metadata as Record<string, unknown>).count,
+                  filename: (log.metadata as Record<string, unknown>).filename,
+                  templateName: (log.metadata as Record<string, unknown>)
+                    .templateName,
+                }
+              : undefined,
+          }))
+          .slice(0, limit);
+
+        res.json(visibleLogs);
+      } catch (error) {
+        console.error("Case transparency log error:", error);
+        res.status(500).json({ error: "Failed to fetch transparency log" });
       }
-
-      const allLogs = await storage.listActivityLogs(userId, limit * 2, 0);
-      
-      // Filter to case-specific, user-visible events only
-      const visibleLogs = allLogs
-        .filter(log => 
-          log.caseId === caseId && 
-          USER_VISIBLE_EVENT_TYPES.includes(log.eventType)
-        )
-        .map(log => ({
-          id: log.id,
-          eventType: log.eventType,
-          description: log.description,
-          createdAt: log.createdAt,
-          caseId: log.caseId,
-          metadata: log.metadata ? {
-            count: (log.metadata as Record<string, unknown>).count,
-            filename: (log.metadata as Record<string, unknown>).filename,
-            templateName: (log.metadata as Record<string, unknown>).templateName,
-          } : undefined,
-        }))
-        .slice(0, limit);
-
-      res.json(visibleLogs);
-    } catch (error) {
-      console.error("Case transparency log error:", error);
-      res.status(500).json({ error: "Failed to fetch transparency log" });
-    }
-  });
+    },
+  );
 
   // Case readiness score endpoint
-  app.get("/api/cases/:caseId/readiness", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const caseId = req.params.caseId;
+  app.get(
+    "/api/cases/:caseId/readiness",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const caseId = req.params.caseId;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        // Get evidence stats
+        const evidenceFiles = await storage.listEvidenceFiles(caseId, userId);
+        const extractedEvidence = evidenceFiles.filter(
+          (f) => f.extractionStatus === "completed",
+        );
+
+        // Get claims stats
+        const claims = await storage.listClaims(userId, caseId);
+        const acceptedClaims = claims.filter((c) => c.status === "accepted");
+        const pendingClaims = claims.filter((c) => c.status === "pending");
+        const totalReviewableClaims =
+          acceptedClaims.length + pendingClaims.length;
+
+        // Get citations stats (claims with at least one citation)
+        const claimsWithCitations = await Promise.all(
+          claims.map(async (claim) => {
+            const citations = await storage.listClaimCitations(
+              userId,
+              caseId,
+              claim.id,
+            );
+            return citations.length > 0;
+          }),
+        );
+        const citedClaimsCount = claimsWithCitations.filter(Boolean).length;
+
+        // Get timeline events
+        const timelineEvents = await storage.listTimelineEvents(caseId, userId);
+
+        res.json({
+          evidenceExtracted: {
+            current: extractedEvidence.length,
+            total: evidenceFiles.length,
+          },
+          claimsAccepted: {
+            current: acceptedClaims.length,
+            total: totalReviewableClaims || 1,
+          },
+          citationsAttached: {
+            current: citedClaimsCount,
+            total: claims.length || 1,
+          },
+          timelineEvents: {
+            count: timelineEvents.length,
+          },
+        });
+      } catch (error) {
+        console.error("Readiness score error:", error);
+        res.status(500).json({ error: "Failed to calculate readiness" });
       }
+    },
+  );
 
-      // Get evidence stats
-      const evidenceFiles = await storage.listEvidenceFiles(caseId, userId);
-      const extractedEvidence = evidenceFiles.filter(f => f.extractionStatus === "completed");
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/extraction/retry",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
 
-      // Get claims stats
-      const claims = await storage.listClaims(userId, caseId);
-      const acceptedClaims = claims.filter(c => c.status === "accepted");
-      const pendingClaims = claims.filter(c => c.status === "pending");
-      const totalReviewableClaims = acceptedClaims.length + pendingClaims.length;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      // Get citations stats (claims with at least one citation)
-      const claimsWithCitations = await Promise.all(
-        claims.map(async (claim) => {
-          const citations = await storage.listClaimCitations(userId, caseId, claim.id);
-          return citations.length > 0;
-        })
-      );
-      const citedClaimsCount = claimsWithCitations.filter(Boolean).length;
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
 
-      // Get timeline events
-      const timelineEvents = await storage.listTimelineEvents(caseId, userId);
-
-      res.json({
-        evidenceExtracted: {
-          current: extractedEvidence.length,
-          total: evidenceFiles.length,
-        },
-        claimsAccepted: {
-          current: acceptedClaims.length,
-          total: totalReviewableClaims || 1,
-        },
-        citationsAttached: {
-          current: citedClaimsCount,
-          total: claims.length || 1,
-        },
-        timelineEvents: {
-          count: timelineEvents.length,
-        },
-      });
-    } catch (error) {
-      console.error("Readiness score error:", error);
-      res.status(500).json({ error: "Failed to calculate readiness" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction/retry", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
-
-      const extraction = await storage.getExtractionByEvidenceId(userId, caseId, evidenceId);
-      if (!extraction) {
-        return res.status(404).json({ error: "No extraction found for this evidence" });
-      }
-
-      if (extraction.status !== "failed") {
-        return res.status(400).json({ error: "Can only retry failed extractions" });
-      }
-
-      const retried = await storage.retryExtraction(userId, extraction.id);
-      if (!retried) {
-        return res.status(400).json({ error: "Failed to queue retry" });
-      }
-
-      if (file.storageKey) {
-        enqueueEvidenceExtraction({
+        const extraction = await storage.getExtractionByEvidenceId(
           userId,
           caseId,
           evidenceId,
-          storageKey: file.storageKey,
-          mimeType: file.mimeType,
-          originalFilename: file.originalName,
-        });
+        );
+        if (!extraction) {
+          return res
+            .status(404)
+            .json({ error: "No extraction found for this evidence" });
+        }
+
+        if (extraction.status !== "failed") {
+          return res
+            .status(400)
+            .json({ error: "Can only retry failed extractions" });
+        }
+
+        const retried = await storage.retryExtraction(userId, extraction.id);
+        if (!retried) {
+          return res.status(400).json({ error: "Failed to queue retry" });
+        }
+
+        if (file.storageKey) {
+          enqueueEvidenceExtraction({
+            userId,
+            caseId,
+            evidenceId,
+            storageKey: file.storageKey,
+            mimeType: file.mimeType,
+            originalFilename: file.originalName,
+          });
+        }
+
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("Retry extraction error:", error);
+        res.status(500).json({ error: "Failed to retry extraction" });
       }
+    },
+  );
 
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("Retry extraction error:", error);
-      res.status(500).json({ error: "Failed to retry extraction" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/retry", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
 
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
+        const analyses = await storage.listEvidenceAiAnalyses(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        const latestAnalysis = analyses[0];
 
-      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
-      const latestAnalysis = analyses[0];
-      
-      if (latestAnalysis && latestAnalysis.status !== "failed") {
-        return res.status(400).json({ error: "Can only retry failed analyses or run new ones" });
-      }
+        if (latestAnalysis && latestAnalysis.status !== "failed") {
+          return res
+            .status(400)
+            .json({ error: "Can only retry failed analyses or run new ones" });
+        }
 
-      const extraction = await storage.getExtractionByEvidenceId(userId, caseId, evidenceId);
-      if (!extraction || extraction.status !== "complete" || !extraction.extractedText) {
-        return res.status(400).json({ error: "Extraction must be complete before running analysis" });
-      }
+        const extraction = await storage.getExtractionByEvidenceId(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        if (
+          !extraction ||
+          extraction.status !== "complete" ||
+          !extraction.extractedText
+        ) {
+          return res
+            .status(400)
+            .json({
+              error: "Extraction must be complete before running analysis",
+            });
+        }
 
-      const analysis = await storage.createEvidenceAiAnalysis(userId, caseId, {
-        evidenceId,
-        analysisType: "summary_findings",
-        content: "",
-        status: "processing",
-        model: "gpt-4o",
-      });
+        const analysis = await storage.createEvidenceAiAnalysis(
+          userId,
+          caseId,
+          {
+            evidenceId,
+            analysisType: "summary_findings",
+            content: "",
+            status: "processing",
+            model: "gpt-4o",
+          },
+        );
 
-      res.json({ ok: true, analysisId: analysis.id });
+        res.json({ ok: true, analysisId: analysis.id });
 
-      const OpenAI = (await import("openai")).default;
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const textToAnalyze = extraction.extractedText.slice(0, 15000);
+        const OpenAI = (await import("openai")).default;
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const textToAnalyze = extraction.extractedText.slice(0, 15000);
 
-      const systemPrompt = `You are a legal document analysis assistant for family court cases. Analyze the provided document text and extract key information. Be factual and objective. Do not provide legal advice.
+        const systemPrompt = `You are a legal document analysis assistant for family court cases. Analyze the provided document text and extract key information. Be factual and objective. Do not provide legal advice.
 
 Return a JSON object with this structure:
 {
@@ -1885,225 +2387,296 @@ Return a JSON object with this structure:
   "keyFindings": ["Array of 3-5 most important facts or claims"]
 }`;
 
-      try {
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Analyze this document:\n\n${textToAnalyze}` }
-          ],
-          temperature: 0.3,
-          max_tokens: 1500,
-          response_format: { type: "json_object" },
-        });
+        try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `Analyze this document:\n\n${textToAnalyze}`,
+              },
+            ],
+            temperature: 0.3,
+            max_tokens: 1500,
+            response_format: { type: "json_object" },
+          });
 
-        const content = completion.choices[0]?.message?.content || "{}";
-        const parsed = JSON.parse(content);
+          const content = completion.choices[0]?.message?.content || "{}";
+          const parsed = JSON.parse(content);
 
-        await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
-          status: "complete",
-          content,
-          summary: parsed.summary || null,
-          findings: parsed,
-          error: null,
-        });
+          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+            status: "complete",
+            content,
+            summary: parsed.summary || null,
+            findings: parsed,
+            error: null,
+          });
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : "Unknown error";
+          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+            status: "failed",
+            error: errorMsg.slice(0, 500),
+          });
+        }
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : "Unknown error";
-        await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
-          status: "failed",
-          error: errorMsg.slice(0, 500),
+        console.error("Retry AI analysis error:", error);
+        res.status(500).json({ error: "Failed to retry analysis" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/claims/retry",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        if (isAutoSuggestPending(caseId)) {
+          return res.json({
+            ok: true,
+            message: "Claims suggestion already pending",
+          });
+        }
+
+        const extractions = await storage.listEvidenceExtractions(
+          userId,
+          caseId,
+        );
+        const completeExtraction = extractions.find(
+          (e) => e.status === "complete" && e.extractedText,
+        );
+
+        if (!completeExtraction) {
+          return res
+            .status(400)
+            .json({
+              error: "No completed extractions available for claims suggestion",
+            });
+        }
+
+        triggerClaimsSuggestionForEvidence({
+          userId,
+          caseId,
+          evidenceId: completeExtraction.evidenceId,
+          extractedText: completeExtraction.extractedText!,
         });
+
+        res.json({ ok: true, message: "Claims suggestion scheduled" });
+      } catch (error) {
+        console.error("Retry claims error:", error);
+        res.status(500).json({ error: "Failed to retry claims suggestion" });
       }
-    } catch (error) {
-      console.error("Retry AI analysis error:", error);
-      res.status(500).json({ error: "Failed to retry analysis" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/claims/retry", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/facts",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
+        const { factType, promotedToClaim } = req.query;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
+
+        const filters: {
+          evidenceId?: string;
+          factType?: string;
+          promotedToClaim?: boolean;
+        } = {
+          evidenceId,
+        };
+        if (factType && typeof factType === "string") {
+          filters.factType = factType;
+        }
+        if (promotedToClaim !== undefined) {
+          filters.promotedToClaim = promotedToClaim === "true";
+        }
+
+        const facts = await storage.listEvidenceFacts(userId, caseId, filters);
+        res.json({ facts });
+      } catch (error) {
+        console.error("List evidence facts error:", error);
+        res.status(500).json({ error: "Failed to list evidence facts" });
       }
+    },
+  );
 
-      if (isAutoSuggestPending(caseId)) {
-        return res.json({ ok: true, message: "Claims suggestion already pending" });
-      }
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/facts/run",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, evidenceId } = req.params;
 
-      const extractions = await storage.listEvidenceExtractions(userId, caseId);
-      const completeExtraction = extractions.find(e => e.status === "complete" && e.extractedText);
-      
-      if (!completeExtraction) {
-        return res.status(400).json({ error: "No completed extractions available for claims suggestion" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      triggerClaimsSuggestionForEvidence({
-        userId,
-        caseId,
-        evidenceId: completeExtraction.evidenceId,
-        extractedText: completeExtraction.extractedText!,
-      });
+        const file = await storage.getEvidenceFile(evidenceId, userId);
+        if (!file || file.caseId !== caseId) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
 
-      res.json({ ok: true, message: "Claims suggestion scheduled" });
-    } catch (error) {
-      console.error("Retry claims error:", error);
-      res.status(500).json({ error: "Failed to retry claims suggestion" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/evidence/:evidenceId/facts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
-      const { factType, promotedToClaim } = req.query;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
-
-      const filters: { evidenceId?: string; factType?: string; promotedToClaim?: boolean } = {
-        evidenceId,
-      };
-      if (factType && typeof factType === "string") {
-        filters.factType = factType;
-      }
-      if (promotedToClaim !== undefined) {
-        filters.promotedToClaim = promotedToClaim === "true";
-      }
-
-      const facts = await storage.listEvidenceFacts(userId, caseId, filters);
-      res.json({ facts });
-    } catch (error) {
-      console.error("List evidence facts error:", error);
-      res.status(500).json({ error: "Failed to list evidence facts" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/evidence/:evidenceId/facts/run", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, evidenceId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const file = await storage.getEvidenceFile(evidenceId, userId);
-      if (!file || file.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
-
-      await storage.createActivityLog(
-        userId,
-        caseId,
-        "evidence_fact_extraction_started",
-        `Started fact extraction for ${file.originalName}`,
-        { evidenceId },
-        { moduleKey: "evidence", entityType: "evidence_file", entityId: evidenceId }
-      );
-
-      const result = await runFactExtractionForEvidence(userId, caseId, evidenceId);
-
-      if (result.success) {
         await storage.createActivityLog(
           userId,
           caseId,
-          "evidence_fact_extraction_completed",
-          `Extracted ${result.factsCreated} facts from ${file.originalName}`,
-          { evidenceId, factsCreated: result.factsCreated },
-          { moduleKey: "evidence", entityType: "evidence_file", entityId: evidenceId }
+          "evidence_fact_extraction_started",
+          `Started fact extraction for ${file.originalName}`,
+          { evidenceId },
+          {
+            moduleKey: "evidence",
+            entityType: "evidence_file",
+            entityId: evidenceId,
+          },
         );
-        res.json({ ok: true, factsCreated: result.factsCreated });
-      } else {
-        await storage.createActivityLog(
+
+        const result = await runFactExtractionForEvidence(
           userId,
           caseId,
-          "evidence_fact_extraction_failed",
-          `Fact extraction failed for ${file.originalName}: ${result.error}`,
-          { evidenceId, error: result.error },
-          { moduleKey: "evidence", entityType: "evidence_file", entityId: evidenceId }
+          evidenceId,
         );
-        res.status(400).json({ error: result.error });
+
+        if (result.success) {
+          await storage.createActivityLog(
+            userId,
+            caseId,
+            "evidence_fact_extraction_completed",
+            `Extracted ${result.factsCreated} facts from ${file.originalName}`,
+            { evidenceId, factsCreated: result.factsCreated },
+            {
+              moduleKey: "evidence",
+              entityType: "evidence_file",
+              entityId: evidenceId,
+            },
+          );
+          res.json({ ok: true, factsCreated: result.factsCreated });
+        } else {
+          await storage.createActivityLog(
+            userId,
+            caseId,
+            "evidence_fact_extraction_failed",
+            `Fact extraction failed for ${file.originalName}: ${result.error}`,
+            { evidenceId, error: result.error },
+            {
+              moduleKey: "evidence",
+              entityType: "evidence_file",
+              entityId: evidenceId,
+            },
+          );
+          res.status(400).json({ error: result.error });
+        }
+      } catch (error) {
+        console.error("Run fact extraction error:", error);
+        res.status(500).json({ error: "Failed to run fact extraction" });
       }
-    } catch (error) {
-      console.error("Run fact extraction error:", error);
-      res.status(500).json({ error: "Failed to run fact extraction" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/facts/:factId/promote-to-claim", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { factId } = req.params;
+  app.post(
+    "/api/facts/:factId/promote-to-claim",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { factId } = req.params;
 
-      const fact = await storage.getEvidenceFact(userId, factId);
-      if (!fact) {
-        return res.status(404).json({ error: "Fact not found" });
+        const fact = await storage.getEvidenceFact(userId, factId);
+        if (!fact) {
+          return res.status(404).json({ error: "Fact not found" });
+        }
+
+        const result = await promoteFactToClaim(userId, fact.caseId, factId);
+
+        if (result.success) {
+          await storage.createActivityLog(
+            userId,
+            fact.caseId,
+            "evidence_fact_promoted",
+            `Promoted fact to claim`,
+            { factId, claimId: result.claimId },
+            {
+              moduleKey: "claims",
+              entityType: "claim",
+              entityId: result.claimId,
+            },
+          );
+          res.json({ ok: true, claimId: result.claimId });
+        } else {
+          res.status(400).json({ error: result.error });
+        }
+      } catch (error) {
+        console.error("Promote fact to claim error:", error);
+        res.status(500).json({ error: "Failed to promote fact to claim" });
       }
+    },
+  );
 
-      const result = await promoteFactToClaim(userId, fact.caseId, factId);
+  app.get(
+    "/api/cases/:caseId/facts",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { factType, promotedToClaim, evidenceId } = req.query;
 
-      if (result.success) {
-        await storage.createActivityLog(
-          userId,
-          fact.caseId,
-          "evidence_fact_promoted",
-          `Promoted fact to claim`,
-          { factId, claimId: result.claimId },
-          { moduleKey: "claims", entityType: "claim", entityId: result.claimId }
-        );
-        res.json({ ok: true, claimId: result.claimId });
-      } else {
-        res.status(400).json({ error: result.error });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const filters: {
+          evidenceId?: string;
+          factType?: string;
+          promotedToClaim?: boolean;
+        } = {};
+        if (evidenceId && typeof evidenceId === "string") {
+          filters.evidenceId = evidenceId;
+        }
+        if (factType && typeof factType === "string") {
+          filters.factType = factType;
+        }
+        if (promotedToClaim !== undefined) {
+          filters.promotedToClaim = promotedToClaim === "true";
+        }
+
+        const facts = await storage.listEvidenceFacts(userId, caseId, filters);
+        const counts = await storage.countEvidenceFactsByCase(userId, caseId);
+
+        res.json({ facts, counts });
+      } catch (error) {
+        console.error("List case facts error:", error);
+        res.status(500).json({ error: "Failed to list case facts" });
       }
-    } catch (error) {
-      console.error("Promote fact to claim error:", error);
-      res.status(500).json({ error: "Failed to promote fact to claim" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/facts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { factType, promotedToClaim, evidenceId } = req.query;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const filters: { evidenceId?: string; factType?: string; promotedToClaim?: boolean } = {};
-      if (evidenceId && typeof evidenceId === "string") {
-        filters.evidenceId = evidenceId;
-      }
-      if (factType && typeof factType === "string") {
-        filters.factType = factType;
-      }
-      if (promotedToClaim !== undefined) {
-        filters.promotedToClaim = promotedToClaim === "true";
-      }
-
-      const facts = await storage.listEvidenceFacts(userId, caseId, filters);
-      const counts = await storage.countEvidenceFactsByCase(userId, caseId);
-
-      res.json({ facts, counts });
-    } catch (error) {
-      console.error("List case facts error:", error);
-      res.status(500).json({ error: "Failed to list case facts" });
-    }
-  });
+    },
+  );
 
   app.delete("/api/facts/:factId", requireAuth, async (req, res) => {
     try {
@@ -2127,100 +2700,121 @@ Return a JSON object with this structure:
     }
   });
 
-  app.get("/api/cases/:caseId/evidence-notes", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/evidence-notes",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const notes = await storage.listAllCaseEvidenceNotes(userId, caseId);
+        res.json({ notes });
+      } catch (error) {
+        console.error("List all case evidence notes error:", error);
+        res.status(500).json({ error: "Failed to list evidence notes" });
       }
+    },
+  );
 
-      const notes = await storage.listAllCaseEvidenceNotes(userId, caseId);
-      res.json({ notes });
-    } catch (error) {
-      console.error("List all case evidence notes error:", error);
-      res.status(500).json({ error: "Failed to list evidence notes" });
-    }
-  });
+  app.post(
+    "/api/evidence-notes/:noteId/link-exhibit",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { noteId } = req.params;
+        const { exhibitListId, label } = req.body;
 
-  app.post("/api/evidence-notes/:noteId/link-exhibit", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { noteId } = req.params;
-      const { exhibitListId, label } = req.body;
+        if (!exhibitListId) {
+          return res.status(400).json({ error: "exhibitListId is required" });
+        }
 
-      if (!exhibitListId) {
-        return res.status(400).json({ error: "exhibitListId is required" });
+        const note = await storage.getEvidenceNote(userId, noteId);
+        if (!note) {
+          return res.status(404).json({ error: "Note not found" });
+        }
+
+        const exhibitList = await storage.getExhibitList(userId, exhibitListId);
+        if (!exhibitList) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        const link = await storage.linkEvidenceNoteToExhibitList(
+          userId,
+          note.caseId,
+          noteId,
+          exhibitListId,
+          { label },
+        );
+
+        res.status(201).json({ link });
+      } catch (error) {
+        console.error("Link note to exhibit error:", error);
+        res.status(500).json({ error: "Failed to link note to exhibit" });
       }
+    },
+  );
 
-      const note = await storage.getEvidenceNote(userId, noteId);
-      if (!note) {
-        return res.status(404).json({ error: "Note not found" });
+  app.delete(
+    "/api/evidence-notes/:noteId/unlink-exhibit/:exhibitListId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { noteId, exhibitListId } = req.params;
+
+        const unlinked = await storage.unlinkEvidenceNoteFromExhibitList(
+          userId,
+          exhibitListId,
+          noteId,
+        );
+        res.json({ ok: unlinked });
+      } catch (error) {
+        console.error("Unlink note from exhibit error:", error);
+        res.status(500).json({ error: "Failed to unlink note from exhibit" });
       }
+    },
+  );
 
-      const exhibitList = await storage.getExhibitList(userId, exhibitListId);
-      if (!exhibitList) {
-        return res.status(404).json({ error: "Exhibit list not found" });
+  app.post(
+    "/api/evidence-notes/:noteId/create-timeline-event",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { noteId } = req.params;
+        const { date, categoryId } = req.body;
+
+        const note = await storage.getEvidenceNote(userId, noteId);
+        if (!note) {
+          return res.status(404).json({ error: "Note not found" });
+        }
+
+        if (!date) {
+          return res.status(400).json({ error: "date is required" });
+        }
+
+        const event = await storage.createTimelineEvent(note.caseId, userId, {
+          date,
+          title: note.label || "Evidence Note",
+          description: note.note,
+          categoryId: categoryId || null,
+        });
+
+        res.status(201).json({ event });
+      } catch (error) {
+        console.error("Create timeline event from note error:", error);
+        res.status(500).json({ error: "Failed to create timeline event" });
       }
-
-      const link = await storage.linkEvidenceNoteToExhibitList(
-        userId,
-        note.caseId,
-        noteId,
-        exhibitListId,
-        { label }
-      );
-
-      res.status(201).json({ link });
-    } catch (error) {
-      console.error("Link note to exhibit error:", error);
-      res.status(500).json({ error: "Failed to link note to exhibit" });
-    }
-  });
-
-  app.delete("/api/evidence-notes/:noteId/unlink-exhibit/:exhibitListId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { noteId, exhibitListId } = req.params;
-
-      const unlinked = await storage.unlinkEvidenceNoteFromExhibitList(userId, exhibitListId, noteId);
-      res.json({ ok: unlinked });
-    } catch (error) {
-      console.error("Unlink note from exhibit error:", error);
-      res.status(500).json({ error: "Failed to unlink note from exhibit" });
-    }
-  });
-
-  app.post("/api/evidence-notes/:noteId/create-timeline-event", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { noteId } = req.params;
-      const { date, categoryId } = req.body;
-
-      const note = await storage.getEvidenceNote(userId, noteId);
-      if (!note) {
-        return res.status(404).json({ error: "Note not found" });
-      }
-
-      if (!date) {
-        return res.status(400).json({ error: "date is required" });
-      }
-
-      const event = await storage.createTimelineEvent(note.caseId, userId, {
-        date,
-        title: note.label || "Evidence Note",
-        description: note.note,
-        categoryId: categoryId || null,
-      });
-
-      res.status(201).json({ event });
-    } catch (error) {
-      console.error("Create timeline event from note error:", error);
-      res.status(500).json({ error: "Failed to create timeline event" });
-    }
-  });
+    },
+  );
 
   app.get("/api/exhibit-lists/:listId/items", requireAuth, async (req, res) => {
     try {
@@ -2232,9 +2826,16 @@ Return a JSON object with this structure:
         return res.status(404).json({ error: "Exhibit list not found" });
       }
 
-      const evidenceLinks = await storage.listExhibitListEvidence(userId, listId);
+      const evidenceLinks = await storage.listExhibitListEvidence(
+        userId,
+        listId,
+      );
       const noteLinks = await storage.listExhibitNoteLinks(userId, listId);
-      const snippets = await storage.listExhibitSnippets(userId, exhibitList.caseId, listId);
+      const snippets = await storage.listExhibitSnippets(
+        userId,
+        exhibitList.caseId,
+        listId,
+      );
 
       res.json({ evidenceLinks, noteLinks, snippets });
     } catch (error) {
@@ -2243,275 +2844,378 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/exhibit-lists/:listId/evidence", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
-      const { evidenceFileId, label, notes } = req.body;
+  app.post(
+    "/api/exhibit-lists/:listId/evidence",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
+        const { evidenceFileId, label, notes } = req.body;
 
-      if (!evidenceFileId) {
-        return res.status(400).json({ error: "evidenceFileId is required" });
+        if (!evidenceFileId) {
+          return res.status(400).json({ error: "evidenceFileId is required" });
+        }
+
+        const exhibitList = await storage.getExhibitList(userId, listId);
+        if (!exhibitList) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        const evidenceFile = await storage.getEvidenceFile(
+          evidenceFileId,
+          userId,
+        );
+        if (!evidenceFile) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
+
+        const link = await storage.addEvidenceToExhibitList(
+          userId,
+          exhibitList.caseId,
+          listId,
+          evidenceFileId,
+          { label, notes },
+        );
+
+        res.status(201).json({ link });
+      } catch (error) {
+        console.error("Add evidence to exhibit list error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to add evidence to exhibit list" });
       }
+    },
+  );
 
-      const exhibitList = await storage.getExhibitList(userId, listId);
-      if (!exhibitList) {
-        return res.status(404).json({ error: "Exhibit list not found" });
+  app.delete(
+    "/api/exhibit-lists/:listId/evidence/:evidenceFileId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId, evidenceFileId } = req.params;
+
+        const removed = await storage.removeEvidenceFromExhibitList(
+          userId,
+          listId,
+          evidenceFileId,
+        );
+        res.json({ ok: removed });
+      } catch (error) {
+        console.error("Remove evidence from exhibit list error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to remove evidence from exhibit list" });
       }
+    },
+  );
 
-      const evidenceFile = await storage.getEvidenceFile(evidenceFileId, userId);
-      if (!evidenceFile) {
-        return res.status(404).json({ error: "Evidence file not found" });
+  app.post(
+    "/api/exhibit-lists/:listId/notes",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
+        const { evidenceNoteId, label } = req.body;
+
+        if (!evidenceNoteId) {
+          return res.status(400).json({ error: "evidenceNoteId is required" });
+        }
+
+        const exhibitList = await storage.getExhibitList(userId, listId);
+        if (!exhibitList) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        const note = await storage.getEvidenceNote(userId, evidenceNoteId);
+        if (!note) {
+          return res.status(404).json({ error: "Evidence note not found" });
+        }
+
+        const link = await storage.linkEvidenceNoteToExhibitList(
+          userId,
+          exhibitList.caseId,
+          evidenceNoteId,
+          listId,
+          { label },
+        );
+
+        res.status(201).json({ link });
+      } catch (error) {
+        console.error("Add note to exhibit list error:", error);
+        res.status(500).json({ error: "Failed to add note to exhibit list" });
       }
+    },
+  );
 
-      const link = await storage.addEvidenceToExhibitList(
-        userId,
-        exhibitList.caseId,
-        listId,
-        evidenceFileId,
-        { label, notes }
-      );
+  app.delete(
+    "/api/exhibit-lists/:listId/notes/:evidenceNoteId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId, evidenceNoteId } = req.params;
 
-      res.status(201).json({ link });
-    } catch (error) {
-      console.error("Add evidence to exhibit list error:", error);
-      res.status(500).json({ error: "Failed to add evidence to exhibit list" });
-    }
-  });
-
-  app.delete("/api/exhibit-lists/:listId/evidence/:evidenceFileId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId, evidenceFileId } = req.params;
-
-      const removed = await storage.removeEvidenceFromExhibitList(userId, listId, evidenceFileId);
-      res.json({ ok: removed });
-    } catch (error) {
-      console.error("Remove evidence from exhibit list error:", error);
-      res.status(500).json({ error: "Failed to remove evidence from exhibit list" });
-    }
-  });
-
-  app.post("/api/exhibit-lists/:listId/notes", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
-      const { evidenceNoteId, label } = req.body;
-
-      if (!evidenceNoteId) {
-        return res.status(400).json({ error: "evidenceNoteId is required" });
+        const removed = await storage.unlinkEvidenceNoteFromExhibitList(
+          userId,
+          listId,
+          evidenceNoteId,
+        );
+        res.json({ ok: removed });
+      } catch (error) {
+        console.error("Remove note from exhibit list error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to remove note from exhibit list" });
       }
+    },
+  );
 
-      const exhibitList = await storage.getExhibitList(userId, listId);
-      if (!exhibitList) {
-        return res.status(404).json({ error: "Exhibit list not found" });
+  app.post(
+    "/api/exhibit-lists/:listId/reorder",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
+        const { evidenceOrder, noteOrder } = req.body;
+
+        const exhibitList = await storage.getExhibitList(userId, listId);
+        if (!exhibitList) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        if (Array.isArray(evidenceOrder)) {
+          await storage.reorderExhibitListEvidence(
+            userId,
+            listId,
+            evidenceOrder,
+          );
+        }
+
+        if (Array.isArray(noteOrder)) {
+          await storage.reorderExhibitNoteLinks(userId, listId, noteOrder);
+        }
+
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("Reorder exhibit list items error:", error);
+        res.status(500).json({ error: "Failed to reorder exhibit list items" });
       }
+    },
+  );
 
-      const note = await storage.getEvidenceNote(userId, evidenceNoteId);
-      if (!note) {
-        return res.status(404).json({ error: "Evidence note not found" });
+  app.get(
+    "/api/cases/:caseId/timeline/categories",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const categories = await storage.listTimelineCategories(userId, caseId);
+        const categoriesWithCounts = await Promise.all(
+          categories.map(async (cat) => ({
+            ...cat,
+            eventCount: await storage.getEventCountByCategory(
+              userId,
+              caseId,
+              cat.id,
+            ),
+          })),
+        );
+        res.json({ categories: categoriesWithCounts });
+      } catch (error) {
+        console.error("List timeline categories error:", error);
+        res.status(500).json({ error: "Failed to list timeline categories" });
       }
+    },
+  );
 
-      const link = await storage.linkEvidenceNoteToExhibitList(
-        userId,
-        exhibitList.caseId,
-        evidenceNoteId,
-        listId,
-        { label }
-      );
+  app.post(
+    "/api/cases/:caseId/timeline/categories",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { name, color } = req.body;
 
-      res.status(201).json({ link });
-    } catch (error) {
-      console.error("Add note to exhibit list error:", error);
-      res.status(500).json({ error: "Failed to add note to exhibit list" });
-    }
-  });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-  app.delete("/api/exhibit-lists/:listId/notes/:evidenceNoteId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId, evidenceNoteId } = req.params;
+        if (!name || !color) {
+          return res.status(400).json({ error: "name and color are required" });
+        }
 
-      const removed = await storage.unlinkEvidenceNoteFromExhibitList(userId, listId, evidenceNoteId);
-      res.json({ ok: removed });
-    } catch (error) {
-      console.error("Remove note from exhibit list error:", error);
-      res.status(500).json({ error: "Failed to remove note from exhibit list" });
-    }
-  });
-
-  app.post("/api/exhibit-lists/:listId/reorder", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
-      const { evidenceOrder, noteOrder } = req.body;
-
-      const exhibitList = await storage.getExhibitList(userId, listId);
-      if (!exhibitList) {
-        return res.status(404).json({ error: "Exhibit list not found" });
+        const category = await storage.createTimelineCategory(userId, caseId, {
+          name,
+          color,
+        });
+        res.status(201).json({ category });
+      } catch (error) {
+        console.error("Create timeline category error:", error);
+        res.status(500).json({ error: "Failed to create timeline category" });
       }
+    },
+  );
 
-      if (Array.isArray(evidenceOrder)) {
-        await storage.reorderExhibitListEvidence(userId, listId, evidenceOrder);
+  app.patch(
+    "/api/cases/:caseId/timeline/categories/:categoryId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, categoryId } = req.params;
+        const { name, color } = req.body;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const updated = await storage.updateTimelineCategory(
+          userId,
+          caseId,
+          categoryId,
+          { name, color },
+        );
+        if (!updated) {
+          return res.status(404).json({ error: "Category not found" });
+        }
+
+        res.json({ category: updated });
+      } catch (error) {
+        console.error("Update timeline category error:", error);
+        res.status(500).json({ error: "Failed to update timeline category" });
       }
+    },
+  );
 
-      if (Array.isArray(noteOrder)) {
-        await storage.reorderExhibitNoteLinks(userId, listId, noteOrder);
+  app.delete(
+    "/api/cases/:caseId/timeline/categories/:categoryId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, categoryId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const result = await storage.deleteTimelineCategory(
+          userId,
+          caseId,
+          categoryId,
+        );
+        if (!result.success) {
+          return res.status(400).json({ error: result.error });
+        }
+
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("Delete timeline category error:", error);
+        res.status(500).json({ error: "Failed to delete timeline category" });
       }
+    },
+  );
 
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("Reorder exhibit list items error:", error);
-      res.status(500).json({ error: "Failed to reorder exhibit list items" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/timeline/categories/seed",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.get("/api/cases/:caseId/timeline/categories", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const categories = await storage.seedSystemTimelineCategories(
+          userId,
+          caseId,
+        );
+        res.json({ categories });
+      } catch (error) {
+        console.error("Seed timeline categories error:", error);
+        res.status(500).json({ error: "Failed to seed timeline categories" });
       }
+    },
+  );
 
-      const categories = await storage.listTimelineCategories(userId, caseId);
-      const categoriesWithCounts = await Promise.all(
-        categories.map(async (cat) => ({
-          ...cat,
-          eventCount: await storage.getEventCountByCategory(userId, caseId, cat.id),
-        }))
-      );
-      res.json({ categories: categoriesWithCounts });
-    } catch (error) {
-      console.error("List timeline categories error:", error);
-      res.status(500).json({ error: "Failed to list timeline categories" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/parenting-plan",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.post("/api/cases/:caseId/timeline/categories", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { name, color } = req.body;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const plan = await storage.getOrCreateParentingPlan(userId, caseId);
+        const sections = await storage.listParentingPlanSections(
+          userId,
+          plan.id,
+        );
+
+        res.json({ plan, sections });
+      } catch (error) {
+        console.error("Get parenting plan error:", error);
+        res.status(500).json({ error: "Failed to get parenting plan" });
       }
+    },
+  );
 
-      if (!name || !color) {
-        return res.status(400).json({ error: "name and color are required" });
+  app.post(
+    "/api/cases/:caseId/parenting-plan",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const plan = await storage.getOrCreateParentingPlan(userId, caseId);
+        res.status(201).json({ plan });
+      } catch (error) {
+        console.error("Create parenting plan error:", error);
+        res.status(500).json({ error: "Failed to create parenting plan" });
       }
-
-      const category = await storage.createTimelineCategory(userId, caseId, { name, color });
-      res.status(201).json({ category });
-    } catch (error) {
-      console.error("Create timeline category error:", error);
-      res.status(500).json({ error: "Failed to create timeline category" });
-    }
-  });
-
-  app.patch("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, categoryId } = req.params;
-      const { name, color } = req.body;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const updated = await storage.updateTimelineCategory(userId, caseId, categoryId, { name, color });
-      if (!updated) {
-        return res.status(404).json({ error: "Category not found" });
-      }
-
-      res.json({ category: updated });
-    } catch (error) {
-      console.error("Update timeline category error:", error);
-      res.status(500).json({ error: "Failed to update timeline category" });
-    }
-  });
-
-  app.delete("/api/cases/:caseId/timeline/categories/:categoryId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, categoryId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const result = await storage.deleteTimelineCategory(userId, caseId, categoryId);
-      if (!result.success) {
-        return res.status(400).json({ error: result.error });
-      }
-
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("Delete timeline category error:", error);
-      res.status(500).json({ error: "Failed to delete timeline category" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/timeline/categories/seed", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const categories = await storage.seedSystemTimelineCategories(userId, caseId);
-      res.json({ categories });
-    } catch (error) {
-      console.error("Seed timeline categories error:", error);
-      res.status(500).json({ error: "Failed to seed timeline categories" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/parenting-plan", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const plan = await storage.getOrCreateParentingPlan(userId, caseId);
-      const sections = await storage.listParentingPlanSections(userId, plan.id);
-
-      res.json({ plan, sections });
-    } catch (error) {
-      console.error("Get parenting plan error:", error);
-      res.status(500).json({ error: "Failed to get parenting plan" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/parenting-plan", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const plan = await storage.getOrCreateParentingPlan(userId, caseId);
-      res.status(201).json({ plan });
-    } catch (error) {
-      console.error("Create parenting plan error:", error);
-      res.status(500).json({ error: "Failed to create parenting plan" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/parenting-plan/:planId", requireAuth, async (req, res) => {
     try {
@@ -2519,7 +3223,9 @@ Return a JSON object with this structure:
       const { planId } = req.params;
       const { status } = req.body;
 
-      const updated = await storage.updateParentingPlan(userId, planId, { status });
+      const updated = await storage.updateParentingPlan(userId, planId, {
+        status,
+      });
       if (!updated) {
         return res.status(404).json({ error: "Parenting plan not found" });
       }
@@ -2531,25 +3237,34 @@ Return a JSON object with this structure:
     }
   });
 
-  app.put("/api/parenting-plan/:planId/sections/:sectionKey", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { planId, sectionKey } = req.params;
-      const { data } = req.body;
+  app.put(
+    "/api/parenting-plan/:planId/sections/:sectionKey",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { planId, sectionKey } = req.params;
+        const { data } = req.body;
 
-      if (!data || typeof data !== "object") {
-        return res.status(400).json({ error: "data object is required" });
+        if (!data || typeof data !== "object") {
+          return res.status(400).json({ error: "data object is required" });
+        }
+
+        const section = await storage.upsertParentingPlanSection(
+          userId,
+          planId,
+          sectionKey,
+          data,
+        );
+        await storage.updateParentingPlan(userId, planId, {});
+
+        res.json({ section });
+      } catch (error) {
+        console.error("Upsert parenting plan section error:", error);
+        res.status(500).json({ error: "Failed to save section" });
       }
-
-      const section = await storage.upsertParentingPlanSection(userId, planId, sectionKey, data);
-      await storage.updateParentingPlan(userId, planId, {});
-
-      res.json({ section });
-    } catch (error) {
-      console.error("Upsert parenting plan section error:", error);
-      res.status(500).json({ error: "Failed to save section" });
-    }
-  });
+    },
+  );
 
   app.delete("/api/parenting-plan/:planId", requireAuth, async (req, res) => {
     try {
@@ -2568,218 +3283,315 @@ Return a JSON object with this structure:
     }
   });
 
-  app.post("/api/parenting-plan/:planId/export-docx", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { planId } = req.params;
+  app.post(
+    "/api/parenting-plan/:planId/export-docx",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { planId } = req.params;
 
-      const plan = await storage.getParentingPlan(userId, planId);
-      if (!plan) {
-        return res.status(404).json({ error: "Parenting plan not found" });
-      }
+        const plan = await storage.getParentingPlan(userId, planId);
+        if (!plan) {
+          return res.status(404).json({ error: "Parenting plan not found" });
+        }
 
-      const sections = await storage.listParentingPlanSections(userId, planId);
-      const caseRecord = await storage.getCase(plan.caseId, userId);
+        const sections = await storage.listParentingPlanSections(
+          userId,
+          planId,
+        );
+        const caseRecord = await storage.getCase(plan.caseId, userId);
 
-      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import("docx");
+        const {
+          Document,
+          Packer,
+          Paragraph,
+          TextRun,
+          HeadingLevel,
+          AlignmentType,
+          BorderStyle,
+        } = await import("docx");
 
-      const FONT = "Times New Roman";
-      const FONT_SIZE = 24;
+        const FONT = "Times New Roman";
+        const FONT_SIZE = 24;
 
-      const docChildren: (typeof Paragraph.prototype)[] = [];
+        const docChildren: (typeof Paragraph.prototype)[] = [];
 
-      docChildren.push(new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 200 },
-        children: [new TextRun({
-          text: "EDUCATIONAL DRAFT TEMPLATE",
-          bold: true,
-          font: FONT,
-          size: FONT_SIZE,
-        })],
-      }));
-
-      docChildren.push(new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
-        children: [new TextRun({
-          text: "This is a draft template for organizational purposes only. It does NOT constitute legal advice or a court-ready document. Consult with a licensed attorney before filing any court documents.",
-          italics: true,
-          font: FONT,
-          size: 20,
-        })],
-      }));
-
-      docChildren.push(new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
-        children: [new TextRun({
-          text: "PARENTING PLAN DRAFT",
-          bold: true,
-          font: FONT,
-          size: 32,
-        })],
-      }));
-
-      if (caseRecord) {
-        if (caseRecord.caseNumber) {
-          docChildren.push(new Paragraph({
+        docChildren.push(
+          new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { after: 200 },
-            children: [new TextRun({
-              text: `Case No.: ${caseRecord.caseNumber}`,
-              font: FONT,
-              size: FONT_SIZE,
-            })],
-          }));
-        }
-      }
+            children: [
+              new TextRun({
+                text: "EDUCATIONAL DRAFT TEMPLATE",
+                bold: true,
+                font: FONT,
+                size: FONT_SIZE,
+              }),
+            ],
+          }),
+        );
 
-      docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
+        docChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+            children: [
+              new TextRun({
+                text: "This is a draft template for organizational purposes only. It does NOT constitute legal advice or a court-ready document. Consult with a licensed attorney before filing any court documents.",
+                italics: true,
+                font: FONT,
+                size: 20,
+              }),
+            ],
+          }),
+        );
 
-      const sectionTitles: Record<string, string> = {
-        "decision-making": "Decision-Making",
-        "parenting-time": "Parenting Time",
-        "holidays": "Holidays & Special Days",
-        "medical": "Medical & Healthcare",
-        "education": "Education",
-        "communication": "Communication",
-        "extracurriculars": "Extracurricular Activities",
-        "travel": "Travel",
-        "childcare": "Childcare",
-        "safety": "Safety & Special Concerns",
-        "financial": "Financial Responsibilities",
-        "modification": "Modification & Dispute Resolution",
-      };
+        docChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+            children: [
+              new TextRun({
+                text: "PARENTING PLAN DRAFT",
+                bold: true,
+                font: FONT,
+                size: 32,
+              }),
+            ],
+          }),
+        );
 
-      for (const section of sections) {
-        const title = sectionTitles[section.sectionKey] || section.sectionKey;
-        const data = section.data as Record<string, unknown>;
-
-        docChildren.push(new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 400, after: 200 },
-          children: [new TextRun({
-            text: title,
-            bold: true,
-            font: FONT,
-            size: 28,
-          })],
-        }));
-
-        for (const [key, value] of Object.entries(data)) {
-          if (value && typeof value === "string" && value.trim()) {
-            const label = key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
-            docChildren.push(new Paragraph({
-              spacing: { after: 100 },
-              children: [
-                new TextRun({ text: `${label}: `, bold: true, font: FONT, size: FONT_SIZE }),
-                new TextRun({ text: value, font: FONT, size: FONT_SIZE }),
-              ],
-            }));
-          } else if (typeof value === "boolean" && value) {
-            const label = key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
-            docChildren.push(new Paragraph({
-              spacing: { after: 100 },
-              children: [new TextRun({ text: `${label}: Yes`, font: FONT, size: FONT_SIZE })],
-            }));
+        if (caseRecord) {
+          if (caseRecord.caseNumber) {
+            docChildren.push(
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Case No.: ${caseRecord.caseNumber}`,
+                    font: FONT,
+                    size: FONT_SIZE,
+                  }),
+                ],
+              }),
+            );
           }
         }
-      }
 
-      docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
-      docChildren.push(new Paragraph({
-        children: [new TextRun({
-          text: "Generated by Civilla.ai - Educational Draft Template",
-          italics: true,
-          font: FONT,
-          size: 18,
-        })],
-      }));
+        docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
 
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: docChildren,
-        }],
-      });
+        const sectionTitles: Record<string, string> = {
+          "decision-making": "Decision-Making",
+          "parenting-time": "Parenting Time",
+          holidays: "Holidays & Special Days",
+          medical: "Medical & Healthcare",
+          education: "Education",
+          communication: "Communication",
+          extracurriculars: "Extracurricular Activities",
+          travel: "Travel",
+          childcare: "Childcare",
+          safety: "Safety & Special Concerns",
+          financial: "Financial Responsibilities",
+          modification: "Modification & Dispute Resolution",
+        };
 
-      const buffer = await Packer.toBuffer(doc);
-      const filename = `parenting-plan-draft-${new Date().toISOString().split('T')[0]}.docx`;
+        for (const section of sections) {
+          const title = sectionTitles[section.sectionKey] || section.sectionKey;
+          const data = section.data as Record<string, unknown>;
 
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Export parenting plan DOCX error:", error);
-      res.status(500).json({ error: "Failed to export parenting plan" });
-    }
-  });
+          docChildren.push(
+            new Paragraph({
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 },
+              children: [
+                new TextRun({
+                  text: title,
+                  bold: true,
+                  font: FONT,
+                  size: 28,
+                }),
+              ],
+            }),
+          );
 
-  app.get("/api/cases/:caseId/parenting-plan/research", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const state = req.query.state as string;
-
-      if (!state) {
-        return res.status(400).json({ error: "State is required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const termKey = `parenting_plan_${state.toLowerCase().replace(/\s+/g, '_')}`;
-      const terms = await storage.getCaseRuleTerms(userId, caseId, "parenting-plan");
-      const cached = terms.find(t => t.termKey === termKey);
-
-      if (cached) {
-        return res.json({ ok: true, content: cached.summary, cached: true, lastCheckedAt: cached.lastCheckedAt });
-      }
-
-      res.json({ ok: true, content: null, cached: false });
-    } catch (error) {
-      console.error("Get parenting plan research error:", error);
-      res.status(500).json({ error: "Failed to get parenting plan research" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/parenting-plan/research", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { state, refresh } = req.body;
-
-      if (!state || typeof state !== "string") {
-        return res.status(400).json({ error: "State is required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const termKey = `parenting_plan_${state.toLowerCase().replace(/\s+/g, '_')}`;
-      const moduleKey = "parenting-plan";
-
-      if (!refresh) {
-        const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
-        const cached = terms.find(t => t.termKey === termKey);
-        if (cached && cached.summary) {
-          return res.json({ ok: true, content: cached.summary, cached: true });
+          for (const [key, value] of Object.entries(data)) {
+            if (value && typeof value === "string" && value.trim()) {
+              const label = key
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (s) => s.toUpperCase());
+              docChildren.push(
+                new Paragraph({
+                  spacing: { after: 100 },
+                  children: [
+                    new TextRun({
+                      text: `${label}: `,
+                      bold: true,
+                      font: FONT,
+                      size: FONT_SIZE,
+                    }),
+                    new TextRun({ text: value, font: FONT, size: FONT_SIZE }),
+                  ],
+                }),
+              );
+            } else if (typeof value === "boolean" && value) {
+              const label = key
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (s) => s.toUpperCase());
+              docChildren.push(
+                new Paragraph({
+                  spacing: { after: 100 },
+                  children: [
+                    new TextRun({
+                      text: `${label}: Yes`,
+                      font: FONT,
+                      size: FONT_SIZE,
+                    }),
+                  ],
+                }),
+              );
+            }
+          }
         }
+
+        docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
+        docChildren.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Generated by Civilla.ai - Educational Draft Template",
+                italics: true,
+                font: FONT,
+                size: 18,
+              }),
+            ],
+          }),
+        );
+
+        const doc = new Document({
+          sections: [
+            {
+              properties: {},
+              children: docChildren,
+            },
+          ],
+        });
+
+        const buffer = await Packer.toBuffer(doc);
+        const filename = `parenting-plan-draft-${new Date().toISOString().split("T")[0]}.docx`;
+
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        );
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${filename}"`,
+        );
+        res.send(buffer);
+      } catch (error) {
+        console.error("Export parenting plan DOCX error:", error);
+        res.status(500).json({ error: "Failed to export parenting plan" });
       }
+    },
+  );
 
-      const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
-      if (!lexiApiKeyConfigured) {
-        return res.status(503).json({ error: "AI integration not configured" });
+  app.get(
+    "/api/cases/:caseId/parenting-plan/research",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const state = req.query.state as string;
+
+        if (!state) {
+          return res.status(400).json({ error: "State is required" });
+        }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const termKey = `parenting_plan_${state.toLowerCase().replace(/\s+/g, "_")}`;
+        const terms = await storage.getCaseRuleTerms(
+          userId,
+          caseId,
+          "parenting-plan",
+        );
+        const cached = terms.find((t) => t.termKey === termKey);
+
+        if (cached) {
+          return res.json({
+            ok: true,
+            content: cached.summary,
+            cached: true,
+            lastCheckedAt: cached.lastCheckedAt,
+          });
+        }
+
+        res.json({ ok: true, content: null, cached: false });
+      } catch (error) {
+        console.error("Get parenting plan research error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to get parenting plan research" });
       }
+    },
+  );
 
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  app.post(
+    "/api/cases/:caseId/parenting-plan/research",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { state, refresh } = req.body;
 
-      const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
+        if (!state || typeof state !== "string") {
+          return res.status(400).json({ error: "State is required" });
+        }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const termKey = `parenting_plan_${state.toLowerCase().replace(/\s+/g, "_")}`;
+        const moduleKey = "parenting-plan";
+
+        if (!refresh) {
+          const terms = await storage.getCaseRuleTerms(
+            userId,
+            caseId,
+            moduleKey,
+          );
+          const cached = terms.find((t) => t.termKey === termKey);
+          if (cached && cached.summary) {
+            return res.json({
+              ok: true,
+              content: cached.summary,
+              cached: true,
+            });
+          }
+        }
+
+        const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+        if (!lexiApiKeyConfigured) {
+          return res
+            .status(503)
+            .json({ error: "AI integration not configured" });
+        }
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
 
 Your task: Research and provide general educational information about parenting plans in ${state}.
 
@@ -2809,101 +3621,138 @@ You MUST format your response EXACTLY like this:
 ### Important Disclaimer
 This is educational and research information only. It is NOT legal advice. Parenting plan requirements vary significantly by jurisdiction and individual circumstances. For court-accurate documents, consult with a family law attorney. civilla does not provide legal advice or representation.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Please research and provide educational information about parenting plan requirements in ${state}.` }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      });
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Please research and provide educational information about parenting plan requirements in ${state}.`,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        });
 
-      const content = completion.choices[0]?.message?.content || "Unable to generate research content.";
+        const content =
+          completion.choices[0]?.message?.content ||
+          "Unable to generate research content.";
 
-      await storage.upsertCaseRuleTerm(userId, caseId, {
-        moduleKey,
-        jurisdictionState: state,
-        termKey,
-        officialLabel: `Parenting Plan Requirements - ${state}`,
-        summary: content,
-        sourcesJson: [],
-      });
+        await storage.upsertCaseRuleTerm(userId, caseId, {
+          moduleKey,
+          jurisdictionState: state,
+          termKey,
+          officialLabel: `Parenting Plan Requirements - ${state}`,
+          summary: content,
+          sourcesJson: [],
+        });
 
-      res.json({ ok: true, content, cached: false });
-    } catch (error) {
-      console.error("Parenting plan research error:", error);
-      res.status(500).json({ error: "Failed to research parenting plan requirements" });
-    }
-  });
-
-// Child Support Research endpoints
-  app.get("/api/cases/:caseId/child-support/research", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const state = req.query.state as string;
-
-      if (!state) {
-        return res.status(400).json({ error: "State is required" });
+        res.json({ ok: true, content, cached: false });
+      } catch (error) {
+        console.error("Parenting plan research error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to research parenting plan requirements" });
       }
+    },
+  );
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+  // Child Support Research endpoints
+  app.get(
+    "/api/cases/:caseId/child-support/research",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const state = req.query.state as string;
 
-      const termKey = `child_support_${state.toLowerCase().replace(/\s+/g, '_')}`;
-      const terms = await storage.getCaseRuleTerms(userId, caseId, "child-support");
-      const cached = terms.find(t => t.termKey === termKey);
-
-      if (cached) {
-        return res.json({ ok: true, content: cached.summary, cached: true, lastCheckedAt: cached.lastCheckedAt });
-      }
-
-      res.json({ ok: true, content: null, cached: false });
-    } catch (error) {
-      console.error("Get child support research error:", error);
-      res.status(500).json({ error: "Failed to get child support research" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/child-support/research", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { state, refresh } = req.body;
-
-      if (!state || typeof state !== "string") {
-        return res.status(400).json({ error: "State is required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const termKey = `child_support_${state.toLowerCase().replace(/\s+/g, '_')}`;
-      const moduleKey = "child-support";
-
-      // Check for cached result first (unless refresh requested)
-      if (!refresh) {
-        const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
-        const cached = terms.find(t => t.termKey === termKey);
-        if (cached && cached.summary) {
-          return res.json({ ok: true, content: cached.summary, cached: true });
+        if (!state) {
+          return res.status(400).json({ error: "State is required" });
         }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const termKey = `child_support_${state.toLowerCase().replace(/\s+/g, "_")}`;
+        const terms = await storage.getCaseRuleTerms(
+          userId,
+          caseId,
+          "child-support",
+        );
+        const cached = terms.find((t) => t.termKey === termKey);
+
+        if (cached) {
+          return res.json({
+            ok: true,
+            content: cached.summary,
+            cached: true,
+            lastCheckedAt: cached.lastCheckedAt,
+          });
+        }
+
+        res.json({ ok: true, content: null, cached: false });
+      } catch (error) {
+        console.error("Get child support research error:", error);
+        res.status(500).json({ error: "Failed to get child support research" });
       }
+    },
+  );
 
-      // Check if OpenAI is configured
-      const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
-      if (!lexiApiKeyConfigured) {
-        return res.status(503).json({ error: "AI integration not configured" });
-      }
+  app.post(
+    "/api/cases/:caseId/child-support/research",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { state, refresh } = req.body;
 
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        if (!state || typeof state !== "string") {
+          return res.status(400).json({ error: "State is required" });
+        }
 
-      const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const termKey = `child_support_${state.toLowerCase().replace(/\s+/g, "_")}`;
+        const moduleKey = "child-support";
+
+        // Check for cached result first (unless refresh requested)
+        if (!refresh) {
+          const terms = await storage.getCaseRuleTerms(
+            userId,
+            caseId,
+            moduleKey,
+          );
+          const cached = terms.find((t) => t.termKey === termKey);
+          if (cached && cached.summary) {
+            return res.json({
+              ok: true,
+              content: cached.summary,
+              cached: true,
+            });
+          }
+        }
+
+        // Check if OpenAI is configured
+        const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+        if (!lexiApiKeyConfigured) {
+          return res
+            .status(503)
+            .json({ error: "AI integration not configured" });
+        }
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
 
 Your task: Research and provide general educational information about child support in ${state}.
 
@@ -2932,109 +3781,156 @@ You MUST format your response EXACTLY like this:
 ### Important Disclaimer
 This is educational and research information only. It is NOT legal advice. Child support calculations vary significantly by individual circumstances. For court-accurate amounts, use your state's official calculator and consult with a family law attorney. civilla does not provide legal advice or representation.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Please research and provide educational information about child support guidelines in ${state}.` }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      });
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Please research and provide educational information about child support guidelines in ${state}.`,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        });
 
-      const content = completion.choices[0]?.message?.content || "Unable to generate research content.";
+        const content =
+          completion.choices[0]?.message?.content ||
+          "Unable to generate research content.";
 
-      // Save to case_rule_terms
-      await storage.upsertCaseRuleTerm(userId, caseId, {
-        moduleKey,
-        jurisdictionState: state,
-        termKey,
-        officialLabel: `Child Support Guidelines - ${state}`,
-        summary: content,
-        sourcesJson: [],
-      });
+        // Save to case_rule_terms
+        await storage.upsertCaseRuleTerm(userId, caseId, {
+          moduleKey,
+          jurisdictionState: state,
+          termKey,
+          officialLabel: `Child Support Guidelines - ${state}`,
+          summary: content,
+          sourcesJson: [],
+        });
 
-      res.json({ ok: true, content, cached: false });
-    } catch (error) {
-      console.error("Child support research error:", error);
-      res.status(500).json({ error: "Failed to research child support guidelines" });
-    }
-  });
+        res.json({ ok: true, content, cached: false });
+      } catch (error) {
+        console.error("Child support research error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to research child support guidelines" });
+      }
+    },
+  );
 
   // Child Support Educational Estimate endpoint
-  app.post("/api/cases/:caseId/child-support/estimate", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { state, inputs, refresh } = req.body;
+  app.post(
+    "/api/cases/:caseId/child-support/estimate",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { state, inputs, refresh } = req.body;
 
-      if (!state || typeof state !== "string") {
-        return res.status(400).json({ error: "State is required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      // Build a stable cache key from inputs
-      const moduleKey = "child-support";
-      const inputsForKey = {
-        parentAIncome: inputs?.parentAIncome ?? null,
-        parentBIncome: inputs?.parentBIncome ?? null,
-        children: inputs?.children ?? null,
-        overnights: inputs?.overnights ?? null,
-        childcare: inputs?.childcare ?? null,
-        healthInsurance: inputs?.healthInsurance ?? null,
-      };
-      const inputHash = Buffer.from(JSON.stringify(inputsForKey)).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
-      const termKey = `child_support_estimate_${state}_${inputHash}`;
-
-      // Check for cached estimate (unless refresh=true)
-      if (!refresh) {
-        const cachedTerms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
-        const cached = cachedTerms.find(t => t.termKey === termKey);
-        if (cached && cached.summary) {
-          // Parse didCompute from the content (check if it contains "Educational Estimate" header)
-          const didCompute = cached.summary.includes("## Educational Estimate");
-          return res.json({ ok: true, content: cached.summary, didCompute, cached: true });
+        if (!state || typeof state !== "string") {
+          return res.status(400).json({ error: "State is required" });
         }
-      }
 
-      // Check if OpenAI is configured
-      const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
-      if (!lexiApiKeyConfigured) {
-        return res.status(503).json({ error: "AI integration not configured" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        // Build a stable cache key from inputs
+        const moduleKey = "child-support";
+        const inputsForKey = {
+          parentAIncome: inputs?.parentAIncome ?? null,
+          parentBIncome: inputs?.parentBIncome ?? null,
+          children: inputs?.children ?? null,
+          overnights: inputs?.overnights ?? null,
+          childcare: inputs?.childcare ?? null,
+          healthInsurance: inputs?.healthInsurance ?? null,
+        };
+        const inputHash = Buffer.from(JSON.stringify(inputsForKey))
+          .toString("base64")
+          .replace(/[+/=]/g, "")
+          .slice(0, 16);
+        const termKey = `child_support_estimate_${state}_${inputHash}`;
 
-      // Build input summary for the prompt
-      const inputParts: string[] = [];
-      if (inputs?.parentAIncome !== undefined && inputs.parentAIncome !== null) {
-        inputParts.push(`Parent A gross monthly income: $${inputs.parentAIncome}`);
-      }
-      if (inputs?.parentBIncome !== undefined && inputs.parentBIncome !== null) {
-        inputParts.push(`Parent B gross monthly income: $${inputs.parentBIncome}`);
-      }
-      if (inputs?.children !== undefined && inputs.children !== null) {
-        inputParts.push(`Number of children: ${inputs.children}`);
-      }
-      if (inputs?.overnights !== undefined && inputs.overnights !== null) {
-        inputParts.push(`Overnights with non-custodial parent: ${inputs.overnights} per year`);
-      }
-      if (inputs?.childcare !== undefined && inputs.childcare !== null) {
-        inputParts.push(`Monthly childcare costs: $${inputs.childcare}`);
-      }
-      if (inputs?.healthInsurance !== undefined && inputs.healthInsurance !== null) {
-        inputParts.push(`Monthly health insurance for children: $${inputs.healthInsurance}`);
-      }
+        // Check for cached estimate (unless refresh=true)
+        if (!refresh) {
+          const cachedTerms = await storage.getCaseRuleTerms(
+            userId,
+            caseId,
+            moduleKey,
+          );
+          const cached = cachedTerms.find((t) => t.termKey === termKey);
+          if (cached && cached.summary) {
+            // Parse didCompute from the content (check if it contains "Educational Estimate" header)
+            const didCompute = cached.summary.includes(
+              "## Educational Estimate",
+            );
+            return res.json({
+              ok: true,
+              content: cached.summary,
+              didCompute,
+              cached: true,
+            });
+          }
+        }
 
-      const inputSummary = inputParts.length > 0 
-        ? inputParts.join('\n') 
-        : "No specific inputs provided";
+        // Check if OpenAI is configured
+        const lexiApiKeyConfigured = !!process.env.OPENAI_API_KEY;
+        if (!lexiApiKeyConfigured) {
+          return res
+            .status(503)
+            .json({ error: "AI integration not configured" });
+        }
 
-      const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        // Build input summary for the prompt
+        const inputParts: string[] = [];
+        if (
+          inputs?.parentAIncome !== undefined &&
+          inputs.parentAIncome !== null
+        ) {
+          inputParts.push(
+            `Parent A gross monthly income: $${inputs.parentAIncome}`,
+          );
+        }
+        if (
+          inputs?.parentBIncome !== undefined &&
+          inputs.parentBIncome !== null
+        ) {
+          inputParts.push(
+            `Parent B gross monthly income: $${inputs.parentBIncome}`,
+          );
+        }
+        if (inputs?.children !== undefined && inputs.children !== null) {
+          inputParts.push(`Number of children: ${inputs.children}`);
+        }
+        if (inputs?.overnights !== undefined && inputs.overnights !== null) {
+          inputParts.push(
+            `Overnights with non-custodial parent: ${inputs.overnights} per year`,
+          );
+        }
+        if (inputs?.childcare !== undefined && inputs.childcare !== null) {
+          inputParts.push(`Monthly childcare costs: $${inputs.childcare}`);
+        }
+        if (
+          inputs?.healthInsurance !== undefined &&
+          inputs.healthInsurance !== null
+        ) {
+          inputParts.push(
+            `Monthly health insurance for children: $${inputs.healthInsurance}`,
+          );
+        }
+
+        const inputSummary =
+          inputParts.length > 0
+            ? inputParts.join("\n")
+            : "No specific inputs provided";
+
+        const systemPrompt = `You are Lexi, an EDUCATIONAL and RESEARCH assistant for civilla.ai, a self-help legal organization platform. You are NOT an attorney. You do NOT provide legal advice, strategy, or case-specific recommendations.
 
 Your task: Attempt to provide an EDUCATIONAL estimate of child support for ${state} based on the provided inputs.
 
@@ -3075,102 +3971,119 @@ STATES WHERE YOU SHOULD SET didCompute=false:
 
 When in doubt, set didCompute=false and provide guidance instead.`;
 
-      const userMessage = `Please analyze and attempt to compute an educational child support estimate for ${state}.
+        const userMessage = `Please analyze and attempt to compute an educational child support estimate for ${state}.
 
 User-provided inputs:
 ${inputSummary}
 
 Remember: Only compute if you're confident in the methodology. If not, provide the official worksheet/calculator link and step-by-step guidance instead.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage }
-        ],
-        temperature: 0.2,
-        max_tokens: 2500,
-        response_format: { type: "json_object" },
-      });
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.2,
+          max_tokens: 2500,
+          response_format: { type: "json_object" },
+        });
 
-      const rawContent = completion.choices[0]?.message?.content || "{}";
-      
-      let parsed: {
-        didCompute?: boolean;
-        officialName?: string;
-        officialLink?: string | null;
-        estimate?: {
-          monthlyAmount?: number | null;
-          range?: { low: number; high: number } | null;
-          methodology?: string;
-          assumptions?: string[];
+        const rawContent = completion.choices[0]?.message?.content || "{}";
+
+        let parsed: {
+          didCompute?: boolean;
+          officialName?: string;
+          officialLink?: string | null;
+          estimate?: {
+            monthlyAmount?: number | null;
+            range?: { low: number; high: number } | null;
+            methodology?: string;
+            assumptions?: string[];
+          };
+          guidance?: string;
+          disclaimer?: string;
         };
-        guidance?: string;
-        disclaimer?: string;
-      };
 
-      try {
-        parsed = JSON.parse(rawContent);
-      } catch {
-        parsed = { didCompute: false, guidance: "Unable to parse response. Please try again." };
-      }
-
-      // Format the response into readable content
-      const didCompute = parsed.didCompute === true;
-      let formattedContent = "";
-
-      formattedContent += `## ${didCompute ? "Educational Estimate" : "Worksheet Guidance"}\n\n`;
-
-      if (parsed.officialName) {
-        formattedContent += `### Official Name\n${parsed.officialName}\n\n`;
-      }
-
-      if (parsed.officialLink) {
-        formattedContent += `### Official Source\n${parsed.officialLink}\n\n`;
-      }
-
-      if (didCompute && parsed.estimate) {
-        if (parsed.estimate.monthlyAmount !== null && parsed.estimate.monthlyAmount !== undefined) {
-          formattedContent += `### Estimated Amount\n**$${parsed.estimate.monthlyAmount.toLocaleString()} per month**\n\n`;
-        } else if (parsed.estimate.range) {
-          formattedContent += `### Estimated Range\n**$${parsed.estimate.range.low.toLocaleString()} - $${parsed.estimate.range.high.toLocaleString()} per month**\n\n`;
+        try {
+          parsed = JSON.parse(rawContent);
+        } catch {
+          parsed = {
+            didCompute: false,
+            guidance: "Unable to parse response. Please try again.",
+          };
         }
 
-        if (parsed.estimate.methodology) {
-          formattedContent += `### How This Was Calculated\n${parsed.estimate.methodology}\n\n`;
+        // Format the response into readable content
+        const didCompute = parsed.didCompute === true;
+        let formattedContent = "";
+
+        formattedContent += `## ${didCompute ? "Educational Estimate" : "Worksheet Guidance"}\n\n`;
+
+        if (parsed.officialName) {
+          formattedContent += `### Official Name\n${parsed.officialName}\n\n`;
         }
 
-        if (parsed.estimate.assumptions && parsed.estimate.assumptions.length > 0) {
-          formattedContent += `### Assumptions Made\n`;
-          parsed.estimate.assumptions.forEach((a: string) => {
-            formattedContent += `- ${a}\n`;
-          });
-          formattedContent += "\n";
+        if (parsed.officialLink) {
+          formattedContent += `### Official Source\n${parsed.officialLink}\n\n`;
         }
+
+        if (didCompute && parsed.estimate) {
+          if (
+            parsed.estimate.monthlyAmount !== null &&
+            parsed.estimate.monthlyAmount !== undefined
+          ) {
+            formattedContent += `### Estimated Amount\n**$${parsed.estimate.monthlyAmount.toLocaleString()} per month**\n\n`;
+          } else if (parsed.estimate.range) {
+            formattedContent += `### Estimated Range\n**$${parsed.estimate.range.low.toLocaleString()} - $${parsed.estimate.range.high.toLocaleString()} per month**\n\n`;
+          }
+
+          if (parsed.estimate.methodology) {
+            formattedContent += `### How This Was Calculated\n${parsed.estimate.methodology}\n\n`;
+          }
+
+          if (
+            parsed.estimate.assumptions &&
+            parsed.estimate.assumptions.length > 0
+          ) {
+            formattedContent += `### Assumptions Made\n`;
+            parsed.estimate.assumptions.forEach((a: string) => {
+              formattedContent += `- ${a}\n`;
+            });
+            formattedContent += "\n";
+          }
+        }
+
+        if (parsed.guidance) {
+          formattedContent += `### ${didCompute ? "Additional Guidance" : "How to Use the Official Calculator"}\n${parsed.guidance}\n\n`;
+        }
+
+        formattedContent += `### Important Disclaimer\n${parsed.disclaimer || "This is an educational estimate only. It is NOT court-accurate. Always verify with your state's official calculator and consult a family law attorney."}\n`;
+
+        // Cache the estimate result
+        await storage.upsertCaseRuleTerm(userId, caseId, {
+          moduleKey,
+          jurisdictionState: state,
+          termKey,
+          officialLabel: `Child Support Estimate - ${state}`,
+          summary: formattedContent,
+          sourcesJson: [],
+        });
+
+        res.json({
+          ok: true,
+          content: formattedContent,
+          didCompute,
+          cached: false,
+        });
+      } catch (error) {
+        console.error("Child support estimate error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to generate child support estimate" });
       }
-
-      if (parsed.guidance) {
-        formattedContent += `### ${didCompute ? "Additional Guidance" : "How to Use the Official Calculator"}\n${parsed.guidance}\n\n`;
-      }
-
-      formattedContent += `### Important Disclaimer\n${parsed.disclaimer || "This is an educational estimate only. It is NOT court-accurate. Always verify with your state's official calculator and consult a family law attorney."}\n`;
-
-      // Cache the estimate result
-      await storage.upsertCaseRuleTerm(userId, caseId, {
-        moduleKey,
-        jurisdictionState: state,
-        termKey,
-        officialLabel: `Child Support Estimate - ${state}`,
-        summary: formattedContent,
-        sourcesJson: [],
-      });
-
-      res.json({ ok: true, content: formattedContent, didCompute, cached: false });
-    } catch (error) {
-      console.error("Child support estimate error:", error);
-      res.status(500).json({ error: "Failed to generate child support estimate" });
-    }
-  });
+    },
+  );
 
   app.get("/api/health/documents", async (_req, res) => {
     try {
@@ -3194,59 +4107,72 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     res.json({ templates });
   });
 
-  app.get("/api/cases/:caseId/documents", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/documents",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const docs = await storage.listDocuments(caseId, userId);
+        res.json({ documents: docs });
+      } catch (error) {
+        console.error("List documents error:", error);
+        res.status(500).json({ error: "Failed to list documents" });
       }
+    },
+  );
 
-      const docs = await storage.listDocuments(caseId, userId);
-      res.json({ documents: docs });
-    } catch (error) {
-      console.error("List documents error:", error);
-      res.status(500).json({ error: "Failed to list documents" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/documents",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.post("/api/cases/:caseId/documents", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const parseResult = insertDocumentSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fieldErrors: Record<string, string> = {};
+          parseResult.error.errors.forEach((err) => {
+            const field = err.path[0] as string;
+            fieldErrors[field] = err.message;
+          });
+          return res
+            .status(400)
+            .json({ error: "Validation failed", fields: fieldErrors });
+        }
 
-      const parseResult = insertDocumentSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fieldErrors: Record<string, string> = {};
-        parseResult.error.errors.forEach((err) => {
-          const field = err.path[0] as string;
-          fieldErrors[field] = err.message;
+        const { title, templateKey } = parseResult.data;
+        const templateContent = DOCUMENT_TEMPLATES[templateKey]?.content || "";
+
+        const doc = await storage.createDocument(caseId, userId, {
+          title,
+          templateKey,
+          content: templateContent,
         });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+
+        res.status(201).json({ document: doc });
+      } catch (error) {
+        console.error("Create document error:", error);
+        res.status(500).json({ error: "Failed to create document" });
       }
-
-      const { title, templateKey } = parseResult.data;
-      const templateContent = DOCUMENT_TEMPLATES[templateKey]?.content || "";
-
-      const doc = await storage.createDocument(caseId, userId, {
-        title,
-        templateKey,
-        content: templateContent,
-      });
-
-      res.status(201).json({ document: doc });
-    } catch (error) {
-      console.error("Create document error:", error);
-      res.status(500).json({ error: "Failed to create document" });
-    }
-  });
+    },
+  );
 
   app.get("/api/documents/:docId", requireAuth, async (req, res) => {
     try {
@@ -3282,10 +4208,16 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           const field = err.path[0] as string;
           fieldErrors[field] = err.message;
         });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
+        return res
+          .status(400)
+          .json({ error: "Validation failed", fields: fieldErrors });
       }
 
-      const updated = await storage.updateDocument(docId, userId, parseResult.data);
+      const updated = await storage.updateDocument(
+        docId,
+        userId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(500).json({ error: "Failed to update document" });
       }
@@ -3341,52 +4273,71 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/documents/:docId/export/docx", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { docId } = req.params;
+  app.get(
+    "/api/documents/:docId/export/docx",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { docId } = req.params;
 
-      const doc = await storage.getDocument(docId, userId);
-      if (!doc) {
-        return res.status(404).json({ error: "Document not found" });
-      }
+        const doc = await storage.getDocument(docId, userId);
+        if (!doc) {
+          return res.status(404).json({ error: "Document not found" });
+        }
 
-      const paragraphs = doc.content.split("\n").map((line) => {
-        return new Paragraph({
-          children: [new TextRun(line)],
+        const paragraphs = doc.content.split("\n").map((line) => {
+          return new Paragraph({
+            children: [new TextRun(line)],
+          });
         });
-      });
 
-      const docxDoc = new DocxDocument({
-        sections: [
-          {
-            properties: {},
-            children: paragraphs,
-          },
-        ],
-      });
+        const docxDoc = new DocxDocument({
+          sections: [
+            {
+              properties: {},
+              children: paragraphs,
+            },
+          ],
+        });
 
-      const buffer = await Packer.toBuffer(docxDoc);
+        const buffer = await Packer.toBuffer(docxDoc);
 
-      const sanitizedTitle = doc.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "_").slice(0, 50);
-      const filename = `${sanitizedTitle || "document"}.docx`;
+        const sanitizedTitle = doc.title
+          .replace(/[^a-zA-Z0-9\s-]/g, "")
+          .replace(/\s+/g, "_")
+          .slice(0, 50);
+        const filename = `${sanitizedTitle || "document"}.docx`;
 
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Export DOCX error:", error);
-      res.status(500).json({ error: "Failed to export document" });
-    }
-  });
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        );
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${filename}"`,
+        );
+        res.send(buffer);
+      } catch (error) {
+        console.error("Export DOCX error:", error);
+        res.status(500).json({ error: "Failed to export document" });
+      }
+    },
+  );
 
   app.post("/api/templates/docx", requireAuth, async (req, res) => {
     try {
       const payload = req.body || {};
       const buf = await buildCourtDocx(payload);
 
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-      res.setHeader("Content-Disposition", "attachment; filename=court-document.docx");
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=court-document.docx",
+      );
       return res.status(200).send(buf);
     } catch (err) {
       console.error("DOCX generation error:", err);
@@ -3394,366 +4345,483 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/generated-documents", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/generated-documents",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const docs = await storage.listGeneratedDocuments(userId, caseId);
-      res.json({ documents: docs });
-    } catch (error) {
-      console.error("List generated documents error:", error);
-      res.status(500).json({ error: "Failed to list generated documents" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/documents/generate", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertGeneratedDocumentSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fieldErrors: Record<string, string> = {};
-        parseResult.error.errors.forEach((err) => {
-          const field = err.path.join(".");
-          fieldErrors[field] = err.message;
-        });
-        return res.status(400).json({ error: "Validation failed", fields: fieldErrors });
-      }
-
-      const { templateType, title, payload } = parseResult.data;
-
-      const doc = await storage.createGeneratedDocument(
-        userId,
-        caseId,
-        templateType,
-        title,
-        payload
-      );
-
-      res.status(201).json({ document: doc });
-    } catch (error) {
-      console.error("Create generated document error:", error);
-      res.status(500).json({ error: "Failed to create generated document" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/documents/:documentId/acknowledge", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId, documentId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { acknowledgementVersion, reviewedChecked, understandChecked } = req.body;
-
-      if (!reviewedChecked || !understandChecked) {
-        return res.status(400).json({ error: "Both checkboxes must be checked to proceed" });
-      }
-
-      await storage.createActivityLog(
-        userId,
-        caseId,
-        "document_acknowledgement",
-        "Pre-submission disclaimer acknowledged before document export",
-        {
-          documentId,
-          acknowledgementVersion: acknowledgementVersion || "1.0",
-          reviewedChecked,
-          understandChecked,
-          acknowledgedAt: new Date().toISOString(),
-        },
-        {
-          entityType: "document",
-          entityId: documentId,
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      );
 
-      res.json({ ok: true, logged: true });
-    } catch (error) {
-      console.error("Document acknowledgement error:", error);
-      res.status(500).json({ error: "Failed to log acknowledgement" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/documents/compile-claims/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const docs = await storage.listGeneratedDocuments(userId, caseId);
+        res.json({ documents: docs });
+      } catch (error) {
+        console.error("List generated documents error:", error);
+        res.status(500).json({ error: "Failed to list generated documents" });
       }
+    },
+  );
 
-      const preflight = await storage.getClaimsCompilePreflight(caseId, userId);
-      const { acceptedClaims, claimCitationCounts } = preflight;
+  app.post(
+    "/api/cases/:caseId/documents/generate",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const acceptedClaimsWithCitations = acceptedClaims.filter(c => (claimCitationCounts[c.id] || 0) > 0).length;
-      const acceptedClaimsMissingCitations = acceptedClaims.filter(c => (claimCitationCounts[c.id] || 0) === 0).length;
-      const acceptedClaimsMissingInfoFlagged = acceptedClaims.filter(c => c.missingInfoFlag).length;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const claimIdsMissingCitations = acceptedClaims
-        .filter(c => (claimCitationCounts[c.id] || 0) === 0)
-        .map(c => c.id);
-      const claimIdsMissingInfoFlagged = acceptedClaims
-        .filter(c => c.missingInfoFlag)
-        .map(c => c.id);
+        const parseResult = insertGeneratedDocumentSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fieldErrors: Record<string, string> = {};
+          parseResult.error.errors.forEach((err) => {
+            const field = err.path.join(".");
+            fieldErrors[field] = err.message;
+          });
+          return res
+            .status(400)
+            .json({ error: "Validation failed", fields: fieldErrors });
+        }
 
-      const canCompile = acceptedClaimsWithCitations >= 1 && acceptedClaimsMissingCitations === 0;
+        const { templateType, title, payload } = parseResult.data;
 
-      const evidence = await storage.getEvidenceByCase(caseId);
-      const extractedCount = evidence.filter(e => e.extractionJobId && e.extractionStatus === "completed").length;
-      const extractionCoverage = evidence.length > 0 ? Math.round((extractedCount / evidence.length) * 100) : 0;
+        const doc = await storage.createGeneratedDocument(
+          userId,
+          caseId,
+          templateType,
+          title,
+          payload,
+        );
 
-      let readinessPercent = 0;
-      if (acceptedClaims.length > 0) {
-        const citationScore = acceptedClaimsMissingCitations === 0 ? 50 : Math.round((acceptedClaimsWithCitations / acceptedClaims.length) * 50);
-        const extractionScore = Math.round((extractionCoverage / 100) * 30);
-        const claimScore = Math.min(20, acceptedClaims.length * 2);
-        readinessPercent = Math.min(100, citationScore + extractionScore + claimScore);
+        res.status(201).json({ document: doc });
+      } catch (error) {
+        console.error("Create generated document error:", error);
+        res.status(500).json({ error: "Failed to create generated document" });
       }
+    },
+  );
 
-      let message = "";
-      if (acceptedClaims.length === 0) {
-        message = "No accepted claims. Review and accept claims from your evidence files first.";
-      } else if (acceptedClaimsMissingCitations > 0) {
-        message = `Blocked until citations are attached. ${acceptedClaimsMissingCitations} claim(s) missing citations.`;
-      } else if (acceptedClaimsMissingInfoFlagged > 0) {
-        message = `Ready to compile. Note: ${acceptedClaimsMissingInfoFlagged} claim(s) flagged as missing info.`;
-      } else {
-        message = "Ready to compile.";
+  app.post(
+    "/api/cases/:caseId/documents/:documentId/acknowledge",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId, documentId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { acknowledgementVersion, reviewedChecked, understandChecked } =
+          req.body;
+
+        if (!reviewedChecked || !understandChecked) {
+          return res
+            .status(400)
+            .json({ error: "Both checkboxes must be checked to proceed" });
+        }
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "document_acknowledgement",
+          "Pre-submission disclaimer acknowledged before document export",
+          {
+            documentId,
+            acknowledgementVersion: acknowledgementVersion || "1.0",
+            reviewedChecked,
+            understandChecked,
+            acknowledgedAt: new Date().toISOString(),
+          },
+          {
+            entityType: "document",
+            entityId: documentId,
+          },
+        );
+
+        res.json({ ok: true, logged: true });
+      } catch (error) {
+        console.error("Document acknowledgement error:", error);
+        res.status(500).json({ error: "Failed to log acknowledgement" });
       }
+    },
+  );
 
-      res.json({
-        ok: true,
-        canCompile,
-        totals: {
-          acceptedClaims: acceptedClaims.length,
-          acceptedClaimsWithCitations,
-          acceptedClaimsMissingCitations,
-          acceptedClaimsMissingInfoFlagged,
-          extractionCoverage,
-        },
-        missing: {
-          claimIdsMissingCitations,
-          claimIdsMissingInfoFlagged,
-        },
-        message,
-        readinessPercent,
-      });
-    } catch (error) {
-      console.error("Compile preflight error:", error);
-      res.status(500).json({ error: "Failed to check compile readiness" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/documents/compile-claims/preflight",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.post("/api/cases/:caseId/documents/compile-claims", requireAuth, requireDownloads(), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { title: providedTitle, draftTopic } = req.body as { title?: string; draftTopic?: string };
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const preflight = await storage.getClaimsCompilePreflight(
+          caseId,
+          userId,
+        );
+        const { acceptedClaims, claimCitationCounts } = preflight;
 
-      const today = new Date().toISOString().split("T")[0];
-      const topicPart = (draftTopic?.trim() || "Compiled Summary").substring(0, 40);
-      const casePart = (caseRecord.title || "Case").substring(0, 40);
-      const autoTitle = `${topicPart} — ${casePart} — ${today}`.substring(0, 120);
-      const title = providedTitle?.trim() || autoTitle;
+        const acceptedClaimsWithCitations = acceptedClaims.filter(
+          (c) => (claimCitationCounts[c.id] || 0) > 0,
+        ).length;
+        const acceptedClaimsMissingCitations = acceptedClaims.filter(
+          (c) => (claimCitationCounts[c.id] || 0) === 0,
+        ).length;
+        const acceptedClaimsMissingInfoFlagged = acceptedClaims.filter(
+          (c) => c.missingInfoFlag,
+        ).length;
 
-      const preflight = await storage.getClaimsCompilePreflight(caseId, userId);
-      const { acceptedClaims, claimCitationCounts } = preflight;
+        const claimIdsMissingCitations = acceptedClaims
+          .filter((c) => (claimCitationCounts[c.id] || 0) === 0)
+          .map((c) => c.id);
+        const claimIdsMissingInfoFlagged = acceptedClaims
+          .filter((c) => c.missingInfoFlag)
+          .map((c) => c.id);
 
-      if (acceptedClaims.length === 0) {
-        return res.status(409).json({
-          error: "No accepted claims to compile",
-          code: "NO_ACCEPTED_CLAIMS",
+        const canCompile =
+          acceptedClaimsWithCitations >= 1 &&
+          acceptedClaimsMissingCitations === 0;
+
+        const evidence = await storage.getEvidenceByCase(caseId);
+        const extractedCount = evidence.filter(
+          (e) => e.extractionJobId && e.extractionStatus === "completed",
+        ).length;
+        const extractionCoverage =
+          evidence.length > 0
+            ? Math.round((extractedCount / evidence.length) * 100)
+            : 0;
+
+        let readinessPercent = 0;
+        if (acceptedClaims.length > 0) {
+          const citationScore =
+            acceptedClaimsMissingCitations === 0
+              ? 50
+              : Math.round(
+                  (acceptedClaimsWithCitations / acceptedClaims.length) * 50,
+                );
+          const extractionScore = Math.round((extractionCoverage / 100) * 30);
+          const claimScore = Math.min(20, acceptedClaims.length * 2);
+          readinessPercent = Math.min(
+            100,
+            citationScore + extractionScore + claimScore,
+          );
+        }
+
+        let message = "";
+        if (acceptedClaims.length === 0) {
+          message =
+            "No accepted claims. Review and accept claims from your evidence files first.";
+        } else if (acceptedClaimsMissingCitations > 0) {
+          message = `Blocked until citations are attached. ${acceptedClaimsMissingCitations} claim(s) missing citations.`;
+        } else if (acceptedClaimsMissingInfoFlagged > 0) {
+          message = `Ready to compile. Note: ${acceptedClaimsMissingInfoFlagged} claim(s) flagged as missing info.`;
+        } else {
+          message = "Ready to compile.";
+        }
+
+        res.json({
+          ok: true,
+          canCompile,
+          totals: {
+            acceptedClaims: acceptedClaims.length,
+            acceptedClaimsWithCitations,
+            acceptedClaimsMissingCitations,
+            acceptedClaimsMissingInfoFlagged,
+            extractionCoverage,
+          },
+          missing: {
+            claimIdsMissingCitations,
+            claimIdsMissingInfoFlagged,
+          },
+          message,
+          readinessPercent,
         });
+      } catch (error) {
+        console.error("Compile preflight error:", error);
+        res.status(500).json({ error: "Failed to check compile readiness" });
       }
+    },
+  );
 
-      const claimsMissingCitations = acceptedClaims.filter(c => (claimCitationCounts[c.id] || 0) === 0);
-      if (claimsMissingCitations.length > 0) {
-        return res.status(409).json({
-          error: "Some accepted claims are missing citations",
-          code: "ACCEPTED_CLAIMS_MISSING_CITATIONS",
-          missingClaimIds: claimsMissingCitations.map(c => c.id),
+  app.post(
+    "/api/cases/:caseId/documents/compile-claims",
+    requireAuth,
+    requireDownloads(),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { title: providedTitle, draftTopic } = req.body as {
+          title?: string;
+          draftTopic?: string;
+        };
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const today = new Date().toISOString().split("T")[0];
+        const topicPart = (draftTopic?.trim() || "Compiled Summary").substring(
+          0,
+          40,
+        );
+        const casePart = (caseRecord.title || "Case").substring(0, 40);
+        const autoTitle = `${topicPart} — ${casePart} — ${today}`.substring(
+          0,
+          120,
+        );
+        const title = providedTitle?.trim() || autoTitle;
+
+        const preflight = await storage.getClaimsCompilePreflight(
+          caseId,
+          userId,
+        );
+        const { acceptedClaims, claimCitationCounts } = preflight;
+
+        if (acceptedClaims.length === 0) {
+          return res.status(409).json({
+            error: "No accepted claims to compile",
+            code: "NO_ACCEPTED_CLAIMS",
+          });
+        }
+
+        const claimsMissingCitations = acceptedClaims.filter(
+          (c) => (claimCitationCounts[c.id] || 0) === 0,
+        );
+        if (claimsMissingCitations.length > 0) {
+          return res.status(409).json({
+            error: "Some accepted claims are missing citations",
+            code: "ACCEPTED_CLAIMS_MISSING_CITATIONS",
+            missingClaimIds: claimsMissingCitations.map((c) => c.id),
+          });
+        }
+
+        const claims = await storage.listCaseClaims(userId, caseId, {
+          status: "accepted",
         });
-      }
+        const evidenceFiles = await storage.getEvidenceFiles(caseId, userId);
+        const evidenceMap = new Map(
+          evidenceFiles.map((e) => [e.id, e.originalName]),
+        );
 
-      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
-      const evidenceFiles = await storage.getEvidenceFiles(caseId, userId);
-      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e.originalName]));
+        type TraceEntry = {
+          claimId: string;
+          claimText: string;
+          citations: Array<{
+            citationId: string;
+            evidenceId: string;
+            evidenceName: string;
+            pointer: {
+              pageNumber?: number;
+              timestampSeconds?: number;
+              quote?: string;
+            };
+          }>;
+          linkedTimelineEvents: Array<{
+            eventId: string;
+            eventDate: string;
+            eventTitle: string;
+          }>;
+        };
 
-      type TraceEntry = {
-        claimId: string;
-        claimText: string;
-        citations: Array<{
-          citationId: string;
-          evidenceId: string;
-          evidenceName: string;
-          pointer: {
-            pageNumber?: number;
-            timestampSeconds?: number;
-            quote?: string;
-          };
-        }>;
-        linkedTimelineEvents: Array<{
-          eventId: string;
-          eventDate: string;
-          eventTitle: string;
-        }>;
-      };
+        const trace: TraceEntry[] = [];
+        const sourceSet = new Set<string>();
 
-      const trace: TraceEntry[] = [];
-      const sourceSet = new Set<string>();
-      
-      const claimsByType: Record<string, typeof claims> = {};
-      for (const claim of claims) {
-        const typeKey = claim.claimType || "general";
-        if (!claimsByType[typeKey]) claimsByType[typeKey] = [];
-        claimsByType[typeKey].push(claim);
-      }
+        const claimsByType: Record<string, typeof claims> = {};
+        for (const claim of claims) {
+          const typeKey = claim.claimType || "general";
+          if (!claimsByType[typeKey]) claimsByType[typeKey] = [];
+          claimsByType[typeKey].push(claim);
+        }
 
-      const typeLabels: Record<string, string> = {
-        factual: "Factual Claims",
-        behavioral: "Behavioral Observations",
-        financial: "Financial Matters",
-        custodial: "Custody & Parenting",
-        legal: "Legal Issues",
-        general: "General Claims",
-      };
+        const typeLabels: Record<string, string> = {
+          factual: "Factual Claims",
+          behavioral: "Behavioral Observations",
+          financial: "Financial Matters",
+          custodial: "Custody & Parenting",
+          legal: "Legal Issues",
+          general: "General Claims",
+        };
 
-      let markdown = `# ${title}\n\n`;
-      markdown += `*Compiled from ${claims.length} evidence-backed claims.*\n\n`;
-      markdown += `---\n\n`;
+        let markdown = `# ${title}\n\n`;
+        markdown += `*Compiled from ${claims.length} evidence-backed claims.*\n\n`;
+        markdown += `---\n\n`;
 
-      let globalIndex = 0;
-      for (const [typeKey, typeClaims] of Object.entries(claimsByType)) {
-        const sectionLabel = typeLabels[typeKey] || typeKey.charAt(0).toUpperCase() + typeKey.slice(1);
-        markdown += `## ${sectionLabel}\n\n`;
+        let globalIndex = 0;
+        for (const [typeKey, typeClaims] of Object.entries(claimsByType)) {
+          const sectionLabel =
+            typeLabels[typeKey] ||
+            typeKey.charAt(0).toUpperCase() + typeKey.slice(1);
+          markdown += `## ${sectionLabel}\n\n`;
 
-        for (const claim of typeClaims) {
-          globalIndex++;
-          const citationPointers = await storage.listClaimCitations(userId, claim.id);
-          const linkedEvents = await storage.getTimelineEventsLinkedToClaim(userId, caseId, claim.id);
-          const traceEntry: TraceEntry = {
-            claimId: claim.id,
-            claimText: claim.claimText,
-            citations: [],
-            linkedTimelineEvents: linkedEvents.map(e => ({
-              eventId: e.eventId,
-              eventDate: e.eventDate,
-              eventTitle: e.eventTitle,
-            })),
-          };
+          for (const claim of typeClaims) {
+            globalIndex++;
+            const citationPointers = await storage.listClaimCitations(
+              userId,
+              claim.id,
+            );
+            const linkedEvents = await storage.getTimelineEventsLinkedToClaim(
+              userId,
+              caseId,
+              claim.id,
+            );
+            const traceEntry: TraceEntry = {
+              claimId: claim.id,
+              claimText: claim.claimText,
+              citations: [],
+              linkedTimelineEvents: linkedEvents.map((e) => ({
+                eventId: e.eventId,
+                eventDate: e.eventDate,
+                eventTitle: e.eventTitle,
+              })),
+            };
 
-          const citationBrackets: string[] = [];
-          for (const cit of citationPointers) {
-            const ptr = cit.citationPointer;
-            if (ptr) {
-              const evidenceName = ptr.evidenceFileId ? (evidenceMap.get(ptr.evidenceFileId) || "Unknown file") : "Unknown file";
-              traceEntry.citations.push({
-                citationId: cit.id,
-                evidenceId: ptr.evidenceFileId || "",
-                evidenceName,
-                pointer: {
-                  pageNumber: ptr.pageNumber ?? undefined,
-                  timestampSeconds: ptr.timestampSeconds ?? undefined,
-                  quote: ptr.quote ?? undefined,
-                },
-              });
+            const citationBrackets: string[] = [];
+            for (const cit of citationPointers) {
+              const ptr = cit.citationPointer;
+              if (ptr) {
+                const evidenceName = ptr.evidenceFileId
+                  ? evidenceMap.get(ptr.evidenceFileId) || "Unknown file"
+                  : "Unknown file";
+                traceEntry.citations.push({
+                  citationId: cit.id,
+                  evidenceId: ptr.evidenceFileId || "",
+                  evidenceName,
+                  pointer: {
+                    pageNumber: ptr.pageNumber ?? undefined,
+                    timestampSeconds: ptr.timestampSeconds ?? undefined,
+                    quote: ptr.quote ?? undefined,
+                  },
+                });
 
-              sourceSet.add(evidenceName);
-              if (ptr.pageNumber) {
-                citationBrackets.push(`[EVID: ${evidenceName}, p.${ptr.pageNumber}]`);
-              } else if (ptr.timestampSeconds) {
-                const mins = Math.floor(ptr.timestampSeconds / 60);
-                const secs = ptr.timestampSeconds % 60;
-                citationBrackets.push(`[EVID: ${evidenceName}, ${mins}:${secs.toString().padStart(2, "0")}]`);
-              } else {
-                citationBrackets.push(`[EVID: ${evidenceName}]`);
+                sourceSet.add(evidenceName);
+                if (ptr.pageNumber) {
+                  citationBrackets.push(
+                    `[EVID: ${evidenceName}, p.${ptr.pageNumber}]`,
+                  );
+                } else if (ptr.timestampSeconds) {
+                  const mins = Math.floor(ptr.timestampSeconds / 60);
+                  const secs = ptr.timestampSeconds % 60;
+                  citationBrackets.push(
+                    `[EVID: ${evidenceName}, ${mins}:${secs.toString().padStart(2, "0")}]`,
+                  );
+                } else {
+                  citationBrackets.push(`[EVID: ${evidenceName}]`);
+                }
               }
             }
+
+            const citationSuffix =
+              citationBrackets.length > 0
+                ? ` ${citationBrackets.join(" ")}`
+                : "";
+            markdown += `${globalIndex}. ${claim.claimText}${citationSuffix}\n\n`;
+            trace.push(traceEntry);
           }
-
-          const citationSuffix = citationBrackets.length > 0 ? ` ${citationBrackets.join(" ")}` : "";
-          markdown += `${globalIndex}. ${claim.claimText}${citationSuffix}\n\n`;
-          trace.push(traceEntry);
         }
-      }
 
-      if (sourceSet.size > 0) {
-        markdown += `---\n\n## Sources\n\n`;
-        const sortedSources = Array.from(sourceSet).sort();
-        for (const source of sortedSources) {
-          markdown += `- ${source}\n`;
+        if (sourceSet.size > 0) {
+          markdown += `---\n\n## Sources\n\n`;
+          const sortedSources = Array.from(sourceSet).sort();
+          for (const source of sortedSources) {
+            markdown += `- ${source}\n`;
+          }
         }
-      }
 
-      const document = await storage.createDocument(userId, caseId, {
-        title: title.trim(),
-        templateKey: "declaration",
-        content: markdown,
-      });
-
-      let lockedClaimCount = 0;
-      for (const claim of claims) {
-        await storage.lockClaimForDocument(userId, claim.id, document.id, "Used in compiled document");
-        lockedClaimCount++;
-      }
-
-      await storage.createLexiFeedbackEvent(userId, caseId, "doc_compile_claims", {
-        documentId: document.id,
-        claimCount: claims.length,
-      });
-      
-      await storage.createActivityLog(userId, caseId, "document_compiled", `Compiled ${claims.length} claims into document`, {
-        documentId: document.id,
-        claimCount: claims.length,
-      });
-      
-      for (const claim of claims) {
-        await storage.createActivityLog(userId, caseId, "claim_locked", `Claim locked for use in compiled document`, {
-          claimId: claim.id,
-          documentId: document.id,
+        const document = await storage.createDocument(userId, caseId, {
+          title: title.trim(),
+          templateKey: "declaration",
+          content: markdown,
         });
-      }
-      
-      await triggerCaseMemoryRebuild(userId, caseId, "doc_compile_claims", {
-        documentId: document.id,
-        acceptedClaimCount: claims.length,
-      });
 
-      res.status(201).json({
-        ok: true,
-        document,
-        markdown,
-        trace,
-        lockedClaimCount,
-      });
-    } catch (error) {
-      console.error("Compile claims error:", error);
-      res.status(500).json({ error: "Failed to compile claims into document" });
-    }
-  });
+        let lockedClaimCount = 0;
+        for (const claim of claims) {
+          await storage.lockClaimForDocument(
+            userId,
+            claim.id,
+            document.id,
+            "Used in compiled document",
+          );
+          lockedClaimCount++;
+        }
+
+        await storage.createLexiFeedbackEvent(
+          userId,
+          caseId,
+          "doc_compile_claims",
+          {
+            documentId: document.id,
+            claimCount: claims.length,
+          },
+        );
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "document_compiled",
+          `Compiled ${claims.length} claims into document`,
+          {
+            documentId: document.id,
+            claimCount: claims.length,
+          },
+        );
+
+        for (const claim of claims) {
+          await storage.createActivityLog(
+            userId,
+            caseId,
+            "claim_locked",
+            `Claim locked for use in compiled document`,
+            {
+              claimId: claim.id,
+              documentId: document.id,
+            },
+          );
+        }
+
+        await triggerCaseMemoryRebuild(userId, caseId, "doc_compile_claims", {
+          documentId: document.id,
+          acceptedClaimCount: claims.length,
+        });
+
+        res.status(201).json({
+          ok: true,
+          document,
+          markdown,
+          trace,
+          lockedClaimCount,
+        });
+      } catch (error) {
+        console.error("Compile claims error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to compile claims into document" });
+      }
+    },
+  );
 
   app.get("/api/generated-documents/:docId", requireAuth, async (req, res) => {
     try {
@@ -3772,51 +4840,66 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/children", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/children",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const children = await storage.listCaseChildren(caseId, userId);
-      res.json({ children });
-    } catch (error) {
-      console.error("List case children error:", error);
-      res.status(500).json({ error: "Failed to list case children" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/children", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertCaseChildSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const child = await storage.createCaseChild(caseId, userId, parseResult.data);
-      res.status(201).json({ child });
-    } catch (error) {
-      console.error("Create case child error:", error);
-      res.status(500).json({ error: "Failed to create case child" });
-    }
-  });
+        const children = await storage.listCaseChildren(caseId, userId);
+        res.json({ children });
+      } catch (error) {
+        console.error("List case children error:", error);
+        res.status(500).json({ error: "Failed to list case children" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/children",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertCaseChildSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const child = await storage.createCaseChild(
+          caseId,
+          userId,
+          parseResult.data,
+        );
+        res.status(201).json({ child });
+      } catch (error) {
+        console.error("Create case child error:", error);
+        res.status(500).json({ error: "Failed to create case child" });
+      }
+    },
+  );
 
   app.patch("/api/children/:childId", requireAuth, async (req, res) => {
     try {
@@ -3838,7 +4921,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateCaseChild(childId, userId, parseResult.data);
+      const updated = await storage.updateCaseChild(
+        childId,
+        userId,
+        parseResult.data,
+      );
       res.json({ child: updated });
     } catch (error) {
       console.error("Update case child error:", error);
@@ -3868,51 +4955,62 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/tasks", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/tasks",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const tasks = await storage.listTasks(userId, caseId);
-      res.json({ tasks });
-    } catch (error) {
-      console.error("List tasks error:", error);
-      res.status(500).json({ error: "Failed to list tasks" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/tasks", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertTaskSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const task = await storage.createTask(userId, caseId, parseResult.data);
-      res.status(201).json({ task });
-    } catch (error) {
-      console.error("Create task error:", error);
-      res.status(500).json({ error: "Failed to create task" });
-    }
-  });
+        const tasks = await storage.listTasks(userId, caseId);
+        res.json({ tasks });
+      } catch (error) {
+        console.error("List tasks error:", error);
+        res.status(500).json({ error: "Failed to list tasks" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/tasks",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertTaskSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const task = await storage.createTask(userId, caseId, parseResult.data);
+        res.status(201).json({ task });
+      } catch (error) {
+        console.error("Create task error:", error);
+        res.status(500).json({ error: "Failed to create task" });
+      }
+    },
+  );
 
   app.patch("/api/tasks/:taskId", requireAuth, async (req, res) => {
     try {
@@ -3929,7 +5027,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateTask(userId, taskId, parseResult.data);
+      const updated = await storage.updateTask(
+        userId,
+        taskId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Task not found" });
       }
@@ -3958,51 +5060,66 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/deadlines", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/deadlines",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const deadlines = await storage.listDeadlines(userId, caseId);
-      res.json({ deadlines });
-    } catch (error) {
-      console.error("List deadlines error:", error);
-      res.status(500).json({ error: "Failed to list deadlines" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/deadlines", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertDeadlineSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const deadline = await storage.createDeadline(userId, caseId, parseResult.data);
-      res.status(201).json({ deadline });
-    } catch (error) {
-      console.error("Create deadline error:", error);
-      res.status(500).json({ error: "Failed to create deadline" });
-    }
-  });
+        const deadlines = await storage.listDeadlines(userId, caseId);
+        res.json({ deadlines });
+      } catch (error) {
+        console.error("List deadlines error:", error);
+        res.status(500).json({ error: "Failed to list deadlines" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/deadlines",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertDeadlineSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const deadline = await storage.createDeadline(
+          userId,
+          caseId,
+          parseResult.data,
+        );
+        res.status(201).json({ deadline });
+      } catch (error) {
+        console.error("Create deadline error:", error);
+        res.status(500).json({ error: "Failed to create deadline" });
+      }
+    },
+  );
 
   app.patch("/api/deadlines/:deadlineId", requireAuth, async (req, res) => {
     try {
@@ -4019,7 +5136,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateDeadline(userId, deadlineId, parseResult.data);
+      const updated = await storage.updateDeadline(
+        userId,
+        deadlineId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Deadline not found" });
       }
@@ -4048,182 +5169,226 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/calendar", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { month } = req.query;
+  app.get(
+    "/api/cases/:caseId/calendar",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { month } = req.query;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const monthStr = typeof month === "string" ? month : new Date().toISOString().slice(0, 7);
-      const [yearStr, monthNumStr] = monthStr.split("-");
-      const year = parseInt(yearStr, 10);
-      const monthNum = parseInt(monthNumStr, 10);
-
-      if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
-        return res.status(400).json({ error: "Invalid month format. Use YYYY-MM" });
-      }
-
-      const startOfMonth = new Date(Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0));
-      const startOfNextMonth = new Date(Date.UTC(year, monthNum, 1, 0, 0, 0, 0));
-
-      const [allDeadlines, allTasks, allTimeline] = await Promise.all([
-        storage.listDeadlines(userId, caseId),
-        storage.listTasks(userId, caseId),
-        storage.listTimelineEvents(caseId, userId),
-      ]);
-
-      const items: Array<{
-        id: string;
-        type: "deadline" | "task" | "timeline";
-        title: string;
-        date: string;
-        meta: Record<string, any>;
-      }> = [];
-
-      for (const d of allDeadlines) {
-        const dueDate = new Date(d.dueDate);
-        if (dueDate >= startOfMonth && dueDate < startOfNextMonth) {
-          items.push({
-            id: d.id,
-            type: "deadline",
-            title: d.title,
-            date: dueDate.toISOString(),
-            meta: { status: d.status, notes: d.notes },
-          });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      }
 
-      for (const t of allTasks) {
-        if (t.dueDate) {
-          const dueDate = new Date(t.dueDate);
+        const monthStr =
+          typeof month === "string"
+            ? month
+            : new Date().toISOString().slice(0, 7);
+        const [yearStr, monthNumStr] = monthStr.split("-");
+        const year = parseInt(yearStr, 10);
+        const monthNum = parseInt(monthNumStr, 10);
+
+        if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+          return res
+            .status(400)
+            .json({ error: "Invalid month format. Use YYYY-MM" });
+        }
+
+        const startOfMonth = new Date(
+          Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0),
+        );
+        const startOfNextMonth = new Date(
+          Date.UTC(year, monthNum, 1, 0, 0, 0, 0),
+        );
+
+        const [allDeadlines, allTasks, allTimeline] = await Promise.all([
+          storage.listDeadlines(userId, caseId),
+          storage.listTasks(userId, caseId),
+          storage.listTimelineEvents(caseId, userId),
+        ]);
+
+        const items: Array<{
+          id: string;
+          type: "deadline" | "task" | "timeline";
+          title: string;
+          date: string;
+          meta: Record<string, any>;
+        }> = [];
+
+        for (const d of allDeadlines) {
+          const dueDate = new Date(d.dueDate);
           if (dueDate >= startOfMonth && dueDate < startOfNextMonth) {
             items.push({
-              id: t.id,
-              type: "task",
-              title: t.title,
+              id: d.id,
+              type: "deadline",
+              title: d.title,
               date: dueDate.toISOString(),
-              meta: { status: t.status, priority: t.priority },
+              meta: { status: d.status, notes: d.notes },
             });
           }
         }
-      }
 
-      for (const e of allTimeline) {
-        const eventDate = new Date(e.eventDate);
-        if (eventDate >= startOfMonth && eventDate < startOfNextMonth) {
-          items.push({
-            id: e.id,
-            type: "timeline",
-            title: e.title,
-            date: eventDate.toISOString(),
-            meta: { category: e.category },
-          });
+        for (const t of allTasks) {
+          if (t.dueDate) {
+            const dueDate = new Date(t.dueDate);
+            if (dueDate >= startOfMonth && dueDate < startOfNextMonth) {
+              items.push({
+                id: t.id,
+                type: "task",
+                title: t.title,
+                date: dueDate.toISOString(),
+                meta: { status: t.status, priority: t.priority },
+              });
+            }
+          }
         }
-      }
 
-      res.json({ month: monthStr, items });
-    } catch (error) {
-      console.error("Calendar fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch calendar items" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/calendar/categories", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const categories = await storage.listCalendarCategories(userId, caseId);
-      res.json({ categories });
-    } catch (error) {
-      console.error("List calendar categories error:", error);
-      res.status(500).json({ error: "Failed to list categories" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/calendar/categories", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertCalendarCategorySchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        for (const e of allTimeline) {
+          const eventDate = new Date(e.eventDate);
+          if (eventDate >= startOfMonth && eventDate < startOfNextMonth) {
+            items.push({
+              id: e.id,
+              type: "timeline",
+              title: e.title,
+              date: eventDate.toISOString(),
+              meta: { category: e.category },
+            });
+          }
         }
-        return res.status(400).json({ error: "Validation failed", fields });
+
+        res.json({ month: monthStr, items });
+      } catch (error) {
+        console.error("Calendar fetch error:", error);
+        res.status(500).json({ error: "Failed to fetch calendar items" });
       }
+    },
+  );
 
-      const category = await storage.createCalendarCategory(userId, caseId, parseResult.data);
-      res.status(201).json({ category });
-    } catch (error) {
-      console.error("Create calendar category error:", error);
-      res.status(500).json({ error: "Failed to create category" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/calendar/categories",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.get("/api/cases/:caseId/calendar/items", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const items = await storage.listCaseCalendarItems(userId, caseId);
-      res.json({ items });
-    } catch (error) {
-      console.error("List calendar items error:", error);
-      res.status(500).json({ error: "Failed to list calendar items" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/calendar/items", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertCaseCalendarItemSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const item = await storage.createCaseCalendarItem(userId, caseId, parseResult.data);
-      res.status(201).json({ item });
-    } catch (error) {
-      console.error("Create calendar item error:", error);
-      res.status(500).json({ error: "Failed to create calendar item" });
-    }
-  });
+        const categories = await storage.listCalendarCategories(userId, caseId);
+        res.json({ categories });
+      } catch (error) {
+        console.error("List calendar categories error:", error);
+        res.status(500).json({ error: "Failed to list categories" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/calendar/categories",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertCalendarCategorySchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const category = await storage.createCalendarCategory(
+          userId,
+          caseId,
+          parseResult.data,
+        );
+        res.status(201).json({ category });
+      } catch (error) {
+        console.error("Create calendar category error:", error);
+        res.status(500).json({ error: "Failed to create category" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/calendar/items",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const items = await storage.listCaseCalendarItems(userId, caseId);
+        res.json({ items });
+      } catch (error) {
+        console.error("List calendar items error:", error);
+        res.status(500).json({ error: "Failed to list calendar items" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/calendar/items",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertCaseCalendarItemSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const item = await storage.createCaseCalendarItem(
+          userId,
+          caseId,
+          parseResult.data,
+        );
+        res.status(201).json({ item });
+      } catch (error) {
+        console.error("Create calendar item error:", error);
+        res.status(500).json({ error: "Failed to create calendar item" });
+      }
+    },
+  );
 
   app.patch("/api/calendar/items/:itemId", requireAuth, async (req, res) => {
     try {
@@ -4240,7 +5405,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateCaseCalendarItem(userId, itemId, parseResult.data);
+      const updated = await storage.updateCaseCalendarItem(
+        userId,
+        itemId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Calendar item not found" });
       }
@@ -4269,200 +5438,240 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/dashboard/calendar", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const { month } = req.query;
+  app.get(
+    "/api/cases/:caseId/dashboard/calendar",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const { month } = req.query;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const monthStr = typeof month === "string" ? month : new Date().toISOString().slice(0, 7);
-      const [yearStr, monthNumStr] = monthStr.split("-");
-      const year = parseInt(yearStr, 10);
-      const monthNum = parseInt(monthNumStr, 10);
-
-      if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
-        return res.status(400).json({ error: "Invalid month format. Use YYYY-MM" });
-      }
-
-      const monthStart = new Date(Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0));
-      const monthEnd = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
-
-      const [allDeadlines, allTasks, allCalendarItems, categories, allCommunications] = await Promise.all([
-        storage.listDeadlines(userId, caseId),
-        storage.listTasks(userId, caseId),
-        storage.listCaseCalendarItems(userId, caseId),
-        storage.listCalendarCategories(userId, caseId),
-        storage.listCaseCommunications(userId, caseId),
-      ]);
-
-      const categoryMap = new Map(categories.map(c => [c.id, c]));
-
-      const defaultDeadlineColor = "#E57373";
-      const defaultTodoColor = "#64B5F6";
-      const defaultCalendarColor = "#7BA3A8";
-      const defaultCommunicationColor = "#9575CD";
-
-      type CalendarEvent = {
-        kind: "deadline" | "todo" | "calendar" | "communication";
-        id: string;
-        title: string;
-        date: string;
-        isDone: boolean;
-        color: string;
-        categoryName?: string;
-      };
-
-      const events: CalendarEvent[] = [];
-
-      for (const d of allDeadlines) {
-        const dueDate = new Date(d.dueDate);
-        if (dueDate >= monthStart && dueDate <= monthEnd) {
-          events.push({
-            kind: "deadline",
-            id: d.id,
-            title: d.title,
-            date: dueDate.toISOString(),
-            isDone: d.status === "done",
-            color: defaultDeadlineColor,
-          });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      }
 
-      for (const t of allTasks) {
-        if (t.dueDate) {
-          const dueDate = new Date(t.dueDate);
+        const monthStr =
+          typeof month === "string"
+            ? month
+            : new Date().toISOString().slice(0, 7);
+        const [yearStr, monthNumStr] = monthStr.split("-");
+        const year = parseInt(yearStr, 10);
+        const monthNum = parseInt(monthNumStr, 10);
+
+        if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+          return res
+            .status(400)
+            .json({ error: "Invalid month format. Use YYYY-MM" });
+        }
+
+        const monthStart = new Date(
+          Date.UTC(year, monthNum - 1, 1, 0, 0, 0, 0),
+        );
+        const monthEnd = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
+
+        const [
+          allDeadlines,
+          allTasks,
+          allCalendarItems,
+          categories,
+          allCommunications,
+        ] = await Promise.all([
+          storage.listDeadlines(userId, caseId),
+          storage.listTasks(userId, caseId),
+          storage.listCaseCalendarItems(userId, caseId),
+          storage.listCalendarCategories(userId, caseId),
+          storage.listCaseCommunications(userId, caseId),
+        ]);
+
+        const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+        const defaultDeadlineColor = "#E57373";
+        const defaultTodoColor = "#64B5F6";
+        const defaultCalendarColor = "#7BA3A8";
+        const defaultCommunicationColor = "#9575CD";
+
+        type CalendarEvent = {
+          kind: "deadline" | "todo" | "calendar" | "communication";
+          id: string;
+          title: string;
+          date: string;
+          isDone: boolean;
+          color: string;
+          categoryName?: string;
+        };
+
+        const events: CalendarEvent[] = [];
+
+        for (const d of allDeadlines) {
+          const dueDate = new Date(d.dueDate);
           if (dueDate >= monthStart && dueDate <= monthEnd) {
             events.push({
-              kind: "todo",
-              id: t.id,
-              title: t.title,
+              kind: "deadline",
+              id: d.id,
+              title: d.title,
               date: dueDate.toISOString(),
-              isDone: t.status === "completed",
-              color: defaultTodoColor,
+              isDone: d.status === "done",
+              color: defaultDeadlineColor,
             });
           }
         }
-      }
 
-      for (const item of allCalendarItems) {
-        const startDate = new Date(item.startDate);
-        if (startDate >= monthStart && startDate <= monthEnd) {
-          const category = item.categoryId ? categoryMap.get(item.categoryId) : null;
-          events.push({
-            kind: "calendar",
-            id: item.id,
-            title: item.title,
-            date: startDate.toISOString(),
-            isDone: item.isDone,
-            color: item.colorOverride ?? category?.color ?? defaultCalendarColor,
-            categoryName: category?.name,
-          });
-        }
-      }
-
-      for (const comm of allCommunications) {
-        if (comm.followUpDate && comm.status !== "resolved") {
-          const followUpDate = new Date(comm.followUpDate);
-          if (followUpDate >= monthStart && followUpDate <= monthEnd) {
-            events.push({
-              kind: "communication",
-              id: comm.id,
-              title: `Follow-up: ${comm.subject}`,
-              date: followUpDate.toISOString(),
-              isDone: comm.status === "resolved",
-              color: defaultCommunicationColor,
-            });
-          }
-        }
-      }
-
-      const now = new Date();
-
-      const communicationUpcoming = allCommunications
-        .filter(c => c.followUpDate && c.status !== "resolved")
-        .map(c => ({
-          kind: "communication" as const,
-          id: c.id,
-          title: `Follow-up: ${c.subject}`,
-          date: new Date(c.followUpDate!).toISOString(),
-          isDone: c.status === "resolved",
-          color: defaultCommunicationColor,
-        }));
-
-      const upcoming = [...allDeadlines, ...allTasks, ...allCalendarItems]
-        .map(item => {
-          if ("dueDate" in item && "status" in item && item.status !== undefined) {
-            if ("priority" in item) {
-              const t = item as any;
-              return t.dueDate ? {
-                kind: "todo" as const,
+        for (const t of allTasks) {
+          if (t.dueDate) {
+            const dueDate = new Date(t.dueDate);
+            if (dueDate >= monthStart && dueDate <= monthEnd) {
+              events.push({
+                kind: "todo",
                 id: t.id,
                 title: t.title,
-                date: new Date(t.dueDate).toISOString(),
+                date: dueDate.toISOString(),
                 isDone: t.status === "completed",
                 color: defaultTodoColor,
-              } : null;
-            } else {
-              const d = item as any;
+              });
+            }
+          }
+        }
+
+        for (const item of allCalendarItems) {
+          const startDate = new Date(item.startDate);
+          if (startDate >= monthStart && startDate <= monthEnd) {
+            const category = item.categoryId
+              ? categoryMap.get(item.categoryId)
+              : null;
+            events.push({
+              kind: "calendar",
+              id: item.id,
+              title: item.title,
+              date: startDate.toISOString(),
+              isDone: item.isDone,
+              color:
+                item.colorOverride ?? category?.color ?? defaultCalendarColor,
+              categoryName: category?.name,
+            });
+          }
+        }
+
+        for (const comm of allCommunications) {
+          if (comm.followUpDate && comm.status !== "resolved") {
+            const followUpDate = new Date(comm.followUpDate);
+            if (followUpDate >= monthStart && followUpDate <= monthEnd) {
+              events.push({
+                kind: "communication",
+                id: comm.id,
+                title: `Follow-up: ${comm.subject}`,
+                date: followUpDate.toISOString(),
+                isDone: comm.status === "resolved",
+                color: defaultCommunicationColor,
+              });
+            }
+          }
+        }
+
+        const now = new Date();
+
+        const communicationUpcoming = allCommunications
+          .filter((c) => c.followUpDate && c.status !== "resolved")
+          .map((c) => ({
+            kind: "communication" as const,
+            id: c.id,
+            title: `Follow-up: ${c.subject}`,
+            date: new Date(c.followUpDate!).toISOString(),
+            isDone: c.status === "resolved",
+            color: defaultCommunicationColor,
+          }));
+
+        const upcoming = [...allDeadlines, ...allTasks, ...allCalendarItems]
+          .map((item) => {
+            if (
+              "dueDate" in item &&
+              "status" in item &&
+              item.status !== undefined
+            ) {
+              if ("priority" in item) {
+                const t = item as any;
+                return t.dueDate
+                  ? {
+                      kind: "todo" as const,
+                      id: t.id,
+                      title: t.title,
+                      date: new Date(t.dueDate).toISOString(),
+                      isDone: t.status === "completed",
+                      color: defaultTodoColor,
+                    }
+                  : null;
+              } else {
+                const d = item as any;
+                return {
+                  kind: "deadline" as const,
+                  id: d.id,
+                  title: d.title,
+                  date: new Date(d.dueDate).toISOString(),
+                  isDone: d.status === "done",
+                  color: defaultDeadlineColor,
+                };
+              }
+            } else if ("startDate" in item) {
+              const c = item as any;
+              const category = c.categoryId
+                ? categoryMap.get(c.categoryId)
+                : null;
               return {
-                kind: "deadline" as const,
-                id: d.id,
-                title: d.title,
-                date: new Date(d.dueDate).toISOString(),
-                isDone: d.status === "done",
-                color: defaultDeadlineColor,
+                kind: "calendar" as const,
+                id: c.id,
+                title: c.title,
+                date: new Date(c.startDate).toISOString(),
+                isDone: c.isDone,
+                color:
+                  c.colorOverride ?? category?.color ?? defaultCalendarColor,
+                categoryName: category?.name,
               };
             }
-          } else if ("startDate" in item) {
-            const c = item as any;
-            const category = c.categoryId ? categoryMap.get(c.categoryId) : null;
-            return {
-              kind: "calendar" as const,
-              id: c.id,
-              title: c.title,
-              date: new Date(c.startDate).toISOString(),
-              isDone: c.isDone,
-              color: c.colorOverride ?? category?.color ?? defaultCalendarColor,
-              categoryName: category?.name,
-            };
-          }
-          return null;
-        })
-        .filter((e): e is NonNullable<typeof e> => e !== null && !e.isDone && new Date(e.date) >= now);
+            return null;
+          })
+          .filter(
+            (e): e is NonNullable<typeof e> =>
+              e !== null && !e.isDone && new Date(e.date) >= now,
+          );
 
-      const allUpcoming = [...upcoming, ...communicationUpcoming.filter(c => !c.isDone && new Date(c.date) >= now)]
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 7);
+        const allUpcoming = [
+          ...upcoming,
+          ...communicationUpcoming.filter(
+            (c) => !c.isDone && new Date(c.date) >= now,
+          ),
+        ]
+          .sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+          )
+          .slice(0, 7);
 
-      res.json({
-        monthStart: monthStart.toISOString(),
-        monthEnd: monthEnd.toISOString(),
-        events,
-        upcoming: allUpcoming,
-        categories,
-      });
-    } catch (error) {
-      console.error("Dashboard calendar fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch dashboard calendar" });
-    }
-  });
+        res.json({
+          monthStart: monthStart.toISOString(),
+          monthEnd: monthEnd.toISOString(),
+          events,
+          upcoming: allUpcoming,
+          categories,
+        });
+      } catch (error) {
+        console.error("Dashboard calendar fetch error:", error);
+        res.status(500).json({ error: "Failed to fetch dashboard calendar" });
+      }
+    },
+  );
 
   app.get("/api/onboarding/status", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const profile = await storage.getUserProfile(userId);
-      
+
       const onboardingComplete = profile?.onboardingCompleted === true;
-      const versionsMatch = 
+      const versionsMatch =
         profile?.tosVersion === POLICY_VERSIONS.tos &&
         profile?.privacyVersion === POLICY_VERSIONS.privacy &&
         profile?.disclaimersVersion === POLICY_VERSIONS.disclaimers;
-      
+
       res.json({
         ok: true,
         onboardingComplete: onboardingComplete && versionsMatch,
@@ -4498,12 +5707,14 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   });
 
   const SENTINEL_VALUES = ["unknown", "prefer_not_to_say"] as const;
-  
-  const sentinelOrString = z.string().refine(
-    (v) => v.length > 0 || SENTINEL_VALUES.includes(v as any),
-    "Value is required"
-  );
-  
+
+  const sentinelOrString = z
+    .string()
+    .refine(
+      (v) => v.length > 0 || SENTINEL_VALUES.includes(v as any),
+      "Value is required",
+    );
+
   const dobSchema = z.string().refine((v) => {
     if (!v || v === "" || SENTINEL_VALUES.includes(v as any)) return true;
     return /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -4534,21 +5745,47 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       caseType: z.string().optional(),
       hasChildren: z.boolean(),
     }),
-    children: z.array(z.object({
-      firstName: z.string().min(1, "First name is required").or(z.enum(SENTINEL_VALUES)),
-      lastName: z.string().optional(),
-      dateOfBirth: dobSchema,
-      notes: z.string().optional(),
-    })).optional(),
+    children: z
+      .array(
+        z.object({
+          firstName: z
+            .string()
+            .min(1, "First name is required")
+            .or(z.enum(SENTINEL_VALUES)),
+          lastName: z.string().optional(),
+          dateOfBirth: dobSchema,
+          notes: z.string().optional(),
+        }),
+      )
+      .optional(),
     agreements: z.object({
-      tosAccepted: z.boolean().refine(v => v === true, "Terms of Service must be accepted"),
-      privacyAccepted: z.boolean().refine(v => v === true, "Privacy Policy must be accepted"),
-      notLawFirmAccepted: z.boolean().refine(v => v === true, "Not a Law Firm disclosure must be accepted"),
-      responsibilityAccepted: z.boolean().refine(v => v === true, "User Responsibility must be accepted"),
-      scrolledTos: z.boolean().refine(v => v === true, "Must read Terms of Service"),
-      scrolledPrivacy: z.boolean().refine(v => v === true, "Must read Privacy Policy"),
-      scrolledNotLawFirm: z.boolean().refine(v => v === true, "Must read Not a Law Firm disclosure"),
-      scrolledResponsibility: z.boolean().refine(v => v === true, "Must read User Responsibility"),
+      tosAccepted: z
+        .boolean()
+        .refine((v) => v === true, "Terms of Service must be accepted"),
+      privacyAccepted: z
+        .boolean()
+        .refine((v) => v === true, "Privacy Policy must be accepted"),
+      notLawFirmAccepted: z
+        .boolean()
+        .refine(
+          (v) => v === true,
+          "Not a Law Firm disclosure must be accepted",
+        ),
+      responsibilityAccepted: z
+        .boolean()
+        .refine((v) => v === true, "User Responsibility must be accepted"),
+      scrolledTos: z
+        .boolean()
+        .refine((v) => v === true, "Must read Terms of Service"),
+      scrolledPrivacy: z
+        .boolean()
+        .refine((v) => v === true, "Must read Privacy Policy"),
+      scrolledNotLawFirm: z
+        .boolean()
+        .refine((v) => v === true, "Must read Not a Law Firm disclosure"),
+      scrolledResponsibility: z
+        .boolean()
+        .refine((v) => v === true, "Must read User Responsibility"),
     }),
     versions: z.object({
       tos: z.string(),
@@ -4557,12 +5794,13 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }),
     deferredFields: z.record(z.boolean()).optional(),
   });
-  
+
   function humanizeOnboardingError(err: any): string {
     if (!err) return "Unknown error";
     const msg = err.message || String(err);
     if (msg.includes("duplicate key")) return "This record already exists";
-    if (msg.includes("violates foreign key")) return "Referenced record not found";
+    if (msg.includes("violates foreign key"))
+      return "Referenced record not found";
     if (msg.includes("violates not-null")) return "A required field is missing";
     if (msg.includes("invalid input syntax")) return "Invalid data format";
     return msg.slice(0, 200);
@@ -4571,7 +5809,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.post("/api/onboarding/complete", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      
+
       const parseResult = onboardingCompleteSchema.safeParse(req.body);
       if (!parseResult.success) {
         const fields: Record<string, string> = {};
@@ -4579,32 +5817,43 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           const path = err.path.join(".");
           fields[path] = err.message;
         }
-        return res.status(422).json({ 
-          error: "Validation failed", 
+        return res.status(422).json({
+          error: "Validation failed",
           code: "VALIDATION_FAILED",
           fields,
-          issues: parseResult.error.issues 
+          issues: parseResult.error.issues,
         });
       }
 
-      const { profile, case: caseData, children, agreements, versions, deferredFields } = parseResult.data;
+      const {
+        profile,
+        case: caseData,
+        children,
+        agreements,
+        versions,
+        deferredFields,
+      } = parseResult.data;
 
       const now = new Date();
-      const hasDeferredFields = deferredFields && Object.keys(deferredFields).some(k => deferredFields[k]);
+      const hasDeferredFields =
+        deferredFields &&
+        Object.keys(deferredFields).some((k) => deferredFields[k]);
 
       await storage.upsertUserProfile(userId, {
         fullName: profile.fullName,
         email: profile.email,
-        phone: deferredFields?.phone ? null : (profile.phone || null),
+        phone: deferredFields?.phone ? null : profile.phone || null,
         addressLine1: profile.addressLine1,
-        addressLine2: deferredFields?.addressLine2 ? null : (profile.addressLine2 || null),
-        city: deferredFields?.city ? null : (profile.city || null),
-        state: deferredFields?.state ? null : (profile.state || null),
-        zip: deferredFields?.zip ? null : (profile.zip || null),
+        addressLine2: deferredFields?.addressLine2
+          ? null
+          : profile.addressLine2 || null,
+        city: deferredFields?.city ? null : profile.city || null,
+        state: deferredFields?.state ? null : profile.state || null,
+        zip: deferredFields?.zip ? null : profile.zip || null,
         partyRole: profile.partyRole,
         isSelfRepresented: profile.isSelfRepresented,
-        barNumber: deferredFields?.barNumber ? null : (profile.barNumber || null),
-        firmName: deferredFields?.firmName ? null : (profile.firmName || null),
+        barNumber: deferredFields?.barNumber ? null : profile.barNumber || null,
+        firmName: deferredFields?.firmName ? null : profile.firmName || null,
         petitionerName: profile.petitionerName,
         respondentName: profile.respondentName,
         onboardingCompleted: true,
@@ -4621,9 +5870,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const existingCases = await storage.getCasesByUserId(userId);
       let targetCase;
-      
-      const caseNumberValue = deferredFields?.caseNumber ? null : (caseData.caseNumber || null);
-      
+
+      const caseNumberValue = deferredFields?.caseNumber
+        ? null
+        : caseData.caseNumber || null;
+
       if (existingCases.length > 0) {
         targetCase = await storage.updateCase(existingCases[0].id, userId, {
           title: caseData.title,
@@ -4663,64 +5914,79 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       res.json({ ok: true, caseId: targetCase.id });
     } catch (error: any) {
       const userId = req.session?.userId || "unknown";
-      console.error("[Onboarding] failed", { 
-        userId, 
+      console.error("[Onboarding] failed", {
+        userId,
         body: req.body ? { ...req.body, agreements: "[redacted]" } : null,
-        error: error?.message || error 
+        error: error?.message || error,
       });
-      res.status(400).json({ 
-        error: "Onboarding failed", 
-        code: "ONBOARDING_SAVE_FAILED", 
-        detail: humanizeOnboardingError(error) 
+      res.status(400).json({
+        error: "Onboarding failed",
+        code: "ONBOARDING_SAVE_FAILED",
+        detail: humanizeOnboardingError(error),
       });
     }
   });
 
-  app.get("/api/cases/:caseId/contacts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/contacts",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const contacts = await storage.listContacts(userId, caseId);
-      res.json({ contacts });
-    } catch (error) {
-      console.error("List contacts error:", error);
-      res.status(500).json({ error: "Failed to list contacts" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/contacts", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertContactSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const contact = await storage.createContact(userId, caseId, parseResult.data);
-      res.status(201).json({ contact });
-    } catch (error) {
-      console.error("Create contact error:", error);
-      res.status(500).json({ error: "Failed to create contact" });
-    }
-  });
+        const contacts = await storage.listContacts(userId, caseId);
+        res.json({ contacts });
+      } catch (error) {
+        console.error("List contacts error:", error);
+        res.status(500).json({ error: "Failed to list contacts" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/contacts",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertContactSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const contact = await storage.createContact(
+          userId,
+          caseId,
+          parseResult.data,
+        );
+        res.status(201).json({ contact });
+      } catch (error) {
+        console.error("Create contact error:", error);
+        res.status(500).json({ error: "Failed to create contact" });
+      }
+    },
+  );
 
   app.patch("/api/contacts/:contactId", requireAuth, async (req, res) => {
     try {
@@ -4737,7 +6003,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateContact(userId, contactId, parseResult.data);
+      const updated = await storage.updateContact(
+        userId,
+        contactId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Contact not found" });
       }
@@ -4766,51 +6036,66 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/communications", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/communications",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const communications = await storage.listCommunications(userId, caseId);
-      res.json({ communications });
-    } catch (error) {
-      console.error("List communications error:", error);
-      res.status(500).json({ error: "Failed to list communications" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/communications", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertCommunicationSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const communication = await storage.createCommunication(userId, caseId, parseResult.data);
-      res.status(201).json({ communication });
-    } catch (error) {
-      console.error("Create communication error:", error);
-      res.status(500).json({ error: "Failed to create communication" });
-    }
-  });
+        const communications = await storage.listCommunications(userId, caseId);
+        res.json({ communications });
+      } catch (error) {
+        console.error("List communications error:", error);
+        res.status(500).json({ error: "Failed to list communications" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/communications",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertCommunicationSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const communication = await storage.createCommunication(
+          userId,
+          caseId,
+          parseResult.data,
+        );
+        res.status(201).json({ communication });
+      } catch (error) {
+        console.error("Create communication error:", error);
+        res.status(500).json({ error: "Failed to create communication" });
+      }
+    },
+  );
 
   app.patch("/api/communications/:commId", requireAuth, async (req, res) => {
     try {
@@ -4827,7 +6112,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateCommunication(userId, commId, parseResult.data);
+      const updated = await storage.updateCommunication(
+        userId,
+        commId,
+        parseResult.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Communication not found" });
       }
@@ -4856,168 +6145,205 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/communications/:commId/push-to-timeline", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { commId } = req.params;
+  app.post(
+    "/api/communications/:commId/push-to-timeline",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { commId } = req.params;
 
-      const comm = await storage.getCommunication(userId, commId);
-      if (!comm) {
-        return res.status(404).json({ error: "Communication not found" });
-      }
-
-      if (comm.timelineEventId) {
-        return res.status(400).json({ error: "Already added to timeline" });
-      }
-
-      let contactName = "Unknown Contact";
-      if (comm.contactId) {
-        const contact = await storage.getContact(userId, comm.contactId);
-        if (contact) {
-          contactName = contact.name;
+        const comm = await storage.getCommunication(userId, commId);
+        if (!comm) {
+          return res.status(404).json({ error: "Communication not found" });
         }
-      }
 
-      const notes = [
-        comm.subject ? `Subject: ${comm.subject}` : null,
-        comm.summary,
-        `Channel: ${comm.channel} | Status: ${comm.status}`,
-      ].filter(Boolean).join("\n\n");
-
-      const timelineEvent = await storage.createTimelineEvent(comm.caseId, userId, {
-        eventDate: comm.occurredAt,
-        title: `Communication: ${contactName}`,
-        category: "communication",
-        notes,
-      });
-
-      await storage.updateCommunication(userId, commId, {
-        timelineEventId: timelineEvent.id,
-      });
-
-      res.json({ timelineEvent });
-    } catch (error) {
-      console.error("Push to timeline error:", error);
-      res.status(500).json({ error: "Failed to push to timeline" });
-    }
-  });
-
-  app.post("/api/communications/:commId/push-to-calendar", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { commId } = req.params;
-
-      const comm = await storage.getCommunication(userId, commId);
-      if (!comm) {
-        return res.status(404).json({ error: "Communication not found" });
-      }
-
-      if (comm.calendarItemId) {
-        return res.status(400).json({ error: "Already added to calendar" });
-      }
-
-      if (!comm.followUpAt && !comm.needsFollowUp) {
-        return res.status(400).json({ error: "No follow-up date set" });
-      }
-
-      let contactName = "Unknown Contact";
-      if (comm.contactId) {
-        const contact = await storage.getContact(userId, comm.contactId);
-        if (contact) {
-          contactName = contact.name;
+        if (comm.timelineEventId) {
+          return res.status(400).json({ error: "Already added to timeline" });
         }
-      }
 
-      const calendarItem = await storage.createCaseCalendarItem(userId, comm.caseId, {
-        title: `Follow up: ${contactName}`,
-        startDate: comm.followUpAt || new Date(),
-        notes: comm.subject || comm.summary.slice(0, 200),
-      });
+        let contactName = "Unknown Contact";
+        if (comm.contactId) {
+          const contact = await storage.getContact(userId, comm.contactId);
+          if (contact) {
+            contactName = contact.name;
+          }
+        }
 
-      await storage.updateCommunication(userId, commId, {
-        calendarItemId: calendarItem.id,
-      });
+        const notes = [
+          comm.subject ? `Subject: ${comm.subject}` : null,
+          comm.summary,
+          `Channel: ${comm.channel} | Status: ${comm.status}`,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
 
-      res.json({ calendarItem });
-    } catch (error) {
-      console.error("Push to calendar error:", error);
-      res.status(500).json({ error: "Failed to push to calendar" });
-    }
-  });
+        const timelineEvent = await storage.createTimelineEvent(
+          comm.caseId,
+          userId,
+          {
+            eventDate: comm.occurredAt,
+            title: `Communication: ${contactName}`,
+            category: "communication",
+            notes,
+          },
+        );
 
-  app.post("/api/communications/:commId/mark-resolved", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { commId } = req.params;
-
-      const comm = await storage.getCommunication(userId, commId);
-      if (!comm) {
-        return res.status(404).json({ error: "Communication not found" });
-      }
-
-      const updated = await storage.updateCommunication(userId, commId, {
-        status: "resolved",
-        needsFollowUp: false,
-      });
-
-      if (comm.calendarItemId) {
-        await storage.updateCaseCalendarItem(userId, comm.calendarItemId, {
-          isDone: true,
+        await storage.updateCommunication(userId, commId, {
+          timelineEventId: timelineEvent.id,
         });
+
+        res.json({ timelineEvent });
+      } catch (error) {
+        console.error("Push to timeline error:", error);
+        res.status(500).json({ error: "Failed to push to timeline" });
       }
+    },
+  );
 
-      res.json({ communication: updated });
-    } catch (error) {
-      console.error("Mark resolved error:", error);
-      res.status(500).json({ error: "Failed to mark resolved" });
-    }
-  });
+  app.post(
+    "/api/communications/:commId/push-to-calendar",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { commId } = req.params;
 
-  app.get("/api/cases/:caseId/exhibit-lists", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const lists = await storage.listExhibitLists(userId, caseId);
-      res.json({ exhibitLists: lists });
-    } catch (error) {
-      console.error("List exhibit lists error:", error);
-      res.status(500).json({ error: "Failed to list exhibit lists" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/exhibit-lists", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parseResult = insertExhibitListSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const comm = await storage.getCommunication(userId, commId);
+        if (!comm) {
+          return res.status(404).json({ error: "Communication not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
 
-      const list = await storage.createExhibitList(userId, caseId, parseResult.data);
-      res.status(201).json({ exhibitList: list });
-    } catch (error) {
-      console.error("Create exhibit list error:", error);
-      res.status(500).json({ error: "Failed to create exhibit list" });
-    }
-  });
+        if (comm.calendarItemId) {
+          return res.status(400).json({ error: "Already added to calendar" });
+        }
+
+        if (!comm.followUpAt && !comm.needsFollowUp) {
+          return res.status(400).json({ error: "No follow-up date set" });
+        }
+
+        let contactName = "Unknown Contact";
+        if (comm.contactId) {
+          const contact = await storage.getContact(userId, comm.contactId);
+          if (contact) {
+            contactName = contact.name;
+          }
+        }
+
+        const calendarItem = await storage.createCaseCalendarItem(
+          userId,
+          comm.caseId,
+          {
+            title: `Follow up: ${contactName}`,
+            startDate: comm.followUpAt || new Date(),
+            notes: comm.subject || comm.summary.slice(0, 200),
+          },
+        );
+
+        await storage.updateCommunication(userId, commId, {
+          calendarItemId: calendarItem.id,
+        });
+
+        res.json({ calendarItem });
+      } catch (error) {
+        console.error("Push to calendar error:", error);
+        res.status(500).json({ error: "Failed to push to calendar" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/communications/:commId/mark-resolved",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { commId } = req.params;
+
+        const comm = await storage.getCommunication(userId, commId);
+        if (!comm) {
+          return res.status(404).json({ error: "Communication not found" });
+        }
+
+        const updated = await storage.updateCommunication(userId, commId, {
+          status: "resolved",
+          needsFollowUp: false,
+        });
+
+        if (comm.calendarItemId) {
+          await storage.updateCaseCalendarItem(userId, comm.calendarItemId, {
+            isDone: true,
+          });
+        }
+
+        res.json({ communication: updated });
+      } catch (error) {
+        console.error("Mark resolved error:", error);
+        res.status(500).json({ error: "Failed to mark resolved" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/exhibit-lists",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const lists = await storage.listExhibitLists(userId, caseId);
+        res.json({ exhibitLists: lists });
+      } catch (error) {
+        console.error("List exhibit lists error:", error);
+        res.status(500).json({ error: "Failed to list exhibit lists" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/exhibit-lists",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parseResult = insertExhibitListSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const list = await storage.createExhibitList(
+          userId,
+          caseId,
+          parseResult.data,
+        );
+        res.status(201).json({ exhibitList: list });
+      } catch (error) {
+        console.error("Create exhibit list error:", error);
+        res.status(500).json({ error: "Failed to create exhibit list" });
+      }
+    },
+  );
 
   app.patch("/api/exhibit-lists/:listId", requireAuth, async (req, res) => {
     try {
@@ -5039,7 +6365,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateExhibitList(userId, listId, parseResult.data);
+      const updated = await storage.updateExhibitList(
+        userId,
+        listId,
+        parseResult.data,
+      );
       res.json({ exhibitList: updated });
     } catch (error) {
       console.error("Update exhibit list error:", error);
@@ -5064,176 +6394,224 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/exhibit-lists/:listId/export", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
+  app.get(
+    "/api/exhibit-lists/:listId/export",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
 
-      const list = await storage.getExhibitList(userId, listId);
-      if (!list) {
-        return res.status(404).json({ error: "Exhibit list not found" });
-      }
-
-      const evidenceLinks = await storage.listExhibitListEvidence(userId, listId);
-      const snippets = await storage.listExhibitSnippets(userId, list.caseId, listId);
-      
-      if (evidenceLinks.length === 0 && snippets.length === 0) {
-        return res.status(400).json({ error: "No items to export. Add evidence or snippets first." });
-      }
-
-      const archive = archiver("zip", { zlib: { level: 9 } });
-      const buffers: Buffer[] = [];
-
-      archive.on("data", (chunk: Buffer) => buffers.push(chunk));
-      archive.on("error", (err: Error) => {
-        console.error("Archive error:", err);
-        throw err;
-      });
-
-      const finishPromise = new Promise<void>((resolve, reject) => {
-        archive.on("end", resolve);
-        archive.on("error", reject);
-      });
-
-      let coverPageContent = "";
-      coverPageContent += `================================================================================\n`;
-      coverPageContent += `${list.coverPageTitle || list.title}\n`;
-      coverPageContent += `================================================================================\n\n`;
-      if (list.coverPageSubtitle) {
-        coverPageContent += `${list.coverPageSubtitle}\n\n`;
-      }
-      if (list.isUsedForFiling) {
-        coverPageContent += `USED FOR COURT FILING\n`;
-        if (list.usedForFilingDate) {
-          coverPageContent += `Filing Date: ${new Date(list.usedForFilingDate).toLocaleDateString()}\n`;
+        const list = await storage.getExhibitList(userId, listId);
+        if (!list) {
+          return res.status(404).json({ error: "Exhibit list not found" });
         }
-        coverPageContent += `\n`;
-      }
-      if (list.notes) {
-        coverPageContent += `Notes:\n${list.notes}\n\n`;
-      }
-      coverPageContent += `Generated: ${new Date().toLocaleString()}\n`;
-      coverPageContent += `================================================================================\n`;
-      archive.append(coverPageContent, { name: "00_Cover_Page.txt" });
 
-      let snippetsContent = "";
-      if (snippets.length > 0) {
-        snippetsContent += `================================================================================\n`;
-        snippetsContent += `SNIPPETS\n`;
-        snippetsContent += `================================================================================\n\n`;
-        for (let i = 0; i < snippets.length; i++) {
-          const snip = snippets[i];
-          snippetsContent += `--- Snippet ${i + 1}: ${snip.title} ---\n`;
-          if (snip.pageNumber) {
-            snippetsContent += `Page: ${snip.pageNumber}\n`;
-          }
-          if (snip.snippetText) {
-            snippetsContent += `\n${snip.snippetText}\n`;
-          }
-          snippetsContent += `\n`;
+        const evidenceLinks = await storage.listExhibitListEvidence(
+          userId,
+          listId,
+        );
+        const snippets = await storage.listExhibitSnippets(
+          userId,
+          list.caseId,
+          listId,
+        );
+
+        if (evidenceLinks.length === 0 && snippets.length === 0) {
+          return res
+            .status(400)
+            .json({
+              error: "No items to export. Add evidence or snippets first.",
+            });
         }
-        archive.append(snippetsContent, { name: "01_Snippets.txt" });
-      }
 
-      const manifest: { title: string; generatedAt: string; items: unknown[] } = {
-        title: list.title,
-        generatedAt: new Date().toISOString(),
-        items: [],
-      };
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        const buffers: Buffer[] = [];
 
-      for (let i = 0; i < evidenceLinks.length; i++) {
-        const link = evidenceLinks[i];
-        const evidenceFile = await storage.getEvidenceFile(link.evidenceFileId, userId);
-        if (!evidenceFile) continue;
-
-        const paddedIndex = String(i + 1).padStart(2, "0");
-        const safeFileName = evidenceFile.originalName.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const archivePath = `Evidence/${paddedIndex}_${safeFileName}`;
-        
-        manifest.items.push({
-          index: i + 1,
-          evidenceId: evidenceFile.id,
-          fileName: evidenceFile.originalName,
-          archivePath,
-          label: link.label || null,
+        archive.on("data", (chunk: Buffer) => buffers.push(chunk));
+        archive.on("error", (err: Error) => {
+          console.error("Archive error:", err);
+          throw err;
         });
 
-        try {
-          if (evidenceFile.storageKey && isR2Configured()) {
-            const downloadUrl = await getSignedDownloadUrl(evidenceFile.storageKey);
-            const response = await fetch(downloadUrl);
-            if (response.ok) {
-              const buffer = Buffer.from(await response.arrayBuffer());
-              archive.append(buffer, { name: archivePath });
-            }
+        const finishPromise = new Promise<void>((resolve, reject) => {
+          archive.on("end", resolve);
+          archive.on("error", reject);
+        });
+
+        let coverPageContent = "";
+        coverPageContent += `================================================================================\n`;
+        coverPageContent += `${list.coverPageTitle || list.title}\n`;
+        coverPageContent += `================================================================================\n\n`;
+        if (list.coverPageSubtitle) {
+          coverPageContent += `${list.coverPageSubtitle}\n\n`;
+        }
+        if (list.isUsedForFiling) {
+          coverPageContent += `USED FOR COURT FILING\n`;
+          if (list.usedForFilingDate) {
+            coverPageContent += `Filing Date: ${new Date(list.usedForFilingDate).toLocaleDateString()}\n`;
           }
-        } catch (err) {
-          console.error(`Failed to fetch evidence file ${evidenceFile.id}:`, err);
+          coverPageContent += `\n`;
         }
-      }
-
-      archive.append(JSON.stringify(manifest, null, 2), { name: "manifest.json" });
-      archive.finalize();
-
-      await finishPromise;
-      const zipBuffer = Buffer.concat(buffers);
-
-      const fileName = `exhibit_packet_${list.title.replace(/[^a-zA-Z0-9]/g, "_")}.zip`;
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-      res.setHeader("Content-Length", zipBuffer.length);
-      res.send(zipBuffer);
-    } catch (error) {
-      console.error("Export exhibit list error:", error);
-      res.status(500).json({ error: "Failed to export exhibit list" });
-    }
-  });
-
-  app.get("/api/exhibit-lists/:listId/exhibits", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
-
-      const list = await storage.getExhibitList(userId, listId);
-      if (!list) {
-        return res.status(404).json({ error: "Exhibit list not found" });
-      }
-
-      const exhibitItems = await storage.listExhibits(userId, listId);
-      res.json({ exhibits: exhibitItems });
-    } catch (error) {
-      console.error("List exhibits error:", error);
-      res.status(500).json({ error: "Failed to list exhibits" });
-    }
-  });
-
-  app.post("/api/exhibit-lists/:listId/exhibits", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
-
-      const list = await storage.getExhibitList(userId, listId);
-      if (!list) {
-        return res.status(404).json({ error: "Exhibit list not found" });
-      }
-
-      const parseResult = insertExhibitSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        if (list.notes) {
+          coverPageContent += `Notes:\n${list.notes}\n\n`;
         }
-        return res.status(400).json({ error: "Validation failed", fields });
-      }
+        coverPageContent += `Generated: ${new Date().toLocaleString()}\n`;
+        coverPageContent += `================================================================================\n`;
+        archive.append(coverPageContent, { name: "00_Cover_Page.txt" });
 
-      const exhibit = await storage.createExhibit(userId, list.caseId, listId, parseResult.data);
-      res.status(201).json({ exhibit });
-    } catch (error) {
-      console.error("Create exhibit error:", error);
-      res.status(500).json({ error: "Failed to create exhibit" });
-    }
-  });
+        let snippetsContent = "";
+        if (snippets.length > 0) {
+          snippetsContent += `================================================================================\n`;
+          snippetsContent += `SNIPPETS\n`;
+          snippetsContent += `================================================================================\n\n`;
+          for (let i = 0; i < snippets.length; i++) {
+            const snip = snippets[i];
+            snippetsContent += `--- Snippet ${i + 1}: ${snip.title} ---\n`;
+            if (snip.pageNumber) {
+              snippetsContent += `Page: ${snip.pageNumber}\n`;
+            }
+            if (snip.snippetText) {
+              snippetsContent += `\n${snip.snippetText}\n`;
+            }
+            snippetsContent += `\n`;
+          }
+          archive.append(snippetsContent, { name: "01_Snippets.txt" });
+        }
+
+        const manifest: {
+          title: string;
+          generatedAt: string;
+          items: unknown[];
+        } = {
+          title: list.title,
+          generatedAt: new Date().toISOString(),
+          items: [],
+        };
+
+        for (let i = 0; i < evidenceLinks.length; i++) {
+          const link = evidenceLinks[i];
+          const evidenceFile = await storage.getEvidenceFile(
+            link.evidenceFileId,
+            userId,
+          );
+          if (!evidenceFile) continue;
+
+          const paddedIndex = String(i + 1).padStart(2, "0");
+          const safeFileName = evidenceFile.originalName.replace(
+            /[^a-zA-Z0-9._-]/g,
+            "_",
+          );
+          const archivePath = `Evidence/${paddedIndex}_${safeFileName}`;
+
+          manifest.items.push({
+            index: i + 1,
+            evidenceId: evidenceFile.id,
+            fileName: evidenceFile.originalName,
+            archivePath,
+            label: link.label || null,
+          });
+
+          try {
+            if (evidenceFile.storageKey && isR2Configured()) {
+              const downloadUrl = await getSignedDownloadUrl(
+                evidenceFile.storageKey,
+              );
+              const response = await fetch(downloadUrl);
+              if (response.ok) {
+                const buffer = Buffer.from(await response.arrayBuffer());
+                archive.append(buffer, { name: archivePath });
+              }
+            }
+          } catch (err) {
+            console.error(
+              `Failed to fetch evidence file ${evidenceFile.id}:`,
+              err,
+            );
+          }
+        }
+
+        archive.append(JSON.stringify(manifest, null, 2), {
+          name: "manifest.json",
+        });
+        archive.finalize();
+
+        await finishPromise;
+        const zipBuffer = Buffer.concat(buffers);
+
+        const fileName = `exhibit_packet_${list.title.replace(/[^a-zA-Z0-9]/g, "_")}.zip`;
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${fileName}"`,
+        );
+        res.setHeader("Content-Length", zipBuffer.length);
+        res.send(zipBuffer);
+      } catch (error) {
+        console.error("Export exhibit list error:", error);
+        res.status(500).json({ error: "Failed to export exhibit list" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/exhibit-lists/:listId/exhibits",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
+
+        const list = await storage.getExhibitList(userId, listId);
+        if (!list) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        const exhibitItems = await storage.listExhibits(userId, listId);
+        res.json({ exhibits: exhibitItems });
+      } catch (error) {
+        console.error("List exhibits error:", error);
+        res.status(500).json({ error: "Failed to list exhibits" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/exhibit-lists/:listId/exhibits",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
+
+        const list = await storage.getExhibitList(userId, listId);
+        if (!list) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        const parseResult = insertExhibitSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const exhibit = await storage.createExhibit(
+          userId,
+          list.caseId,
+          listId,
+          parseResult.data,
+        );
+        res.status(201).json({ exhibit });
+      } catch (error) {
+        console.error("Create exhibit error:", error);
+        res.status(500).json({ error: "Failed to create exhibit" });
+      }
+    },
+  );
 
   app.patch("/api/exhibits/:exhibitId", requireAuth, async (req, res) => {
     try {
@@ -5255,7 +6633,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         return res.status(400).json({ error: "Validation failed", fields });
       }
 
-      const updated = await storage.updateExhibit(userId, exhibitId, parseResult.data);
+      const updated = await storage.updateExhibit(
+        userId,
+        exhibitId,
+        parseResult.data,
+      );
       res.json({ exhibit: updated });
     } catch (error) {
       console.error("Update exhibit error:", error);
@@ -5280,233 +6662,315 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/exhibit-lists/:listId/exhibits/reorder", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { listId } = req.params;
-      const { orderedIds } = req.body;
+  app.post(
+    "/api/exhibit-lists/:listId/exhibits/reorder",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { listId } = req.params;
+        const { orderedIds } = req.body;
 
-      const list = await storage.getExhibitList(userId, listId);
-      if (!list) {
-        return res.status(404).json({ error: "Exhibit list not found" });
-      }
-
-      if (!Array.isArray(orderedIds)) {
-        return res.status(400).json({ error: "orderedIds must be an array" });
-      }
-
-      await storage.reorderExhibits(userId, listId, orderedIds);
-      const exhibitItems = await storage.listExhibits(userId, listId);
-      res.json({ exhibits: exhibitItems });
-    } catch (error) {
-      console.error("Reorder exhibits error:", error);
-      res.status(500).json({ error: "Failed to reorder exhibits" });
-    }
-  });
-
-  app.get("/api/exhibits/:exhibitId/evidence", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { exhibitId } = req.params;
-
-      const exhibit = await storage.getExhibit(userId, exhibitId);
-      if (!exhibit) {
-        return res.status(404).json({ error: "Exhibit not found" });
-      }
-
-      const files = await storage.listExhibitEvidence(userId, exhibitId);
-      res.json({ evidence: files });
-    } catch (error) {
-      console.error("List exhibit evidence error:", error);
-      res.status(500).json({ error: "Failed to list exhibit evidence" });
-    }
-  });
-
-  app.post("/api/exhibits/:exhibitId/evidence/attach", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { exhibitId } = req.params;
-
-      const exhibit = await storage.getExhibit(userId, exhibitId);
-      if (!exhibit) {
-        return res.status(404).json({ error: "Exhibit not found" });
-      }
-
-      const parseResult = attachEvidenceToExhibitSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        const fields: Record<string, string> = {};
-        for (const err of parseResult.error.errors) {
-          const field = err.path[0]?.toString() || "unknown";
-          fields[field] = err.message;
+        const list = await storage.getExhibitList(userId, listId);
+        if (!list) {
+          return res.status(404).json({ error: "Exhibit list not found" });
         }
-        return res.status(400).json({ error: "Validation failed", fields });
+
+        if (!Array.isArray(orderedIds)) {
+          return res.status(400).json({ error: "orderedIds must be an array" });
+        }
+
+        await storage.reorderExhibits(userId, listId, orderedIds);
+        const exhibitItems = await storage.listExhibits(userId, listId);
+        res.json({ exhibits: exhibitItems });
+      } catch (error) {
+        console.error("Reorder exhibits error:", error);
+        res.status(500).json({ error: "Failed to reorder exhibits" });
       }
+    },
+  );
 
-      const { evidenceId } = parseResult.data;
+  app.get(
+    "/api/exhibits/:exhibitId/evidence",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { exhibitId } = req.params;
 
-      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidenceFile) {
-        return res.status(404).json({ error: "Evidence file not found" });
+        const exhibit = await storage.getExhibit(userId, exhibitId);
+        if (!exhibit) {
+          return res.status(404).json({ error: "Exhibit not found" });
+        }
+
+        const files = await storage.listExhibitEvidence(userId, exhibitId);
+        res.json({ evidence: files });
+      } catch (error) {
+        console.error("List exhibit evidence error:", error);
+        res.status(500).json({ error: "Failed to list exhibit evidence" });
       }
+    },
+  );
 
-      const link = await storage.attachEvidence(userId, exhibit.caseId, exhibitId, evidenceId);
-      if (!link) {
-        return res.status(400).json({ error: "Evidence already attached to this exhibit" });
+  app.post(
+    "/api/exhibits/:exhibitId/evidence/attach",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { exhibitId } = req.params;
+
+        const exhibit = await storage.getExhibit(userId, exhibitId);
+        if (!exhibit) {
+          return res.status(404).json({ error: "Exhibit not found" });
+        }
+
+        const parseResult = attachEvidenceToExhibitSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          const fields: Record<string, string> = {};
+          for (const err of parseResult.error.errors) {
+            const field = err.path[0]?.toString() || "unknown";
+            fields[field] = err.message;
+          }
+          return res.status(400).json({ error: "Validation failed", fields });
+        }
+
+        const { evidenceId } = parseResult.data;
+
+        const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidenceFile) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
+
+        const link = await storage.attachEvidence(
+          userId,
+          exhibit.caseId,
+          exhibitId,
+          evidenceId,
+        );
+        if (!link) {
+          return res
+            .status(400)
+            .json({ error: "Evidence already attached to this exhibit" });
+        }
+
+        res.status(201).json({ attached: true });
+      } catch (error) {
+        console.error("Attach evidence error:", error);
+        res.status(500).json({ error: "Failed to attach evidence" });
       }
+    },
+  );
 
-      res.status(201).json({ attached: true });
-    } catch (error) {
-      console.error("Attach evidence error:", error);
-      res.status(500).json({ error: "Failed to attach evidence" });
-    }
-  });
+  app.post(
+    "/api/exhibits/:exhibitId/evidence/detach",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { exhibitId } = req.params;
+        const { evidenceId } = req.body;
 
-  app.post("/api/exhibits/:exhibitId/evidence/detach", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { exhibitId } = req.params;
-      const { evidenceId } = req.body;
+        const exhibit = await storage.getExhibit(userId, exhibitId);
+        if (!exhibit) {
+          return res.status(404).json({ error: "Exhibit not found" });
+        }
 
-      const exhibit = await storage.getExhibit(userId, exhibitId);
-      if (!exhibit) {
-        return res.status(404).json({ error: "Exhibit not found" });
+        if (!evidenceId) {
+          return res.status(400).json({ error: "evidenceId is required" });
+        }
+
+        const detached = await storage.detachEvidence(
+          userId,
+          exhibitId,
+          evidenceId,
+        );
+        if (!detached) {
+          return res.status(404).json({ error: "Link not found" });
+        }
+
+        res.json({ detached: true });
+      } catch (error) {
+        console.error("Detach evidence error:", error);
+        res.status(500).json({ error: "Failed to detach evidence" });
       }
+    },
+  );
 
-      if (!evidenceId) {
-        return res.status(400).json({ error: "evidenceId is required" });
+  app.post(
+    "/api/evidence/:evidenceId/add-to-exhibit",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { evidenceId } = req.params;
+        const { exhibitListId, exhibitId, createNewExhibitTitle } = req.body;
+
+        const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidenceFile) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
+
+        if (!exhibitListId) {
+          return res.status(400).json({ error: "exhibitListId is required" });
+        }
+
+        const list = await storage.getExhibitList(userId, exhibitListId);
+        if (!list) {
+          return res.status(404).json({ error: "Exhibit list not found" });
+        }
+
+        let targetExhibitId = exhibitId;
+
+        if (createNewExhibitTitle) {
+          const newExhibit = await storage.createExhibit(
+            userId,
+            list.caseId,
+            exhibitListId,
+            {
+              title: createNewExhibitTitle,
+            },
+          );
+          targetExhibitId = newExhibit.id;
+        }
+
+        if (!targetExhibitId) {
+          return res
+            .status(400)
+            .json({ error: "exhibitId or createNewExhibitTitle is required" });
+        }
+
+        const exhibit = await storage.getExhibit(userId, targetExhibitId);
+        if (!exhibit) {
+          return res.status(404).json({ error: "Exhibit not found" });
+        }
+
+        const link = await storage.attachEvidence(
+          userId,
+          list.caseId,
+          targetExhibitId,
+          evidenceId,
+        );
+        if (!link) {
+          return res
+            .status(400)
+            .json({ error: "Evidence already attached to this exhibit" });
+        }
+
+        res.status(201).json({ attached: true, exhibitId: targetExhibitId });
+      } catch (error) {
+        console.error("Add to exhibit error:", error);
+        res.status(500).json({ error: "Failed to add to exhibit" });
       }
+    },
+  );
 
-      const detached = await storage.detachEvidence(userId, exhibitId, evidenceId);
-      if (!detached) {
-        return res.status(404).json({ error: "Link not found" });
+  app.get(
+    "/api/evidence/:evidenceId/exhibits",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { evidenceId } = req.params;
+
+        const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidenceFile) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
+
+        const exhibitItems = await storage.getExhibitsForEvidence(
+          userId,
+          evidenceId,
+        );
+        res.json({ exhibits: exhibitItems });
+      } catch (error) {
+        console.error("Get exhibits for evidence error:", error);
+        res.status(500).json({ error: "Failed to get exhibits" });
       }
+    },
+  );
 
-      res.json({ detached: true });
-    } catch (error) {
-      console.error("Detach evidence error:", error);
-      res.status(500).json({ error: "Failed to detach evidence" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/rule-terms",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+        const moduleKey = req.query.moduleKey as string | undefined;
 
-  app.post("/api/evidence/:evidenceId/add-to-exhibit", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { evidenceId } = req.params;
-      const { exhibitListId, exhibitId, createNewExhibitTitle } = req.body;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidenceFile) {
-        return res.status(404).json({ error: "Evidence file not found" });
+        const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
+        res.json({ terms });
+      } catch (error) {
+        console.error("Get rule terms error:", error);
+        res.status(500).json({ error: "Failed to get rule terms" });
       }
+    },
+  );
 
-      if (!exhibitListId) {
-        return res.status(400).json({ error: "exhibitListId is required" });
+  app.post(
+    "/api/cases/:caseId/rule-terms",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const parsed = upsertCaseRuleTermSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid request",
+              details: parsed.error.flatten(),
+            });
+        }
+
+        const term = await storage.upsertCaseRuleTerm(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ term });
+      } catch (error) {
+        console.error("Upsert rule term error:", error);
+        res.status(500).json({ error: "Failed to save rule term" });
       }
+    },
+  );
 
-      const list = await storage.getExhibitList(userId, exhibitListId);
-      if (!list) {
-        return res.status(404).json({ error: "Exhibit list not found" });
-      }
-
-      let targetExhibitId = exhibitId;
-
-      if (createNewExhibitTitle) {
-        const newExhibit = await storage.createExhibit(userId, list.caseId, exhibitListId, {
-          title: createNewExhibitTitle,
-        });
-        targetExhibitId = newExhibit.id;
-      }
-
-      if (!targetExhibitId) {
-        return res.status(400).json({ error: "exhibitId or createNewExhibitTitle is required" });
-      }
-
-      const exhibit = await storage.getExhibit(userId, targetExhibitId);
-      if (!exhibit) {
-        return res.status(404).json({ error: "Exhibit not found" });
-      }
-
-      const link = await storage.attachEvidence(userId, list.caseId, targetExhibitId, evidenceId);
-      if (!link) {
-        return res.status(400).json({ error: "Evidence already attached to this exhibit" });
-      }
-
-      res.status(201).json({ attached: true, exhibitId: targetExhibitId });
-    } catch (error) {
-      console.error("Add to exhibit error:", error);
-      res.status(500).json({ error: "Failed to add to exhibit" });
-    }
-  });
-
-  app.get("/api/evidence/:evidenceId/exhibits", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { evidenceId } = req.params;
-
-      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidenceFile) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
-
-      const exhibitItems = await storage.getExhibitsForEvidence(userId, evidenceId);
-      res.json({ exhibits: exhibitItems });
-    } catch (error) {
-      console.error("Get exhibits for evidence error:", error);
-      res.status(500).json({ error: "Failed to get exhibits" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/rule-terms", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-      const moduleKey = req.query.moduleKey as string | undefined;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const terms = await storage.getCaseRuleTerms(userId, caseId, moduleKey);
-      res.json({ terms });
-    } catch (error) {
-      console.error("Get rule terms error:", error);
-      res.status(500).json({ error: "Failed to get rule terms" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/rule-terms", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const parsed = upsertCaseRuleTermSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
-      }
-
-      const term = await storage.upsertCaseRuleTerm(userId, caseId, parsed.data);
-      res.status(201).json({ term });
-    } catch (error) {
-      console.error("Upsert rule term error:", error);
-      res.status(500).json({ error: "Failed to save rule term" });
-    }
-  });
-
-  const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || process.env.OPEN_AI_KEY || "").trim();
+  const OPENAI_API_KEY = (
+    process.env.OPENAI_API_KEY ||
+    process.env.OPEN_AI_KEY ||
+    ""
+  ).trim();
   const lexiApiKeyConfigured = !!OPENAI_API_KEY;
-  const openai = lexiApiKeyConfigured 
+  const openai = lexiApiKeyConfigured
     ? new OpenAI({ apiKey: OPENAI_API_KEY })
     : null;
 
   app.get("/api/lexi/health", requireAuth, async (_req, res) => {
     if (!OPENAI_API_KEY) {
-      return res.status(200).json({ ok: false, provider: "openai-direct", error: "missing OPENAI_API_KEY" });
+      return res
+        .status(200)
+        .json({
+          ok: false,
+          provider: "openai-direct",
+          error: "missing OPENAI_API_KEY",
+        });
     }
 
     try {
@@ -5540,7 +7004,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
   app.get("/api/ai/health", requireAuth, async (_req, res) => {
     try {
-      const openaiStatus: { ok: boolean; error?: string; code?: string } = { ok: false };
+      const openaiStatus: { ok: boolean; error?: string; code?: string } = {
+        ok: false,
+      };
       if (!process.env.OPENAI_API_KEY) {
         openaiStatus.error = "OPENAI_API_KEY not configured";
         openaiStatus.code = "OPENAI_KEY_MISSING";
@@ -5554,7 +7020,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           });
           openaiStatus.ok = true;
         } catch (err: unknown) {
-          const errAny = err as { status?: number; code?: string; message?: string };
+          const errAny = err as {
+            status?: number;
+            code?: string;
+            message?: string;
+          };
           if (errAny?.status === 401 || errAny?.code === "invalid_api_key") {
             openaiStatus.error = "Invalid OpenAI API key";
             openaiStatus.code = "OPENAI_KEY_INVALID";
@@ -5585,7 +7055,13 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       });
     } catch (error) {
       console.error("AI health check error:", error);
-      res.status(500).json({ ok: false, error: "Health check failed", code: "INTERNAL_ERROR" });
+      res
+        .status(500)
+        .json({
+          ok: false,
+          error: "Health check failed",
+          code: "INTERNAL_ERROR",
+        });
     }
   });
 
@@ -5619,7 +7095,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const dbStatus = await checkAiTableColumns();
 
-      const allOk = openaiStatus.ok && visionStatus.ok && r2Status.ok && dbStatus.ok;
+      const allOk =
+        openaiStatus.ok && visionStatus.ok && r2Status.ok && dbStatus.ok;
       res.json({
         ok: allOk,
         openai: openaiStatus,
@@ -5644,23 +7121,26 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       res.json(result);
     } catch (error) {
       console.error("[AI][Diagnostics] Error:", error);
-      res.status(500).json({ 
-        ok: false, 
-        error: "Diagnostics failed", 
+      res.status(500).json({
+        ok: false,
+        error: "Diagnostics failed",
         code: "DIAGNOSTICS_ERROR",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
   app.get("/api/lexi/disclaimer", requireAuth, (_req, res) => {
-    res.json({ disclaimer: LEXI_BANNER_DISCLAIMER, welcome: LEXI_WELCOME_MESSAGE });
+    res.json({
+      disclaimer: LEXI_BANNER_DISCLAIMER,
+      welcome: LEXI_WELCOME_MESSAGE,
+    });
   });
 
   app.get("/api/search", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const q = (req.query.q as string || "").trim();
+      const q = ((req.query.q as string) || "").trim();
       const caseId = (req.query.caseId as string) || null;
 
       if (q.length < 2) {
@@ -5679,23 +7159,28 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     res.json({ ok: true, context: null });
   });
 
-  app.get("/api/cases/:caseId/lexi/context", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/lexi/context",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const context = await buildLexiContext({ userId, caseId });
+        res.json({ ok: true, context });
+      } catch (error) {
+        console.error("Get lexi context error:", error);
+        res.status(500).json({ error: "Failed to get context" });
       }
-
-      const context = await buildLexiContext({ userId, caseId });
-      res.json({ ok: true, context });
-    } catch (error) {
-      console.error("Get lexi context error:", error);
-      res.status(500).json({ error: "Failed to get context" });
-    }
-  });
+    },
+  );
 
   app.get("/api/lexi/threads", requireAuth, async (req, res) => {
     try {
@@ -5713,7 +7198,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const userId = req.session.userId!;
       const parsed = createLexiThreadSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+        return res
+          .status(400)
+          .json({ error: "Invalid request", details: parsed.error.flatten() });
       }
       const requestedTitle = (parsed.data.title ?? "").trim();
       const moduleKey = (parsed.data.moduleKey ?? "").trim();
@@ -5727,50 +7214,72 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/lexi/threads", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/lexi/threads",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const threads = await storage.listLexiThreads(userId, caseId);
+        res.json({ threads });
+      } catch (error) {
+        console.error("List lexi threads error:", error);
+        res.status(500).json({ error: "Failed to list threads" });
       }
+    },
+  );
 
-      const threads = await storage.listLexiThreads(userId, caseId);
-      res.json({ threads });
-    } catch (error) {
-      console.error("List lexi threads error:", error);
-      res.status(500).json({ error: "Failed to list threads" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/lexi/threads",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { caseId } = req.params;
 
-  app.post("/api/cases/:caseId/lexi/threads", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const parsed = createLexiThreadSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid request",
+              details: parsed.error.flatten(),
+            });
+        }
+
+        const requestedTitle = (parsed.data.title ?? "").trim();
+        const moduleKey = (parsed.data.moduleKey ?? "").trim();
+        const defaultTitle = DEFAULT_THREAD_TITLES[moduleKey] ?? "General";
+        const titleToSave = requestedTitle.length
+          ? requestedTitle
+          : defaultTitle;
+        const thread = await storage.createLexiThread(
+          userId,
+          caseId,
+          titleToSave,
+        );
+        res.status(201).json({ thread });
+      } catch (error) {
+        console.error("Create lexi thread error:", error);
+        res.status(500).json({ error: "Failed to create thread" });
       }
-
-      const parsed = createLexiThreadSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
-      }
-
-      const requestedTitle = (parsed.data.title ?? "").trim();
-      const moduleKey = (parsed.data.moduleKey ?? "").trim();
-      const defaultTitle = DEFAULT_THREAD_TITLES[moduleKey] ?? "General";
-      const titleToSave = requestedTitle.length ? requestedTitle : defaultTitle;
-      const thread = await storage.createLexiThread(userId, caseId, titleToSave);
-      res.status(201).json({ thread });
-    } catch (error) {
-      console.error("Create lexi thread error:", error);
-      res.status(500).json({ error: "Failed to create thread" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/lexi/threads/:threadId", requireAuth, async (req, res) => {
     try {
@@ -5779,10 +7288,16 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const parsed = renameLexiThreadSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+        return res
+          .status(400)
+          .json({ error: "Invalid request", details: parsed.error.flatten() });
       }
 
-      const thread = await storage.renameLexiThread(userId, threadId, parsed.data.title);
+      const thread = await storage.renameLexiThread(
+        userId,
+        threadId,
+        parsed.data.title,
+      );
       if (!thread) {
         return res.status(404).json({ error: "Thread not found" });
       }
@@ -5809,23 +7324,27 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/lexi/threads/:threadId/messages", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { threadId } = req.params;
+  app.get(
+    "/api/lexi/threads/:threadId/messages",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId!;
+        const { threadId } = req.params;
 
-      const thread = await storage.getLexiThread(userId, threadId);
-      if (!thread) {
-        return res.status(404).json({ error: "Thread not found" });
+        const thread = await storage.getLexiThread(userId, threadId);
+        if (!thread) {
+          return res.status(404).json({ error: "Thread not found" });
+        }
+
+        const messages = await storage.listLexiMessages(userId, threadId);
+        res.json({ messages });
+      } catch (error) {
+        console.error("List lexi messages error:", error);
+        res.status(500).json({ error: "Failed to list messages" });
       }
-
-      const messages = await storage.listLexiMessages(userId, threadId);
-      res.json({ messages });
-    } catch (error) {
-      console.error("List lexi messages error:", error);
-      res.status(500).json({ error: "Failed to list messages" });
-    }
-  });
+    },
+  );
 
   app.post("/api/lexi/chat", requireAuth, async (req, res) => {
     try {
@@ -5833,10 +7352,13 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       const parsed = lexiChatRequestSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+        return res
+          .status(400)
+          .json({ error: "Invalid request", details: parsed.error.flatten() });
       }
 
-      const { threadId, message, stateOverride, stylePreset, fastMode } = parsed.data;
+      const { threadId, message, stateOverride, stylePreset, fastMode } =
+        parsed.data;
       const effectiveCaseId = parsed.data.caseId || null;
 
       let caseRecord = null;
@@ -5857,48 +7379,98 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       if (isDisallowed(message)) {
         const userMsg = await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "user", message, 
-          { disallowed: true }, null, { intent, refused: true }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "user",
+          message,
+          { disallowed: true },
+          null,
+          { intent, refused: true },
         );
-        
-        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, DISALLOWED_RESPONSE);
+
+        const { content: responseContent, wasAdded } =
+          prependDisclaimerIfNeeded(disclaimerShown, DISALLOWED_RESPONSE);
         if (wasAdded) {
           await storage.markLexiThreadDisclaimerShown(userId, threadId);
         }
-        
+
         const assistantMsg = await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "assistant", responseContent, 
-          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "assistant",
+          responseContent,
+          { safety_template: true },
+          null,
+          { intent, refused: true, hadSources: false },
         );
-        return res.json({ userMessage: userMsg, assistantMessage: assistantMsg, intent, refused: true });
+        return res.json({
+          userMessage: userMsg,
+          assistantMessage: assistantMsg,
+          intent,
+          refused: true,
+        });
       }
 
       const uplTemplate = detectUPLRequest(message);
       if (uplTemplate) {
         const userMsg = await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "user", message, 
-          { upl_detected: true }, null, { intent, refused: true }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "user",
+          message,
+          { upl_detected: true },
+          null,
+          { intent, refused: true },
         );
-        
-        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, SAFETY_TEMPLATES[uplTemplate]);
+
+        const { content: responseContent, wasAdded } =
+          prependDisclaimerIfNeeded(
+            disclaimerShown,
+            SAFETY_TEMPLATES[uplTemplate],
+          );
         if (wasAdded) {
           await storage.markLexiThreadDisclaimerShown(userId, threadId);
         }
-        
+
         const assistantMsg = await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "assistant", responseContent, 
-          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "assistant",
+          responseContent,
+          { safety_template: true },
+          null,
+          { intent, refused: true, hadSources: false },
         );
-        return res.json({ userMessage: userMsg, assistantMessage: assistantMsg, intent, refused: true });
+        return res.json({
+          userMessage: userMsg,
+          assistantMessage: assistantMsg,
+          intent,
+          refused: true,
+        });
       }
 
       if (!openai) {
-        return res.status(503).json({ error: "Lexi is not configured. Add OPENAI_API_KEY in Replit Secrets and restart the app." });
+        return res
+          .status(503)
+          .json({
+            error:
+              "Lexi is not configured. Add OPENAI_API_KEY in Replit Secrets and restart the app.",
+          });
       }
 
       await storage.createLexiMessage(
-        userId, effectiveCaseId, threadId, "user", message, 
-        null, null, { intent }
+        userId,
+        effectiveCaseId,
+        threadId,
+        "user",
+        message,
+        null,
+        null,
+        { intent },
       );
 
       const existingMessages = await storage.listLexiMessages(userId, threadId);
@@ -5908,12 +7480,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         caseType: caseRecord?.caseType || undefined,
       });
 
-      const personalization = await getLexiPersonalization(userId, effectiveCaseId);
+      const personalization = await getLexiPersonalization(
+        userId,
+        effectiveCaseId,
+      );
       const personalizationBlock = buildPersonalizationPrompt(personalization);
 
       let caseContextBlock = "";
       if (effectiveCaseId) {
-        const lexiContext = await buildLexiContext({ userId, caseId: effectiveCaseId });
+        const lexiContext = await buildLexiContext({
+          userId,
+          caseId: effectiveCaseId,
+        });
         if (lexiContext) {
           caseContextBlock = `\n\n${formatContextForPrompt(lexiContext)}\n`;
         }
@@ -5967,7 +7545,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       };
 
       const activeStyle = stylePreset || "bullets";
-      const formattingPolicy = formattingPolicies[activeStyle] || formattingPolicies.bullets;
+      const formattingPolicy =
+        formattingPolicies[activeStyle] || formattingPolicies.bullets;
       const intentTemplate = intentTemplates[intent] || "";
       const systemPrompt = `${baseSystemPrompt}${personalizationBlock}${caseContextBlock}\n\n${formattingPolicy}${intentTemplate ? `\n\n${intentTemplate}` : ""}`;
 
@@ -5988,11 +7567,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const timeoutMs = fastMode ? 25000 : 45000;
 
       if (process.env.NODE_ENV === "development") {
-        console.log("[Lexi] fastMode:", fastMode, "model:", model, "timeout:", timeoutMs);
+        console.log(
+          "[Lexi] fastMode:",
+          fastMode,
+          "model:",
+          model,
+          "timeout:",
+          timeoutMs,
+        );
       }
 
       let assistantContent: string;
-      
+
       if (isAiTestMode()) {
         console.log("[Lexi] AI_TEST_MODE active - using mock response");
         assistantContent = getMockLexiResponse(intent, message);
@@ -6002,80 +7588,116 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
         let completion;
         try {
-          completion = await openai.chat.completions.create({
-            model,
-            messages: chatHistory,
-            temperature,
-            max_completion_tokens: maxTokens,
-          }, { signal: controller.signal });
+          completion = await openai.chat.completions.create(
+            {
+              model,
+              messages: chatHistory,
+              temperature,
+              max_completion_tokens: maxTokens,
+            },
+            { signal: controller.signal },
+          );
         } catch (abortErr: any) {
           clearTimeout(timeoutId);
           if (abortErr.name === "AbortError" || controller.signal.aborted) {
-            return res.status(504).json({ 
-              error: "Lexi timed out. Try again.", 
-              code: "LEXI_TIMEOUT" 
+            return res.status(504).json({
+              error: "Lexi timed out. Try again.",
+              code: "LEXI_TIMEOUT",
             });
           }
           throw abortErr;
         }
         clearTimeout(timeoutId);
 
-        assistantContent = completion.choices[0]?.message?.content || "I apologize, but I was unable to generate a response. Please try again.";
+        assistantContent =
+          completion.choices[0]?.message?.content ||
+          "I apologize, but I was unable to generate a response. Please try again.";
       }
-      
+
       // Apply safety and formatting pass
       assistantContent = formatLexiResponse(assistantContent, {
         isResearchMode: intent === "research",
         validateLinks: true,
       });
-      
+
       assistantContent = normalizeUrlsInContent(assistantContent);
-      
-      const { sources, hasSources } = extractSourcesFromContent(assistantContent);
-      
+
+      const { sources, hasSources } =
+        extractSourcesFromContent(assistantContent);
+
       let verifiedSources: VerifiedSource[] = [];
       if (hasSources && sources.length > 0) {
         const candidateUrls = sources.map((s) => s.url).filter(Boolean);
-        const queryTopic = extractTopicFromContext(message, thread.title || undefined, undefined);
-        const keyTerms = extractKeyTermsFromText(assistantContent, caseRecord?.state || undefined);
-        
+        const queryTopic = extractTopicFromContext(
+          message,
+          thread.title || undefined,
+          undefined,
+        );
+        const keyTerms = extractKeyTermsFromText(
+          assistantContent,
+          caseRecord?.state || undefined,
+        );
+
         verifiedSources = await verifySources({
           queryTopic,
           keyTerms,
           candidates: candidateUrls,
         });
       }
-      
-      const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
+
+      const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(
+        disclaimerShown,
+        assistantContent,
+      );
       if (wasAdded) {
         await storage.markLexiThreadDisclaimerShown(userId, threadId);
       }
-      
+
       const assistantMsg = await storage.createLexiMessage(
-        userId, effectiveCaseId, threadId, "assistant", finalContent, 
-        null, "gpt-4.1", { intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources }
+        userId,
+        effectiveCaseId,
+        threadId,
+        "assistant",
+        finalContent,
+        null,
+        "gpt-4.1",
+        {
+          intent,
+          refused: false,
+          hadSources: verifiedSources.length > 0,
+          sources: verifiedSources,
+        },
       );
 
-      res.json({ assistantMessage: assistantMsg, intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources });
+      res.json({
+        assistantMessage: assistantMsg,
+        intent,
+        refused: false,
+        hadSources: verifiedSources.length > 0,
+        sources: verifiedSources,
+      });
     } catch (err: any) {
       const requestId = crypto.randomUUID();
       const userId = req.session?.userId || "unknown";
       const threadId = req.body?.threadId || "unknown";
       const effectiveCaseId = req.body?.caseId || null;
-      
+
       const status = err?.status || err?.response?.status;
       const code = err?.code || err?.error?.code;
       const errorMessage = err?.message || String(err);
 
       // Log with correlation ID (redact any keys in error message)
-      const safeMessage = errorMessage.replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]");
-      console.error("[LexiChatError]", { 
-        requestId, 
-        userId, 
-        threadId, 
-        caseId: effectiveCaseId, 
+      const safeMessage = errorMessage.replace(
+        /sk-[a-zA-Z0-9]+/g,
+        "[REDACTED]",
+      );
+      console.error("[LexiChatError]", {
+        requestId,
+        userId,
+        threadId,
+        caseId: effectiveCaseId,
         code: code || "UNKNOWN",
-        message: safeMessage 
+        message: safeMessage,
       });
 
       if (status === 401 || code === "invalid_api_key") {
@@ -6087,23 +7709,27 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       if (status === 429) {
-        return res.status(429).json({ 
-          error: "Lexi is busy. Try again in a minute.", 
+        return res.status(429).json({
+          error: "Lexi is busy. Try again in a minute.",
           code: "OPENAI_RATE_LIMIT",
           requestId,
         });
       }
 
-      if (err.name === "AbortError" || code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT") {
-        return res.status(504).json({ 
-          error: "Lexi timed out. Try Faster mode.", 
+      if (
+        err.name === "AbortError" ||
+        code === "ETIMEDOUT" ||
+        code === "ESOCKETTIMEDOUT"
+      ) {
+        return res.status(504).json({
+          error: "Lexi timed out. Try Faster mode.",
           code: "LEXI_TIMEOUT",
           requestId,
         });
       }
 
-      res.status(500).json({ 
-        error: "Lexi failed", 
+      res.status(500).json({
+        error: "Lexi failed",
         code: "LEXI_FAILED",
         requestId,
       });
@@ -6125,33 +7751,53 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     try {
       const parsed = lexiChatRequestSchema.safeParse(req.body);
       if (!parsed.success) {
-        sendSSE("error", { code: "INVALID_REQUEST", message: "Invalid request format" });
+        sendSSE("error", {
+          code: "INVALID_REQUEST",
+          message: "Invalid request format",
+        });
         return res.end();
       }
 
-      const { threadId: providedThreadId, message, stateOverride, stylePreset, fastMode } = parsed.data;
+      const {
+        threadId: providedThreadId,
+        message,
+        stateOverride,
+        stylePreset,
+        fastMode,
+      } = parsed.data;
       const effectiveCaseId = parsed.data.caseId || null;
 
       let caseRecord = null;
       if (effectiveCaseId) {
         caseRecord = await storage.getCase(effectiveCaseId, userId);
         if (!caseRecord) {
-          sendSSE("error", { code: "CASE_NOT_FOUND", message: "Case not found" });
+          sendSSE("error", {
+            code: "CASE_NOT_FOUND",
+            message: "Case not found",
+          });
           return res.end();
         }
       }
 
       let thread;
       let threadId = providedThreadId;
-      
+
       if (providedThreadId) {
         thread = await storage.getLexiThread(userId, providedThreadId);
         if (!thread || thread.caseId !== effectiveCaseId) {
-          sendSSE("error", { code: "THREAD_NOT_FOUND", message: "Thread not found" });
+          sendSSE("error", {
+            code: "THREAD_NOT_FOUND",
+            message: "Thread not found",
+          });
           return res.end();
         }
       } else {
-        const timestamp = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+        const timestamp = new Date().toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
         const title = `New conversation - ${timestamp}`;
         thread = await storage.createLexiThread(userId, effectiveCaseId, title);
         threadId = thread.id;
@@ -6163,22 +7809,36 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
       if (isDisallowed(message)) {
         await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "user", message, 
-          { disallowed: true }, null, { intent, refused: true }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "user",
+          message,
+          { disallowed: true },
+          null,
+          { intent, refused: true },
         );
-        
-        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, DISALLOWED_RESPONSE);
-        if (wasAdded) await storage.markLexiThreadDisclaimerShown(userId, threadId);
-        
+
+        const { content: responseContent, wasAdded } =
+          prependDisclaimerIfNeeded(disclaimerShown, DISALLOWED_RESPONSE);
+        if (wasAdded)
+          await storage.markLexiThreadDisclaimerShown(userId, threadId);
+
         for (const chunk of responseContent.split(" ")) {
           sendSSE("token", { delta: chunk + " " });
         }
-        
+
         await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "assistant", responseContent, 
-          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "assistant",
+          responseContent,
+          { safety_template: true },
+          null,
+          { intent, refused: true, hadSources: false },
         );
-        
+
         sendSSE("done", { ok: true });
         return res.end();
       }
@@ -6186,34 +7846,60 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const uplTemplate = detectUPLRequest(message);
       if (uplTemplate) {
         await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "user", message, 
-          { upl_detected: true }, null, { intent, refused: true }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "user",
+          message,
+          { upl_detected: true },
+          null,
+          { intent, refused: true },
         );
-        
-        const { content: responseContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, SAFETY_TEMPLATES[uplTemplate]);
-        if (wasAdded) await storage.markLexiThreadDisclaimerShown(userId, threadId);
-        
+
+        const { content: responseContent, wasAdded } =
+          prependDisclaimerIfNeeded(
+            disclaimerShown,
+            SAFETY_TEMPLATES[uplTemplate],
+          );
+        if (wasAdded)
+          await storage.markLexiThreadDisclaimerShown(userId, threadId);
+
         for (const chunk of responseContent.split(" ")) {
           sendSSE("token", { delta: chunk + " " });
         }
-        
+
         await storage.createLexiMessage(
-          userId, effectiveCaseId, threadId, "assistant", responseContent, 
-          { safety_template: true }, null, { intent, refused: true, hadSources: false }
+          userId,
+          effectiveCaseId,
+          threadId,
+          "assistant",
+          responseContent,
+          { safety_template: true },
+          null,
+          { intent, refused: true, hadSources: false },
         );
-        
+
         sendSSE("done", { ok: true });
         return res.end();
       }
 
       if (!openai) {
-        sendSSE("error", { code: "OPENAI_KEY_MISSING", message: "Lexi isn't configured yet. Add OPENAI_API_KEY in Secrets." });
+        sendSSE("error", {
+          code: "OPENAI_KEY_MISSING",
+          message: "Lexi isn't configured yet. Add OPENAI_API_KEY in Secrets.",
+        });
         return res.end();
       }
 
       await storage.createLexiMessage(
-        userId, effectiveCaseId, threadId, "user", message, 
-        null, null, { intent }
+        userId,
+        effectiveCaseId,
+        threadId,
+        "user",
+        message,
+        null,
+        null,
+        { intent },
       );
 
       const existingMessages = await storage.listLexiMessages(userId, threadId);
@@ -6223,12 +7909,18 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         caseType: caseRecord?.caseType || undefined,
       });
 
-      const personalization = await getLexiPersonalization(userId, effectiveCaseId);
+      const personalization = await getLexiPersonalization(
+        userId,
+        effectiveCaseId,
+      );
       const personalizationBlock = buildPersonalizationPrompt(personalization);
 
       let caseContextBlock = "";
       if (effectiveCaseId) {
-        const lexiContext = await buildLexiContext({ userId, caseId: effectiveCaseId });
+        const lexiContext = await buildLexiContext({
+          userId,
+          caseId: effectiveCaseId,
+        });
         if (lexiContext) {
           caseContextBlock = `\n\n${formatContextForPrompt(lexiContext)}\n`;
         }
@@ -6257,7 +7949,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       };
 
       const activeStyle = stylePreset || "bullets";
-      const formattingPolicy = formattingPolicies[activeStyle] || formattingPolicies.bullets;
+      const formattingPolicy =
+        formattingPolicies[activeStyle] || formattingPolicies.bullets;
       const systemPrompt = `${baseSystemPrompt}${personalizationBlock}${caseContextBlock}\n\n${formattingPolicy}`;
 
       const chatHistory: OpenAI.ChatCompletionMessageParam[] = [
@@ -6277,7 +7970,14 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const timeoutMs = fastMode ? 25000 : 45000;
 
       if (process.env.NODE_ENV === "development") {
-        console.log("[LexiStream] fastMode:", fastMode, "model:", model, "timeout:", timeoutMs);
+        console.log(
+          "[LexiStream] fastMode:",
+          fastMode,
+          "model:",
+          model,
+          "timeout:",
+          timeoutMs,
+        );
       }
 
       let clientDisconnected = false;
@@ -6286,7 +7986,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       });
 
       let fullContent = "";
-      
+
       if (isAiTestMode()) {
         console.log("[LexiStream] AI_TEST_MODE active - using mock stream");
         const chunks = getMockStreamChunks(intent, message);
@@ -6294,22 +7994,29 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           if (clientDisconnected) break;
           fullContent += chunk;
           sendSSE("token", { delta: chunk });
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
         }
       } else {
         const controller = new AbortController();
-        const stream = await openai.chat.completions.create({
-          model,
-          messages: chatHistory,
-          temperature,
-          max_completion_tokens: maxTokens,
-          stream: true,
-        }, { signal: controller.signal });
+        const stream = await openai.chat.completions.create(
+          {
+            model,
+            messages: chatHistory,
+            temperature,
+            max_completion_tokens: maxTokens,
+            stream: true,
+          },
+          { signal: controller.signal },
+        );
 
         const timeout = setTimeout(() => {
           if (!clientDisconnected) {
             controller.abort();
-            sendSSE("error", { code: "LEXI_TIMEOUT", message: "Lexi took too long. Try again (or turn on Faster mode)." });
+            sendSSE("error", {
+              code: "LEXI_TIMEOUT",
+              message:
+                "Lexi took too long. Try again (or turn on Faster mode).",
+            });
             res.end();
           }
         }, timeoutMs);
@@ -6330,42 +8037,68 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       if (clientDisconnected) {
-        console.log("[LexiStream] Not persisting partial response due to client disconnect");
+        console.log(
+          "[LexiStream] Not persisting partial response due to client disconnect",
+        );
         return res.end();
       }
 
-      let assistantContent = fullContent || "I apologize, but I was unable to generate a response. Please try again.";
-      
+      let assistantContent =
+        fullContent ||
+        "I apologize, but I was unable to generate a response. Please try again.";
+
       // Apply safety and formatting pass
       assistantContent = formatLexiResponse(assistantContent, {
         isResearchMode: intent === "research",
         validateLinks: true,
       });
-      
+
       assistantContent = normalizeUrlsInContent(assistantContent);
-      
-      const { sources, hasSources } = extractSourcesFromContent(assistantContent);
+
+      const { sources, hasSources } =
+        extractSourcesFromContent(assistantContent);
       let verifiedSources: VerifiedSource[] = [];
       if (hasSources && sources.length > 0) {
         const candidateUrls = sources.map((s) => s.url).filter(Boolean);
-        const queryTopic = extractTopicFromContext(message, thread?.title || undefined, undefined);
-        const keyTerms = extractKeyTermsFromText(assistantContent, caseRecord?.state || undefined);
-        
+        const queryTopic = extractTopicFromContext(
+          message,
+          thread?.title || undefined,
+          undefined,
+        );
+        const keyTerms = extractKeyTermsFromText(
+          assistantContent,
+          caseRecord?.state || undefined,
+        );
+
         verifiedSources = await verifySources({
           queryTopic,
           keyTerms,
           candidates: candidateUrls,
         });
       }
-      
-      const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(disclaimerShown, assistantContent);
+
+      const { content: finalContent, wasAdded } = prependDisclaimerIfNeeded(
+        disclaimerShown,
+        assistantContent,
+      );
       if (wasAdded) {
         await storage.markLexiThreadDisclaimerShown(userId, threadId!);
       }
-      
+
       const assistantMessage = await storage.createLexiMessage(
-        userId, effectiveCaseId, threadId!, "assistant", finalContent, 
-        null, "gpt-4.1", { intent, refused: false, hadSources: verifiedSources.length > 0, sources: verifiedSources }
+        userId,
+        effectiveCaseId,
+        threadId!,
+        "assistant",
+        finalContent,
+        null,
+        "gpt-4.1",
+        {
+          intent,
+          refused: false,
+          hadSources: verifiedSources.length > 0,
+          sources: verifiedSources,
+        },
       );
 
       if (verifiedSources.length > 0) {
@@ -6379,26 +8112,49 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const status = err?.status || err?.response?.status;
       const code = err?.code || err?.error?.code;
       const errorMessage = err?.message || String(err);
-      
+
       // Log with correlation ID (redact any keys)
-      const safeMessage = errorMessage.replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]");
-      console.error("[LexiStreamError]", { 
-        requestId, 
-        userId, 
+      const safeMessage = errorMessage.replace(
+        /sk-[a-zA-Z0-9]+/g,
+        "[REDACTED]",
+      );
+      console.error("[LexiStreamError]", {
+        requestId,
+        userId,
         threadId: req.body?.threadId || "auto",
-        caseId: req.body?.caseId || null, 
+        caseId: req.body?.caseId || null,
         code: code || "UNKNOWN",
-        message: safeMessage 
+        message: safeMessage,
       });
 
       if (status === 401 || code === "invalid_api_key") {
-        sendSSE("error", { code: "OPENAI_KEY_INVALID", message: "Lexi can't authenticate. Please contact support.", requestId });
+        sendSSE("error", {
+          code: "OPENAI_KEY_INVALID",
+          message: "Lexi can't authenticate. Please contact support.",
+          requestId,
+        });
       } else if (status === 429) {
-        sendSSE("error", { code: "OPENAI_RATE_LIMIT", message: "Lexi is busy. Try again in a minute.", requestId });
-      } else if (err.name === "AbortError" || code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT") {
-        sendSSE("error", { code: "LEXI_TIMEOUT", message: "Lexi timed out. Try Faster mode.", requestId });
+        sendSSE("error", {
+          code: "OPENAI_RATE_LIMIT",
+          message: "Lexi is busy. Try again in a minute.",
+          requestId,
+        });
+      } else if (
+        err.name === "AbortError" ||
+        code === "ETIMEDOUT" ||
+        code === "ESOCKETTIMEDOUT"
+      ) {
+        sendSSE("error", {
+          code: "LEXI_TIMEOUT",
+          message: "Lexi timed out. Try Faster mode.",
+          requestId,
+        });
       } else {
-        sendSSE("error", { code: "LEXI_FAILED", message: `Lexi error (ID: ${requestId}). Please try again.`, requestId });
+        sendSSE("error", {
+          code: "LEXI_FAILED",
+          message: `Lexi error (ID: ${requestId}). Please try again.`,
+          requestId,
+        });
       }
       res.end();
     }
@@ -6418,7 +8174,14 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.put("/api/lexi/prefs", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
-      const { responseStyle, verbosity, citationStrictness, defaultMode, streamingEnabled, fasterMode } = req.body;
+      const {
+        responseStyle,
+        verbosity,
+        citationStrictness,
+        defaultMode,
+        streamingEnabled,
+        fasterMode,
+      } = req.body;
       const prefs = await storage.upsertLexiUserPrefs(userId, {
         responseStyle: responseStyle ?? undefined,
         verbosity: verbosity ?? undefined,
@@ -6434,58 +8197,79 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/lexi/memory", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/lexi/memory",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const memory = await storage.getLexiCaseMemory(userId, caseId);
+        res.json({ memory: memory || null });
+      } catch (err) {
+        console.error("Get Lexi case memory error:", err);
+        res.status(500).json({ error: "Failed to fetch case memory" });
       }
-      const memory = await storage.getLexiCaseMemory(userId, caseId);
-      res.json({ memory: memory || null });
-    } catch (err) {
-      console.error("Get Lexi case memory error:", err);
-      res.status(500).json({ error: "Failed to fetch case memory" });
-    }
-  });
+    },
+  );
 
-  app.patch("/api/cases/:caseId/lexi/memory", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.patch(
+    "/api/cases/:caseId/lexi/memory",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const { memoryMarkdown, preferencesJson } = req.body;
+        const memory = await storage.upsertLexiCaseMemory(userId, caseId, {
+          memoryMarkdown: memoryMarkdown ?? undefined,
+          preferencesJson: preferencesJson ?? undefined,
+        });
+        res.json({ ok: true, memory });
+      } catch (err) {
+        console.error("Upsert Lexi case memory error:", err);
+        res.status(500).json({ error: "Failed to save case memory" });
       }
-      const { memoryMarkdown, preferencesJson } = req.body;
-      const memory = await storage.upsertLexiCaseMemory(userId, caseId, {
-        memoryMarkdown: memoryMarkdown ?? undefined,
-        preferencesJson: preferencesJson ?? undefined,
-      });
-      res.json({ ok: true, memory });
-    } catch (err) {
-      console.error("Upsert Lexi case memory error:", err);
-      res.status(500).json({ error: "Failed to save case memory" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/lexi/memory/rebuild", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.post(
+    "/api/cases/:caseId/lexi/memory/rebuild",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const memoryMarkdown = await rebuildCaseMemory(userId, caseId);
+        res.json({
+          ok: true,
+          memoryMarkdown,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error("Rebuild Lexi case memory error:", err);
+        res.status(500).json({ error: "Failed to rebuild case memory" });
       }
-
-      const memoryMarkdown = await rebuildCaseMemory(userId, caseId);
-      res.json({ ok: true, memoryMarkdown, updatedAt: new Date().toISOString() });
-    } catch (err) {
-      console.error("Rebuild Lexi case memory error:", err);
-      res.status(500).json({ error: "Failed to rebuild case memory" });
-    }
-  });
+    },
+  );
 
   app.post("/api/lexi/feedback", requireAuth, async (req, res) => {
     try {
@@ -6494,7 +8278,12 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       if (!eventType || typeof eventType !== "string") {
         return res.status(400).json({ error: "eventType is required" });
       }
-      const event = await storage.createLexiFeedbackEvent(userId, caseId || null, eventType, payload || {});
+      const event = await storage.createLexiFeedbackEvent(
+        userId,
+        caseId || null,
+        eventType,
+        payload || {},
+      );
       res.status(201).json({ event });
     } catch (err) {
       console.error("Create Lexi feedback event error:", err);
@@ -6507,7 +8296,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const userId = req.session.userId as string;
       const caseId = (req.query.caseId as string) || null;
       const limit = parseInt((req.query.limit as string) || "50", 10);
-      const events = await storage.listLexiFeedbackEvents(userId, caseId, limit);
+      const events = await storage.listLexiFeedbackEvents(
+        userId,
+        caseId,
+        limit,
+      );
       res.json({ events });
     } catch (err) {
       console.error("List Lexi feedback events error:", err);
@@ -6518,7 +8311,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.get("/api/activity-logs", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
-      const limit = Math.min(parseInt((req.query.limit as string) || "50", 10), 100);
+      const limit = Math.min(
+        parseInt((req.query.limit as string) || "50", 10),
+        100,
+      );
       const cursor = req.query.cursor as string | undefined;
       const range = parseInt((req.query.range as string) || "30", 10);
       const q = (req.query.q as string) || "";
@@ -6533,7 +8329,8 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         searchTerm: q,
       });
 
-      const nextCursor = logs.length === limit ? logs[logs.length - 1]?.id : undefined;
+      const nextCursor =
+        logs.length === limit ? logs[logs.length - 1]?.id : undefined;
 
       res.json({
         items: logs,
@@ -6558,7 +8355,7 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         "module_view",
         `Viewed ${moduleKey} module`,
         {},
-        { moduleKey, entityType: null, entityId: null }
+        { moduleKey, entityType: null, entityId: null },
       );
       res.status(204).send();
     } catch (err) {
@@ -6579,22 +8376,30 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/analytics/case-overview/:caseId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/analytics/case-overview/:caseId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const days = parseInt((req.query.days as string) || "30", 10);
+        const overview = await storage.getCaseActivityOverview(
+          userId,
+          caseId,
+          days,
+        );
+        res.json(overview);
+      } catch (err) {
+        console.error("Case analytics error:", err);
+        res.status(500).json({ error: "Failed to fetch case analytics" });
       }
-      const days = parseInt((req.query.days as string) || "30", 10);
-      const overview = await storage.getCaseActivityOverview(userId, caseId, days);
-      res.json(overview);
-    } catch (err) {
-      console.error("Case analytics error:", err);
-      res.status(500).json({ error: "Failed to fetch case analytics" });
-    }
-  });
+    },
+  );
 
   app.get("/api/admin/metrics", requireAuth, requireAdmin, async (req, res) => {
     try {
@@ -6603,24 +8408,35 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       res.json(data);
     } catch (e: any) {
       console.error("Admin metrics error:", e);
-      res.status(500).json({ ok: false, error: "Failed to load admin metrics" });
+      res
+        .status(500)
+        .json({ ok: false, error: "Failed to load admin metrics" });
     }
   });
 
-  app.get("/api/admin/system-health", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const data = await getSystemHealth();
-      res.json(data);
-    } catch (e: any) {
-      console.error("System health error:", e);
-      res.status(500).json({ ok: false, error: "Failed to get system health" });
-    }
-  });
+  app.get(
+    "/api/admin/system-health",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const data = await getSystemHealth();
+        res.json(data);
+      } catch (e: any) {
+        console.error("System health error:", e);
+        res
+          .status(500)
+          .json({ ok: false, error: "Failed to get system health" });
+      }
+    },
+  );
 
   app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
     try {
       const q = typeof req.query.q === "string" ? req.query.q : "";
-      const limit = req.query.limit ? Math.min(Number(req.query.limit), 50) : 20;
+      const limit = req.query.limit
+        ? Math.min(Number(req.query.limit), 50)
+        : 20;
       const users = await searchUsers(q, limit);
       res.json({ ok: true, users });
     } catch (e: any) {
@@ -6629,34 +8445,44 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.patch("/api/admin/users/:userId/roles", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const actorUserId = (req as any).user?.id;
-      const targetUserId = req.params.userId;
-      const { isAdmin, isGrantViewer } = req.body;
+  app.patch(
+    "/api/admin/users/:userId/roles",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const actorUserId = req.session.userId;
+        const targetUserId = req.params.userId;
+        const { isAdmin, isGrantViewer } = req.body;
 
-      const result = await setUserRoles(targetUserId, { isAdmin, isGrantViewer });
+        const result = await setUserRoles(targetUserId, {
+          isAdmin,
+          isGrantViewer,
+        });
 
-      await createAdminAuditLog(actorUserId, {
-        targetUserId,
-        action: "SET_ROLE",
-        details: { isAdmin, isGrantViewer },
-        ip: req.ip || undefined,
-        userAgent: req.get("User-Agent") || undefined,
-      });
+        await createAdminAuditLog(actorUserId, {
+          targetUserId,
+          action: "SET_ROLE",
+          details: { isAdmin, isGrantViewer },
+          ip: req.ip || undefined,
+          userAgent: req.get("User-Agent") || undefined,
+        });
 
-      res.json(result);
-    } catch (e: any) {
-      console.error("Admin set roles error:", e);
-      res.status(500).json({ ok: false, error: "Failed to update roles" });
-    }
-  });
+        res.json(result);
+      } catch (e: any) {
+        console.error("Admin set roles error:", e);
+        res.status(500).json({ ok: false, error: "Failed to update roles" });
+      }
+    },
+  );
 
   app.get("/api/admin/audit", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const start = typeof req.query.start === "string" ? req.query.start : undefined;
+      const start =
+        typeof req.query.start === "string" ? req.query.start : undefined;
       const end = typeof req.query.end === "string" ? req.query.end : undefined;
-      const action = typeof req.query.action === "string" ? req.query.action : undefined;
+      const action =
+        typeof req.query.action === "string" ? req.query.action : undefined;
       const limit = req.query.limit ? Number(req.query.limit) : 100;
 
       const logs = await listAdminAuditLogs({ start, end, action, limit });
@@ -6670,229 +8496,361 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
   app.get("/api/admin/smoke", requireAuth, requireAdmin, async (req, res) => {
     try {
       const userId = req.session.userId as string;
-      const caseId = typeof req.query.caseId === "string" ? req.query.caseId : undefined;
+      const caseId =
+        typeof req.query.caseId === "string" ? req.query.caseId : undefined;
       const report = await runSmokeChecks(userId, caseId);
       res.json({ ...report, requestId: req.requestId });
     } catch (e: any) {
       console.error("[SmokeCheck] error:", e);
-      res.status(500).json({ ok: false, error: "Smoke check failed", requestId: req.requestId });
+      res
+        .status(500)
+        .json({
+          ok: false,
+          error: "Smoke check failed",
+          requestId: req.requestId,
+        });
     }
   });
 
-  app.get("/api/admin/diagnostics", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const { sql } = await import("drizzle-orm");
-      
-      const recentFailuresResult = await db.execute(sql`
+  app.get(
+    "/api/admin/diagnostics",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const { sql } = await import("drizzle-orm");
+
+        const recentFailuresResult = await db.execute(sql`
         SELECT type, created_at, error_code, request_id, module_key
         FROM activity_logs
         WHERE error_code IS NOT NULL
         ORDER BY created_at DESC
         LIMIT 20
       `);
-      
-      const recentFailures = (recentFailuresResult.rows || []).map((row: any) => ({
-        type: row.type,
-        createdAt: row.created_at,
-        normalizedError: row.error_code ? String(row.error_code).replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]") : "Unknown",
-        requestId: row.request_id || null,
-        moduleKey: row.module_key || null,
-      }));
-      
-      const extractionCountsResult = await db.execute(sql`
+
+        const recentFailures = (recentFailuresResult.rows || []).map(
+          (row: any) => ({
+            type: row.type,
+            createdAt: row.created_at,
+            normalizedError: row.error_code
+              ? String(row.error_code).replace(/sk-[a-zA-Z0-9]+/g, "[REDACTED]")
+              : "Unknown",
+            requestId: row.request_id || null,
+            moduleKey: row.module_key || null,
+          }),
+        );
+
+        const extractionCountsResult = await db.execute(sql`
         SELECT status, COUNT(*)::int as count FROM evidence_extractions GROUP BY status
       `);
-      const extractions: Record<string, number> = {};
-      for (const row of (extractionCountsResult.rows || []) as any[]) {
-        extractions[row.status || "unknown"] = row.count;
-      }
-      
-      const analysisCountsResult = await db.execute(sql`
+        const extractions: Record<string, number> = {};
+        for (const row of (extractionCountsResult.rows || []) as any[]) {
+          extractions[row.status || "unknown"] = row.count;
+        }
+
+        const analysisCountsResult = await db.execute(sql`
         SELECT status, COUNT(*)::int as count FROM evidence_ai_analyses GROUP BY status
       `);
-      const analyses: Record<string, number> = {};
-      for (const row of (analysisCountsResult.rows || []) as any[]) {
-        analyses[row.status || "unknown"] = row.count;
-      }
-      
-      const uptimeSeconds = Math.floor((Date.now() - (serverStartTime || Date.now())) / 1000);
-      const commitHash = process.env.REPL_ID || process.env.RAILWAY_GIT_COMMIT_SHA || null;
-      
-      res.json({
-        recentFailures,
-        counts: { extractions, analyses },
-        lastChecks: { openai: null, vision: null },
-        deployment: {
-          nodeEnv: process.env.NODE_ENV || "development",
-          uptimeSeconds,
-          commitHash,
-        },
-        requestId: req.requestId,
-      });
-    } catch (e: any) {
-      console.error("[Diagnostics] error:", e);
-      res.status(500).json({ ok: false, error: "Diagnostics failed", requestId: req.requestId });
-    }
-  });
-
-  app.get("/api/admin/contracts", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const caseId = typeof req.query.caseId === "string" ? req.query.caseId : undefined;
-      const results: Array<{ schema: string; valid: boolean; errors?: string[] }> = [];
-      
-      if (caseId) {
-        const userId = req.session.userId as string;
-        const extractions = await storage.listEvidenceExtractions(userId, caseId);
-        
-        for (const ext of extractions.slice(0, 5)) {
-          const parsed = EvidenceExtractionSchema.safeParse(ext);
-          results.push({
-            schema: "EvidenceExtraction",
-            valid: parsed.success,
-            errors: parsed.success ? undefined : parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`),
-          });
+        const analyses: Record<string, number> = {};
+        for (const row of (analysisCountsResult.rows || []) as any[]) {
+          analyses[row.status || "unknown"] = row.count;
         }
-        
-        const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
-        for (const analysis of analyses.slice(0, 5)) {
-          const parsed = EvidenceAiAnalysisSchema.safeParse(analysis);
-          results.push({
-            schema: "EvidenceAiAnalysis",
-            valid: parsed.success,
-            errors: parsed.success ? undefined : parsed.error.errors.map(e => `${e.path.join(".")}: ${e.message}`),
+
+        const uptimeSeconds = Math.floor(
+          (Date.now() - (serverStartTime || Date.now())) / 1000,
+        );
+        const commitHash =
+          process.env.REPL_ID || process.env.RAILWAY_GIT_COMMIT_SHA || null;
+
+        res.json({
+          recentFailures,
+          counts: { extractions, analyses },
+          lastChecks: { openai: null, vision: null },
+          deployment: {
+            nodeEnv: process.env.NODE_ENV || "development",
+            uptimeSeconds,
+            commitHash,
+          },
+          requestId: req.requestId,
+        });
+      } catch (e: any) {
+        console.error("[Diagnostics] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Diagnostics failed",
+            requestId: req.requestId,
           });
+      }
+    },
+  );
+
+  app.get(
+    "/api/admin/contracts",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const caseId =
+          typeof req.query.caseId === "string" ? req.query.caseId : undefined;
+        const results: Array<{
+          schema: string;
+          valid: boolean;
+          errors?: string[];
+        }> = [];
+
+        if (caseId) {
+          const userId = req.session.userId as string;
+          const extractions = await storage.listEvidenceExtractions(
+            userId,
+            caseId,
+          );
+
+          for (const ext of extractions.slice(0, 5)) {
+            const parsed = EvidenceExtractionSchema.safeParse(ext);
+            results.push({
+              schema: "EvidenceExtraction",
+              valid: parsed.success,
+              errors: parsed.success
+                ? undefined
+                : parsed.error.errors.map(
+                    (e) => `${e.path.join(".")}: ${e.message}`,
+                  ),
+            });
+          }
+
+          const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
+          for (const analysis of analyses.slice(0, 5)) {
+            const parsed = EvidenceAiAnalysisSchema.safeParse(analysis);
+            results.push({
+              schema: "EvidenceAiAnalysis",
+              valid: parsed.success,
+              errors: parsed.success
+                ? undefined
+                : parsed.error.errors.map(
+                    (e) => `${e.path.join(".")}: ${e.message}`,
+                  ),
+            });
+          }
         }
+
+        const allValid = results.every((r) => r.valid);
+        res.json({ ok: allValid, results, requestId: req.requestId });
+      } catch (e: any) {
+        console.error("[Contracts] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Contract validation failed",
+            requestId: req.requestId,
+          });
       }
-      
-      const allValid = results.every(r => r.valid);
-      res.json({ ok: allValid, results, requestId: req.requestId });
-    } catch (e: any) {
-      console.error("[Contracts] error:", e);
-      res.status(500).json({ ok: false, error: "Contract validation failed", requestId: req.requestId });
-    }
-  });
+    },
+  );
 
-  app.get("/api/admin/ai-status", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const { 
-        getRecentFailures, 
-        getQueueStats, 
-        getAllFeatureStatus,
-        getGlobalUsageStats,
-        getGlobalUsageSummary,
-        getRecentAlerts,
-        getAlertStats,
-      } = await import("./ai");
-      
-      res.json({
-        ok: true,
-        features: getAllFeatureStatus(),
-        recentFailures: getRecentFailures(20),
-        queueStats: getQueueStats(),
-        rateLimits: getGlobalUsageStats(),
-        budgetSummary: getGlobalUsageSummary(),
-        alerts: {
-          recent: getRecentAlerts(10),
-          stats: getAlertStats(),
-        },
-        aiJobs: getAiJobStats(),
-        activeJobs: getActiveAiJobs().slice(0, 20),
-        requestId: req.requestId,
-      });
-    } catch (e: any) {
-      console.error("[AI Status] error:", e);
-      res.status(500).json({ ok: false, error: "Failed to get AI status", requestId: req.requestId });
-    }
-  });
+  app.get(
+    "/api/admin/ai-status",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const {
+          getRecentFailures,
+          getQueueStats,
+          getAllFeatureStatus,
+          getGlobalUsageStats,
+          getGlobalUsageSummary,
+          getRecentAlerts,
+          getAlertStats,
+        } = await import("./ai");
 
-  app.post("/api/admin/feature-flag", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const { feature, enabled } = req.body;
-      const { setFeatureEnabled, AI_FEATURES, getAllFeatureStatus } = await import("./ai");
-      
-      if (!feature || typeof enabled !== "boolean") {
-        return res.status(400).json({ ok: false, error: "feature and enabled required" });
+        res.json({
+          ok: true,
+          features: getAllFeatureStatus(),
+          recentFailures: getRecentFailures(20),
+          queueStats: getQueueStats(),
+          rateLimits: getGlobalUsageStats(),
+          budgetSummary: getGlobalUsageSummary(),
+          alerts: {
+            recent: getRecentAlerts(10),
+            stats: getAlertStats(),
+          },
+          aiJobs: getAiJobStats(),
+          activeJobs: getActiveAiJobs().slice(0, 20),
+          requestId: req.requestId,
+        });
+      } catch (e: any) {
+        console.error("[AI Status] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Failed to get AI status",
+            requestId: req.requestId,
+          });
       }
-      
-      const validFeatures = Object.values(AI_FEATURES);
-      if (!validFeatures.includes(feature)) {
-        return res.status(400).json({ ok: false, error: `Invalid feature. Valid: ${validFeatures.join(", ")}` });
+    },
+  );
+
+  app.post(
+    "/api/admin/feature-flag",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const { feature, enabled } = req.body;
+        const { setFeatureEnabled, AI_FEATURES, getAllFeatureStatus } =
+          await import("./ai");
+
+        if (!feature || typeof enabled !== "boolean") {
+          return res
+            .status(400)
+            .json({ ok: false, error: "feature and enabled required" });
+        }
+
+        const validFeatures = Object.values(AI_FEATURES);
+        if (!validFeatures.includes(feature)) {
+          return res
+            .status(400)
+            .json({
+              ok: false,
+              error: `Invalid feature. Valid: ${validFeatures.join(", ")}`,
+            });
+        }
+
+        setFeatureEnabled(feature, enabled);
+
+        res.json({
+          ok: true,
+          features: getAllFeatureStatus(),
+          requestId: req.requestId,
+        });
+      } catch (e: any) {
+        console.error("[Feature Flag] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Failed to update feature flag",
+            requestId: req.requestId,
+          });
       }
-      
-      setFeatureEnabled(feature, enabled);
-      
-      res.json({ ok: true, features: getAllFeatureStatus(), requestId: req.requestId });
-    } catch (e: any) {
-      console.error("[Feature Flag] error:", e);
-      res.status(500).json({ ok: false, error: "Failed to update feature flag", requestId: req.requestId });
-    }
-  });
+    },
+  );
 
-  app.post("/api/admin/acknowledge-alert", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const { alertId } = req.body;
-      const { acknowledgeAlert, getUnacknowledgedAlerts } = await import("./ai");
-      
-      if (!alertId) {
-        return res.status(400).json({ ok: false, error: "alertId required" });
+  app.post(
+    "/api/admin/acknowledge-alert",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const { alertId } = req.body;
+        const { acknowledgeAlert, getUnacknowledgedAlerts } = await import(
+          "./ai"
+        );
+
+        if (!alertId) {
+          return res.status(400).json({ ok: false, error: "alertId required" });
+        }
+
+        const acknowledged = acknowledgeAlert(alertId);
+
+        res.json({
+          ok: acknowledged,
+          unacknowledged: getUnacknowledgedAlerts(),
+          requestId: req.requestId,
+        });
+      } catch (e: any) {
+        console.error("[Acknowledge Alert] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Failed to acknowledge alert",
+            requestId: req.requestId,
+          });
       }
-      
-      const acknowledged = acknowledgeAlert(alertId);
-      
-      res.json({ 
-        ok: acknowledged, 
-        unacknowledged: getUnacknowledgedAlerts(),
-        requestId: req.requestId,
-      });
-    } catch (e: any) {
-      console.error("[Acknowledge Alert] error:", e);
-      res.status(500).json({ ok: false, error: "Failed to acknowledge alert", requestId: req.requestId });
-    }
-  });
+    },
+  );
 
-  app.post("/api/admin/refresh-entitlements", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const results = await applyAllEntitlements();
-      
-      res.json({
-        ok: true,
-        allowlists: {
-          lifetimePremium: LIFETIME_PREMIUM_EMAILS,
-          admin: ADMIN_EMAILS,
-          grantViewer: GRANT_VIEWER_EMAILS,
-        },
-        results,
-        requestId: req.requestId,
-      });
-    } catch (e: any) {
-      console.error("[Refresh Entitlements] error:", e);
-      res.status(500).json({ ok: false, error: "Failed to refresh entitlements", requestId: req.requestId });
-    }
-  });
+  app.post(
+    "/api/admin/refresh-entitlements",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const results = await applyAllEntitlements();
 
-  app.get("/api/admin/entitlements", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      res.json({
-        ok: true,
-        allowlists: {
-          lifetimePremium: LIFETIME_PREMIUM_EMAILS,
-          admin: ADMIN_EMAILS,
-          grantViewer: GRANT_VIEWER_EMAILS,
-        },
-        requestId: req.requestId,
-      });
-    } catch (e: any) {
-      console.error("[Get Entitlements] error:", e);
-      res.status(500).json({ ok: false, error: "Failed to get entitlements", requestId: req.requestId });
-    }
-  });
+        res.json({
+          ok: true,
+          allowlists: {
+            lifetimePremium: LIFETIME_PREMIUM_EMAILS,
+            admin: ADMIN_EMAILS,
+            grantViewer: GRANT_VIEWER_EMAILS,
+          },
+          results,
+          requestId: req.requestId,
+        });
+      } catch (e: any) {
+        console.error("[Refresh Entitlements] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Failed to refresh entitlements",
+            requestId: req.requestId,
+          });
+      }
+    },
+  );
+
+  app.get(
+    "/api/admin/entitlements",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        res.json({
+          ok: true,
+          allowlists: {
+            lifetimePremium: LIFETIME_PREMIUM_EMAILS,
+            admin: ADMIN_EMAILS,
+            grantViewer: GRANT_VIEWER_EMAILS,
+          },
+          requestId: req.requestId,
+        });
+      } catch (e: any) {
+        console.error("[Get Entitlements] error:", e);
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error: "Failed to get entitlements",
+            requestId: req.requestId,
+          });
+      }
+    },
+  );
 
   app.post("/api/analytics/event", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user?.id;
-      if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+      const userId = req.session.userId;
+      if (!userId)
+        return res.status(401).json({ ok: false, error: "Unauthorized" });
 
-      const { eventType, caseId, moduleKey, entityType, entityId, durationMs, success, errorCode, meta } = req.body;
+      const {
+        eventType,
+        caseId,
+        moduleKey,
+        entityType,
+        entityId,
+        durationMs,
+        success,
+        errorCode,
+        meta,
+      } = req.body;
 
       if (!eventType || typeof eventType !== "string") {
         return res.status(400).json({ ok: false, error: "eventType required" });
@@ -6917,16 +8875,23 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/grants/metrics", requireAuth, requireGrantViewer, async (req, res) => {
-    try {
-      const days = req.query.days ? Number(req.query.days) : 90;
-      const data = await getGrantMetrics({ days });
-      res.json(data);
-    } catch (e: any) {
-      console.error("[GrantsMetrics] failed", e);
-      res.status(500).json({ ok: false, error: "Failed to load grant metrics" });
-    }
-  });
+  app.get(
+    "/api/grants/metrics",
+    requireAuth,
+    requireGrantViewer,
+    async (req, res) => {
+      try {
+        const days = req.query.days ? Number(req.query.days) : 90;
+        const data = await getGrantMetrics({ days });
+        res.json(data);
+      } catch (e: any) {
+        console.error("[GrantsMetrics] failed", e);
+        res
+          .status(500)
+          .json({ ok: false, error: "Failed to load grant metrics" });
+      }
+    },
+  );
 
   function asCsvRow(cols: (string | number | null | undefined)[]) {
     return cols
@@ -6938,213 +8903,290 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       .join(",");
   }
 
-  app.get("/api/grants/metrics.csv", requireAuth, requireGrantViewer, async (req, res) => {
-    try {
-      const days = req.query.days ? Number(req.query.days) : 90;
-      const data = await getGrantMetrics({ days });
+  app.get(
+    "/api/grants/metrics.csv",
+    requireAuth,
+    requireGrantViewer,
+    async (req, res) => {
+      try {
+        const days = req.query.days ? Number(req.query.days) : 90;
+        const data = await getGrantMetrics({ days });
 
-      const lines: string[] = [];
-      lines.push(asCsvRow(["Metric Window (days)", data.windowDays]));
-      lines.push("");
+        const lines: string[] = [];
+        lines.push(asCsvRow(["Metric Window (days)", data.windowDays]));
+        lines.push("");
 
-      lines.push(asCsvRow(["Totals"]));
-      lines.push(asCsvRow(["Total Users", data.totals.users]));
-      lines.push(asCsvRow(["Total Cases", data.totals.cases]));
-      lines.push(asCsvRow(["Active Users (window)", data.totals.activeUsers]));
-      lines.push("");
+        lines.push(asCsvRow(["Totals"]));
+        lines.push(asCsvRow(["Total Users", data.totals.users]));
+        lines.push(asCsvRow(["Total Cases", data.totals.cases]));
+        lines.push(
+          asCsvRow(["Active Users (window)", data.totals.activeUsers]),
+        );
+        lines.push("");
 
-      lines.push(asCsvRow(["Cases by State"]));
-      lines.push(asCsvRow(["State", "Count"]));
-      for (const r of data.distributions.casesByState ?? []) {
-        lines.push(asCsvRow([r.label, r.count]));
-      }
-      lines.push("");
+        lines.push(asCsvRow(["Cases by State"]));
+        lines.push(asCsvRow(["State", "Count"]));
+        for (const r of data.distributions.casesByState ?? []) {
+          lines.push(asCsvRow([r.label, r.count]));
+        }
+        lines.push("");
 
-      lines.push(asCsvRow(["Module Usage"]));
-      lines.push(asCsvRow(["Module", "Count"]));
-      for (const r of data.distributions.moduleUsage ?? []) {
-        lines.push(asCsvRow([r.label, r.count]));
-      }
-      lines.push("");
+        lines.push(asCsvRow(["Module Usage"]));
+        lines.push(asCsvRow(["Module", "Count"]));
+        for (const r of data.distributions.moduleUsage ?? []) {
+          lines.push(asCsvRow([r.label, r.count]));
+        }
+        lines.push("");
 
-      lines.push(asCsvRow(["Time Series - New Users / Day"]));
-      lines.push(asCsvRow(["Day", "Count"]));
-      for (const r of data.timeSeries?.newUsersByDay ?? []) {
-        lines.push(asCsvRow([r.day, r.count]));
-      }
-      lines.push("");
+        lines.push(asCsvRow(["Time Series - New Users / Day"]));
+        lines.push(asCsvRow(["Day", "Count"]));
+        for (const r of data.timeSeries?.newUsersByDay ?? []) {
+          lines.push(asCsvRow([r.day, r.count]));
+        }
+        lines.push("");
 
-      lines.push(asCsvRow(["Time Series - New Cases / Day"]));
-      lines.push(asCsvRow(["Day", "Count"]));
-      for (const r of data.timeSeries?.newCasesByDay ?? []) {
-        lines.push(asCsvRow([r.day, r.count]));
-      }
-      lines.push("");
+        lines.push(asCsvRow(["Time Series - New Cases / Day"]));
+        lines.push(asCsvRow(["Day", "Count"]));
+        for (const r of data.timeSeries?.newCasesByDay ?? []) {
+          lines.push(asCsvRow([r.day, r.count]));
+        }
+        lines.push("");
 
-      lines.push(asCsvRow(["Time Series - Active Users / Day"]));
-      lines.push(asCsvRow(["Day", "Count"]));
-      for (const r of data.timeSeries?.activeUsersByDay ?? []) {
-        lines.push(asCsvRow([r.day, r.count]));
-      }
+        lines.push(asCsvRow(["Time Series - Active Users / Day"]));
+        lines.push(asCsvRow(["Day", "Count"]));
+        for (const r of data.timeSeries?.activeUsersByDay ?? []) {
+          lines.push(asCsvRow([r.day, r.count]));
+        }
 
-      const csv = lines.join("\n");
-      res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="civilla_grant_metrics_${days}d.csv"`);
-      res.send(csv);
-    } catch (e) {
-      console.error("[GrantsCSV] failed", e);
-      res.status(500).json({ ok: false, error: "Failed to export CSV" });
-    }
-  });
+        const csv = lines.join("\n");
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="civilla_grant_metrics_${days}d.csv"`,
+        );
+        res.send(csv);
+      } catch (e) {
+        console.error("[GrantsCSV] failed", e);
+        res.status(500).json({ ok: false, error: "Failed to export CSV" });
+      }
+    },
+  );
 
-  app.get("/api/cases/:caseId/trial-prep/sections", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/trial-prep/sections",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const sections = await storage.seedDefaultTrialBinderSectionsIfMissing(
+          userId,
+          caseId,
+        );
+        res.json(sections);
+      } catch (error) {
+        console.error("Error fetching trial prep sections:", error);
+        res.status(500).json({ error: "Failed to fetch sections" });
       }
-      const sections = await storage.seedDefaultTrialBinderSectionsIfMissing(userId, caseId);
-      res.json(sections);
-    } catch (error) {
-      console.error("Error fetching trial prep sections:", error);
-      res.status(500).json({ error: "Failed to fetch sections" });
-    }
-  });
+    },
+  );
 
-  app.get("/api/cases/:caseId/trial-prep/items", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/trial-prep/items",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const items = await storage.listTrialBinderItems(userId, caseId);
+        res.json(items);
+      } catch (error) {
+        console.error("Error fetching trial prep items:", error);
+        res.status(500).json({ error: "Failed to fetch items" });
       }
-      const items = await storage.listTrialBinderItems(userId, caseId);
-      res.json(items);
-    } catch (error) {
-      console.error("Error fetching trial prep items:", error);
-      res.status(500).json({ error: "Failed to fetch items" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/trial-prep/items", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.post(
+    "/api/cases/:caseId/trial-prep/items",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const parsed = upsertTrialBinderItemSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({ error: "Invalid input", details: parsed.error.flatten() });
+        }
+        const item = await storage.upsertTrialBinderItem(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.json(item);
+      } catch (error) {
+        console.error("Error upserting trial prep item:", error);
+        res.status(500).json({ error: "Failed to save item" });
       }
-      const parsed = upsertTrialBinderItemSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
-      }
-      const item = await storage.upsertTrialBinderItem(userId, caseId, parsed.data);
-      res.json(item);
-    } catch (error) {
-      console.error("Error upserting trial prep item:", error);
-      res.status(500).json({ error: "Failed to save item" });
-    }
-  });
+    },
+  );
 
-  app.patch("/api/cases/:caseId/trial-prep/items/:itemId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, itemId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      const parsed = updateTrialBinderItemSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
-      }
-      
-      const existingItem = await storage.getTrialBinderItem(userId, itemId);
-      const item = await storage.updateTrialBinderItem(userId, itemId, parsed.data);
-      if (!item) {
-        return res.status(404).json({ error: "Item not found" });
-      }
-      
-      if (parsed.data.pinnedRank !== undefined) {
-        const wasPinned = existingItem?.pinnedRank !== null;
-        const isPinned = parsed.data.pinnedRank !== null;
-        if (wasPinned !== isPinned) {
-          await storage.createLexiFeedbackEvent(userId, caseId, isPinned ? "trial_prep_pin" : "trial_prep_unpin", {
-            itemId: item.id,
-            sectionKey: item.sectionKey,
-          });
-          
-          const caseIdNum = parseInt(caseId, 10);
-          if (!isNaN(caseIdNum)) {
-            scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, caseId));
+  app.patch(
+    "/api/cases/:caseId/trial-prep/items/:itemId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, itemId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const parsed = updateTrialBinderItemSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({ error: "Invalid input", details: parsed.error.flatten() });
+        }
+
+        const existingItem = await storage.getTrialBinderItem(userId, itemId);
+        const item = await storage.updateTrialBinderItem(
+          userId,
+          itemId,
+          parsed.data,
+        );
+        if (!item) {
+          return res.status(404).json({ error: "Item not found" });
+        }
+
+        if (parsed.data.pinnedRank !== undefined) {
+          const wasPinned = existingItem?.pinnedRank !== null;
+          const isPinned = parsed.data.pinnedRank !== null;
+          if (wasPinned !== isPinned) {
+            await storage.createLexiFeedbackEvent(
+              userId,
+              caseId,
+              isPinned ? "trial_prep_pin" : "trial_prep_unpin",
+              {
+                itemId: item.id,
+                sectionKey: item.sectionKey,
+              },
+            );
+
+            const caseIdNum = parseInt(caseId, 10);
+            if (!isNaN(caseIdNum)) {
+              scheduleMemoryRebuild(caseIdNum, () =>
+                rebuildCaseMemory(userId, caseId),
+              );
+            }
           }
         }
-      }
-      
-      res.json(item);
-    } catch (error) {
-      console.error("Error updating trial prep item:", error);
-      res.status(500).json({ error: "Failed to update item" });
-    }
-  });
 
-  app.delete("/api/cases/:caseId/trial-prep/items/:itemId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, itemId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        res.json(item);
+      } catch (error) {
+        console.error("Error updating trial prep item:", error);
+        res.status(500).json({ error: "Failed to update item" });
       }
-      const deleted = await storage.deleteTrialBinderItem(userId, itemId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Item not found" });
-      }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting trial prep item:", error);
-      res.status(500).json({ error: "Failed to delete item" });
-    }
-  });
+    },
+  );
 
-  app.get("/api/cases/:caseId/exhibit-packets", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.delete(
+    "/api/cases/:caseId/trial-prep/items/:itemId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, itemId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const deleted = await storage.deleteTrialBinderItem(userId, itemId);
+        if (!deleted) {
+          return res.status(404).json({ error: "Item not found" });
+        }
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting trial prep item:", error);
+        res.status(500).json({ error: "Failed to delete item" });
       }
-      const packets = await storage.listExhibitPackets(userId, caseId);
-      res.json({ packets });
-    } catch (error) {
-      console.error("List exhibit packets error:", error);
-      res.status(500).json({ error: "Failed to list packets" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/exhibit-packets", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/exhibit-packets",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const packets = await storage.listExhibitPackets(userId, caseId);
+        res.json({ packets });
+      } catch (error) {
+        console.error("List exhibit packets error:", error);
+        res.status(500).json({ error: "Failed to list packets" });
       }
-      const parsed = insertExhibitPacketSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/exhibit-packets",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const parsed = insertExhibitPacketSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({ error: "Invalid input", details: parsed.error.flatten() });
+        }
+        const packet = await storage.createExhibitPacket(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ packet });
+      } catch (error) {
+        console.error("Create exhibit packet error:", error);
+        res.status(500).json({ error: "Failed to create packet" });
       }
-      const packet = await storage.createExhibitPacket(userId, caseId, parsed.data);
-      res.status(201).json({ packet });
-    } catch (error) {
-      console.error("Create exhibit packet error:", error);
-      res.status(500).json({ error: "Failed to create packet" });
-    }
-  });
+    },
+  );
 
   app.get("/api/exhibit-packets/:packetId", requireAuth, async (req, res) => {
     try {
@@ -7167,9 +9209,15 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const { packetId } = req.params;
       const parsed = updateExhibitPacketSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+        return res
+          .status(400)
+          .json({ error: "Invalid input", details: parsed.error.flatten() });
       }
-      const packet = await storage.updateExhibitPacket(userId, packetId, parsed.data);
+      const packet = await storage.updateExhibitPacket(
+        userId,
+        packetId,
+        parsed.data,
+      );
       if (!packet) {
         return res.status(404).json({ error: "Packet not found" });
       }
@@ -7180,56 +9228,75 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.delete("/api/exhibit-packets/:packetId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { packetId } = req.params;
-      const deleted = await storage.deleteExhibitPacket(userId, packetId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Packet not found" });
+  app.delete(
+    "/api/exhibit-packets/:packetId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { packetId } = req.params;
+        const deleted = await storage.deleteExhibitPacket(userId, packetId);
+        if (!deleted) {
+          return res.status(404).json({ error: "Packet not found" });
+        }
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete exhibit packet error:", error);
+        res.status(500).json({ error: "Failed to delete packet" });
       }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete exhibit packet error:", error);
-      res.status(500).json({ error: "Failed to delete packet" });
-    }
-  });
+    },
+  );
 
-  app.get("/api/exhibit-packets/:packetId/items", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { packetId } = req.params;
-      const packet = await storage.getExhibitPacket(userId, packetId);
-      if (!packet) {
-        return res.status(404).json({ error: "Packet not found" });
+  app.get(
+    "/api/exhibit-packets/:packetId/items",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { packetId } = req.params;
+        const packet = await storage.getExhibitPacket(userId, packetId);
+        if (!packet) {
+          return res.status(404).json({ error: "Packet not found" });
+        }
+        const items = await storage.listPacketItems(userId, packetId);
+        res.json({ items });
+      } catch (error) {
+        console.error("List packet items error:", error);
+        res.status(500).json({ error: "Failed to list items" });
       }
-      const items = await storage.listPacketItems(userId, packetId);
-      res.json({ items });
-    } catch (error) {
-      console.error("List packet items error:", error);
-      res.status(500).json({ error: "Failed to list items" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/exhibit-packets/:packetId/items", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { packetId } = req.params;
-      const packet = await storage.getExhibitPacket(userId, packetId);
-      if (!packet) {
-        return res.status(404).json({ error: "Packet not found" });
+  app.post(
+    "/api/exhibit-packets/:packetId/items",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { packetId } = req.params;
+        const packet = await storage.getExhibitPacket(userId, packetId);
+        if (!packet) {
+          return res.status(404).json({ error: "Packet not found" });
+        }
+        const parsed = insertExhibitPacketItemSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({ error: "Invalid input", details: parsed.error.flatten() });
+        }
+        const item = await storage.createPacketItem(
+          userId,
+          packetId,
+          packet.caseId,
+          parsed.data,
+        );
+        res.status(201).json({ item });
+      } catch (error) {
+        console.error("Create packet item error:", error);
+        res.status(500).json({ error: "Failed to create item" });
       }
-      const parsed = insertExhibitPacketItemSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
-      }
-      const item = await storage.createPacketItem(userId, packetId, packet.caseId, parsed.data);
-      res.status(201).json({ item });
-    } catch (error) {
-      console.error("Create packet item error:", error);
-      res.status(500).json({ error: "Failed to create item" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/packet-items/:itemId", requireAuth, async (req, res) => {
     try {
@@ -7237,7 +9304,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       const { itemId } = req.params;
       const parsed = updateExhibitPacketItemSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+        return res
+          .status(400)
+          .json({ error: "Invalid input", details: parsed.error.flatten() });
       }
       const item = await storage.updatePacketItem(userId, itemId, parsed.data);
       if (!item) {
@@ -7265,221 +9334,321 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.post("/api/exhibit-packets/:packetId/items/reorder", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { packetId } = req.params;
-      const { orderedIds } = req.body;
-      if (!Array.isArray(orderedIds)) {
-        return res.status(400).json({ error: "orderedIds must be an array" });
+  app.post(
+    "/api/exhibit-packets/:packetId/items/reorder",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { packetId } = req.params;
+        const { orderedIds } = req.body;
+        if (!Array.isArray(orderedIds)) {
+          return res.status(400).json({ error: "orderedIds must be an array" });
+        }
+        await storage.reorderPacketItems(userId, packetId, orderedIds);
+        const items = await storage.listPacketItems(userId, packetId);
+        res.json({ items });
+      } catch (error) {
+        console.error("Reorder packet items error:", error);
+        res.status(500).json({ error: "Failed to reorder items" });
       }
-      await storage.reorderPacketItems(userId, packetId, orderedIds);
-      const items = await storage.listPacketItems(userId, packetId);
-      res.json({ items });
-    } catch (error) {
-      console.error("Reorder packet items error:", error);
-      res.status(500).json({ error: "Failed to reorder items" });
-    }
-  });
+    },
+  );
 
-  app.get("/api/packet-items/:itemId/evidence", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { itemId } = req.params;
-      const item = await storage.getPacketItem(userId, itemId);
-      if (!item) {
-        return res.status(404).json({ error: "Item not found" });
+  app.get(
+    "/api/packet-items/:itemId/evidence",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { itemId } = req.params;
+        const item = await storage.getPacketItem(userId, itemId);
+        if (!item) {
+          return res.status(404).json({ error: "Item not found" });
+        }
+        const files = await storage.listPacketItemEvidence(userId, itemId);
+        res.json({ evidence: files });
+      } catch (error) {
+        console.error("List packet item evidence error:", error);
+        res.status(500).json({ error: "Failed to list evidence" });
       }
-      const files = await storage.listPacketItemEvidence(userId, itemId);
-      res.json({ evidence: files });
-    } catch (error) {
-      console.error("List packet item evidence error:", error);
-      res.status(500).json({ error: "Failed to list evidence" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/packet-items/:itemId/evidence/attach", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { itemId } = req.params;
-      const { evidenceId } = req.body;
-      if (!evidenceId) {
-        return res.status(400).json({ error: "evidenceId is required" });
+  app.post(
+    "/api/packet-items/:itemId/evidence/attach",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { itemId } = req.params;
+        const { evidenceId } = req.body;
+        if (!evidenceId) {
+          return res.status(400).json({ error: "evidenceId is required" });
+        }
+        const item = await storage.getPacketItem(userId, itemId);
+        if (!item) {
+          return res.status(404).json({ error: "Item not found" });
+        }
+        const link = await storage.addEvidenceToPacketItem(
+          userId,
+          item.caseId,
+          itemId,
+          evidenceId,
+        );
+        res.status(201).json({ link });
+      } catch (error) {
+        console.error("Attach packet item evidence error:", error);
+        res.status(500).json({ error: "Failed to attach evidence" });
       }
-      const item = await storage.getPacketItem(userId, itemId);
-      if (!item) {
-        return res.status(404).json({ error: "Item not found" });
-      }
-      const link = await storage.addEvidenceToPacketItem(userId, item.caseId, itemId, evidenceId);
-      res.status(201).json({ link });
-    } catch (error) {
-      console.error("Attach packet item evidence error:", error);
-      res.status(500).json({ error: "Failed to attach evidence" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/packet-items/:itemId/evidence/detach", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { itemId } = req.params;
-      const { evidenceId } = req.body;
-      if (!evidenceId) {
-        return res.status(400).json({ error: "evidenceId is required" });
+  app.post(
+    "/api/packet-items/:itemId/evidence/detach",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { itemId } = req.params;
+        const { evidenceId } = req.body;
+        if (!evidenceId) {
+          return res.status(400).json({ error: "evidenceId is required" });
+        }
+        const detached = await storage.removeEvidenceFromPacketItem(
+          userId,
+          itemId,
+          evidenceId,
+        );
+        res.json({ success: detached });
+      } catch (error) {
+        console.error("Detach packet item evidence error:", error);
+        res.status(500).json({ error: "Failed to detach evidence" });
       }
-      const detached = await storage.removeEvidenceFromPacketItem(userId, itemId, evidenceId);
-      res.json({ success: detached });
-    } catch (error) {
-      console.error("Detach packet item evidence error:", error);
-      res.status(500).json({ error: "Failed to detach evidence" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/packet-items/:itemId/evidence/reorder", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { itemId } = req.params;
-      const { orderedEvidenceIds } = req.body;
-      if (!Array.isArray(orderedEvidenceIds)) {
-        return res.status(400).json({ error: "orderedEvidenceIds must be an array" });
+  app.post(
+    "/api/packet-items/:itemId/evidence/reorder",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { itemId } = req.params;
+        const { orderedEvidenceIds } = req.body;
+        if (!Array.isArray(orderedEvidenceIds)) {
+          return res
+            .status(400)
+            .json({ error: "orderedEvidenceIds must be an array" });
+        }
+        await storage.reorderPacketItemEvidence(
+          userId,
+          itemId,
+          orderedEvidenceIds,
+        );
+        const files = await storage.listPacketItemEvidence(userId, itemId);
+        res.json({ evidence: files });
+      } catch (error) {
+        console.error("Reorder packet item evidence error:", error);
+        res.status(500).json({ error: "Failed to reorder evidence" });
       }
-      await storage.reorderPacketItemEvidence(userId, itemId, orderedEvidenceIds);
-      const files = await storage.listPacketItemEvidence(userId, itemId);
-      res.json({ evidence: files });
-    } catch (error) {
-      console.error("Reorder packet item evidence error:", error);
-      res.status(500).json({ error: "Failed to reorder evidence" });
-    }
-  });
+    },
+  );
 
-  app.get("/api/cases/:caseId/generated-exhibit-packets", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/generated-exhibit-packets",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const generated = await storage.listGeneratedExhibitPackets(
+          userId,
+          caseId,
+        );
+        res.json({ generated });
+      } catch (error) {
+        console.error("List generated exhibit packets error:", error);
+        res.status(500).json({ error: "Failed to list generated packets" });
       }
-      const generated = await storage.listGeneratedExhibitPackets(userId, caseId);
-      res.json({ generated });
-    } catch (error) {
-      console.error("List generated exhibit packets error:", error);
-      res.status(500).json({ error: "Failed to list generated packets" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/exhibit-packets/:packetId/generate", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { packetId } = req.params;
-      const packet = await storage.getExhibitPacket(userId, packetId);
-      if (!packet) {
-        return res.status(404).json({ error: "Packet not found" });
+  app.post(
+    "/api/exhibit-packets/:packetId/generate",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { packetId } = req.params;
+        const packet = await storage.getExhibitPacket(userId, packetId);
+        if (!packet) {
+          return res.status(404).json({ error: "Packet not found" });
+        }
+        const result = await generateExhibitPacketZip(userId, packetId);
+        if (!result) {
+          return res.status(500).json({ error: "Failed to generate packet" });
+        }
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${result.fileName}"`,
+        );
+        res.setHeader("Content-Length", result.zipBuffer.length);
+        res.send(result.zipBuffer);
+      } catch (error) {
+        console.error("Generate exhibit packet error:", error);
+        res.status(500).json({ error: "Failed to generate packet" });
       }
-      const result = await generateExhibitPacketZip(userId, packetId);
-      if (!result) {
-        return res.status(500).json({ error: "Failed to generate packet" });
-      }
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
-      res.setHeader("Content-Length", result.zipBuffer.length);
-      res.send(result.zipBuffer);
-    } catch (error) {
-      console.error("Generate exhibit packet error:", error);
-      res.status(500).json({ error: "Failed to generate packet" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const { isGcvConfigured } = await import("./services/ocr");
-      if (!isGcvConfigured()) {
-        return res.status(503).json({ 
-          error: "Text extraction is not configured. Please add Google Cloud Vision credentials." 
-        });
-      }
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const evidence = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidence || evidence.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence not found" });
-      }
-      
-      const existingJob = await storage.getEvidenceProcessingJobByEvidence(userId, evidenceId);
-      if (existingJob && (existingJob.status === "queued" || existingJob.status === "processing")) {
-        return res.json({ ok: true, jobId: existingJob.id, status: existingJob.status });
-      }
-      
-      const job = await storage.createEvidenceProcessingJob(userId, caseId, evidenceId);
-      
-      const filePath = evidence.storageKey;
-      const { processEvidenceFile } = await import("./services/ocr");
-      processEvidenceFile(userId, caseId, evidenceId, job.id, filePath, evidence.mimeType);
-      
-      res.json({ ok: true, jobId: job.id, status: "queued" });
-    } catch (error) {
-      console.error("Start OCR processing error:", error);
-      res.status(500).json({ error: "Failed to start text extraction" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/process",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/process", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const job = await storage.getEvidenceProcessingJobByEvidence(userId, evidenceId);
-      if (!job) {
-        return res.json({ job: null });
-      }
-      
-      res.json({ job });
-    } catch (error) {
-      console.error("Get OCR job status error:", error);
-      res.status(500).json({ error: "Failed to get job status" });
-    }
-  });
+        const { isGcvConfigured } = await import("./services/ocr");
+        if (!isGcvConfigured()) {
+          return res.status(503).json({
+            error:
+              "Text extraction is not configured. Please add Google Cloud Vision credentials.",
+          });
+        }
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/ocr-pages", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const evidence = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidence || evidence.caseId !== caseId) {
+          return res.status(404).json({ error: "Evidence not found" });
+        }
+
+        const existingJob = await storage.getEvidenceProcessingJobByEvidence(
+          userId,
+          evidenceId,
+        );
+        if (
+          existingJob &&
+          (existingJob.status === "queued" ||
+            existingJob.status === "processing")
+        ) {
+          return res.json({
+            ok: true,
+            jobId: existingJob.id,
+            status: existingJob.status,
+          });
+        }
+
+        const job = await storage.createEvidenceProcessingJob(
+          userId,
+          caseId,
+          evidenceId,
+        );
+
+        const filePath = evidence.storageKey;
+        const { processEvidenceFile } = await import("./services/ocr");
+        processEvidenceFile(
+          userId,
+          caseId,
+          evidenceId,
+          job.id,
+          filePath,
+          evidence.mimeType,
+        );
+
+        res.json({ ok: true, jobId: job.id, status: "queued" });
+      } catch (error) {
+        console.error("Start OCR processing error:", error);
+        res.status(500).json({ error: "Failed to start text extraction" });
       }
-      
-      const pages = await storage.listEvidenceOcrPages(userId, caseId, evidenceId);
-      res.json({ pages });
-    } catch (error) {
-      console.error("List OCR pages error:", error);
-      res.status(500).json({ error: "Failed to list OCR pages" });
-    }
-  });
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/process",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const job = await storage.getEvidenceProcessingJobByEvidence(
+          userId,
+          evidenceId,
+        );
+        if (!job) {
+          return res.json({ job: null });
+        }
+
+        res.json({ job });
+      } catch (error) {
+        console.error("Get OCR job status error:", error);
+        res.status(500).json({ error: "Failed to get job status" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/ocr-pages",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const pages = await storage.listEvidenceOcrPages(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        res.json({ pages });
+      } catch (error) {
+        console.error("List OCR pages error:", error);
+        res.status(500).json({ error: "Failed to list OCR pages" });
+      }
+    },
+  );
 
   app.patch("/api/ocr-pages/:ocrPageId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { ocrPageId } = req.params;
       const { needsReview } = req.body;
-      
-      const updated = await storage.markOcrPageReviewed(userId, ocrPageId, needsReview ?? false);
+
+      const updated = await storage.markOcrPageReviewed(
+        userId,
+        ocrPageId,
+        needsReview ?? false,
+      );
       if (!updated) {
         return res.status(404).json({ error: "OCR page not found" });
       }
-      
+
       res.json({ page: updated });
     } catch (error) {
       console.error("Update OCR page error:", error);
@@ -7487,64 +9656,96 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const anchors = await storage.listEvidenceAnchors(userId, caseId, evidenceId);
-      res.json({ anchors });
-    } catch (error) {
-      console.error("List evidence anchors error:", error);
-      res.status(500).json({ error: "Failed to list anchors" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/anchors",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/anchors", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const anchors = await storage.listEvidenceAnchors(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        res.json({ anchors });
+      } catch (error) {
+        console.error("List evidence anchors error:", error);
+        res.status(500).json({ error: "Failed to list anchors" });
       }
-      
-      const { insertEvidenceAnchorSchema } = await import("@shared/schema");
-      const parsed = insertEvidenceAnchorSchema.safeParse({ ...req.body, evidenceId });
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/anchors",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertEvidenceAnchorSchema } = await import("@shared/schema");
+        const parsed = insertEvidenceAnchorSchema.safeParse({
+          ...req.body,
+          evidenceId,
+        });
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const anchor = await storage.createEvidenceAnchor(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ anchor });
+      } catch (error) {
+        console.error("Create evidence anchor error:", error);
+        res.status(500).json({ error: "Failed to create anchor" });
       }
-      
-      const anchor = await storage.createEvidenceAnchor(userId, caseId, parsed.data);
-      res.status(201).json({ anchor });
-    } catch (error) {
-      console.error("Create evidence anchor error:", error);
-      res.status(500).json({ error: "Failed to create anchor" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/anchors/:anchorId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { anchorId } = req.params;
-      
+
       const { updateEvidenceAnchorSchema } = await import("@shared/schema");
       const parsed = updateEvidenceAnchorSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+        return res
+          .status(400)
+          .json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
-      
-      const anchor = await storage.updateEvidenceAnchor(userId, anchorId, parsed.data);
+
+      const anchor = await storage.updateEvidenceAnchor(
+        userId,
+        anchorId,
+        parsed.data,
+      );
       if (!anchor) {
         return res.status(404).json({ error: "Anchor not found" });
       }
-      
+
       res.json({ anchor });
     } catch (error) {
       console.error("Update evidence anchor error:", error);
@@ -7556,12 +9757,12 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     try {
       const userId = req.session.userId as string;
       const { anchorId } = req.params;
-      
+
       const deleted = await storage.deleteEvidenceAnchor(userId, anchorId);
       if (!deleted) {
         return res.status(404).json({ error: "Anchor not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Delete evidence anchor error:", error);
@@ -7569,698 +9770,898 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/pattern-analysis/input", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const anchors = await storage.listEvidenceAnchors(userId, caseId);
-      
-      const evidenceFiles = await storage.getEvidenceFilesByCase(caseId, userId);
-      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
-      
-      const enrichedAnchors = anchors.map(anchor => ({
-        ...anchor,
-        evidenceName: evidenceMap.get(anchor.evidenceId)?.originalName || "Unknown",
-      }));
-      
-      res.json({ anchors: enrichedAnchors });
-    } catch (error) {
-      console.error("Get pattern analysis input error:", error);
-      res.status(500).json({ error: "Failed to get pattern analysis input" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/pattern-analysis/input",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-  app.get("/api/cases/:caseId/pattern-analysis", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const [
-        evidenceFiles,
-        aiAnalyses,
-        notesFull,
-        timelineEvents,
-        communications,
-        exhibitSnippets,
-        trialPrepItems,
-      ] = await Promise.all([
-        storage.listEvidenceFiles(caseId, userId),
-        storage.listEvidenceAiAnalyses(userId, caseId),
-        storage.listEvidenceNotesFull(userId, caseId),
-        storage.listTimelineEvents(caseId, userId),
-        storage.listCommunications(userId, caseId),
-        storage.listExhibitSnippets(userId, caseId),
-        storage.listTrialPrepShortlist(userId, caseId),
-      ]);
-
-      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
-      const pinnedSourceIds = new Set(trialPrepItems.filter(t => t.isPinned).map(t => t.sourceId));
-
-      const status = {
-        evidenceTotal: evidenceFiles.length,
-        extractedComplete: aiAnalyses.filter(a => a.status === "complete").length,
-        extractedProcessing: aiAnalyses.filter(a => a.status === "processing").length,
-        extractedFailed: aiAnalyses.filter(a => a.status === "failed").length,
-        analysesComplete: aiAnalyses.filter(a => a.status === "complete").length,
-        analysesProcessing: aiAnalyses.filter(a => a.status === "processing").length,
-        analysesFailed: aiAnalyses.filter(a => a.status === "failed").length,
-        notesTotal: notesFull.length,
-        timelineTotal: timelineEvents.length,
-        communicationsTotal: communications.length,
-      };
-
-      type ExampleItem = {
-        sourceType: string;
-        sourceId: string;
-        title: string;
-        excerpt: string;
-        occurredAt?: string;
-        evidenceId?: string;
-        fileName?: string;
-        pageNumber?: number;
-        tags?: string[];
-        importance?: number;
-      };
-
-      const themeKeywords = [
-        "missed exchanges", "medical obstruction", "unilateral decisions",
-        "hostile language", "withheld communication", "deadline pressure",
-        "inconsistency", "gatekeeping", "schedule changes", "conflict",
-        "coparenting", "custody", "visitation", "support", "agreement"
-      ];
-
-      const themeCounts: Record<string, ExampleItem[]> = {};
-      const patternCounts: Record<string, ExampleItem[]> = {};
-      const keyDatesMap: Record<string, ExampleItem[]> = {};
-      const keyNamesMap: Record<string, ExampleItem[]> = {};
-      const conflictsAndGaps: ExampleItem[] = [];
-
-      for (const analysis of aiAnalyses) {
-        if (analysis.status !== "complete") continue;
-        const findings = analysis.findings as Record<string, unknown> | null;
-        const summary = analysis.summary || "";
-        const evidenceFile = evidenceMap.get(analysis.evidenceId);
-        
-        const baseItem: ExampleItem = {
-          sourceType: "evidence_analysis",
-          sourceId: analysis.id,
-          title: evidenceFile?.originalName || "AI Analysis",
-          excerpt: summary.slice(0, 200),
-          evidenceId: analysis.evidenceId,
-          fileName: evidenceFile?.originalName,
-          importance: pinnedSourceIds.has(analysis.id) ? 10 : 5,
-        };
-
-        for (const keyword of themeKeywords) {
-          if (summary.toLowerCase().includes(keyword.toLowerCase())) {
-            const label = keyword.charAt(0).toUpperCase() + keyword.slice(1);
-            if (!themeCounts[label]) themeCounts[label] = [];
-            themeCounts[label].push(baseItem);
-          }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
 
-        if (findings && typeof findings === "object") {
-          const findingsThemes = (findings as { themes?: string[] }).themes;
-          if (Array.isArray(findingsThemes)) {
-            for (const theme of findingsThemes) {
-              const label = String(theme).charAt(0).toUpperCase() + String(theme).slice(1);
+        const anchors = await storage.listEvidenceAnchors(userId, caseId);
+
+        const evidenceFiles = await storage.getEvidenceFilesByCase(
+          caseId,
+          userId,
+        );
+        const evidenceMap = new Map(evidenceFiles.map((e) => [e.id, e]));
+
+        const enrichedAnchors = anchors.map((anchor) => ({
+          ...anchor,
+          evidenceName:
+            evidenceMap.get(anchor.evidenceId)?.originalName || "Unknown",
+        }));
+
+        res.json({ anchors: enrichedAnchors });
+      } catch (error) {
+        console.error("Get pattern analysis input error:", error);
+        res.status(500).json({ error: "Failed to get pattern analysis input" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/pattern-analysis",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const [
+          evidenceFiles,
+          aiAnalyses,
+          notesFull,
+          timelineEvents,
+          communications,
+          exhibitSnippets,
+          trialPrepItems,
+        ] = await Promise.all([
+          storage.listEvidenceFiles(caseId, userId),
+          storage.listEvidenceAiAnalyses(userId, caseId),
+          storage.listEvidenceNotesFull(userId, caseId),
+          storage.listTimelineEvents(caseId, userId),
+          storage.listCommunications(userId, caseId),
+          storage.listExhibitSnippets(userId, caseId),
+          storage.listTrialPrepShortlist(userId, caseId),
+        ]);
+
+        const evidenceMap = new Map(evidenceFiles.map((e) => [e.id, e]));
+        const pinnedSourceIds = new Set(
+          trialPrepItems.filter((t) => t.isPinned).map((t) => t.sourceId),
+        );
+
+        const status = {
+          evidenceTotal: evidenceFiles.length,
+          extractedComplete: aiAnalyses.filter((a) => a.status === "complete")
+            .length,
+          extractedProcessing: aiAnalyses.filter(
+            (a) => a.status === "processing",
+          ).length,
+          extractedFailed: aiAnalyses.filter((a) => a.status === "failed")
+            .length,
+          analysesComplete: aiAnalyses.filter((a) => a.status === "complete")
+            .length,
+          analysesProcessing: aiAnalyses.filter(
+            (a) => a.status === "processing",
+          ).length,
+          analysesFailed: aiAnalyses.filter((a) => a.status === "failed")
+            .length,
+          notesTotal: notesFull.length,
+          timelineTotal: timelineEvents.length,
+          communicationsTotal: communications.length,
+        };
+
+        type ExampleItem = {
+          sourceType: string;
+          sourceId: string;
+          title: string;
+          excerpt: string;
+          occurredAt?: string;
+          evidenceId?: string;
+          fileName?: string;
+          pageNumber?: number;
+          tags?: string[];
+          importance?: number;
+        };
+
+        const themeKeywords = [
+          "missed exchanges",
+          "medical obstruction",
+          "unilateral decisions",
+          "hostile language",
+          "withheld communication",
+          "deadline pressure",
+          "inconsistency",
+          "gatekeeping",
+          "schedule changes",
+          "conflict",
+          "coparenting",
+          "custody",
+          "visitation",
+          "support",
+          "agreement",
+        ];
+
+        const themeCounts: Record<string, ExampleItem[]> = {};
+        const patternCounts: Record<string, ExampleItem[]> = {};
+        const keyDatesMap: Record<string, ExampleItem[]> = {};
+        const keyNamesMap: Record<string, ExampleItem[]> = {};
+        const conflictsAndGaps: ExampleItem[] = [];
+
+        for (const analysis of aiAnalyses) {
+          if (analysis.status !== "complete") continue;
+          const findings = analysis.findings as Record<string, unknown> | null;
+          const summary = analysis.summary || "";
+          const evidenceFile = evidenceMap.get(analysis.evidenceId);
+
+          const baseItem: ExampleItem = {
+            sourceType: "evidence_analysis",
+            sourceId: analysis.id,
+            title: evidenceFile?.originalName || "AI Analysis",
+            excerpt: summary.slice(0, 200),
+            evidenceId: analysis.evidenceId,
+            fileName: evidenceFile?.originalName,
+            importance: pinnedSourceIds.has(analysis.id) ? 10 : 5,
+          };
+
+          for (const keyword of themeKeywords) {
+            if (summary.toLowerCase().includes(keyword.toLowerCase())) {
+              const label = keyword.charAt(0).toUpperCase() + keyword.slice(1);
               if (!themeCounts[label]) themeCounts[label] = [];
               themeCounts[label].push(baseItem);
             }
           }
-        }
-      }
 
-      for (const note of notesFull) {
-        const evidenceFile = evidenceMap.get(note.evidenceId);
-        const noteItem: ExampleItem = {
-          sourceType: "evidence_note",
-          sourceId: note.id,
-          title: note.noteTitle || "Note",
-          excerpt: (note.noteText || "").slice(0, 200),
-          evidenceId: note.evidenceId,
-          fileName: evidenceFile?.originalName,
-          pageNumber: note.pageNumber ?? undefined,
-          tags: Array.isArray(note.tags) ? note.tags as string[] : [],
-          importance: pinnedSourceIds.has(note.id) ? 10 : (note.isResolved ? 2 : 5),
-        };
-
-        if (note.tags && Array.isArray(note.tags)) {
-          for (const tag of note.tags as string[]) {
-            const label = String(tag).charAt(0).toUpperCase() + String(tag).slice(1);
-            if (!themeCounts[label]) themeCounts[label] = [];
-            themeCounts[label].push(noteItem);
-          }
-        }
-      }
-
-      for (const event of timelineEvents) {
-        const eventItem: ExampleItem = {
-          sourceType: "timeline_event",
-          sourceId: event.id,
-          title: event.title,
-          excerpt: (event.notes || "").slice(0, 200),
-          occurredAt: event.eventDate?.toISOString(),
-          importance: pinnedSourceIds.has(event.id) ? 10 : 4,
-        };
-
-        if (event.eventDate) {
-          const dateKey = event.eventDate.toISOString().split("T")[0];
-          if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
-          keyDatesMap[dateKey].push(eventItem);
-        }
-
-        const category = event.title.toLowerCase();
-        if (category.includes("hearing") || category.includes("court") || category.includes("filing")) {
-          if (!patternCounts["Court Events"]) patternCounts["Court Events"] = [];
-          patternCounts["Court Events"].push(eventItem);
-        }
-        if (category.includes("exchange") || category.includes("pickup") || category.includes("dropoff")) {
-          if (!patternCounts["Custody Exchanges"]) patternCounts["Custody Exchanges"] = [];
-          patternCounts["Custody Exchanges"].push(eventItem);
-        }
-      }
-
-      for (const comm of communications) {
-        const resolved = comm.status === "resolved";
-        const commItem: ExampleItem = {
-          sourceType: "communication",
-          sourceId: comm.id,
-          title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactId || "Unknown"}`,
-          excerpt: (comm.summary || "").slice(0, 200),
-          occurredAt: comm.occurredAt?.toISOString(),
-          importance: pinnedSourceIds.has(comm.id) ? 10 : (resolved ? 2 : 5),
-        };
-
-        if (comm.followUpAt && !resolved) {
-          const dueDate = new Date(comm.followUpAt);
-          if (dueDate < new Date()) {
-            conflictsAndGaps.push({
-              ...commItem,
-              title: `Overdue follow-up: ${comm.contactId || "Unknown"}`,
-            });
+          if (findings && typeof findings === "object") {
+            const findingsThemes = (findings as { themes?: string[] }).themes;
+            if (Array.isArray(findingsThemes)) {
+              for (const theme of findingsThemes) {
+                const label =
+                  String(theme).charAt(0).toUpperCase() +
+                  String(theme).slice(1);
+                if (!themeCounts[label]) themeCounts[label] = [];
+                themeCounts[label].push(baseItem);
+              }
+            }
           }
         }
 
-        if (comm.channel) {
-          const typeLabel = comm.channel.charAt(0).toUpperCase() + comm.channel.slice(1) + " communications";
-          if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
-          patternCounts[typeLabel].push(commItem);
-        }
-      }
+        for (const note of notesFull) {
+          const evidenceFile = evidenceMap.get(note.evidenceId);
+          const noteItem: ExampleItem = {
+            sourceType: "evidence_note",
+            sourceId: note.id,
+            title: note.noteTitle || "Note",
+            excerpt: (note.noteText || "").slice(0, 200),
+            evidenceId: note.evidenceId,
+            fileName: evidenceFile?.originalName,
+            pageNumber: note.pageNumber ?? undefined,
+            tags: Array.isArray(note.tags) ? (note.tags as string[]) : [],
+            importance: pinnedSourceIds.has(note.id)
+              ? 10
+              : note.isResolved
+                ? 2
+                : 5,
+          };
 
-      for (const snippet of exhibitSnippets) {
-        const snippetItem: ExampleItem = {
-          sourceType: "exhibit_snippet",
-          sourceId: snippet.id,
-          title: snippet.title,
-          excerpt: (snippet.snippetText || "").slice(0, 200),
-          pageNumber: snippet.pageNumber ?? undefined,
-          importance: pinnedSourceIds.has(snippet.id) ? 10 : 4,
-        };
-
-        if (!patternCounts["Exhibit Highlights"]) patternCounts["Exhibit Highlights"] = [];
-        patternCounts["Exhibit Highlights"].push(snippetItem);
-      }
-
-      const sortByImportance = (items: ExampleItem[]) =>
-        [...items].sort((a, b) => (b.importance || 0) - (a.importance || 0));
-
-      const themes = Object.entries(themeCounts)
-        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-      const patterns = Object.entries(patternCounts)
-        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-      const keyDates = Object.entries(keyDatesMap)
-        .map(([date, sources]) => ({ date, label: `${sources.length} event(s)`, sources: sortByImportance(sources).slice(0, 3) }))
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .slice(0, 10);
-
-      const keyNames = Object.entries(keyNamesMap)
-        .map(([name, examples]) => ({ name, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-      res.json({
-        ok: true,
-        status,
-        themes,
-        patterns,
-        keyDates,
-        conflictsAndGaps: sortByImportance(conflictsAndGaps).slice(0, 10),
-        keyNames,
-        topExamples: {
-          themes: themes.flatMap(t => t.examples).slice(0, 3),
-          patterns: patterns.flatMap(p => p.examples).slice(0, 3),
-          dates: keyDates.flatMap(d => d.sources).slice(0, 3),
-        },
-      });
-    } catch (error) {
-      console.error("Get pattern analysis error:", error);
-      res.status(500).json({ error: "Failed to get pattern analysis" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/pattern-analysis/export", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const [
-        evidenceFiles,
-        aiAnalyses,
-        notesFull,
-        timelineEvents,
-        communications,
-        exhibitSnippets,
-        trialPrepItems,
-      ] = await Promise.all([
-        storage.listEvidenceFiles(caseId, userId),
-        storage.listEvidenceAiAnalyses(userId, caseId),
-        storage.listEvidenceNotesFull(userId, caseId),
-        storage.listTimelineEvents(caseId, userId),
-        storage.listCommunications(userId, caseId),
-        storage.listExhibitSnippets(userId, caseId),
-        storage.listTrialPrepShortlist(userId, caseId),
-      ]);
-
-      const evidenceMap = new Map(evidenceFiles.map(e => [e.id, e]));
-      const pinnedSourceIds = new Set(trialPrepItems.filter(t => t.isPinned).map(t => t.sourceId));
-
-      type ExampleItem = {
-        sourceType: string;
-        sourceId: string;
-        title: string;
-        excerpt: string;
-        occurredAt?: string;
-        evidenceId?: string;
-        fileName?: string;
-        pageNumber?: number;
-        tags?: string[];
-        importance?: number;
-      };
-
-      const themeKeywords = [
-        "missed exchanges", "medical obstruction", "unilateral decisions",
-        "hostile language", "withheld communication", "deadline pressure",
-        "inconsistency", "gatekeeping", "schedule changes", "conflict",
-        "coparenting", "custody", "visitation", "support", "agreement"
-      ];
-
-      const themeCounts: Record<string, ExampleItem[]> = {};
-      const patternCounts: Record<string, ExampleItem[]> = {};
-      const keyDatesMap: Record<string, ExampleItem[]> = {};
-      const conflictsAndGaps: ExampleItem[] = [];
-
-      for (const analysis of aiAnalyses) {
-        if (analysis.status !== "complete") continue;
-        const findings = analysis.findings as Record<string, unknown> | null;
-        const summary = analysis.summary || "";
-        const evidenceFile = evidenceMap.get(analysis.evidenceId);
-        
-        const baseItem: ExampleItem = {
-          sourceType: "evidence_analysis",
-          sourceId: analysis.id,
-          title: evidenceFile?.originalName || "AI Analysis",
-          excerpt: summary.slice(0, 200),
-          evidenceId: analysis.evidenceId,
-          fileName: evidenceFile?.originalName,
-          importance: pinnedSourceIds.has(analysis.id) ? 10 : 5,
-        };
-
-        for (const keyword of themeKeywords) {
-          if (summary.toLowerCase().includes(keyword.toLowerCase())) {
-            const label = keyword.charAt(0).toUpperCase() + keyword.slice(1);
-            if (!themeCounts[label]) themeCounts[label] = [];
-            themeCounts[label].push(baseItem);
+          if (note.tags && Array.isArray(note.tags)) {
+            for (const tag of note.tags as string[]) {
+              const label =
+                String(tag).charAt(0).toUpperCase() + String(tag).slice(1);
+              if (!themeCounts[label]) themeCounts[label] = [];
+              themeCounts[label].push(noteItem);
+            }
           }
         }
 
-        if (findings && typeof findings === "object") {
-          const findingsThemes = (findings as { themes?: string[] }).themes;
-          if (Array.isArray(findingsThemes)) {
-            for (const theme of findingsThemes) {
-              const label = String(theme).charAt(0).toUpperCase() + String(theme).slice(1);
+        for (const event of timelineEvents) {
+          const eventItem: ExampleItem = {
+            sourceType: "timeline_event",
+            sourceId: event.id,
+            title: event.title,
+            excerpt: (event.notes || "").slice(0, 200),
+            occurredAt: event.eventDate?.toISOString(),
+            importance: pinnedSourceIds.has(event.id) ? 10 : 4,
+          };
+
+          if (event.eventDate) {
+            const dateKey = event.eventDate.toISOString().split("T")[0];
+            if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
+            keyDatesMap[dateKey].push(eventItem);
+          }
+
+          const category = event.title.toLowerCase();
+          if (
+            category.includes("hearing") ||
+            category.includes("court") ||
+            category.includes("filing")
+          ) {
+            if (!patternCounts["Court Events"])
+              patternCounts["Court Events"] = [];
+            patternCounts["Court Events"].push(eventItem);
+          }
+          if (
+            category.includes("exchange") ||
+            category.includes("pickup") ||
+            category.includes("dropoff")
+          ) {
+            if (!patternCounts["Custody Exchanges"])
+              patternCounts["Custody Exchanges"] = [];
+            patternCounts["Custody Exchanges"].push(eventItem);
+          }
+        }
+
+        for (const comm of communications) {
+          const resolved = comm.status === "resolved";
+          const commItem: ExampleItem = {
+            sourceType: "communication",
+            sourceId: comm.id,
+            title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactId || "Unknown"}`,
+            excerpt: (comm.summary || "").slice(0, 200),
+            occurredAt: comm.occurredAt?.toISOString(),
+            importance: pinnedSourceIds.has(comm.id) ? 10 : resolved ? 2 : 5,
+          };
+
+          if (comm.followUpAt && !resolved) {
+            const dueDate = new Date(comm.followUpAt);
+            if (dueDate < new Date()) {
+              conflictsAndGaps.push({
+                ...commItem,
+                title: `Overdue follow-up: ${comm.contactId || "Unknown"}`,
+              });
+            }
+          }
+
+          if (comm.channel) {
+            const typeLabel =
+              comm.channel.charAt(0).toUpperCase() +
+              comm.channel.slice(1) +
+              " communications";
+            if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
+            patternCounts[typeLabel].push(commItem);
+          }
+        }
+
+        for (const snippet of exhibitSnippets) {
+          const snippetItem: ExampleItem = {
+            sourceType: "exhibit_snippet",
+            sourceId: snippet.id,
+            title: snippet.title,
+            excerpt: (snippet.snippetText || "").slice(0, 200),
+            pageNumber: snippet.pageNumber ?? undefined,
+            importance: pinnedSourceIds.has(snippet.id) ? 10 : 4,
+          };
+
+          if (!patternCounts["Exhibit Highlights"])
+            patternCounts["Exhibit Highlights"] = [];
+          patternCounts["Exhibit Highlights"].push(snippetItem);
+        }
+
+        const sortByImportance = (items: ExampleItem[]) =>
+          [...items].sort((a, b) => (b.importance || 0) - (a.importance || 0));
+
+        const themes = Object.entries(themeCounts)
+          .map(([label, examples]) => ({
+            label,
+            count: examples.length,
+            examples: sortByImportance(examples).slice(0, 3),
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        const patterns = Object.entries(patternCounts)
+          .map(([label, examples]) => ({
+            label,
+            count: examples.length,
+            examples: sortByImportance(examples).slice(0, 3),
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        const keyDates = Object.entries(keyDatesMap)
+          .map(([date, sources]) => ({
+            date,
+            label: `${sources.length} event(s)`,
+            sources: sortByImportance(sources).slice(0, 3),
+          }))
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 10);
+
+        const keyNames = Object.entries(keyNamesMap)
+          .map(([name, examples]) => ({
+            name,
+            count: examples.length,
+            examples: sortByImportance(examples).slice(0, 3),
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        res.json({
+          ok: true,
+          status,
+          themes,
+          patterns,
+          keyDates,
+          conflictsAndGaps: sortByImportance(conflictsAndGaps).slice(0, 10),
+          keyNames,
+          topExamples: {
+            themes: themes.flatMap((t) => t.examples).slice(0, 3),
+            patterns: patterns.flatMap((p) => p.examples).slice(0, 3),
+            dates: keyDates.flatMap((d) => d.sources).slice(0, 3),
+          },
+        });
+      } catch (error) {
+        console.error("Get pattern analysis error:", error);
+        res.status(500).json({ error: "Failed to get pattern analysis" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/pattern-analysis/export",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const [
+          evidenceFiles,
+          aiAnalyses,
+          notesFull,
+          timelineEvents,
+          communications,
+          exhibitSnippets,
+          trialPrepItems,
+        ] = await Promise.all([
+          storage.listEvidenceFiles(caseId, userId),
+          storage.listEvidenceAiAnalyses(userId, caseId),
+          storage.listEvidenceNotesFull(userId, caseId),
+          storage.listTimelineEvents(caseId, userId),
+          storage.listCommunications(userId, caseId),
+          storage.listExhibitSnippets(userId, caseId),
+          storage.listTrialPrepShortlist(userId, caseId),
+        ]);
+
+        const evidenceMap = new Map(evidenceFiles.map((e) => [e.id, e]));
+        const pinnedSourceIds = new Set(
+          trialPrepItems.filter((t) => t.isPinned).map((t) => t.sourceId),
+        );
+
+        type ExampleItem = {
+          sourceType: string;
+          sourceId: string;
+          title: string;
+          excerpt: string;
+          occurredAt?: string;
+          evidenceId?: string;
+          fileName?: string;
+          pageNumber?: number;
+          tags?: string[];
+          importance?: number;
+        };
+
+        const themeKeywords = [
+          "missed exchanges",
+          "medical obstruction",
+          "unilateral decisions",
+          "hostile language",
+          "withheld communication",
+          "deadline pressure",
+          "inconsistency",
+          "gatekeeping",
+          "schedule changes",
+          "conflict",
+          "coparenting",
+          "custody",
+          "visitation",
+          "support",
+          "agreement",
+        ];
+
+        const themeCounts: Record<string, ExampleItem[]> = {};
+        const patternCounts: Record<string, ExampleItem[]> = {};
+        const keyDatesMap: Record<string, ExampleItem[]> = {};
+        const conflictsAndGaps: ExampleItem[] = [];
+
+        for (const analysis of aiAnalyses) {
+          if (analysis.status !== "complete") continue;
+          const findings = analysis.findings as Record<string, unknown> | null;
+          const summary = analysis.summary || "";
+          const evidenceFile = evidenceMap.get(analysis.evidenceId);
+
+          const baseItem: ExampleItem = {
+            sourceType: "evidence_analysis",
+            sourceId: analysis.id,
+            title: evidenceFile?.originalName || "AI Analysis",
+            excerpt: summary.slice(0, 200),
+            evidenceId: analysis.evidenceId,
+            fileName: evidenceFile?.originalName,
+            importance: pinnedSourceIds.has(analysis.id) ? 10 : 5,
+          };
+
+          for (const keyword of themeKeywords) {
+            if (summary.toLowerCase().includes(keyword.toLowerCase())) {
+              const label = keyword.charAt(0).toUpperCase() + keyword.slice(1);
               if (!themeCounts[label]) themeCounts[label] = [];
               themeCounts[label].push(baseItem);
             }
           }
-        }
-      }
 
-      for (const note of notesFull) {
-        const evidenceFile = evidenceMap.get(note.evidenceId);
-        const noteItem: ExampleItem = {
-          sourceType: "evidence_note",
-          sourceId: note.id,
-          title: note.noteTitle || "Note",
-          excerpt: (note.noteText || "").slice(0, 200),
-          evidenceId: note.evidenceId,
-          fileName: evidenceFile?.originalName,
-          pageNumber: note.pageNumber ?? undefined,
-          tags: Array.isArray(note.tags) ? note.tags as string[] : [],
-          importance: pinnedSourceIds.has(note.id) ? 10 : (note.isResolved ? 2 : 5),
-        };
-
-        if (note.tags && Array.isArray(note.tags)) {
-          for (const tag of note.tags as string[]) {
-            const label = String(tag).charAt(0).toUpperCase() + String(tag).slice(1);
-            if (!themeCounts[label]) themeCounts[label] = [];
-            themeCounts[label].push(noteItem);
+          if (findings && typeof findings === "object") {
+            const findingsThemes = (findings as { themes?: string[] }).themes;
+            if (Array.isArray(findingsThemes)) {
+              for (const theme of findingsThemes) {
+                const label =
+                  String(theme).charAt(0).toUpperCase() +
+                  String(theme).slice(1);
+                if (!themeCounts[label]) themeCounts[label] = [];
+                themeCounts[label].push(baseItem);
+              }
+            }
           }
         }
+
+        for (const note of notesFull) {
+          const evidenceFile = evidenceMap.get(note.evidenceId);
+          const noteItem: ExampleItem = {
+            sourceType: "evidence_note",
+            sourceId: note.id,
+            title: note.noteTitle || "Note",
+            excerpt: (note.noteText || "").slice(0, 200),
+            evidenceId: note.evidenceId,
+            fileName: evidenceFile?.originalName,
+            pageNumber: note.pageNumber ?? undefined,
+            tags: Array.isArray(note.tags) ? (note.tags as string[]) : [],
+            importance: pinnedSourceIds.has(note.id)
+              ? 10
+              : note.isResolved
+                ? 2
+                : 5,
+          };
+
+          if (note.tags && Array.isArray(note.tags)) {
+            for (const tag of note.tags as string[]) {
+              const label =
+                String(tag).charAt(0).toUpperCase() + String(tag).slice(1);
+              if (!themeCounts[label]) themeCounts[label] = [];
+              themeCounts[label].push(noteItem);
+            }
+          }
+        }
+
+        for (const event of timelineEvents) {
+          const eventItem: ExampleItem = {
+            sourceType: "timeline_event",
+            sourceId: event.id,
+            title: event.title,
+            excerpt: (event.notes || "").slice(0, 200),
+            occurredAt: event.eventDate?.toISOString(),
+            importance: pinnedSourceIds.has(event.id) ? 10 : 4,
+          };
+
+          if (event.eventDate) {
+            const dateKey = event.eventDate.toISOString().split("T")[0];
+            if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
+            keyDatesMap[dateKey].push(eventItem);
+          }
+
+          const category = event.title.toLowerCase();
+          if (
+            category.includes("hearing") ||
+            category.includes("court") ||
+            category.includes("filing")
+          ) {
+            if (!patternCounts["Court Events"])
+              patternCounts["Court Events"] = [];
+            patternCounts["Court Events"].push(eventItem);
+          }
+          if (
+            category.includes("exchange") ||
+            category.includes("pickup") ||
+            category.includes("dropoff")
+          ) {
+            if (!patternCounts["Custody Exchanges"])
+              patternCounts["Custody Exchanges"] = [];
+            patternCounts["Custody Exchanges"].push(eventItem);
+          }
+        }
+
+        for (const comm of communications) {
+          const resolved = comm.status === "resolved";
+          const commItem: ExampleItem = {
+            sourceType: "communication",
+            sourceId: comm.id,
+            title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactId || "Unknown"}`,
+            excerpt: (comm.summary || "").slice(0, 200),
+            occurredAt: comm.occurredAt?.toISOString(),
+            importance: pinnedSourceIds.has(comm.id) ? 10 : resolved ? 2 : 5,
+          };
+
+          if (comm.followUpAt && !resolved) {
+            const dueDate = new Date(comm.followUpAt);
+            if (dueDate < new Date()) {
+              conflictsAndGaps.push({
+                ...commItem,
+                title: `Overdue follow-up: ${comm.contactId || "Unknown"}`,
+              });
+            }
+          }
+
+          if (comm.channel) {
+            const typeLabel =
+              comm.channel.charAt(0).toUpperCase() +
+              comm.channel.slice(1) +
+              " communications";
+            if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
+            patternCounts[typeLabel].push(commItem);
+          }
+        }
+
+        for (const snippet of exhibitSnippets) {
+          const snippetItem: ExampleItem = {
+            sourceType: "exhibit_snippet",
+            sourceId: snippet.id,
+            title: snippet.title,
+            excerpt: (snippet.snippetText || "").slice(0, 200),
+            pageNumber: snippet.pageNumber ?? undefined,
+            importance: pinnedSourceIds.has(snippet.id) ? 10 : 4,
+          };
+
+          if (!patternCounts["Exhibit Highlights"])
+            patternCounts["Exhibit Highlights"] = [];
+          patternCounts["Exhibit Highlights"].push(snippetItem);
+        }
+
+        const sortByImportance = (items: ExampleItem[]) =>
+          [...items].sort((a, b) => (b.importance || 0) - (a.importance || 0));
+
+        const themes = Object.entries(themeCounts)
+          .map(([label, examples]) => ({
+            label,
+            count: examples.length,
+            examples: sortByImportance(examples).slice(0, 3),
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        const patterns = Object.entries(patternCounts)
+          .map(([label, examples]) => ({
+            label,
+            count: examples.length,
+            examples: sortByImportance(examples).slice(0, 3),
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        const keyDates = Object.entries(keyDatesMap)
+          .map(([date, sources]) => ({
+            date,
+            label: `${sources.length} event(s)`,
+            sources: sortByImportance(sources).slice(0, 3),
+          }))
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 10);
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+
+        let markdown = `# Pattern Analysis Summary\n\n`;
+        markdown += `**Case:** ${caseRecord.title}\n`;
+        markdown += `**Generated:** ${dateStr}\n\n`;
+        markdown += `---\n\n`;
+        markdown += `> **Disclaimer:** This is an organizational summary and may be incomplete or incorrect. Verify against your documents. This is not legal advice.\n\n`;
+        markdown += `---\n\n`;
+
+        markdown += `## Coverage & Status\n\n`;
+        markdown += `- **Evidence Files:** ${evidenceFiles.length}\n`;
+        markdown += `- **AI Analyses Complete:** ${aiAnalyses.filter((a) => a.status === "complete").length}\n`;
+        markdown += `- **Notes:** ${notesFull.length}\n`;
+        markdown += `- **Timeline Events:** ${timelineEvents.length}\n`;
+        markdown += `- **Communications:** ${communications.length}\n\n`;
+
+        if (themes.length > 0) {
+          markdown += `## Themes Detected\n\n`;
+          for (const theme of themes) {
+            markdown += `### ${theme.label} (${theme.count} occurrence${theme.count !== 1 ? "s" : ""})\n\n`;
+            for (const ex of theme.examples) {
+              markdown += `- **${ex.title}**${ex.fileName ? ` (${ex.fileName})` : ""}\n`;
+              markdown += `  ${ex.excerpt}\n\n`;
+            }
+          }
+        }
+
+        if (patterns.length > 0) {
+          markdown += `## Patterns Found\n\n`;
+          for (const pattern of patterns) {
+            markdown += `### ${pattern.label} (${pattern.count} item${pattern.count !== 1 ? "s" : ""})\n\n`;
+            for (const ex of pattern.examples) {
+              markdown += `- **${ex.title}**${ex.fileName ? ` (${ex.fileName})` : ""}\n`;
+              markdown += `  ${ex.excerpt}\n\n`;
+            }
+          }
+        }
+
+        if (keyDates.length > 0) {
+          markdown += `## Key Dates\n\n`;
+          for (const entry of keyDates) {
+            const formattedDate = new Date(entry.date).toLocaleDateString(
+              "en-US",
+              { month: "short", day: "numeric", year: "numeric" },
+            );
+            markdown += `### ${formattedDate} - ${entry.label}\n\n`;
+            for (const src of entry.sources) {
+              markdown += `- **${src.title}**: ${src.excerpt}\n\n`;
+            }
+          }
+        }
+
+        if (conflictsAndGaps.length > 0) {
+          markdown += `## Conflicts & Gaps\n\n`;
+          for (const item of sortByImportance(conflictsAndGaps).slice(0, 10)) {
+            markdown += `- **${item.title}**: ${item.excerpt}\n\n`;
+          }
+        }
+
+        markdown += `---\n\n`;
+        markdown += `## Sources Appendix\n\n`;
+        markdown += `| Type | ID | Title |\n`;
+        markdown += `|------|-----|-------|\n`;
+
+        const allExamples = [
+          ...themes.flatMap((t) => t.examples),
+          ...patterns.flatMap((p) => p.examples),
+          ...keyDates.flatMap((d) => d.sources),
+          ...conflictsAndGaps,
+        ];
+        const seenIds = new Set<string>();
+        for (const ex of allExamples) {
+          if (seenIds.has(ex.sourceId)) continue;
+          seenIds.add(ex.sourceId);
+          markdown += `| ${ex.sourceType} | ${ex.sourceId.slice(0, 8)}... | ${ex.title.replace(/\|/g, "\\|")} |\n`;
+        }
+
+        const archiver = require("archiver");
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="PatternAnalysis_${caseRecord.title.replace(/[^a-zA-Z0-9]/g, "_")}.zip"`,
+        );
+
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        archive.on("error", (err: Error) => {
+          console.error("Archive error:", err);
+          res.status(500).json({ error: "Failed to create export" });
+        });
+        archive.pipe(res);
+        archive.append(markdown, { name: "PatternAnalysisSummary.md" });
+        await archive.finalize();
+
+        await triggerCaseMemoryRebuild(
+          userId,
+          caseId,
+          "export_pattern_analysis",
+          {},
+        );
+      } catch (error) {
+        console.error("Export pattern analysis error:", error);
+        res.status(500).json({ error: "Failed to export pattern analysis" });
       }
+    },
+  );
 
-      for (const event of timelineEvents) {
-        const eventItem: ExampleItem = {
-          sourceType: "timeline_event",
-          sourceId: event.id,
-          title: event.title,
-          excerpt: (event.notes || "").slice(0, 200),
-          occurredAt: event.eventDate?.toISOString(),
-          importance: pinnedSourceIds.has(event.id) ? 10 : 4,
-        };
+  app.get(
+    "/api/cases/:caseId/anchors",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-        if (event.eventDate) {
-          const dateKey = event.eventDate.toISOString().split("T")[0];
-          if (!keyDatesMap[dateKey]) keyDatesMap[dateKey] = [];
-          keyDatesMap[dateKey].push(eventItem);
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
 
-        const category = event.title.toLowerCase();
-        if (category.includes("hearing") || category.includes("court") || category.includes("filing")) {
-          if (!patternCounts["Court Events"]) patternCounts["Court Events"] = [];
-          patternCounts["Court Events"].push(eventItem);
-        }
-        if (category.includes("exchange") || category.includes("pickup") || category.includes("dropoff")) {
-          if (!patternCounts["Custody Exchanges"]) patternCounts["Custody Exchanges"] = [];
-          patternCounts["Custody Exchanges"].push(eventItem);
-        }
+        const anchors = await storage.listEvidenceAnchors(userId, caseId);
+        res.json({ anchors });
+      } catch (error) {
+        console.error("List case anchors error:", error);
+        res.status(500).json({ error: "Failed to list anchors" });
       }
+    },
+  );
 
-      for (const comm of communications) {
-        const resolved = comm.status === "resolved";
-        const commItem: ExampleItem = {
-          sourceType: "communication",
-          sourceId: comm.id,
-          title: `${comm.direction === "incoming" ? "From" : "To"}: ${comm.contactId || "Unknown"}`,
-          excerpt: (comm.summary || "").slice(0, 200),
-          occurredAt: comm.occurredAt?.toISOString(),
-          importance: pinnedSourceIds.has(comm.id) ? 10 : (resolved ? 2 : 5),
-        };
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/extraction",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
 
-        if (comm.followUpAt && !resolved) {
-          const dueDate = new Date(comm.followUpAt);
-          if (dueDate < new Date()) {
-            conflictsAndGaps.push({
-              ...commItem,
-              title: `Overdue follow-up: ${comm.contactId || "Unknown"}`,
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const extraction = await storage.getEvidenceExtraction(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        res.json({ extraction });
+      } catch (error) {
+        console.error("Get evidence extraction error:", error);
+        res.status(500).json({ error: "Failed to get extraction" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/extraction",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidenceFile) {
+          return res.status(404).json({ error: "Evidence file not found" });
+        }
+
+        const { insertEvidenceExtractionSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = insertEvidenceExtractionSchema.safeParse({
+          evidenceId,
+          provider: req.body.provider || "internal",
+          mimeType: evidenceFile.mimeType,
+        });
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
             });
-          }
         }
 
-        if (comm.channel) {
-          const typeLabel = comm.channel.charAt(0).toUpperCase() + comm.channel.slice(1) + " communications";
-          if (!patternCounts[typeLabel]) patternCounts[typeLabel] = [];
-          patternCounts[typeLabel].push(commItem);
+        const extraction = await storage.createEvidenceExtraction(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ extraction });
+      } catch (error) {
+        console.error("Create evidence extraction error:", error);
+        res.status(500).json({ error: "Failed to create extraction" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/notes-full",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
+
+        const notes = await storage.listEvidenceNotesFull(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        res.json({ notes });
+      } catch (error) {
+        console.error("List evidence notes error:", error);
+        res.status(500).json({ error: "Failed to list notes" });
       }
+    },
+  );
 
-      for (const snippet of exhibitSnippets) {
-        const snippetItem: ExampleItem = {
-          sourceType: "exhibit_snippet",
-          sourceId: snippet.id,
-          title: snippet.title,
-          excerpt: (snippet.snippetText || "").slice(0, 200),
-          pageNumber: snippet.pageNumber ?? undefined,
-          importance: pinnedSourceIds.has(snippet.id) ? 10 : 4,
-        };
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/notes-full",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
 
-        if (!patternCounts["Exhibit Highlights"]) patternCounts["Exhibit Highlights"] = [];
-        patternCounts["Exhibit Highlights"].push(snippetItem);
-      }
-
-      const sortByImportance = (items: ExampleItem[]) =>
-        [...items].sort((a, b) => (b.importance || 0) - (a.importance || 0));
-
-      const themes = Object.entries(themeCounts)
-        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-      const patterns = Object.entries(patternCounts)
-        .map(([label, examples]) => ({ label, count: examples.length, examples: sortByImportance(examples).slice(0, 3) }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-      const keyDates = Object.entries(keyDatesMap)
-        .map(([date, sources]) => ({ date, label: `${sources.length} event(s)`, sources: sortByImportance(sources).slice(0, 3) }))
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .slice(0, 10);
-
-      const now = new Date();
-      const dateStr = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-      
-      let markdown = `# Pattern Analysis Summary\n\n`;
-      markdown += `**Case:** ${caseRecord.title}\n`;
-      markdown += `**Generated:** ${dateStr}\n\n`;
-      markdown += `---\n\n`;
-      markdown += `> **Disclaimer:** This is an organizational summary and may be incomplete or incorrect. Verify against your documents. This is not legal advice.\n\n`;
-      markdown += `---\n\n`;
-
-      markdown += `## Coverage & Status\n\n`;
-      markdown += `- **Evidence Files:** ${evidenceFiles.length}\n`;
-      markdown += `- **AI Analyses Complete:** ${aiAnalyses.filter(a => a.status === "complete").length}\n`;
-      markdown += `- **Notes:** ${notesFull.length}\n`;
-      markdown += `- **Timeline Events:** ${timelineEvents.length}\n`;
-      markdown += `- **Communications:** ${communications.length}\n\n`;
-
-      if (themes.length > 0) {
-        markdown += `## Themes Detected\n\n`;
-        for (const theme of themes) {
-          markdown += `### ${theme.label} (${theme.count} occurrence${theme.count !== 1 ? "s" : ""})\n\n`;
-          for (const ex of theme.examples) {
-            markdown += `- **${ex.title}**${ex.fileName ? ` (${ex.fileName})` : ""}\n`;
-            markdown += `  ${ex.excerpt}\n\n`;
-          }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      }
 
-      if (patterns.length > 0) {
-        markdown += `## Patterns Found\n\n`;
-        for (const pattern of patterns) {
-          markdown += `### ${pattern.label} (${pattern.count} item${pattern.count !== 1 ? "s" : ""})\n\n`;
-          for (const ex of pattern.examples) {
-            markdown += `- **${ex.title}**${ex.fileName ? ` (${ex.fileName})` : ""}\n`;
-            markdown += `  ${ex.excerpt}\n\n`;
-          }
+        const { insertEvidenceNoteFullSchema } = await import("@shared/schema");
+        const parsed = insertEvidenceNoteFullSchema.safeParse({
+          ...req.body,
+          evidenceId,
+        });
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
         }
-      }
 
-      if (keyDates.length > 0) {
-        markdown += `## Key Dates\n\n`;
-        for (const entry of keyDates) {
-          const formattedDate = new Date(entry.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-          markdown += `### ${formattedDate} - ${entry.label}\n\n`;
-          for (const src of entry.sources) {
-            markdown += `- **${src.title}**: ${src.excerpt}\n\n`;
-          }
-        }
+        const note = await storage.createEvidenceNoteFull(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ note });
+      } catch (error) {
+        console.error("Create evidence note error:", error);
+        res.status(500).json({ error: "Failed to create note" });
       }
-
-      if (conflictsAndGaps.length > 0) {
-        markdown += `## Conflicts & Gaps\n\n`;
-        for (const item of sortByImportance(conflictsAndGaps).slice(0, 10)) {
-          markdown += `- **${item.title}**: ${item.excerpt}\n\n`;
-        }
-      }
-
-      markdown += `---\n\n`;
-      markdown += `## Sources Appendix\n\n`;
-      markdown += `| Type | ID | Title |\n`;
-      markdown += `|------|-----|-------|\n`;
-      
-      const allExamples = [
-        ...themes.flatMap(t => t.examples),
-        ...patterns.flatMap(p => p.examples),
-        ...keyDates.flatMap(d => d.sources),
-        ...conflictsAndGaps,
-      ];
-      const seenIds = new Set<string>();
-      for (const ex of allExamples) {
-        if (seenIds.has(ex.sourceId)) continue;
-        seenIds.add(ex.sourceId);
-        markdown += `| ${ex.sourceType} | ${ex.sourceId.slice(0, 8)}... | ${ex.title.replace(/\|/g, "\\|")} |\n`;
-      }
-
-      const archiver = require("archiver");
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", `attachment; filename="PatternAnalysis_${caseRecord.title.replace(/[^a-zA-Z0-9]/g, "_")}.zip"`);
-
-      const archive = archiver("zip", { zlib: { level: 9 } });
-      archive.on("error", (err: Error) => {
-        console.error("Archive error:", err);
-        res.status(500).json({ error: "Failed to create export" });
-      });
-      archive.pipe(res);
-      archive.append(markdown, { name: "PatternAnalysisSummary.md" });
-      await archive.finalize();
-      
-      await triggerCaseMemoryRebuild(userId, caseId, "export_pattern_analysis", {});
-    } catch (error) {
-      console.error("Export pattern analysis error:", error);
-      res.status(500).json({ error: "Failed to export pattern analysis" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/anchors", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const anchors = await storage.listEvidenceAnchors(userId, caseId);
-      res.json({ anchors });
-    } catch (error) {
-      console.error("List case anchors error:", error);
-      res.status(500).json({ error: "Failed to list anchors" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
-      res.json({ extraction });
-    } catch (error) {
-      console.error("Get evidence extraction error:", error);
-      res.status(500).json({ error: "Failed to get extraction" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/evidence/:evidenceId/extraction", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const evidenceFile = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidenceFile) {
-        return res.status(404).json({ error: "Evidence file not found" });
-      }
-      
-      const { insertEvidenceExtractionSchema } = await import("@shared/schema");
-      const parsed = insertEvidenceExtractionSchema.safeParse({ 
-        evidenceId, 
-        provider: req.body.provider || "internal",
-        mimeType: evidenceFile.mimeType 
-      });
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const extraction = await storage.createEvidenceExtraction(userId, caseId, parsed.data);
-      res.status(201).json({ extraction });
-    } catch (error) {
-      console.error("Create evidence extraction error:", error);
-      res.status(500).json({ error: "Failed to create extraction" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const notes = await storage.listEvidenceNotesFull(userId, caseId, evidenceId);
-      res.json({ notes });
-    } catch (error) {
-      console.error("List evidence notes error:", error);
-      res.status(500).json({ error: "Failed to list notes" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/evidence/:evidenceId/notes-full", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const { insertEvidenceNoteFullSchema } = await import("@shared/schema");
-      const parsed = insertEvidenceNoteFullSchema.safeParse({ ...req.body, evidenceId });
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const note = await storage.createEvidenceNoteFull(userId, caseId, parsed.data);
-      res.status(201).json({ note });
-    } catch (error) {
-      console.error("Create evidence note error:", error);
-      res.status(500).json({ error: "Failed to create note" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/notes-full/:noteId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { noteId } = req.params;
-      
+
       const { updateEvidenceNoteFullSchema } = await import("@shared/schema");
       const parsed = updateEvidenceNoteFullSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+        return res
+          .status(400)
+          .json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
-      
-      const note = await storage.updateEvidenceNoteFull(userId, noteId, parsed.data);
+
+      const note = await storage.updateEvidenceNoteFull(
+        userId,
+        noteId,
+        parsed.data,
+      );
       if (!note) {
         return res.status(404).json({ error: "Note not found" });
       }
-      
+
       res.json({ note });
     } catch (error) {
       console.error("Update evidence note error:", error);
@@ -8272,12 +10673,12 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     try {
       const userId = req.session.userId as string;
       const { noteId } = req.params;
-      
+
       const deleted = await storage.deleteEvidenceNoteFull(userId, noteId);
       if (!deleted) {
         return res.status(404).json({ error: "Note not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Delete evidence note error:", error);
@@ -8285,246 +10686,384 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
     }
   });
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
-      res.json({ analyses });
-    } catch (error) {
-      console.error("List AI analyses error:", error);
-      res.status(500).json({ error: "Failed to list analyses" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/ai-analyses",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
 
-  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const { insertEvidenceAiAnalysisSchema } = await import("@shared/schema");
-      const parsed = insertEvidenceAiAnalysisSchema.safeParse({ ...req.body, evidenceId });
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const analysis = await storage.createEvidenceAiAnalysis(userId, caseId, parsed.data);
-      res.status(201).json({ analysis });
-    } catch (error) {
-      console.error("Create AI analysis error:", error);
-      res.status(500).json({ error: "Failed to create analysis" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/ai-analyses", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
-      res.json({ analyses });
-    } catch (error) {
-      console.error("List all AI analyses error:", error);
-      res.status(500).json({ error: "Failed to list analyses" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/ai/status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const evidence = await storage.listEvidence(userId, caseId);
-      const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
-      
-      const analysisStatusByEvidence: Record<string, { status: string; error?: string }> = {};
-      for (const analysis of analyses) {
-        analysisStatusByEvidence[analysis.evidenceId] = {
-          status: analysis.status,
-          error: analysis.errorMessage || undefined,
-        };
-      }
-      
-      let running = 0;
-      let pending = 0;
-      let completed = 0;
-      let failed = 0;
-      
-      for (const e of evidence) {
-        const analysis = analysisStatusByEvidence[e.id];
-        if (!analysis) {
-          pending += 1;
-        } else if (analysis.status === "running" || analysis.status === "pending") {
-          running += 1;
-        } else if (analysis.status === "completed") {
-          completed += 1;
-        } else if (analysis.status === "failed") {
-          failed += 1;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      }
-      
-      const overallStatus = running > 0 ? "running" : pending > 0 ? "pending" : failed > 0 && completed === 0 ? "failed" : "idle";
-      
-      res.json({
-        overallStatus,
-        counts: { running, pending, completed, failed, total: evidence.length },
-        evidenceStatus: analysisStatusByEvidence,
-      });
-    } catch (error) {
-      console.error("AI status error:", error);
-      res.status(500).json({ error: "Failed to get AI status" });
-    }
-  });
 
-  app.patch("/api/evidence-ai-analyses/:analysisId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { analysisId } = req.params;
-      
-      const { updateEvidenceAiAnalysisSchema } = await import("@shared/schema");
-      const parsed = updateEvidenceAiAnalysisSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const updated = await storage.updateEvidenceAiAnalysis(userId, analysisId, parsed.data);
-      if (!updated) {
-        return res.status(404).json({ error: "Analysis not found" });
-      }
-      
-      res.json({ analysis: updated });
-    } catch (error) {
-      console.error("Update AI analysis error:", error);
-      res.status(500).json({ error: "Failed to update analysis" });
-    }
-  });
-
-  app.delete("/api/evidence-ai-analyses/:analysisId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { analysisId } = req.params;
-      
-      const deleted = await storage.deleteEvidenceAiAnalysis(userId, analysisId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Analysis not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete AI analysis error:", error);
-      res.status(500).json({ error: "Failed to delete analysis" });
-    }
-  });
-
-  const analysisLimiter = createLimiter(2);
-  app.post("/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run", requireAuth, requireAnalysis(), requireQuota("ai_call"), async (req, res) => {
-    const userId = req.session.userId as string;
-    const { caseId, evidenceId } = req.params;
-    const refresh = req.body.refresh === true;
-    
-    const quotaReq = req as import("./middleware/quota").QuotaRequest;
-    const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
-    
-    try {
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found", code: "CASE_NOT_FOUND" });
-      }
-      
-      const evidence = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidence || evidence.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence not found", code: "EVIDENCE_NOT_FOUND" });
-      }
-      
-      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
-      if (!extraction || extraction.status !== "complete") {
-        return res.status(409).json({ 
-          error: "Run text extraction first.", 
-          code: "EXTRACTION_NOT_COMPLETE",
-          extractionStatus: extraction?.status || "not_started"
-        });
-      }
-      
-      if (!extraction.extractedText || extraction.extractedText.trim().length === 0) {
-        return res.status(400).json({ error: "No extracted text available for analysis", code: "NO_EXTRACTED_TEXT" });
-      }
-      
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(503).json({ error: "AI analysis unavailable - OPENAI_API_KEY not configured", code: "OPENAI_KEY_MISSING" });
-      }
-      
-      const existingAnalyses = await storage.listEvidenceAiAnalyses(userId, caseId, evidenceId);
-      const existingProcessing = existingAnalyses.find(a => a.status === "processing");
-      if (existingProcessing && !refresh) {
-        return res.status(409).json({ error: "Analysis already in progress", analysisId: existingProcessing.id });
-      }
-      
-      const existingSummary = existingAnalyses.find(a => a.analysisType === "summary_findings" && a.status === "complete");
-      if (existingSummary && !refresh) {
-        return res.status(409).json({ error: "Analysis already exists", analysisId: existingSummary.id });
-      }
-      
-      const analysis = await storage.createEvidenceAiAnalysis(userId, caseId, {
-        evidenceId,
-        analysisType: "summary_findings",
-        content: "",
-        status: "processing",
-        model: "gpt-4o",
-      });
-      
-      const jobKey = `ai_analysis:${analysis.id}`;
-      let creditConsumed = false;
-      
-      if (useCredit) {
-        const { consumeCreditOrThrow } = await import("./services/credits");
-        const consumeResult = await consumeCreditOrThrow({
+        const analyses = await storage.listEvidenceAiAnalyses(
           userId,
           caseId,
-          jobType: "ai_analysis",
-          jobKey,
-        });
-        
-        if (!consumeResult.consumed) {
-          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
-            status: "failed",
-            error: "Insufficient processing credits",
-          });
-          return res.status(402).json({ error: "Insufficient processing credits", code: "INSUFFICIENT_CREDITS" });
-        }
-        creditConsumed = true;
-        console.log(`[AI_ANALYSIS] Consumed 1 credit for analysis ${analysis.id}, remaining=${consumeResult.remaining}`);
+          evidenceId,
+        );
+        res.json({ analyses });
+      } catch (error) {
+        console.error("List AI analyses error:", error);
+        res.status(500).json({ error: "Failed to list analyses" });
       }
-      
-      console.log(`[AI_ANALYSIS] start { caseId: ${caseId}, evidenceId: ${evidenceId}, analysisId: ${analysis.id}, useCredit: ${useCredit} }`);
-      res.status(202).json({ analysis, message: "Analysis started", useCredit });
-      
-      analysisLimiter(async () => {
-        try {
-          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-          const textToAnalyze = extraction.extractedText!.slice(0, 15000);
-          
-          const systemPrompt = `You are a legal document analysis assistant for family court cases. Analyze the provided document text and extract key information. Be factual and objective. Do not provide legal advice.
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/ai-analyses",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertEvidenceAiAnalysisSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = insertEvidenceAiAnalysisSchema.safeParse({
+          ...req.body,
+          evidenceId,
+        });
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const analysis = await storage.createEvidenceAiAnalysis(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ analysis });
+      } catch (error) {
+        console.error("Create AI analysis error:", error);
+        res.status(500).json({ error: "Failed to create analysis" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/ai-analyses",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
+        res.json({ analyses });
+      } catch (error) {
+        console.error("List all AI analyses error:", error);
+        res.status(500).json({ error: "Failed to list analyses" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/ai/status",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const evidence = await storage.listEvidence(userId, caseId);
+        const analyses = await storage.listEvidenceAiAnalyses(userId, caseId);
+
+        const analysisStatusByEvidence: Record<
+          string,
+          { status: string; error?: string }
+        > = {};
+        for (const analysis of analyses) {
+          analysisStatusByEvidence[analysis.evidenceId] = {
+            status: analysis.status,
+            error: analysis.errorMessage || undefined,
+          };
+        }
+
+        let running = 0;
+        let pending = 0;
+        let completed = 0;
+        let failed = 0;
+
+        for (const e of evidence) {
+          const analysis = analysisStatusByEvidence[e.id];
+          if (!analysis) {
+            pending += 1;
+          } else if (
+            analysis.status === "running" ||
+            analysis.status === "pending"
+          ) {
+            running += 1;
+          } else if (analysis.status === "completed") {
+            completed += 1;
+          } else if (analysis.status === "failed") {
+            failed += 1;
+          }
+        }
+
+        const overallStatus =
+          running > 0
+            ? "running"
+            : pending > 0
+              ? "pending"
+              : failed > 0 && completed === 0
+                ? "failed"
+                : "idle";
+
+        res.json({
+          overallStatus,
+          counts: {
+            running,
+            pending,
+            completed,
+            failed,
+            total: evidence.length,
+          },
+          evidenceStatus: analysisStatusByEvidence,
+        });
+      } catch (error) {
+        console.error("AI status error:", error);
+        res.status(500).json({ error: "Failed to get AI status" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/evidence-ai-analyses/:analysisId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { analysisId } = req.params;
+
+        const { updateEvidenceAiAnalysisSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = updateEvidenceAiAnalysisSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const updated = await storage.updateEvidenceAiAnalysis(
+          userId,
+          analysisId,
+          parsed.data,
+        );
+        if (!updated) {
+          return res.status(404).json({ error: "Analysis not found" });
+        }
+
+        res.json({ analysis: updated });
+      } catch (error) {
+        console.error("Update AI analysis error:", error);
+        res.status(500).json({ error: "Failed to update analysis" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/evidence-ai-analyses/:analysisId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { analysisId } = req.params;
+
+        const deleted = await storage.deleteEvidenceAiAnalysis(
+          userId,
+          analysisId,
+        );
+        if (!deleted) {
+          return res.status(404).json({ error: "Analysis not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete AI analysis error:", error);
+        res.status(500).json({ error: "Failed to delete analysis" });
+      }
+    },
+  );
+
+  const analysisLimiter = createLimiter(2);
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/ai-analyses/run",
+    requireAuth,
+    requireAnalysis(),
+    requireQuota("ai_call"),
+    async (req, res) => {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      const refresh = req.body.refresh === true;
+
+      const quotaReq = req as import("./middleware/quota").QuotaRequest;
+      const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
+
+      try {
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res
+            .status(404)
+            .json({ error: "Case not found", code: "CASE_NOT_FOUND" });
+        }
+
+        const evidence = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidence || evidence.caseId !== caseId) {
+          return res
+            .status(404)
+            .json({ error: "Evidence not found", code: "EVIDENCE_NOT_FOUND" });
+        }
+
+        const extraction = await storage.getEvidenceExtraction(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        if (!extraction || extraction.status !== "complete") {
+          return res.status(409).json({
+            error: "Run text extraction first.",
+            code: "EXTRACTION_NOT_COMPLETE",
+            extractionStatus: extraction?.status || "not_started",
+          });
+        }
+
+        if (
+          !extraction.extractedText ||
+          extraction.extractedText.trim().length === 0
+        ) {
+          return res
+            .status(400)
+            .json({
+              error: "No extracted text available for analysis",
+              code: "NO_EXTRACTED_TEXT",
+            });
+        }
+
+        if (!process.env.OPENAI_API_KEY) {
+          return res
+            .status(503)
+            .json({
+              error: "AI analysis unavailable - OPENAI_API_KEY not configured",
+              code: "OPENAI_KEY_MISSING",
+            });
+        }
+
+        const existingAnalyses = await storage.listEvidenceAiAnalyses(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        const existingProcessing = existingAnalyses.find(
+          (a) => a.status === "processing",
+        );
+        if (existingProcessing && !refresh) {
+          return res
+            .status(409)
+            .json({
+              error: "Analysis already in progress",
+              analysisId: existingProcessing.id,
+            });
+        }
+
+        const existingSummary = existingAnalyses.find(
+          (a) =>
+            a.analysisType === "summary_findings" && a.status === "complete",
+        );
+        if (existingSummary && !refresh) {
+          return res
+            .status(409)
+            .json({
+              error: "Analysis already exists",
+              analysisId: existingSummary.id,
+            });
+        }
+
+        const analysis = await storage.createEvidenceAiAnalysis(
+          userId,
+          caseId,
+          {
+            evidenceId,
+            analysisType: "summary_findings",
+            content: "",
+            status: "processing",
+            model: "gpt-4o",
+          },
+        );
+
+        const jobKey = `ai_analysis:${analysis.id}`;
+        let creditConsumed = false;
+
+        if (useCredit) {
+          const { consumeCreditOrThrow } = await import("./services/credits");
+          const consumeResult = await consumeCreditOrThrow({
+            userId,
+            caseId,
+            jobType: "ai_analysis",
+            jobKey,
+          });
+
+          if (!consumeResult.consumed) {
+            await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+              status: "failed",
+              error: "Insufficient processing credits",
+            });
+            return res
+              .status(402)
+              .json({
+                error: "Insufficient processing credits",
+                code: "INSUFFICIENT_CREDITS",
+              });
+          }
+          creditConsumed = true;
+          console.log(
+            `[AI_ANALYSIS] Consumed 1 credit for analysis ${analysis.id}, remaining=${consumeResult.remaining}`,
+          );
+        }
+
+        console.log(
+          `[AI_ANALYSIS] start { caseId: ${caseId}, evidenceId: ${evidenceId}, analysisId: ${analysis.id}, useCredit: ${useCredit} }`,
+        );
+        res
+          .status(202)
+          .json({ analysis, message: "Analysis started", useCredit });
+
+        analysisLimiter(async () => {
+          try {
+            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+            const textToAnalyze = extraction.extractedText!.slice(0, 15000);
+
+            const systemPrompt = `You are a legal document analysis assistant for family court cases. Analyze the provided document text and extract key information. Be factual and objective. Do not provide legal advice.
 
 Return a JSON object with this structure:
 {
@@ -8538,172 +11077,253 @@ Return a JSON object with this structure:
   "confidenceNotes": ["Any caveats about extraction quality or missing info"]
 }`;
 
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: `Analyze this document:\n\n${textToAnalyze}` }
-            ],
-            temperature: 0.3,
-            max_tokens: 2000,
-            response_format: { type: "json_object" },
-          });
-          
-          const responseText = completion.choices[0]?.message?.content || "{}";
-          let parsed: Record<string, unknown> = {};
-          try {
-            parsed = JSON.parse(responseText);
-          } catch {
-            parsed = { summary: responseText, error: "Failed to parse structured response" };
-          }
-          
-          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
-            status: "complete",
-            summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis complete",
-            findings: parsed,
-            content: responseText,
-          });
-          
-          await triggerCaseMemoryRebuild(userId, caseId, "evidence_ai_analysis_complete", {
-            evidenceId,
-            analysisId: analysis.id,
-            model: "gpt-4o",
-          });
-          
-          console.log(`[AI_ANALYSIS] complete { analysisId: ${analysis.id} }`);
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : "Unknown error";
-          const code = (error as any)?.code || "ANALYSIS_ERROR";
-          console.error(`[AI_ANALYSIS] failed { analysisId: ${analysis.id}, code: ${code}, message: ${errorMsg} }`);
-          
-          if (creditConsumed) {
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: systemPrompt },
+                {
+                  role: "user",
+                  content: `Analyze this document:\n\n${textToAnalyze}`,
+                },
+              ],
+              temperature: 0.3,
+              max_tokens: 2000,
+              response_format: { type: "json_object" },
+            });
+
+            const responseText =
+              completion.choices[0]?.message?.content || "{}";
+            let parsed: Record<string, unknown> = {};
             try {
-              const { refundCreditIfNeeded } = await import("./services/credits");
-              await refundCreditIfNeeded({
-                userId,
-                caseId,
-                jobType: "ai_analysis",
-                jobKey,
-                error: errorMsg,
-              });
-              console.log(`[AI_ANALYSIS] Refunded credit for failed analysis ${analysis.id}`);
-            } catch (refundError) {
-              console.error(`[AI_ANALYSIS] Failed to refund credit for ${analysis.id}:`, refundError);
+              parsed = JSON.parse(responseText);
+            } catch {
+              parsed = {
+                summary: responseText,
+                error: "Failed to parse structured response",
+              };
             }
+
+            await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+              status: "complete",
+              summary:
+                typeof parsed.summary === "string"
+                  ? parsed.summary
+                  : "Analysis complete",
+              findings: parsed,
+              content: responseText,
+            });
+
+            await triggerCaseMemoryRebuild(
+              userId,
+              caseId,
+              "evidence_ai_analysis_complete",
+              {
+                evidenceId,
+                analysisId: analysis.id,
+                model: "gpt-4o",
+              },
+            );
+
+            console.log(
+              `[AI_ANALYSIS] complete { analysisId: ${analysis.id} }`,
+            );
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : "Unknown error";
+            const code = (error as any)?.code || "ANALYSIS_ERROR";
+            console.error(
+              `[AI_ANALYSIS] failed { analysisId: ${analysis.id}, code: ${code}, message: ${errorMsg} }`,
+            );
+
+            if (creditConsumed) {
+              try {
+                const { refundCreditIfNeeded } = await import(
+                  "./services/credits"
+                );
+                await refundCreditIfNeeded({
+                  userId,
+                  caseId,
+                  jobType: "ai_analysis",
+                  jobKey,
+                  error: errorMsg,
+                });
+                console.log(
+                  `[AI_ANALYSIS] Refunded credit for failed analysis ${analysis.id}`,
+                );
+              } catch (refundError) {
+                console.error(
+                  `[AI_ANALYSIS] Failed to refund credit for ${analysis.id}:`,
+                  refundError,
+                );
+              }
+            }
+
+            const refundNote = creditConsumed ? " (credit refunded)" : "";
+            await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
+              status: "failed",
+              error: errorMsg.slice(0, 500) + refundNote,
+            });
+
+            await triggerCaseMemoryRebuild(
+              userId,
+              caseId,
+              "evidence_ai_analysis_failed",
+              {
+                evidenceId,
+                analysisId: analysis.id,
+                error: errorMsg.slice(0, 200),
+                creditRefunded: creditConsumed,
+              },
+            );
           }
-          
-          const refundNote = creditConsumed ? " (credit refunded)" : "";
-          await storage.updateEvidenceAiAnalysis(userId, analysis.id, {
-            status: "failed",
-            error: errorMsg.slice(0, 500) + refundNote,
-          });
-          
-          await triggerCaseMemoryRebuild(userId, caseId, "evidence_ai_analysis_failed", {
-            evidenceId,
-            analysisId: analysis.id,
-            error: errorMsg.slice(0, 200),
-            creditRefunded: creditConsumed,
-          });
-        }
-      });
-    } catch (error) {
-      console.error("Run AI analysis error:", error);
-      const code = (error as any)?.code || "ANALYSIS_ERROR";
-      res.status(500).json({ error: "Failed to start analysis", code });
-    }
-  });
+        });
+      } catch (error) {
+        console.error("Run AI analysis error:", error);
+        const code = (error as any)?.code || "ANALYSIS_ERROR";
+        res.status(500).json({ error: "Failed to start analysis", code });
+      }
+    },
+  );
 
   const claimSuggestionLimiter = createLimiter(2);
-  app.post("/api/cases/:caseId/evidence/:evidenceId/claims/suggest", requireAuth, requireAnalysis(), requireQuota("ai_call"), async (req, res) => {
-    const userId = req.session.userId as string;
-    const { caseId, evidenceId } = req.params;
-    const refresh = req.body.refresh === true;
-    const limit = typeof req.body.limit === "number" ? Math.min(req.body.limit, 20) : 10;
-    
-    const quotaReq = req as import("./middleware/quota").QuotaRequest;
-    const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
-    
-    try {
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found", code: "CASE_NOT_FOUND" });
-      }
-      
-      const evidence = await storage.getEvidenceFile(evidenceId, userId);
-      if (!evidence || evidence.caseId !== caseId) {
-        return res.status(404).json({ error: "Evidence not found", code: "EVIDENCE_NOT_FOUND" });
-      }
-      
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(502).json({ error: "Lexi cannot authenticate to OpenAI.", code: "OPENAI_KEY_MISSING" });
-      }
-      
-      const extraction = await storage.getEvidenceExtraction(userId, caseId, evidenceId);
-      const notes = await storage.listEvidenceNotesFull(userId, caseId, evidenceId);
-      
-      let inputText = "";
-      if (extraction?.status === "complete" && extraction.extractedText?.trim()) {
-        inputText = extraction.extractedText.slice(0, 20000);
-      } else if (notes.length > 0) {
-        inputText = notes
-          .map(n => `[Note: ${n.noteTitle || "Untitled"}]\n${n.noteText || ""}`)
-          .join("\n\n")
-          .slice(0, 20000);
-      }
-      
-      if (!inputText.trim()) {
-        return res.status(409).json({ 
-          error: "Extraction not ready.", 
-          code: "EXTRACTION_NOT_COMPLETE" 
-        });
-      }
-      
-      const existingClaims = await storage.listCaseClaims(userId, caseId);
-      if (!refresh && existingClaims.some(c => c.createdFrom === "ai_suggested" && c.status === "suggested")) {
-        const suggestedForEvidence = existingClaims.filter(c => 
-          c.createdFrom === "ai_suggested" && c.status === "suggested"
-        );
-        return res.status(200).json({ 
-          ok: true, 
-          created: 0, 
-          skipped: 0, 
-          message: "Suggested claims already exist. Use refresh=true to suggest more.",
-          existingCount: suggestedForEvidence.length
-        });
-      }
-      
-      const normalizedExisting = new Set(
-        existingClaims
-          .filter(c => c.status === "suggested" || c.status === "accepted")
-          .map(c => c.claimText.toLowerCase().trim().replace(/\s+/g, " "))
-      );
-      
-      const jobKey = `claim_suggest:${evidenceId}:${Date.now()}`;
-      let creditConsumed = false;
-      
-      if (useCredit) {
-        const { consumeCreditOrThrow } = await import("./services/credits");
-        const consumeResult = await consumeCreditOrThrow({
+  app.post(
+    "/api/cases/:caseId/evidence/:evidenceId/claims/suggest",
+    requireAuth,
+    requireAnalysis(),
+    requireQuota("ai_call"),
+    async (req, res) => {
+      const userId = req.session.userId as string;
+      const { caseId, evidenceId } = req.params;
+      const refresh = req.body.refresh === true;
+      const limit =
+        typeof req.body.limit === "number" ? Math.min(req.body.limit, 20) : 10;
+
+      const quotaReq = req as import("./middleware/quota").QuotaRequest;
+      const useCredit = quotaReq.quotaCheck?.code === "CREDITS_CONSUMED";
+
+      try {
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res
+            .status(404)
+            .json({ error: "Case not found", code: "CASE_NOT_FOUND" });
+        }
+
+        const evidence = await storage.getEvidenceFile(evidenceId, userId);
+        if (!evidence || evidence.caseId !== caseId) {
+          return res
+            .status(404)
+            .json({ error: "Evidence not found", code: "EVIDENCE_NOT_FOUND" });
+        }
+
+        if (!process.env.OPENAI_API_KEY) {
+          return res
+            .status(502)
+            .json({
+              error: "Lexi cannot authenticate to OpenAI.",
+              code: "OPENAI_KEY_MISSING",
+            });
+        }
+
+        const extraction = await storage.getEvidenceExtraction(
           userId,
           caseId,
-          jobType: "claims",
-          jobKey,
-        });
-        
-        if (!consumeResult.consumed) {
-          return res.status(402).json({ error: "Insufficient processing credits", code: "INSUFFICIENT_CREDITS" });
+          evidenceId,
+        );
+        const notes = await storage.listEvidenceNotesFull(
+          userId,
+          caseId,
+          evidenceId,
+        );
+
+        let inputText = "";
+        if (
+          extraction?.status === "complete" &&
+          extraction.extractedText?.trim()
+        ) {
+          inputText = extraction.extractedText.slice(0, 20000);
+        } else if (notes.length > 0) {
+          inputText = notes
+            .map(
+              (n) =>
+                `[Note: ${n.noteTitle || "Untitled"}]\n${n.noteText || ""}`,
+            )
+            .join("\n\n")
+            .slice(0, 20000);
         }
-        creditConsumed = true;
-        console.log(`[CLAIM_SUGGEST] Consumed 1 credit for evidence ${evidenceId}, remaining=${consumeResult.remaining}`);
-      }
-      
-      res.status(202).json({ ok: true, message: "Generating claim suggestions...", useCredit });
-      
-      claimSuggestionLimiter(async () => {
-        try {
-          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-          
-          const systemPrompt = `You are a legal document analyst extracting factual claims from evidence. Your job is to identify NEUTRAL, FACTUAL statements that can be verified from the text.
+
+        if (!inputText.trim()) {
+          return res.status(409).json({
+            error: "Extraction not ready.",
+            code: "EXTRACTION_NOT_COMPLETE",
+          });
+        }
+
+        const existingClaims = await storage.listCaseClaims(userId, caseId);
+        if (
+          !refresh &&
+          existingClaims.some(
+            (c) => c.createdFrom === "ai_suggested" && c.status === "suggested",
+          )
+        ) {
+          const suggestedForEvidence = existingClaims.filter(
+            (c) => c.createdFrom === "ai_suggested" && c.status === "suggested",
+          );
+          return res.status(200).json({
+            ok: true,
+            created: 0,
+            skipped: 0,
+            message:
+              "Suggested claims already exist. Use refresh=true to suggest more.",
+            existingCount: suggestedForEvidence.length,
+          });
+        }
+
+        const normalizedExisting = new Set(
+          existingClaims
+            .filter((c) => c.status === "suggested" || c.status === "accepted")
+            .map((c) => c.claimText.toLowerCase().trim().replace(/\s+/g, " ")),
+        );
+
+        const jobKey = `claim_suggest:${evidenceId}:${Date.now()}`;
+        let creditConsumed = false;
+
+        if (useCredit) {
+          const { consumeCreditOrThrow } = await import("./services/credits");
+          const consumeResult = await consumeCreditOrThrow({
+            userId,
+            caseId,
+            jobType: "claims",
+            jobKey,
+          });
+
+          if (!consumeResult.consumed) {
+            return res
+              .status(402)
+              .json({
+                error: "Insufficient processing credits",
+                code: "INSUFFICIENT_CREDITS",
+              });
+          }
+          creditConsumed = true;
+          console.log(
+            `[CLAIM_SUGGEST] Consumed 1 credit for evidence ${evidenceId}, remaining=${consumeResult.remaining}`,
+          );
+        }
+
+        res
+          .status(202)
+          .json({
+            ok: true,
+            message: "Generating claim suggestions...",
+            useCredit,
+          });
+
+        claimSuggestionLimiter(async () => {
+          try {
+            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+            const systemPrompt = `You are a legal document analyst extracting factual claims from evidence. Your job is to identify NEUTRAL, FACTUAL statements that can be verified from the text.
 
 RULES:
 - Claims must be neutral factual statements only
@@ -8731,462 +11351,660 @@ Return ONLY valid JSON (no markdown) as an array of objects:
 
 Limit to ${limit} most important claims.`;
 
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: `Extract factual claims from this evidence:\n\n${inputText}` }
-            ],
-            temperature: 0.2,
-            max_tokens: 4000,
-            response_format: { type: "json_object" },
-          });
-          
-          const responseText = completion.choices[0]?.message?.content || "[]";
-          let suggestions: Array<{
-            claimText: string;
-            claimType: string;
-            tags: string[];
-            missingInfoFlag: boolean;
-            citation: {
-              quote: string;
-              pageNumber: number | null;
-              timestampSeconds: number | null;
-              startOffset: number | null;
-              endOffset: number | null;
-            };
-          }> = [];
-          
-          try {
-            const parsed = JSON.parse(responseText);
-            suggestions = Array.isArray(parsed) ? parsed : (parsed.claims || parsed.suggestions || []);
-          } catch {
-            console.error("[CLAIM_SUGGEST] Failed to parse OpenAI response");
-            return;
-          }
-          
-          let created = 0;
-          let skipped = 0;
-          
-          for (const sug of suggestions.slice(0, limit)) {
-            if (!sug.claimText?.trim()) {
-              skipped++;
-              continue;
-            }
-            
-            const normalized = sug.claimText.toLowerCase().trim().replace(/\s+/g, " ");
-            if (normalizedExisting.has(normalized)) {
-              skipped++;
-              continue;
-            }
-            normalizedExisting.add(normalized);
-            
-            const citationPointer = await storage.createCitationPointer(userId, caseId, {
-              evidenceFileId: evidenceId,
-              quote: sug.citation?.quote?.slice(0, 500) || "",
-              pageNumber: sug.citation?.pageNumber ?? null,
-              timestampSeconds: sug.citation?.timestampSeconds ?? null,
-              startOffset: sug.citation?.startOffset ?? null,
-              endOffset: sug.citation?.endOffset ?? null,
-              excerpt: sug.citation?.quote?.slice(0, 200) || null,
-              confidence: 0.8,
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: systemPrompt },
+                {
+                  role: "user",
+                  content: `Extract factual claims from this evidence:\n\n${inputText}`,
+                },
+              ],
+              temperature: 0.2,
+              max_tokens: 4000,
+              response_format: { type: "json_object" },
             });
-            
-            const validTypes = ["fact", "procedural", "context", "communication", "financial", "medical", "school", "custody"];
-            const claimType = validTypes.includes(sug.claimType) ? sug.claimType as any : "fact";
-            
-            const claim = await storage.createCaseClaim(userId, caseId, {
-              claimText: sug.claimText.trim(),
-              claimType,
-              tags: Array.isArray(sug.tags) ? sug.tags : [],
-              missingInfoFlag: sug.missingInfoFlag === true,
-              createdFrom: "ai_suggested",
-              status: "suggested",
-            });
-            
-            await storage.attachClaimCitation(userId, claim.id, citationPointer.id);
-            created++;
-          }
-          
-          console.log(`[CLAIM_SUGGEST] complete { caseId: ${caseId}, evidenceId: ${evidenceId}, created: ${created}, skipped: ${skipped} }`);
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : "Unknown error";
-          console.error(`[CLAIM_SUGGEST] failed { caseId: ${caseId}, evidenceId: ${evidenceId}, error: ${errorMsg} }`);
-          
-          if (creditConsumed) {
+
+            const responseText =
+              completion.choices[0]?.message?.content || "[]";
+            let suggestions: Array<{
+              claimText: string;
+              claimType: string;
+              tags: string[];
+              missingInfoFlag: boolean;
+              citation: {
+                quote: string;
+                pageNumber: number | null;
+                timestampSeconds: number | null;
+                startOffset: number | null;
+                endOffset: number | null;
+              };
+            }> = [];
+
             try {
-              const { refundCreditIfNeeded } = await import("./services/credits");
-              await refundCreditIfNeeded({
+              const parsed = JSON.parse(responseText);
+              suggestions = Array.isArray(parsed)
+                ? parsed
+                : parsed.claims || parsed.suggestions || [];
+            } catch {
+              console.error("[CLAIM_SUGGEST] Failed to parse OpenAI response");
+              return;
+            }
+
+            let created = 0;
+            let skipped = 0;
+
+            for (const sug of suggestions.slice(0, limit)) {
+              if (!sug.claimText?.trim()) {
+                skipped++;
+                continue;
+              }
+
+              const normalized = sug.claimText
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g, " ");
+              if (normalizedExisting.has(normalized)) {
+                skipped++;
+                continue;
+              }
+              normalizedExisting.add(normalized);
+
+              const citationPointer = await storage.createCitationPointer(
                 userId,
                 caseId,
-                jobType: "claims",
-                jobKey,
-                error: errorMsg,
+                {
+                  evidenceFileId: evidenceId,
+                  quote: sug.citation?.quote?.slice(0, 500) || "",
+                  pageNumber: sug.citation?.pageNumber ?? null,
+                  timestampSeconds: sug.citation?.timestampSeconds ?? null,
+                  startOffset: sug.citation?.startOffset ?? null,
+                  endOffset: sug.citation?.endOffset ?? null,
+                  excerpt: sug.citation?.quote?.slice(0, 200) || null,
+                  confidence: 0.8,
+                },
+              );
+
+              const validTypes = [
+                "fact",
+                "procedural",
+                "context",
+                "communication",
+                "financial",
+                "medical",
+                "school",
+                "custody",
+              ];
+              const claimType = validTypes.includes(sug.claimType)
+                ? (sug.claimType as any)
+                : "fact";
+
+              const claim = await storage.createCaseClaim(userId, caseId, {
+                claimText: sug.claimText.trim(),
+                claimType,
+                tags: Array.isArray(sug.tags) ? sug.tags : [],
+                missingInfoFlag: sug.missingInfoFlag === true,
+                createdFrom: "ai_suggested",
+                status: "suggested",
               });
-              console.log(`[CLAIM_SUGGEST] Refunded credit for failed suggestion ${evidenceId}`);
-            } catch (refundError) {
-              console.error(`[CLAIM_SUGGEST] Failed to refund credit for ${evidenceId}:`, refundError);
+
+              await storage.attachClaimCitation(
+                userId,
+                claim.id,
+                citationPointer.id,
+              );
+              created++;
+            }
+
+            console.log(
+              `[CLAIM_SUGGEST] complete { caseId: ${caseId}, evidenceId: ${evidenceId}, created: ${created}, skipped: ${skipped} }`,
+            );
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : "Unknown error";
+            console.error(
+              `[CLAIM_SUGGEST] failed { caseId: ${caseId}, evidenceId: ${evidenceId}, error: ${errorMsg} }`,
+            );
+
+            if (creditConsumed) {
+              try {
+                const { refundCreditIfNeeded } = await import(
+                  "./services/credits"
+                );
+                await refundCreditIfNeeded({
+                  userId,
+                  caseId,
+                  jobType: "claims",
+                  jobKey,
+                  error: errorMsg,
+                });
+                console.log(
+                  `[CLAIM_SUGGEST] Refunded credit for failed suggestion ${evidenceId}`,
+                );
+              } catch (refundError) {
+                console.error(
+                  `[CLAIM_SUGGEST] Failed to refund credit for ${evidenceId}:`,
+                  refundError,
+                );
+              }
             }
           }
-        }
-      });
-    } catch (error) {
-      console.error("Suggest claims error:", error);
-      res.status(500).json({ error: "Failed to suggest claims" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/exhibit-snippets", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const exhibitListId = req.query.exhibitListId as string | undefined;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const snippets = await storage.listExhibitSnippets(userId, caseId, exhibitListId);
-      res.json({ snippets });
-    } catch (error) {
-      console.error("List exhibit snippets error:", error);
-      res.status(500).json({ error: "Failed to list snippets" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/exhibit-snippets", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const { insertExhibitSnippetSchema } = await import("@shared/schema");
-      const parsed = insertExhibitSnippetSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const snippet = await storage.createExhibitSnippet(userId, caseId, parsed.data);
-      res.status(201).json({ snippet });
-    } catch (error) {
-      console.error("Create exhibit snippet error:", error);
-      res.status(500).json({ error: "Failed to create snippet" });
-    }
-  });
-
-  app.patch("/api/exhibit-snippets/:snippetId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { snippetId } = req.params;
-      
-      const { updateExhibitSnippetSchema } = await import("@shared/schema");
-      const parsed = updateExhibitSnippetSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const updated = await storage.updateExhibitSnippet(userId, snippetId, parsed.data);
-      if (!updated) {
-        return res.status(404).json({ error: "Snippet not found" });
-      }
-      
-      res.json({ snippet: updated });
-    } catch (error) {
-      console.error("Update exhibit snippet error:", error);
-      res.status(500).json({ error: "Failed to update snippet" });
-    }
-  });
-
-  app.delete("/api/exhibit-snippets/:snippetId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { snippetId } = req.params;
-      
-      const deleted = await storage.deleteExhibitSnippet(userId, snippetId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Snippet not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete exhibit snippet error:", error);
-      res.status(500).json({ error: "Failed to delete snippet" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/trial-prep-shortlist", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const items = await storage.listTrialPrepShortlist(userId, caseId);
-      res.json({ items });
-    } catch (error) {
-      console.error("List trial prep shortlist error:", error);
-      res.status(500).json({ error: "Failed to list shortlist" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/trial-prep-shortlist", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const { insertTrialPrepShortlistSchema } = await import("@shared/schema");
-      const parsed = insertTrialPrepShortlistSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const item = await storage.createTrialPrepShortlistItem(userId, caseId, parsed.data);
-      
-      await triggerCaseMemoryRebuild(userId, caseId, "trial_prep_created", {
-        itemId: item.id,
-        title: item.title,
-      });
-      
-      res.status(201).json({ item });
-    } catch (error: unknown) {
-      const err = error as { code?: string; constraint?: string };
-      if (err.code === "23505" || (err.constraint && err.constraint.includes("unique"))) {
-        return res.status(409).json({ ok: false, error: "duplicate" });
-      }
-      console.error("Create trial prep shortlist item error:", error);
-      res.status(500).json({ error: "Failed to create shortlist item" });
-    }
-  });
-
-  app.patch("/api/trial-prep-shortlist/:itemId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { itemId } = req.params;
-      
-      const { updateTrialPrepShortlistSchema } = await import("@shared/schema");
-      const parsed = updateTrialPrepShortlistSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const existing = await storage.getTrialPrepShortlistItem(userId, itemId);
-      const wasPinned = existing?.isPinned ?? false;
-      
-      const updated = await storage.updateTrialPrepShortlistItem(userId, itemId, parsed.data);
-      if (!updated) {
-        return res.status(404).json({ error: "Item not found" });
-      }
-      
-      if (updated.caseId) {
-        const nowPinned = updated.isPinned ?? false;
-        let reason = "trial_prep_updated";
-        if (!wasPinned && nowPinned) {
-          reason = "trial_prep_pinned";
-        } else if (wasPinned && !nowPinned) {
-          reason = "trial_prep_unpinned";
-        }
-        
-        await triggerCaseMemoryRebuild(userId, updated.caseId, reason, {
-          itemId: updated.id,
-          title: updated.title,
         });
+      } catch (error) {
+        console.error("Suggest claims error:", error);
+        res.status(500).json({ error: "Failed to suggest claims" });
       }
-      
-      res.json({ item: updated });
-    } catch (error) {
-      console.error("Update trial prep shortlist item error:", error);
-      res.status(500).json({ error: "Failed to update shortlist item" });
-    }
-  });
+    },
+  );
 
-  app.delete("/api/trial-prep-shortlist/:itemId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { itemId } = req.params;
-      
-      const existing = await storage.getTrialPrepShortlistItem(userId, itemId);
-      
-      const deleted = await storage.deleteTrialPrepShortlistItem(userId, itemId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Item not found" });
+  app.get(
+    "/api/cases/:caseId/exhibit-snippets",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const exhibitListId = req.query.exhibitListId as string | undefined;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const snippets = await storage.listExhibitSnippets(
+          userId,
+          caseId,
+          exhibitListId,
+        );
+        res.json({ snippets });
+      } catch (error) {
+        console.error("List exhibit snippets error:", error);
+        res.status(500).json({ error: "Failed to list snippets" });
       }
-      
-      if (existing?.caseId) {
-        await triggerCaseMemoryRebuild(userId, existing.caseId, "trial_prep_deleted", {
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/exhibit-snippets",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertExhibitSnippetSchema } = await import("@shared/schema");
+        const parsed = insertExhibitSnippetSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const snippet = await storage.createExhibitSnippet(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ snippet });
+      } catch (error) {
+        console.error("Create exhibit snippet error:", error);
+        res.status(500).json({ error: "Failed to create snippet" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/exhibit-snippets/:snippetId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { snippetId } = req.params;
+
+        const { updateExhibitSnippetSchema } = await import("@shared/schema");
+        const parsed = updateExhibitSnippetSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const updated = await storage.updateExhibitSnippet(
+          userId,
+          snippetId,
+          parsed.data,
+        );
+        if (!updated) {
+          return res.status(404).json({ error: "Snippet not found" });
+        }
+
+        res.json({ snippet: updated });
+      } catch (error) {
+        console.error("Update exhibit snippet error:", error);
+        res.status(500).json({ error: "Failed to update snippet" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/exhibit-snippets/:snippetId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { snippetId } = req.params;
+
+        const deleted = await storage.deleteExhibitSnippet(userId, snippetId);
+        if (!deleted) {
+          return res.status(404).json({ error: "Snippet not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete exhibit snippet error:", error);
+        res.status(500).json({ error: "Failed to delete snippet" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/trial-prep-shortlist",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const items = await storage.listTrialPrepShortlist(userId, caseId);
+        res.json({ items });
+      } catch (error) {
+        console.error("List trial prep shortlist error:", error);
+        res.status(500).json({ error: "Failed to list shortlist" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/trial-prep-shortlist",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertTrialPrepShortlistSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = insertTrialPrepShortlistSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const item = await storage.createTrialPrepShortlistItem(
+          userId,
+          caseId,
+          parsed.data,
+        );
+
+        await triggerCaseMemoryRebuild(userId, caseId, "trial_prep_created", {
+          itemId: item.id,
+          title: item.title,
+        });
+
+        res.status(201).json({ item });
+      } catch (error: unknown) {
+        const err = error as { code?: string; constraint?: string };
+        if (
+          err.code === "23505" ||
+          (err.constraint && err.constraint.includes("unique"))
+        ) {
+          return res.status(409).json({ ok: false, error: "duplicate" });
+        }
+        console.error("Create trial prep shortlist item error:", error);
+        res.status(500).json({ error: "Failed to create shortlist item" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/trial-prep-shortlist/:itemId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { itemId } = req.params;
+
+        const { updateTrialPrepShortlistSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = updateTrialPrepShortlistSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const existing = await storage.getTrialPrepShortlistItem(
+          userId,
           itemId,
-          title: existing.title,
+        );
+        const wasPinned = existing?.isPinned ?? false;
+
+        const updated = await storage.updateTrialPrepShortlistItem(
+          userId,
+          itemId,
+          parsed.data,
+        );
+        if (!updated) {
+          return res.status(404).json({ error: "Item not found" });
+        }
+
+        if (updated.caseId) {
+          const nowPinned = updated.isPinned ?? false;
+          let reason = "trial_prep_updated";
+          if (!wasPinned && nowPinned) {
+            reason = "trial_prep_pinned";
+          } else if (wasPinned && !nowPinned) {
+            reason = "trial_prep_unpinned";
+          }
+
+          await triggerCaseMemoryRebuild(userId, updated.caseId, reason, {
+            itemId: updated.id,
+            title: updated.title,
+          });
+        }
+
+        res.json({ item: updated });
+      } catch (error) {
+        console.error("Update trial prep shortlist item error:", error);
+        res.status(500).json({ error: "Failed to update shortlist item" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/trial-prep-shortlist/:itemId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { itemId } = req.params;
+
+        const existing = await storage.getTrialPrepShortlistItem(
+          userId,
+          itemId,
+        );
+
+        const deleted = await storage.deleteTrialPrepShortlistItem(
+          userId,
+          itemId,
+        );
+        if (!deleted) {
+          return res.status(404).json({ error: "Item not found" });
+        }
+
+        if (existing?.caseId) {
+          await triggerCaseMemoryRebuild(
+            userId,
+            existing.caseId,
+            "trial_prep_deleted",
+            {
+              itemId,
+              title: existing.title,
+            },
+          );
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete trial prep shortlist item error:", error);
+        res.status(500).json({ error: "Failed to delete shortlist item" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/citations",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertCitationPointerSchema } = await import("@shared/schema");
+        const parsed = insertCitationPointerSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const citation = await storage.createCitationPointer(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ citation });
+      } catch (error) {
+        console.error("Create citation pointer error:", error);
+        res.status(500).json({ error: "Failed to create citation" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/evidence/:evidenceId/citations",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, evidenceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const citations = await storage.listCitationPointersByEvidence(
+          userId,
+          caseId,
+          evidenceId,
+        );
+        res.json({ citations });
+      } catch (error) {
+        console.error("List citations error:", error);
+        res.status(500).json({ error: "Failed to list citations" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/claims",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { status, evidenceFileId } = req.query;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const filters: {
+          status?: "suggested" | "accepted" | "rejected";
+          evidenceFileId?: string;
+        } = {};
+        if (
+          status &&
+          ["suggested", "accepted", "rejected"].includes(status as string)
+        ) {
+          filters.status = status as "suggested" | "accepted" | "rejected";
+        }
+        if (evidenceFileId && typeof evidenceFileId === "string") {
+          filters.evidenceFileId = evidenceFileId;
+        }
+
+        const claims = await storage.listCaseClaims(userId, caseId, filters);
+        res.json({ claims });
+      } catch (error) {
+        console.error("List claims error:", error);
+        res.status(500).json({ error: "Failed to list claims" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/draft-readiness",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const allClaims = await storage.listCaseClaims(userId, caseId, {});
+        const acceptedClaims = allClaims.filter((c) => c.status === "accepted");
+        const suggestedClaims = allClaims.filter(
+          (c) => c.status === "suggested",
+        );
+        const rejectedClaims = allClaims.filter((c) => c.status === "rejected");
+        const withMissingInfo = allClaims.filter((c) => c.missingInfoFlag);
+
+        const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+        const evidenceWithClaims = new Set(
+          allClaims.map((c) => c.primaryEvidenceId).filter(Boolean),
+        );
+        const evidenceWithExtraction = evidenceFiles.filter(
+          (e) => e.extractionStatus === "complete",
+        );
+
+        const readinessScore = Math.min(
+          100,
+          Math.round(
+            acceptedClaims.length * 10 +
+              evidenceWithExtraction.length * 5 -
+              suggestedClaims.length * 2 -
+              withMissingInfo.length * 3,
+          ),
+        );
+
+        res.json({
+          stats: {
+            totalClaims: allClaims.length,
+            acceptedClaims: acceptedClaims.length,
+            suggestedClaims: suggestedClaims.length,
+            rejectedClaims: rejectedClaims.length,
+            claimsWithMissingInfo: withMissingInfo.length,
+            totalEvidence: evidenceFiles.length,
+            evidenceWithExtraction: evidenceWithExtraction.length,
+            evidenceWithClaims: evidenceWithClaims.size,
+            readinessScore: Math.max(0, readinessScore),
+          },
         });
+      } catch (error) {
+        console.error("Draft readiness error:", error);
+        res.status(500).json({ error: "Failed to get draft readiness" });
       }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete trial prep shortlist item error:", error);
-      res.status(500).json({ error: "Failed to delete shortlist item" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/citations", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const { insertCitationPointerSchema } = await import("@shared/schema");
-      const parsed = insertCitationPointerSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const citation = await storage.createCitationPointer(userId, caseId, parsed.data);
-      res.status(201).json({ citation });
-    } catch (error) {
-      console.error("Create citation pointer error:", error);
-      res.status(500).json({ error: "Failed to create citation" });
-    }
-  });
+  app.post(
+    "/api/cases/:caseId/claims",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-  app.get("/api/cases/:caseId/evidence/:evidenceId/citations", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, evidenceId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const citations = await storage.listCitationPointersByEvidence(userId, caseId, evidenceId);
-      res.json({ citations });
-    } catch (error) {
-      console.error("List citations error:", error);
-      res.status(500).json({ error: "Failed to list citations" });
-    }
-  });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-  app.get("/api/cases/:caseId/claims", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { status, evidenceFileId } = req.query;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const filters: { status?: "suggested" | "accepted" | "rejected"; evidenceFileId?: string } = {};
-      if (status && ["suggested", "accepted", "rejected"].includes(status as string)) {
-        filters.status = status as "suggested" | "accepted" | "rejected";
-      }
-      if (evidenceFileId && typeof evidenceFileId === "string") {
-        filters.evidenceFileId = evidenceFileId;
-      }
-      
-      const claims = await storage.listCaseClaims(userId, caseId, filters);
-      res.json({ claims });
-    } catch (error) {
-      console.error("List claims error:", error);
-      res.status(500).json({ error: "Failed to list claims" });
-    }
-  });
+        const { insertCaseClaimSchema } = await import("@shared/schema");
+        const parsed = insertCaseClaimSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
 
-  app.get("/api/cases/:caseId/draft-readiness", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const claim = await storage.createCaseClaim(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ claim });
+      } catch (error) {
+        console.error("Create claim error:", error);
+        res.status(500).json({ error: "Failed to create claim" });
       }
-      
-      const allClaims = await storage.listCaseClaims(userId, caseId, {});
-      const acceptedClaims = allClaims.filter(c => c.status === "accepted");
-      const suggestedClaims = allClaims.filter(c => c.status === "suggested");
-      const rejectedClaims = allClaims.filter(c => c.status === "rejected");
-      const withMissingInfo = allClaims.filter(c => c.missingInfoFlag);
-      
-      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
-      const evidenceWithClaims = new Set(allClaims.map(c => c.primaryEvidenceId).filter(Boolean));
-      const evidenceWithExtraction = evidenceFiles.filter(e => e.extractionStatus === "complete");
-      
-      const readinessScore = Math.min(100, Math.round(
-        (acceptedClaims.length * 10) + 
-        (evidenceWithExtraction.length * 5) - 
-        (suggestedClaims.length * 2) - 
-        (withMissingInfo.length * 3)
-      ));
-      
-      res.json({
-        stats: {
-          totalClaims: allClaims.length,
-          acceptedClaims: acceptedClaims.length,
-          suggestedClaims: suggestedClaims.length,
-          rejectedClaims: rejectedClaims.length,
-          claimsWithMissingInfo: withMissingInfo.length,
-          totalEvidence: evidenceFiles.length,
-          evidenceWithExtraction: evidenceWithExtraction.length,
-          evidenceWithClaims: evidenceWithClaims.size,
-          readinessScore: Math.max(0, readinessScore),
-        },
-      });
-    } catch (error) {
-      console.error("Draft readiness error:", error);
-      res.status(500).json({ error: "Failed to get draft readiness" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/claims", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const { insertCaseClaimSchema } = await import("@shared/schema");
-      const parsed = insertCaseClaimSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
-      }
-      
-      const claim = await storage.createCaseClaim(userId, caseId, parsed.data);
-      res.status(201).json({ claim });
-    } catch (error) {
-      console.error("Create claim error:", error);
-      res.status(500).json({ error: "Failed to create claim" });
-    }
-  });
+    },
+  );
 
   app.get("/api/claims/:claimId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { claimId } = req.params;
-      
+
       const claim = await storage.getCaseClaim(userId, claimId);
       if (!claim) {
         return res.status(404).json({ error: "Claim not found" });
       }
-      
+
       const citations = await storage.listClaimCitations(userId, claimId);
       res.json({ claim, citations });
     } catch (error) {
@@ -9199,37 +12017,62 @@ Limit to ${limit} most important claims.`;
     try {
       const userId = req.session.userId as string;
       const { claimId } = req.params;
-      
+
       const { updateCaseClaimSchema } = await import("@shared/schema");
       const parsed = updateCaseClaimSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+        return res
+          .status(400)
+          .json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
-      
+
       const existingClaim = await storage.getCaseClaim(userId, claimId);
-      const updated = await storage.updateCaseClaim(userId, claimId, parsed.data);
+      const updated = await storage.updateCaseClaim(
+        userId,
+        claimId,
+        parsed.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Claim not found" });
       }
-      
-      if (parsed.data.status && parsed.data.status !== existingClaim?.status && updated.caseId) {
-        const eventType = parsed.data.status === "accepted" ? "claim_accept" : parsed.data.status === "rejected" ? "claim_reject" : null;
+
+      if (
+        parsed.data.status &&
+        parsed.data.status !== existingClaim?.status &&
+        updated.caseId
+      ) {
+        const eventType =
+          parsed.data.status === "accepted"
+            ? "claim_accept"
+            : parsed.data.status === "rejected"
+              ? "claim_reject"
+              : null;
         if (eventType) {
-          await storage.createLexiFeedbackEvent(userId, updated.caseId, eventType, {
-            claimId: updated.id,
-            claimText: updated.claimText.slice(0, 100),
-            previousStatus: existingClaim?.status,
-          });
+          await storage.createLexiFeedbackEvent(
+            userId,
+            updated.caseId,
+            eventType,
+            {
+              claimId: updated.id,
+              claimText: updated.claimText.slice(0, 100),
+              previousStatus: existingClaim?.status,
+            },
+          );
         }
-        
-        if (parsed.data.status === "accepted" || parsed.data.status === "rejected") {
+
+        if (
+          parsed.data.status === "accepted" ||
+          parsed.data.status === "rejected"
+        ) {
           const caseIdNum = parseInt(updated.caseId, 10);
           if (!isNaN(caseIdNum)) {
-            scheduleMemoryRebuild(caseIdNum, () => rebuildCaseMemory(userId, updated.caseId));
+            scheduleMemoryRebuild(caseIdNum, () =>
+              rebuildCaseMemory(userId, updated.caseId),
+            );
           }
         }
       }
-      
+
       res.json({ claim: updated });
     } catch (error) {
       console.error("Update claim error:", error);
@@ -9241,12 +12084,12 @@ Limit to ${limit} most important claims.`;
     try {
       const userId = req.session.userId as string;
       const { claimId } = req.params;
-      
+
       const deleted = await storage.deleteCaseClaim(userId, claimId);
       if (!deleted) {
         return res.status(404).json({ error: "Claim not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Delete claim error:", error);
@@ -9259,22 +12102,33 @@ Limit to ${limit} most important claims.`;
       const userId = req.session.userId as string;
       const { claimId } = req.params;
       const { reason } = req.body || {};
-      
+
       const claim = await storage.getCaseClaim(userId, claimId);
       if (!claim) {
         return res.status(404).json({ error: "Claim not found" });
       }
-      
-      const updated = await storage.lockClaimForDocument(userId, claimId, "", reason || "Manual lock");
+
+      const updated = await storage.lockClaimForDocument(
+        userId,
+        claimId,
+        "",
+        reason || "Manual lock",
+      );
       if (!updated) {
         return res.status(500).json({ error: "Failed to lock claim" });
       }
-      
-      await storage.createActivityLog(userId, claim.caseId, "claim_locked", "Claim manually locked", {
-        claimId,
-        reason: reason || "Manual lock",
-      });
-      
+
+      await storage.createActivityLog(
+        userId,
+        claim.caseId,
+        "claim_locked",
+        "Claim manually locked",
+        {
+          claimId,
+          reason: reason || "Manual lock",
+        },
+      );
+
       res.json({ claim: updated });
     } catch (error) {
       console.error("Lock claim error:", error);
@@ -9287,30 +12141,41 @@ Limit to ${limit} most important claims.`;
       const userId = req.session.userId as string;
       const { claimId } = req.params;
       const { confirm, reason } = req.body || {};
-      
+
       if (confirm !== true) {
-        return res.status(400).json({ error: "Unlock requires confirmation. Set confirm: true in request body." });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Unlock requires confirmation. Set confirm: true in request body.",
+          });
       }
-      
+
       const claim = await storage.getCaseClaim(userId, claimId);
       if (!claim) {
         return res.status(404).json({ error: "Claim not found" });
       }
-      
+
       if (!claim.isLocked) {
         return res.status(400).json({ error: "Claim is not locked" });
       }
-      
+
       const updated = await storage.unlockClaim(userId, claimId, reason);
       if (!updated) {
         return res.status(500).json({ error: "Failed to unlock claim" });
       }
-      
-      await storage.createActivityLog(userId, claim.caseId, "claim_unlocked", "Claim unlocked for editing", {
-        claimId,
-        reason: reason || "User requested unlock",
-      });
-      
+
+      await storage.createActivityLog(
+        userId,
+        claim.caseId,
+        "claim_unlocked",
+        "Claim unlocked for editing",
+        {
+          claimId,
+          reason: reason || "User requested unlock",
+        },
+      );
+
       res.json({ claim: updated });
     } catch (error) {
       console.error("Unlock claim error:", error);
@@ -9318,123 +12183,175 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/claims/:claimId/citations/:citationId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { claimId, citationId } = req.params;
-      
-      const attached = await storage.attachClaimCitation(userId, claimId, citationId);
-      if (!attached) {
-        return res.status(404).json({ error: "Claim or citation not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Attach citation error:", error);
-      res.status(500).json({ error: "Failed to attach citation" });
-    }
-  });
+  app.post(
+    "/api/claims/:claimId/citations/:citationId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { claimId, citationId } = req.params;
 
-  app.delete("/api/claims/:claimId/citations/:citationId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { claimId, citationId } = req.params;
-      
-      const detached = await storage.detachClaimCitation(userId, claimId, citationId);
-      if (!detached) {
-        return res.status(404).json({ error: "Link not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Detach citation error:", error);
-      res.status(500).json({ error: "Failed to detach citation" });
-    }
-  });
-
-  app.post("/api/claims/:claimId/citations/auto", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { claimId } = req.params;
-      const { maxAttach, preferEvidenceId } = req.body || {};
-      
-      const claim = await storage.getCaseClaim(userId, claimId);
-      if (!claim) {
-        return res.status(404).json({ error: "Claim not found" });
-      }
-      
-      const result = await storage.autoAttachClaimCitation(userId, claimId, {
-        maxAttach: typeof maxAttach === "number" ? Math.min(maxAttach, 5) : 1,
-        preferEvidenceId: typeof preferEvidenceId === "string" ? preferEvidenceId : undefined,
-      });
-      
-      if (result.attached === 0 && result.citationIds.length === 0) {
-        const existingCitations = await storage.listClaimCitations(userId, claimId);
-        if (existingCitations.length > 0) {
-          return res.json({ ok: true, attached: 0, citationIds: [], message: "Claim already has citations" });
+        const attached = await storage.attachClaimCitation(
+          userId,
+          claimId,
+          citationId,
+        );
+        if (!attached) {
+          return res.status(404).json({ error: "Claim or citation not found" });
         }
-        return res.json({ ok: false, error: "no_citations_available" });
-      }
-      
-      res.json({ ok: true, attached: result.attached, citationIds: result.citationIds });
-    } catch (error) {
-      console.error("Auto-attach citation error:", error);
-      res.status(500).json({ error: "Failed to auto-attach citation" });
-    }
-  });
 
-  app.get("/api/cases/:caseId/issues", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Attach citation error:", error);
+        res.status(500).json({ error: "Failed to attach citation" });
       }
-      
-      const issues = await storage.listIssueGroupings(userId, caseId);
-      res.json({ issues });
-    } catch (error) {
-      console.error("List issues error:", error);
-      res.status(500).json({ error: "Failed to list issues" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/issues", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.delete(
+    "/api/claims/:claimId/citations/:citationId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { claimId, citationId } = req.params;
+
+        const detached = await storage.detachClaimCitation(
+          userId,
+          claimId,
+          citationId,
+        );
+        if (!detached) {
+          return res.status(404).json({ error: "Link not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Detach citation error:", error);
+        res.status(500).json({ error: "Failed to detach citation" });
       }
-      
-      const { insertIssueGroupingSchema } = await import("@shared/schema");
-      const parsed = insertIssueGroupingSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+    },
+  );
+
+  app.post(
+    "/api/claims/:claimId/citations/auto",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { claimId } = req.params;
+        const { maxAttach, preferEvidenceId } = req.body || {};
+
+        const claim = await storage.getCaseClaim(userId, claimId);
+        if (!claim) {
+          return res.status(404).json({ error: "Claim not found" });
+        }
+
+        const result = await storage.autoAttachClaimCitation(userId, claimId, {
+          maxAttach: typeof maxAttach === "number" ? Math.min(maxAttach, 5) : 1,
+          preferEvidenceId:
+            typeof preferEvidenceId === "string" ? preferEvidenceId : undefined,
+        });
+
+        if (result.attached === 0 && result.citationIds.length === 0) {
+          const existingCitations = await storage.listClaimCitations(
+            userId,
+            claimId,
+          );
+          if (existingCitations.length > 0) {
+            return res.json({
+              ok: true,
+              attached: 0,
+              citationIds: [],
+              message: "Claim already has citations",
+            });
+          }
+          return res.json({ ok: false, error: "no_citations_available" });
+        }
+
+        res.json({
+          ok: true,
+          attached: result.attached,
+          citationIds: result.citationIds,
+        });
+      } catch (error) {
+        console.error("Auto-attach citation error:", error);
+        res.status(500).json({ error: "Failed to auto-attach citation" });
       }
-      
-      const issue = await storage.createIssueGrouping(userId, caseId, parsed.data);
-      res.status(201).json({ issue });
-    } catch (error) {
-      console.error("Create issue error:", error);
-      res.status(500).json({ error: "Failed to create issue" });
-    }
-  });
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/issues",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const issues = await storage.listIssueGroupings(userId, caseId);
+        res.json({ issues });
+      } catch (error) {
+        console.error("List issues error:", error);
+        res.status(500).json({ error: "Failed to list issues" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/issues",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertIssueGroupingSchema } = await import("@shared/schema");
+        const parsed = insertIssueGroupingSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: parsed.error.errors[0]?.message || "Invalid input",
+            });
+        }
+
+        const issue = await storage.createIssueGrouping(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ issue });
+      } catch (error) {
+        console.error("Create issue error:", error);
+        res.status(500).json({ error: "Failed to create issue" });
+      }
+    },
+  );
 
   app.get("/api/issues/:issueId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { issueId } = req.params;
-      
+
       const issue = await storage.getIssueGrouping(userId, issueId);
       if (!issue) {
         return res.status(404).json({ error: "Issue not found" });
       }
-      
+
       const claims = await storage.listIssueClaims(userId, issueId);
       res.json({ issue, claims });
     } catch (error) {
@@ -9447,18 +12364,24 @@ Limit to ${limit} most important claims.`;
     try {
       const userId = req.session.userId as string;
       const { issueId } = req.params;
-      
+
       const { updateIssueGroupingSchema } = await import("@shared/schema");
       const parsed = updateIssueGroupingSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Invalid input" });
+        return res
+          .status(400)
+          .json({ error: parsed.error.errors[0]?.message || "Invalid input" });
       }
-      
-      const updated = await storage.updateIssueGrouping(userId, issueId, parsed.data);
+
+      const updated = await storage.updateIssueGrouping(
+        userId,
+        issueId,
+        parsed.data,
+      );
       if (!updated) {
         return res.status(404).json({ error: "Issue not found" });
       }
-      
+
       res.json({ issue: updated });
     } catch (error) {
       console.error("Update issue error:", error);
@@ -9470,12 +12393,12 @@ Limit to ${limit} most important claims.`;
     try {
       const userId = req.session.userId as string;
       const { issueId } = req.params;
-      
+
       const deleted = await storage.deleteIssueGrouping(userId, issueId);
       if (!deleted) {
         return res.status(404).json({ error: "Issue not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Delete issue error:", error);
@@ -9483,257 +12406,400 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/issues/:issueId/claims/:claimId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { issueId, claimId } = req.params;
-      
-      const added = await storage.addClaimToIssue(userId, issueId, claimId);
-      if (!added) {
-        return res.status(404).json({ error: "Issue or claim not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Add claim to issue error:", error);
-      res.status(500).json({ error: "Failed to add claim to issue" });
-    }
-  });
+  app.post(
+    "/api/issues/:issueId/claims/:claimId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { issueId, claimId } = req.params;
 
-  app.delete("/api/issues/:issueId/claims/:claimId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { issueId, claimId } = req.params;
-      
-      const removed = await storage.removeClaimFromIssue(userId, issueId, claimId);
-      if (!removed) {
-        return res.status(404).json({ error: "Link not found" });
+        const added = await storage.addClaimToIssue(userId, issueId, claimId);
+        if (!added) {
+          return res.status(404).json({ error: "Issue or claim not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Add claim to issue error:", error);
+        res.status(500).json({ error: "Failed to add claim to issue" });
       }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Remove claim from issue error:", error);
-      res.status(500).json({ error: "Failed to remove claim from issue" });
-    }
-  });
+    },
+  );
+
+  app.delete(
+    "/api/issues/:issueId/claims/:claimId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { issueId, claimId } = req.params;
+
+        const removed = await storage.removeClaimFromIssue(
+          userId,
+          issueId,
+          claimId,
+        );
+        if (!removed) {
+          return res.status(404).json({ error: "Link not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Remove claim from issue error:", error);
+        res.status(500).json({ error: "Failed to remove claim from issue" });
+      }
+    },
+  );
 
   // Phase 3A: Cross-Module Links - Timeline Event Links
-  app.get("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, eventId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const event = await storage.getTimelineEvent(eventId, userId);
-      if (!event || event.caseId !== caseId) {
-        return res.status(404).json({ error: "Event not found" });
-      }
-      
-      const links = await storage.listTimelineEventLinks(userId, caseId, eventId);
-      
-      const hydratedLinks = await Promise.all(links.map(async (link) => {
-        const base = {
-          linkId: link.id,
-          linkType: link.linkType,
-          note: link.note,
-          createdAt: link.createdAt,
-        };
-        
-        if (link.linkType === "evidence" && link.evidenceId) {
-          const evidence = await storage.getEvidenceFile(link.evidenceId, userId);
-          return { ...base, evidence: evidence ? { id: evidence.id, originalName: evidence.originalName } : null };
-        }
-        if (link.linkType === "claim" && link.claimId) {
-          const claim = await storage.getCaseClaim(userId, link.claimId);
-          return { ...base, claim: claim ? { id: claim.id, text: claim.claimText, status: claim.status } : null };
-        }
-        if (link.linkType === "snippet" && link.snippetId) {
-          const snippet = await storage.getExhibitSnippet(userId, link.snippetId);
-          return { ...base, snippet: snippet ? { id: snippet.id, title: snippet.title } : null };
-        }
-        return base;
-      }));
-      
-      res.json({ links: hydratedLinks });
-    } catch (error) {
-      console.error("List timeline event links error:", error);
-      res.status(500).json({ error: "Failed to list links" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/timeline/events/:eventId/links",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, eventId } = req.params;
 
-  app.post("/api/cases/:caseId/timeline/events/:eventId/links", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, eventId } = req.params;
-      const { linkType, evidenceId, claimId, snippetId, note } = req.body;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      if (!linkType || !["evidence", "claim", "snippet"].includes(linkType)) {
-        return res.status(400).json({ error: "Invalid linkType" });
-      }
-      
-      const targetCount = [evidenceId, claimId, snippetId].filter(Boolean).length;
-      if (targetCount !== 1) {
-        return res.status(400).json({ error: "Exactly one of evidenceId, claimId, or snippetId must be provided" });
-      }
-      
-      if (linkType === "evidence" && !evidenceId) {
-        return res.status(400).json({ error: "evidenceId required for evidence link" });
-      }
-      if (linkType === "claim" && !claimId) {
-        return res.status(400).json({ error: "claimId required for claim link" });
-      }
-      if (linkType === "snippet" && !snippetId) {
-        return res.status(400).json({ error: "snippetId required for snippet link" });
-      }
-      
-      const link = await storage.createTimelineEventLink(userId, caseId, eventId, {
-        linkType,
-        evidenceId: evidenceId || null,
-        claimId: claimId || null,
-        snippetId: snippetId || null,
-        note: note || null,
-      });
-      
-      res.json({ link });
-    } catch (error: any) {
-      console.error("Create timeline event link error:", error);
-      if (error.message?.includes("not found") || error.message?.includes("doesn't belong")) {
-        return res.status(404).json({ error: error.message });
-      }
-      res.status(500).json({ error: "Failed to create link" });
-    }
-  });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-  app.delete("/api/timeline/event-links/:linkId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { linkId } = req.params;
-      
-      const deleted = await storage.deleteTimelineEventLink(userId, linkId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Link not found" });
+        const event = await storage.getTimelineEvent(eventId, userId);
+        if (!event || event.caseId !== caseId) {
+          return res.status(404).json({ error: "Event not found" });
+        }
+
+        const links = await storage.listTimelineEventLinks(
+          userId,
+          caseId,
+          eventId,
+        );
+
+        const hydratedLinks = await Promise.all(
+          links.map(async (link) => {
+            const base = {
+              linkId: link.id,
+              linkType: link.linkType,
+              note: link.note,
+              createdAt: link.createdAt,
+            };
+
+            if (link.linkType === "evidence" && link.evidenceId) {
+              const evidence = await storage.getEvidenceFile(
+                link.evidenceId,
+                userId,
+              );
+              return {
+                ...base,
+                evidence: evidence
+                  ? { id: evidence.id, originalName: evidence.originalName }
+                  : null,
+              };
+            }
+            if (link.linkType === "claim" && link.claimId) {
+              const claim = await storage.getCaseClaim(userId, link.claimId);
+              return {
+                ...base,
+                claim: claim
+                  ? {
+                      id: claim.id,
+                      text: claim.claimText,
+                      status: claim.status,
+                    }
+                  : null,
+              };
+            }
+            if (link.linkType === "snippet" && link.snippetId) {
+              const snippet = await storage.getExhibitSnippet(
+                userId,
+                link.snippetId,
+              );
+              return {
+                ...base,
+                snippet: snippet
+                  ? { id: snippet.id, title: snippet.title }
+                  : null,
+              };
+            }
+            return base;
+          }),
+        );
+
+        res.json({ links: hydratedLinks });
+      } catch (error) {
+        console.error("List timeline event links error:", error);
+        res.status(500).json({ error: "Failed to list links" });
       }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete timeline event link error:", error);
-      res.status(500).json({ error: "Failed to delete link" });
-    }
-  });
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/timeline/events/:eventId/links",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, eventId } = req.params;
+        const { linkType, evidenceId, claimId, snippetId, note } = req.body;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        if (!linkType || !["evidence", "claim", "snippet"].includes(linkType)) {
+          return res.status(400).json({ error: "Invalid linkType" });
+        }
+
+        const targetCount = [evidenceId, claimId, snippetId].filter(
+          Boolean,
+        ).length;
+        if (targetCount !== 1) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "Exactly one of evidenceId, claimId, or snippetId must be provided",
+            });
+        }
+
+        if (linkType === "evidence" && !evidenceId) {
+          return res
+            .status(400)
+            .json({ error: "evidenceId required for evidence link" });
+        }
+        if (linkType === "claim" && !claimId) {
+          return res
+            .status(400)
+            .json({ error: "claimId required for claim link" });
+        }
+        if (linkType === "snippet" && !snippetId) {
+          return res
+            .status(400)
+            .json({ error: "snippetId required for snippet link" });
+        }
+
+        const link = await storage.createTimelineEventLink(
+          userId,
+          caseId,
+          eventId,
+          {
+            linkType,
+            evidenceId: evidenceId || null,
+            claimId: claimId || null,
+            snippetId: snippetId || null,
+            note: note || null,
+          },
+        );
+
+        res.json({ link });
+      } catch (error: any) {
+        console.error("Create timeline event link error:", error);
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("doesn't belong")
+        ) {
+          return res.status(404).json({ error: error.message });
+        }
+        res.status(500).json({ error: "Failed to create link" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/timeline/event-links/:linkId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { linkId } = req.params;
+
+        const deleted = await storage.deleteTimelineEventLink(userId, linkId);
+        if (!deleted) {
+          return res.status(404).json({ error: "Link not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete timeline event link error:", error);
+        res.status(500).json({ error: "Failed to delete link" });
+      }
+    },
+  );
 
   // Phase 3A: Cross-Module Links - Claim Links
-  app.get("/api/cases/:caseId/claims/:claimId/links", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, claimId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const claim = await storage.getCaseClaim(userId, claimId);
-      if (!claim || claim.caseId !== caseId) {
-        return res.status(404).json({ error: "Claim not found" });
-      }
-      
-      const links = await storage.listClaimLinks(userId, caseId, claimId);
-      
-      const hydratedLinks = await Promise.all(links.map(async (link) => {
-        const base = {
-          linkId: link.id,
-          linkType: link.linkType,
-          createdAt: link.createdAt,
-        };
-        
-        if (link.linkType === "timeline" && link.eventId) {
-          const event = await storage.getTimelineEvent(link.eventId, userId);
-          return { ...base, event: event ? { id: event.id, title: event.title, eventDate: event.eventDate } : null };
-        }
-        if (link.linkType === "trial_prep" && link.trialPrepId) {
-          const item = await storage.getTrialPrepShortlistItem(userId, link.trialPrepId);
-          return { ...base, trialPrepItem: item ? { id: item.id, title: item.title, binderSection: item.binderSection } : null };
-        }
-        if (link.linkType === "snippet" && link.snippetId) {
-          const snippet = await storage.getExhibitSnippet(userId, link.snippetId);
-          return { ...base, snippet: snippet ? { id: snippet.id, title: snippet.title } : null };
-        }
-        return base;
-      }));
-      
-      res.json({ links: hydratedLinks });
-    } catch (error) {
-      console.error("List claim links error:", error);
-      res.status(500).json({ error: "Failed to list links" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/claims/:claimId/links",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, claimId } = req.params;
 
-  app.post("/api/cases/:caseId/claims/:claimId/links", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, claimId } = req.params;
-      const { linkType, eventId, trialPrepId, snippetId } = req.body;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const claim = await storage.getCaseClaim(userId, claimId);
+        if (!claim || claim.caseId !== caseId) {
+          return res.status(404).json({ error: "Claim not found" });
+        }
+
+        const links = await storage.listClaimLinks(userId, caseId, claimId);
+
+        const hydratedLinks = await Promise.all(
+          links.map(async (link) => {
+            const base = {
+              linkId: link.id,
+              linkType: link.linkType,
+              createdAt: link.createdAt,
+            };
+
+            if (link.linkType === "timeline" && link.eventId) {
+              const event = await storage.getTimelineEvent(
+                link.eventId,
+                userId,
+              );
+              return {
+                ...base,
+                event: event
+                  ? {
+                      id: event.id,
+                      title: event.title,
+                      eventDate: event.eventDate,
+                    }
+                  : null,
+              };
+            }
+            if (link.linkType === "trial_prep" && link.trialPrepId) {
+              const item = await storage.getTrialPrepShortlistItem(
+                userId,
+                link.trialPrepId,
+              );
+              return {
+                ...base,
+                trialPrepItem: item
+                  ? {
+                      id: item.id,
+                      title: item.title,
+                      binderSection: item.binderSection,
+                    }
+                  : null,
+              };
+            }
+            if (link.linkType === "snippet" && link.snippetId) {
+              const snippet = await storage.getExhibitSnippet(
+                userId,
+                link.snippetId,
+              );
+              return {
+                ...base,
+                snippet: snippet
+                  ? { id: snippet.id, title: snippet.title }
+                  : null,
+              };
+            }
+            return base;
+          }),
+        );
+
+        res.json({ links: hydratedLinks });
+      } catch (error) {
+        console.error("List claim links error:", error);
+        res.status(500).json({ error: "Failed to list links" });
       }
-      
-      if (!linkType || !["timeline", "trial_prep", "snippet"].includes(linkType)) {
-        return res.status(400).json({ error: "Invalid linkType" });
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/claims/:claimId/links",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, claimId } = req.params;
+        const { linkType, eventId, trialPrepId, snippetId } = req.body;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        if (
+          !linkType ||
+          !["timeline", "trial_prep", "snippet"].includes(linkType)
+        ) {
+          return res.status(400).json({ error: "Invalid linkType" });
+        }
+
+        const targetCount = [eventId, trialPrepId, snippetId].filter(
+          Boolean,
+        ).length;
+        if (targetCount !== 1) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "Exactly one of eventId, trialPrepId, or snippetId must be provided",
+            });
+        }
+
+        if (linkType === "timeline" && !eventId) {
+          return res
+            .status(400)
+            .json({ error: "eventId required for timeline link" });
+        }
+        if (linkType === "trial_prep" && !trialPrepId) {
+          return res
+            .status(400)
+            .json({ error: "trialPrepId required for trial_prep link" });
+        }
+        if (linkType === "snippet" && !snippetId) {
+          return res
+            .status(400)
+            .json({ error: "snippetId required for snippet link" });
+        }
+
+        const link = await storage.createClaimLink(userId, caseId, claimId, {
+          linkType,
+          eventId: eventId || null,
+          trialPrepId: trialPrepId || null,
+          snippetId: snippetId || null,
+        });
+
+        res.json({ link });
+      } catch (error: any) {
+        console.error("Create claim link error:", error);
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("doesn't belong")
+        ) {
+          return res.status(404).json({ error: error.message });
+        }
+        res.status(500).json({ error: "Failed to create link" });
       }
-      
-      const targetCount = [eventId, trialPrepId, snippetId].filter(Boolean).length;
-      if (targetCount !== 1) {
-        return res.status(400).json({ error: "Exactly one of eventId, trialPrepId, or snippetId must be provided" });
-      }
-      
-      if (linkType === "timeline" && !eventId) {
-        return res.status(400).json({ error: "eventId required for timeline link" });
-      }
-      if (linkType === "trial_prep" && !trialPrepId) {
-        return res.status(400).json({ error: "trialPrepId required for trial_prep link" });
-      }
-      if (linkType === "snippet" && !snippetId) {
-        return res.status(400).json({ error: "snippetId required for snippet link" });
-      }
-      
-      const link = await storage.createClaimLink(userId, caseId, claimId, {
-        linkType,
-        eventId: eventId || null,
-        trialPrepId: trialPrepId || null,
-        snippetId: snippetId || null,
-      });
-      
-      res.json({ link });
-    } catch (error: any) {
-      console.error("Create claim link error:", error);
-      if (error.message?.includes("not found") || error.message?.includes("doesn't belong")) {
-        return res.status(404).json({ error: error.message });
-      }
-      res.status(500).json({ error: "Failed to create link" });
-    }
-  });
+    },
+  );
 
   app.delete("/api/claim-links/:linkId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { linkId } = req.params;
-      
+
       const deleted = await storage.deleteClaimLink(userId, linkId);
       if (!deleted) {
         return res.status(404).json({ error: "Link not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Delete claim link error:", error);
@@ -9742,34 +12808,39 @@ Limit to ${limit} most important claims.`;
   });
 
   // Phase 3: Draft Outlines API
-  app.get("/api/cases/:caseId/draft-outlines", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/draft-outlines",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const outlines = await storage.listDraftOutlines(userId, caseId);
+        res.json({ outlines });
+      } catch (error) {
+        console.error("List draft outlines error:", error);
+        res.status(500).json({ error: "Failed to list outlines" });
       }
-      
-      const outlines = await storage.listDraftOutlines(userId, caseId);
-      res.json({ outlines });
-    } catch (error) {
-      console.error("List draft outlines error:", error);
-      res.status(500).json({ error: "Failed to list outlines" });
-    }
-  });
+    },
+  );
 
   app.get("/api/draft-outlines/:outlineId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { outlineId } = req.params;
-      
+
       const outline = await storage.getDraftOutline(userId, outlineId);
       if (!outline) {
         return res.status(404).json({ error: "Outline not found" });
       }
-      
+
       const claims = await storage.listDraftOutlineClaims(userId, outlineId);
       res.json({ outline, claims });
     } catch (error) {
@@ -9778,47 +12849,68 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.post("/api/cases/:caseId/draft-outlines", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.post(
+    "/api/cases/:caseId/draft-outlines",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { insertDraftOutlineSchema } = await import("@shared/schema");
+        const parsed = insertDraftOutlineSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid outline data",
+              details: parsed.error.errors,
+            });
+        }
+
+        const outline = await storage.createDraftOutline(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        res.status(201).json({ outline });
+      } catch (error) {
+        console.error("Create draft outline error:", error);
+        res.status(500).json({ error: "Failed to create outline" });
       }
-      
-      const { insertDraftOutlineSchema } = await import("@shared/schema");
-      const parsed = insertDraftOutlineSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid outline data", details: parsed.error.errors });
-      }
-      
-      const outline = await storage.createDraftOutline(userId, caseId, parsed.data);
-      res.status(201).json({ outline });
-    } catch (error) {
-      console.error("Create draft outline error:", error);
-      res.status(500).json({ error: "Failed to create outline" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/draft-outlines/:outlineId", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId as string;
       const { outlineId } = req.params;
-      
+
       const existing = await storage.getDraftOutline(userId, outlineId);
       if (!existing) {
         return res.status(404).json({ error: "Outline not found" });
       }
-      
+
       const { updateDraftOutlineSchema } = await import("@shared/schema");
       const parsed = updateDraftOutlineSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid update data", details: parsed.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid update data", details: parsed.error.errors });
       }
-      
-      const outline = await storage.updateDraftOutline(userId, outlineId, parsed.data);
+
+      const outline = await storage.updateDraftOutline(
+        userId,
+        outlineId,
+        parsed.data,
+      );
       res.json({ outline });
     } catch (error) {
       console.error("Update draft outline error:", error);
@@ -9826,543 +12918,790 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.delete("/api/draft-outlines/:outlineId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { outlineId } = req.params;
-      
-      const deleted = await storage.deleteDraftOutline(userId, outlineId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Outline not found" });
+  app.delete(
+    "/api/draft-outlines/:outlineId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { outlineId } = req.params;
+
+        const deleted = await storage.deleteDraftOutline(userId, outlineId);
+        if (!deleted) {
+          return res.status(404).json({ error: "Outline not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete draft outline error:", error);
+        res.status(500).json({ error: "Failed to delete outline" });
       }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete draft outline error:", error);
-      res.status(500).json({ error: "Failed to delete outline" });
-    }
-  });
+    },
+  );
 
   // Draft Outline Claims (assign claims to sections)
-  app.post("/api/draft-outlines/:outlineId/claims", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { outlineId } = req.params;
-      
-      const outline = await storage.getDraftOutline(userId, outlineId);
-      if (!outline) {
-        return res.status(404).json({ error: "Outline not found" });
-      }
-      
-      const { insertDraftOutlineClaimSchema } = await import("@shared/schema");
-      const parsed = insertDraftOutlineClaimSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid claim assignment data", details: parsed.error.errors });
-      }
-      
-      const claim = await storage.addClaimToOutline(userId, outline.caseId, outlineId, parsed.data);
-      res.status(201).json({ claim });
-    } catch (error: any) {
-      if (error.code === "23505") {
-        return res.status(409).json({ error: "Claim already assigned to this outline" });
-      }
-      console.error("Add claim to outline error:", error);
-      res.status(500).json({ error: "Failed to add claim to outline" });
-    }
-  });
+  app.post(
+    "/api/draft-outlines/:outlineId/claims",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { outlineId } = req.params;
 
-  app.delete("/api/draft-outlines/:outlineId/claims/:claimId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { outlineId, claimId } = req.params;
-      
-      const deleted = await storage.removeClaimFromOutline(userId, outlineId, claimId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Claim assignment not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Remove claim from outline error:", error);
-      res.status(500).json({ error: "Failed to remove claim from outline" });
-    }
-  });
+        const outline = await storage.getDraftOutline(userId, outlineId);
+        if (!outline) {
+          return res.status(404).json({ error: "Outline not found" });
+        }
 
-  app.patch("/api/draft-outlines/:outlineId/claims/bulk", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { outlineId } = req.params;
-      
-      const outline = await storage.getDraftOutline(userId, outlineId);
-      if (!outline) {
-        return res.status(404).json({ error: "Outline not found" });
+        const { insertDraftOutlineClaimSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = insertDraftOutlineClaimSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid claim assignment data",
+              details: parsed.error.errors,
+            });
+        }
+
+        const claim = await storage.addClaimToOutline(
+          userId,
+          outline.caseId,
+          outlineId,
+          parsed.data,
+        );
+        res.status(201).json({ claim });
+      } catch (error: any) {
+        if (error.code === "23505") {
+          return res
+            .status(409)
+            .json({ error: "Claim already assigned to this outline" });
+        }
+        console.error("Add claim to outline error:", error);
+        res.status(500).json({ error: "Failed to add claim to outline" });
       }
-      
-      const { bulkUpdateDraftOutlineClaimsSchema } = await import("@shared/schema");
-      const parsed = bulkUpdateDraftOutlineClaimsSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid bulk update data", details: parsed.error.errors });
+    },
+  );
+
+  app.delete(
+    "/api/draft-outlines/:outlineId/claims/:claimId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { outlineId, claimId } = req.params;
+
+        const deleted = await storage.removeClaimFromOutline(
+          userId,
+          outlineId,
+          claimId,
+        );
+        if (!deleted) {
+          return res.status(404).json({ error: "Claim assignment not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Remove claim from outline error:", error);
+        res.status(500).json({ error: "Failed to remove claim from outline" });
       }
-      
-      await storage.bulkUpdateOutlineClaims(userId, outlineId, parsed.data);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Bulk update outline claims error:", error);
-      res.status(500).json({ error: "Failed to update claim assignments" });
-    }
-  });
+    },
+  );
+
+  app.patch(
+    "/api/draft-outlines/:outlineId/claims/bulk",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { outlineId } = req.params;
+
+        const outline = await storage.getDraftOutline(userId, outlineId);
+        if (!outline) {
+          return res.status(404).json({ error: "Outline not found" });
+        }
+
+        const { bulkUpdateDraftOutlineClaimsSchema } = await import(
+          "@shared/schema"
+        );
+        const parsed = bulkUpdateDraftOutlineClaimsSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid bulk update data",
+              details: parsed.error.errors,
+            });
+        }
+
+        await storage.bulkUpdateOutlineClaims(userId, outlineId, parsed.data);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Bulk update outline claims error:", error);
+        res.status(500).json({ error: "Failed to update claim assignments" });
+      }
+    },
+  );
 
   // Compile outline - validates claims have citations before compiling
-  app.post("/api/draft-outlines/:outlineId/compile", requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { outlineId } = req.params;
-      
-      const outline = await storage.getDraftOutline(userId, outlineId);
-      if (!outline) {
-        return res.status(404).json({ error: "Outline not found" });
-      }
-      
-      const outlineClaims = await storage.listDraftOutlineClaims(userId, outlineId);
-      if (outlineClaims.length === 0) {
-        return res.status(400).json({ 
-          error: "No claims assigned to this outline",
-          blockers: [{ type: "no_claims", message: "Add at least one claim to the outline before compiling" }]
-        });
-      }
-      
-      // Check for uncited claims
-      const claimIds = outlineClaims.map(oc => oc.claimId);
-      const claims = await Promise.all(claimIds.map(id => storage.getCaseClaim(userId, id)));
-      const validClaims = claims.filter(c => c !== undefined);
-      
-      const blockers: Array<{ type: string; claimId: string; text: string }> = [];
-      for (const claim of validClaims) {
-        if (!claim) continue;
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        if (citations.length === 0) {
-          blockers.push({
-            type: "uncited_claim",
-            claimId: claim.id,
-            text: claim.claimText,
-          });
-        }
-      }
-      
-      if (blockers.length > 0) {
-        return res.status(400).json({
-          error: "Some claims need supporting evidence",
-          blockers,
-          message: `${blockers.length} claim(s) need at least one citation before compiling`
-        });
-      }
-      
-      // Lock all claims used in this compile
-      for (const claim of validClaims) {
-        if (!claim) continue;
-        const existingDocIds = Array.isArray(claim.usedInDocIds) ? claim.usedInDocIds : [];
-        if (!existingDocIds.includes(outlineId)) {
-          await storage.updateCaseClaim(userId, claim.id, {
-            usedInDocIds: [...existingDocIds, outlineId],
-            isLocked: true,
-            lockedAt: new Date().toISOString(),
-            lockedReason: "Used in compiled document",
-          });
-        }
-      }
-      
-      res.json({ 
-        success: true, 
-        message: "Outline compiled successfully",
-        claimsLocked: validClaims.length
-      });
-    } catch (error) {
-      console.error("Compile outline error:", error);
-      res.status(500).json({ error: "Failed to compile outline" });
-    }
-  });
+  app.post(
+    "/api/draft-outlines/:outlineId/compile",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { outlineId } = req.params;
 
-  app.get("/api/cases/:caseId/draft-readiness", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const outline = await storage.getDraftOutline(userId, outlineId);
+        if (!outline) {
+          return res.status(404).json({ error: "Outline not found" });
+        }
+
+        const outlineClaims = await storage.listDraftOutlineClaims(
+          userId,
+          outlineId,
+        );
+        if (outlineClaims.length === 0) {
+          return res.status(400).json({
+            error: "No claims assigned to this outline",
+            blockers: [
+              {
+                type: "no_claims",
+                message:
+                  "Add at least one claim to the outline before compiling",
+              },
+            ],
+          });
+        }
+
+        // Check for uncited claims
+        const claimIds = outlineClaims.map((oc) => oc.claimId);
+        const claims = await Promise.all(
+          claimIds.map((id) => storage.getCaseClaim(userId, id)),
+        );
+        const validClaims = claims.filter((c) => c !== undefined);
+
+        const blockers: Array<{ type: string; claimId: string; text: string }> =
+          [];
+        for (const claim of validClaims) {
+          if (!claim) continue;
+          const citations = await storage.listClaimCitations(userId, claim.id);
+          if (citations.length === 0) {
+            blockers.push({
+              type: "uncited_claim",
+              claimId: claim.id,
+              text: claim.claimText,
+            });
+          }
+        }
+
+        if (blockers.length > 0) {
+          return res.status(400).json({
+            error: "Some claims need supporting evidence",
+            blockers,
+            message: `${blockers.length} claim(s) need at least one citation before compiling`,
+          });
+        }
+
+        // Lock all claims used in this compile
+        for (const claim of validClaims) {
+          if (!claim) continue;
+          const existingDocIds = Array.isArray(claim.usedInDocIds)
+            ? claim.usedInDocIds
+            : [];
+          if (!existingDocIds.includes(outlineId)) {
+            await storage.updateCaseClaim(userId, claim.id, {
+              usedInDocIds: [...existingDocIds, outlineId],
+              isLocked: true,
+              lockedAt: new Date().toISOString(),
+              lockedReason: "Used in compiled document",
+            });
+          }
+        }
+
+        res.json({
+          success: true,
+          message: "Outline compiled successfully",
+          claimsLocked: validClaims.length,
+        });
+      } catch (error) {
+        console.error("Compile outline error:", error);
+        res.status(500).json({ error: "Failed to compile outline" });
       }
-      
-      const stats = await storage.getCaseDraftReadiness(userId, caseId);
-      const { resolveCasePhase } = await import("./services/phaseResolver");
-      const phase = resolveCasePhase({
-        acceptedClaims: stats.acceptedClaims,
-        totalClaims: stats.totalClaims,
-        readinessPercent: stats.readinessScore,
-      });
-      res.json({ stats, phase });
-    } catch (error) {
-      console.error("Get draft readiness error:", error);
-      res.status(500).json({ error: "Failed to get draft readiness" });
-    }
-  });
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/draft-readiness",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const stats = await storage.getCaseDraftReadiness(userId, caseId);
+        const { resolveCasePhase } = await import("./services/phaseResolver");
+        const phase = resolveCasePhase({
+          acceptedClaims: stats.acceptedClaims,
+          totalClaims: stats.totalClaims,
+          readinessPercent: stats.readinessScore,
+        });
+        res.json({ stats, phase });
+      } catch (error) {
+        console.error("Get draft readiness error:", error);
+        res.status(500).json({ error: "Failed to get draft readiness" });
+      }
+    },
+  );
 
   // ───────────────────────────────────────────────────────────────
   // Task 2: Case Resources (Form Pack Finder)
   // ───────────────────────────────────────────────────────────────
-  app.get("/api/cases/:caseId/resources", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { state, resourceType } = req.query as { state?: string; resourceType?: string };
+  app.get(
+    "/api/cases/:caseId/resources",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { state, resourceType } = req.query as {
+          state?: string;
+          resourceType?: string;
+        };
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const filters: { state?: string; resourceType?: string } = {};
+        if (state) filters.state = state;
+        if (resourceType) filters.resourceType = resourceType;
+
+        const resources = await storage.listCaseResources(
+          userId,
+          caseId,
+          filters,
+        );
+        res.json({ resources });
+      } catch (error) {
+        console.error("List case resources error:", error);
+        res.status(500).json({ error: "Failed to list resources" });
       }
+    },
+  );
 
-      const filters: { state?: string; resourceType?: string } = {};
-      if (state) filters.state = state;
-      if (resourceType) filters.resourceType = resourceType;
+  app.post(
+    "/api/cases/:caseId/resources",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-      const resources = await storage.listCaseResources(userId, caseId, filters);
-      res.json({ resources });
-    } catch (error) {
-      console.error("List case resources error:", error);
-      res.status(500).json({ error: "Failed to list resources" });
-    }
-  });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-  app.post("/api/cases/:caseId/resources", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
+        const { insertCaseResourceSchema } = await import("@shared/schema");
+        const parsed = insertCaseResourceSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid resource data",
+              details: parsed.error.errors,
+            });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const resource = await storage.createCaseResource(
+          userId,
+          caseId,
+          parsed.data,
+        );
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "resource_saved",
+          `Saved resource: ${resource.title}`,
+          {
+            resourceId: resource.id,
+            resourceType: resource.resourceType,
+            domain: resource.domain,
+          },
+        );
+
+        res.status(201).json({ resource });
+      } catch (error) {
+        console.error("Create case resource error:", error);
+        res.status(500).json({ error: "Failed to create resource" });
       }
+    },
+  );
 
-      const { insertCaseResourceSchema } = await import("@shared/schema");
-      const parsed = insertCaseResourceSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid resource data", details: parsed.error.errors });
+  app.patch(
+    "/api/cases/:caseId/resources/:resourceId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, resourceId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { updateCaseResourceSchema } = await import("@shared/schema");
+        const parsed = updateCaseResourceSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid update data",
+              details: parsed.error.errors,
+            });
+        }
+
+        const resource = await storage.updateCaseResource(
+          userId,
+          resourceId,
+          parsed.data,
+        );
+        if (!resource) {
+          return res.status(404).json({ error: "Resource not found" });
+        }
+
+        res.json({ resource });
+      } catch (error) {
+        console.error("Update case resource error:", error);
+        res.status(500).json({ error: "Failed to update resource" });
       }
+    },
+  );
 
-      const resource = await storage.createCaseResource(userId, caseId, parsed.data);
-      await storage.createActivityLog(userId, caseId, "resource_saved", `Saved resource: ${resource.title}`, {
-        resourceId: resource.id,
-        resourceType: resource.resourceType,
-        domain: resource.domain,
-      });
+  app.delete(
+    "/api/cases/:caseId/resources/:resourceId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, resourceId } = req.params;
 
-      res.status(201).json({ resource });
-    } catch (error) {
-      console.error("Create case resource error:", error);
-      res.status(500).json({ error: "Failed to create resource" });
-    }
-  });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-  app.patch("/api/cases/:caseId/resources/:resourceId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, resourceId } = req.params;
+        const existing = await storage.getCaseResource(userId, resourceId);
+        if (!existing) {
+          return res.status(404).json({ error: "Resource not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const deleted = await storage.deleteCaseResource(userId, resourceId);
+        if (!deleted) {
+          return res.status(404).json({ error: "Resource not found" });
+        }
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "resource_deleted",
+          `Deleted resource: ${existing.title}`,
+          {
+            resourceId,
+            resourceType: existing.resourceType,
+          },
+        );
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete case resource error:", error);
+        res.status(500).json({ error: "Failed to delete resource" });
       }
-
-      const { updateCaseResourceSchema } = await import("@shared/schema");
-      const parsed = updateCaseResourceSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid update data", details: parsed.error.errors });
-      }
-
-      const resource = await storage.updateCaseResource(userId, resourceId, parsed.data);
-      if (!resource) {
-        return res.status(404).json({ error: "Resource not found" });
-      }
-
-      res.json({ resource });
-    } catch (error) {
-      console.error("Update case resource error:", error);
-      res.status(500).json({ error: "Failed to update resource" });
-    }
-  });
-
-  app.delete("/api/cases/:caseId/resources/:resourceId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, resourceId } = req.params;
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const existing = await storage.getCaseResource(userId, resourceId);
-      if (!existing) {
-        return res.status(404).json({ error: "Resource not found" });
-      }
-
-      const deleted = await storage.deleteCaseResource(userId, resourceId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Resource not found" });
-      }
-
-      await storage.createActivityLog(userId, caseId, "resource_deleted", `Deleted resource: ${existing.title}`, {
-        resourceId,
-        resourceType: existing.resourceType,
-      });
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete case resource error:", error);
-      res.status(500).json({ error: "Failed to delete resource" });
-    }
-  });
+    },
+  );
 
   // Resource Field Maps - Task 3 (Phase 2)
   // GET field maps for a resource
-  app.get("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, resourceId } = req.params;
+  app.get(
+    "/api/cases/:caseId/resources/:resourceId/field-maps",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, resourceId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const resource = await storage.getCaseResource(userId, resourceId);
+        if (!resource) {
+          return res.status(404).json({ error: "Resource not found" });
+        }
+
+        const fieldMaps = await storage.listResourceFieldMaps(
+          userId,
+          resourceId,
+        );
+        res.json({ fieldMaps });
+      } catch (error) {
+        console.error("List field maps error:", error);
+        res.status(500).json({ error: "Failed to list field maps" });
       }
-
-      const resource = await storage.getCaseResource(userId, resourceId);
-      if (!resource) {
-        return res.status(404).json({ error: "Resource not found" });
-      }
-
-      const fieldMaps = await storage.listResourceFieldMaps(userId, resourceId);
-      res.json({ fieldMaps });
-    } catch (error) {
-      console.error("List field maps error:", error);
-      res.status(500).json({ error: "Failed to list field maps" });
-    }
-  });
+    },
+  );
 
   // POST create field map for a resource
-  app.post("/api/cases/:caseId/resources/:resourceId/field-maps", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, resourceId } = req.params;
+  app.post(
+    "/api/cases/:caseId/resources/:resourceId/field-maps",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, resourceId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const resource = await storage.getCaseResource(userId, resourceId);
+        if (!resource) {
+          return res.status(404).json({ error: "Resource not found" });
+        }
+
+        const { insertResourceFieldMapSchema } = await import("@shared/schema");
+        const parsed = insertResourceFieldMapSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid field map data",
+              details: parsed.error.errors,
+            });
+        }
+
+        const fieldMap = await storage.createResourceFieldMap(
+          userId,
+          caseId,
+          resourceId,
+          parsed.data,
+        );
+        res.status(201).json({ fieldMap });
+      } catch (error) {
+        console.error("Create field map error:", error);
+        res.status(500).json({ error: "Failed to create field map" });
       }
-
-      const resource = await storage.getCaseResource(userId, resourceId);
-      if (!resource) {
-        return res.status(404).json({ error: "Resource not found" });
-      }
-
-      const { insertResourceFieldMapSchema } = await import("@shared/schema");
-      const parsed = insertResourceFieldMapSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid field map data", details: parsed.error.errors });
-      }
-
-      const fieldMap = await storage.createResourceFieldMap(userId, caseId, resourceId, parsed.data);
-      res.status(201).json({ fieldMap });
-    } catch (error) {
-      console.error("Create field map error:", error);
-      res.status(500).json({ error: "Failed to create field map" });
-    }
-  });
+    },
+  );
 
   // POST bulk create field maps with claim suggestions
-  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/bulk", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, resourceId } = req.params;
-      const { fields } = req.body as { fields: Array<{ fieldLabel: string; fieldDescription?: string }> };
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const resource = await storage.getCaseResource(userId, resourceId);
-      if (!resource) {
-        return res.status(404).json({ error: "Resource not found" });
-      }
-
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        return res.status(400).json({ error: "Fields array is required" });
-      }
-
-      // Get all accepted claims for suggestion matching
-      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
-
-      // Match fields to claims using keyword overlap
-      const fieldsWithSuggestions = fields.map((field, idx) => {
-        const fieldWords = field.fieldLabel.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-        const descWords = (field.fieldDescription || "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-        const allFieldWords = [...fieldWords, ...descWords];
-
-        // Score each claim by keyword overlap
-        const scoredClaims = claims.map((claim: { id: string; claimText: string }) => {
-          const claimWords = claim.claimText.toLowerCase().split(/\s+/);
-          let score = 0;
-          for (const word of allFieldWords) {
-            if (claimWords.some((cw: string) => cw.includes(word) || word.includes(cw))) {
-              score++;
-            }
-          }
-          return { claimId: claim.id, score };
-        }).filter((c: { score: number }) => c.score > 0).sort((a: { score: number }, b: { score: number }) => b.score - a.score);
-
-        const suggestedClaimIds = scoredClaims.slice(0, 5).map((c: { claimId: string }) => c.claimId);
-
-        return {
-          fieldLabel: field.fieldLabel,
-          fieldDescription: field.fieldDescription,
-          sortOrder: idx,
-          suggestedClaimIds,
+  app.post(
+    "/api/cases/:caseId/resources/:resourceId/field-maps/bulk",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, resourceId } = req.params;
+        const { fields } = req.body as {
+          fields: Array<{ fieldLabel: string; fieldDescription?: string }>;
         };
-      });
 
-      const fieldMaps = await storage.bulkCreateResourceFieldMaps(userId, caseId, resourceId, fieldsWithSuggestions.map(f => ({
-        fieldLabel: f.fieldLabel,
-        fieldDescription: f.fieldDescription || null,
-        sortOrder: f.sortOrder,
-        isCompleted: false,
-      })));
-
-      // Update suggested claim IDs for each field map
-      const updatedFieldMaps = await Promise.all(fieldMaps.map(async (fm, idx) => {
-        if (fieldsWithSuggestions[idx].suggestedClaimIds.length > 0) {
-          const { db } = await import("./db");
-          const { resourceFieldMaps } = await import("@shared/schema");
-          const { eq } = await import("drizzle-orm");
-          await db.update(resourceFieldMaps)
-            .set({ suggestedClaimIds: fieldsWithSuggestions[idx].suggestedClaimIds })
-            .where(eq(resourceFieldMaps.id, fm.id));
-          return { ...fm, suggestedClaimIds: fieldsWithSuggestions[idx].suggestedClaimIds };
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return fm;
-      }));
 
-      await storage.createActivityLog(userId, caseId, "field_maps_created", `Created ${fieldMaps.length} field maps for resource`, {
-        resourceId,
-        fieldCount: fieldMaps.length,
-      });
+        const resource = await storage.getCaseResource(userId, resourceId);
+        if (!resource) {
+          return res.status(404).json({ error: "Resource not found" });
+        }
 
-      res.status(201).json({ fieldMaps: updatedFieldMaps });
-    } catch (error) {
-      console.error("Bulk create field maps error:", error);
-      res.status(500).json({ error: "Failed to create field maps" });
-    }
-  });
+        if (!fields || !Array.isArray(fields) || fields.length === 0) {
+          return res.status(400).json({ error: "Fields array is required" });
+        }
+
+        // Get all accepted claims for suggestion matching
+        const claims = await storage.listCaseClaims(userId, caseId, {
+          status: "accepted",
+        });
+
+        // Match fields to claims using keyword overlap
+        const fieldsWithSuggestions = fields.map((field, idx) => {
+          const fieldWords = field.fieldLabel
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w: string) => w.length > 2);
+          const descWords = (field.fieldDescription || "")
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w: string) => w.length > 2);
+          const allFieldWords = [...fieldWords, ...descWords];
+
+          // Score each claim by keyword overlap
+          const scoredClaims = claims
+            .map((claim: { id: string; claimText: string }) => {
+              const claimWords = claim.claimText.toLowerCase().split(/\s+/);
+              let score = 0;
+              for (const word of allFieldWords) {
+                if (
+                  claimWords.some(
+                    (cw: string) => cw.includes(word) || word.includes(cw),
+                  )
+                ) {
+                  score++;
+                }
+              }
+              return { claimId: claim.id, score };
+            })
+            .filter((c: { score: number }) => c.score > 0)
+            .sort(
+              (a: { score: number }, b: { score: number }) => b.score - a.score,
+            );
+
+          const suggestedClaimIds = scoredClaims
+            .slice(0, 5)
+            .map((c: { claimId: string }) => c.claimId);
+
+          return {
+            fieldLabel: field.fieldLabel,
+            fieldDescription: field.fieldDescription,
+            sortOrder: idx,
+            suggestedClaimIds,
+          };
+        });
+
+        const fieldMaps = await storage.bulkCreateResourceFieldMaps(
+          userId,
+          caseId,
+          resourceId,
+          fieldsWithSuggestions.map((f) => ({
+            fieldLabel: f.fieldLabel,
+            fieldDescription: f.fieldDescription || null,
+            sortOrder: f.sortOrder,
+            isCompleted: false,
+          })),
+        );
+
+        // Update suggested claim IDs for each field map
+        const updatedFieldMaps = await Promise.all(
+          fieldMaps.map(async (fm, idx) => {
+            if (fieldsWithSuggestions[idx].suggestedClaimIds.length > 0) {
+              const { db } = await import("./db");
+              const { resourceFieldMaps } = await import("@shared/schema");
+              const { eq } = await import("drizzle-orm");
+              await db
+                .update(resourceFieldMaps)
+                .set({
+                  suggestedClaimIds:
+                    fieldsWithSuggestions[idx].suggestedClaimIds,
+                })
+                .where(eq(resourceFieldMaps.id, fm.id));
+              return {
+                ...fm,
+                suggestedClaimIds: fieldsWithSuggestions[idx].suggestedClaimIds,
+              };
+            }
+            return fm;
+          }),
+        );
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "field_maps_created",
+          `Created ${fieldMaps.length} field maps for resource`,
+          {
+            resourceId,
+            fieldCount: fieldMaps.length,
+          },
+        );
+
+        res.status(201).json({ fieldMaps: updatedFieldMaps });
+      } catch (error) {
+        console.error("Bulk create field maps error:", error);
+        res.status(500).json({ error: "Failed to create field maps" });
+      }
+    },
+  );
 
   // PATCH update field map
-  app.patch("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, fieldMapId } = req.params;
+  app.patch(
+    "/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, fieldMapId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { updateResourceFieldMapSchema } = await import("@shared/schema");
+        const parsed = updateResourceFieldMapSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid update data",
+              details: parsed.error.errors,
+            });
+        }
+
+        const fieldMap = await storage.updateResourceFieldMap(
+          userId,
+          fieldMapId,
+          parsed.data,
+        );
+        if (!fieldMap) {
+          return res.status(404).json({ error: "Field map not found" });
+        }
+
+        res.json({ fieldMap });
+      } catch (error) {
+        console.error("Update field map error:", error);
+        res.status(500).json({ error: "Failed to update field map" });
       }
-
-      const { updateResourceFieldMapSchema } = await import("@shared/schema");
-      const parsed = updateResourceFieldMapSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid update data", details: parsed.error.errors });
-      }
-
-      const fieldMap = await storage.updateResourceFieldMap(userId, fieldMapId, parsed.data);
-      if (!fieldMap) {
-        return res.status(404).json({ error: "Field map not found" });
-      }
-
-      res.json({ fieldMap });
-    } catch (error) {
-      console.error("Update field map error:", error);
-      res.status(500).json({ error: "Failed to update field map" });
-    }
-  });
+    },
+  );
 
   // DELETE field map
-  app.delete("/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, fieldMapId } = req.params;
+  app.delete(
+    "/api/cases/:caseId/resources/:resourceId/field-maps/:fieldMapId",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, fieldMapId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const deleted = await storage.deleteResourceFieldMap(
+          userId,
+          fieldMapId,
+        );
+        if (!deleted) {
+          return res.status(404).json({ error: "Field map not found" });
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Delete field map error:", error);
+        res.status(500).json({ error: "Failed to delete field map" });
       }
-
-      const deleted = await storage.deleteResourceFieldMap(userId, fieldMapId);
-      if (!deleted) {
-        return res.status(404).json({ error: "Field map not found" });
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete field map error:", error);
-      res.status(500).json({ error: "Failed to delete field map" });
-    }
-  });
+    },
+  );
 
   // POST suggest claims for a field based on keyword matching
-  app.post("/api/cases/:caseId/resources/:resourceId/field-maps/suggest", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { fieldLabel, fieldDescription } = req.body as { fieldLabel: string; fieldDescription?: string };
+  app.post(
+    "/api/cases/:caseId/resources/:resourceId/field-maps/suggest",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { fieldLabel, fieldDescription } = req.body as {
+          fieldLabel: string;
+          fieldDescription?: string;
+        };
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      if (!fieldLabel) {
-        return res.status(400).json({ error: "Field label is required" });
-      }
-
-      // Get accepted claims
-      const claims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
-
-      // Match by keyword overlap
-      const fieldWords = fieldLabel.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-      const descWords = (fieldDescription || "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-      const allFieldWords = [...fieldWords, ...descWords];
-
-      type ClaimType = { id: string; claimText: string; claimType: string };
-      const scoredClaims = claims.map((claim: ClaimType) => {
-        const claimWords = claim.claimText.toLowerCase().split(/\s+/);
-        let score = 0;
-        for (const word of allFieldWords) {
-          if (claimWords.some((cw: string) => cw.includes(word) || word.includes(cw))) {
-            score++;
-          }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        return { claim, score };
-      }).filter((c: { score: number }) => c.score > 0).sort((a: { score: number }, b: { score: number }) => b.score - a.score);
 
-      const suggestions = scoredClaims.slice(0, 5).map((c: { claim: ClaimType; score: number }) => ({
-        claimId: c.claim.id,
-        claimText: c.claim.claimText,
-        claimType: c.claim.claimType,
-        score: c.score,
-      }));
+        if (!fieldLabel) {
+          return res.status(400).json({ error: "Field label is required" });
+        }
 
-      res.json({ suggestions });
-    } catch (error) {
-      console.error("Suggest claims error:", error);
-      res.status(500).json({ error: "Failed to suggest claims" });
-    }
-  });
+        // Get accepted claims
+        const claims = await storage.listCaseClaims(userId, caseId, {
+          status: "accepted",
+        });
+
+        // Match by keyword overlap
+        const fieldWords = fieldLabel
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w: string) => w.length > 2);
+        const descWords = (fieldDescription || "")
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w: string) => w.length > 2);
+        const allFieldWords = [...fieldWords, ...descWords];
+
+        type ClaimType = { id: string; claimText: string; claimType: string };
+        const scoredClaims = claims
+          .map((claim: ClaimType) => {
+            const claimWords = claim.claimText.toLowerCase().split(/\s+/);
+            let score = 0;
+            for (const word of allFieldWords) {
+              if (
+                claimWords.some(
+                  (cw: string) => cw.includes(word) || word.includes(cw),
+                )
+              ) {
+                score++;
+              }
+            }
+            return { claim, score };
+          })
+          .filter((c: { score: number }) => c.score > 0)
+          .sort(
+            (a: { score: number }, b: { score: number }) => b.score - a.score,
+          );
+
+        const suggestions = scoredClaims
+          .slice(0, 5)
+          .map((c: { claim: ClaimType; score: number }) => ({
+            claimId: c.claim.id,
+            claimText: c.claim.claimText,
+            claimType: c.claim.claimType,
+            score: c.score,
+          }));
+
+        res.json({ suggestions });
+      } catch (error) {
+        console.error("Suggest claims error:", error);
+        res.status(500).json({ error: "Failed to suggest claims" });
+      }
+    },
+  );
 
   // Form Pack Search - search official court form directories
   // Only returns results from official domains (.gov, .us, state courts)
@@ -10375,144 +13714,254 @@ Limit to ${limit} most important claims.`;
   ];
 
   const isOfficialDomain = (domain: string): boolean => {
-    return OFFICIAL_DOMAIN_PATTERNS.some(pattern => pattern.test(domain));
+    return OFFICIAL_DOMAIN_PATTERNS.some((pattern) => pattern.test(domain));
   };
 
   // Pre-defined state court form directories for quick lookup
-  const STATE_COURT_RESOURCES: Record<string, Array<{ title: string; url: string; description: string; category: string }>> = {
+  const STATE_COURT_RESOURCES: Record<
+    string,
+    Array<{ title: string; url: string; description: string; category: string }>
+  > = {
     CA: [
-      { title: "California Courts - Self-Help Forms", url: "https://www.courts.ca.gov/forms.htm", description: "Official California Judicial Council forms", category: "general" },
-      { title: "CA Family Law Forms", url: "https://www.courts.ca.gov/forms.htm?filter=FL", description: "Family law forms including custody, support, and dissolution", category: "family" },
-      { title: "CA Domestic Violence Forms", url: "https://www.courts.ca.gov/forms.htm?filter=DV", description: "Restraining order and domestic violence forms", category: "dv" },
+      {
+        title: "California Courts - Self-Help Forms",
+        url: "https://www.courts.ca.gov/forms.htm",
+        description: "Official California Judicial Council forms",
+        category: "general",
+      },
+      {
+        title: "CA Family Law Forms",
+        url: "https://www.courts.ca.gov/forms.htm?filter=FL",
+        description:
+          "Family law forms including custody, support, and dissolution",
+        category: "family",
+      },
+      {
+        title: "CA Domestic Violence Forms",
+        url: "https://www.courts.ca.gov/forms.htm?filter=DV",
+        description: "Restraining order and domestic violence forms",
+        category: "dv",
+      },
     ],
     TX: [
-      { title: "Texas Courts - Self-Help Forms", url: "https://www.txcourts.gov/programs-services/self-help/", description: "Texas state court self-representation resources", category: "general" },
-      { title: "TX Family Law Forms", url: "https://www.txcourts.gov/programs-services/self-help/self-help-forms/", description: "Texas family law self-help forms", category: "family" },
+      {
+        title: "Texas Courts - Self-Help Forms",
+        url: "https://www.txcourts.gov/programs-services/self-help/",
+        description: "Texas state court self-representation resources",
+        category: "general",
+      },
+      {
+        title: "TX Family Law Forms",
+        url: "https://www.txcourts.gov/programs-services/self-help/self-help-forms/",
+        description: "Texas family law self-help forms",
+        category: "family",
+      },
     ],
     NY: [
-      { title: "New York Courts - DIY Forms", url: "https://nycourts.gov/courthelp/diy/index.shtml", description: "New York unified court system forms", category: "general" },
-      { title: "NY Family Court Forms", url: "https://nycourts.gov/courthelp/GoingToCourt/familyCourtForms.shtml", description: "New York Family Court forms", category: "family" },
+      {
+        title: "New York Courts - DIY Forms",
+        url: "https://nycourts.gov/courthelp/diy/index.shtml",
+        description: "New York unified court system forms",
+        category: "general",
+      },
+      {
+        title: "NY Family Court Forms",
+        url: "https://nycourts.gov/courthelp/GoingToCourt/familyCourtForms.shtml",
+        description: "New York Family Court forms",
+        category: "family",
+      },
     ],
     FL: [
-      { title: "Florida Courts - Self-Help", url: "https://www.flcourts.gov/Resources-Services/Court-Improvement/Family-Courts/Family-Law-Self-Help-Information", description: "Florida state courts self-help center", category: "general" },
-      { title: "FL Family Law Forms", url: "https://www.flcourts.gov/Resources-Services/Court-Improvement/Family-Courts/Family-Law-Self-Help-Information/Family-Law-Forms", description: "Florida Supreme Court approved family law forms", category: "family" },
+      {
+        title: "Florida Courts - Self-Help",
+        url: "https://www.flcourts.gov/Resources-Services/Court-Improvement/Family-Courts/Family-Law-Self-Help-Information",
+        description: "Florida state courts self-help center",
+        category: "general",
+      },
+      {
+        title: "FL Family Law Forms",
+        url: "https://www.flcourts.gov/Resources-Services/Court-Improvement/Family-Courts/Family-Law-Self-Help-Information/Family-Law-Forms",
+        description: "Florida Supreme Court approved family law forms",
+        category: "family",
+      },
     ],
     IL: [
-      { title: "Illinois Courts - Self-Help", url: "https://www.illinoiscourts.gov/resources/forms/", description: "Illinois court forms repository", category: "general" },
+      {
+        title: "Illinois Courts - Self-Help",
+        url: "https://www.illinoiscourts.gov/resources/forms/",
+        description: "Illinois court forms repository",
+        category: "general",
+      },
     ],
     PA: [
-      { title: "Pennsylvania Courts - Forms", url: "https://www.pacourts.us/forms/", description: "Pennsylvania unified judicial system forms", category: "general" },
+      {
+        title: "Pennsylvania Courts - Forms",
+        url: "https://www.pacourts.us/forms/",
+        description: "Pennsylvania unified judicial system forms",
+        category: "general",
+      },
     ],
     OH: [
-      { title: "Ohio Courts - Forms", url: "https://www.supremecourt.ohio.gov/JCS/domesticViolence/default.aspx", description: "Ohio Supreme Court approved forms", category: "general" },
+      {
+        title: "Ohio Courts - Forms",
+        url: "https://www.supremecourt.ohio.gov/JCS/domesticViolence/default.aspx",
+        description: "Ohio Supreme Court approved forms",
+        category: "general",
+      },
     ],
     GA: [
-      { title: "Georgia Courts - Self-Help", url: "https://georgiacourts.gov/resources/court-forms/", description: "Georgia judicial branch forms", category: "general" },
+      {
+        title: "Georgia Courts - Self-Help",
+        url: "https://georgiacourts.gov/resources/court-forms/",
+        description: "Georgia judicial branch forms",
+        category: "general",
+      },
     ],
     NC: [
-      { title: "North Carolina Courts - Forms", url: "https://www.nccourts.gov/documents/forms", description: "North Carolina judicial branch forms", category: "general" },
+      {
+        title: "North Carolina Courts - Forms",
+        url: "https://www.nccourts.gov/documents/forms",
+        description: "North Carolina judicial branch forms",
+        category: "general",
+      },
     ],
     MI: [
-      { title: "Michigan Courts - Forms", url: "https://www.courts.michigan.gov/administration/scao/forms/", description: "Michigan SCAO approved forms", category: "general" },
+      {
+        title: "Michigan Courts - Forms",
+        url: "https://www.courts.michigan.gov/administration/scao/forms/",
+        description: "Michigan SCAO approved forms",
+        category: "general",
+      },
     ],
   };
 
   const FEDERAL_RESOURCES = [
-    { title: "US Courts - Forms", url: "https://www.uscourts.gov/forms", description: "Federal judiciary forms", category: "federal" },
-    { title: "PACER - Court Records", url: "https://www.pacer.uscourts.gov/", description: "Public Access to Court Electronic Records", category: "federal" },
+    {
+      title: "US Courts - Forms",
+      url: "https://www.uscourts.gov/forms",
+      description: "Federal judiciary forms",
+      category: "federal",
+    },
+    {
+      title: "PACER - Court Records",
+      url: "https://www.pacer.uscourts.gov/",
+      description: "Public Access to Court Electronic Records",
+      category: "federal",
+    },
   ];
 
-  app.post("/api/cases/:caseId/form-packs/search", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { state, county, category, query } = req.body as {
-        state?: string;
-        county?: string;
-        category?: string;
-        query?: string;
-      };
+  app.post(
+    "/api/cases/:caseId/form-packs/search",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { state, county, category, query } = req.body as {
+          state?: string;
+          county?: string;
+          category?: string;
+          query?: string;
+        };
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const results: Array<{
-        title: string;
-        url: string;
-        description: string;
-        category: string;
-        domain: string;
-        isOfficial: boolean;
-        state?: string;
-      }> = [];
+        const results: Array<{
+          title: string;
+          url: string;
+          description: string;
+          category: string;
+          domain: string;
+          isOfficial: boolean;
+          state?: string;
+        }> = [];
 
-      // Add federal resources first
-      for (const resource of FEDERAL_RESOURCES) {
-        const domain = new URL(resource.url).hostname;
-        results.push({
-          ...resource,
-          domain,
-          isOfficial: true,
-        });
-      }
-
-      // Add state-specific resources
-      if (state && STATE_COURT_RESOURCES[state]) {
-        for (const resource of STATE_COURT_RESOURCES[state]) {
-          if (category && resource.category !== category && resource.category !== "general") {
-            continue;
-          }
+        // Add federal resources first
+        for (const resource of FEDERAL_RESOURCES) {
           const domain = new URL(resource.url).hostname;
           results.push({
             ...resource,
             domain,
             isOfficial: true,
-            state,
           });
         }
-      }
 
-      // Filter by category if specified
-      let filtered = results;
-      if (category) {
-        filtered = results.filter(r => r.category === category || r.category === "general" || r.category === "federal");
-      }
+        // Add state-specific resources
+        if (state && STATE_COURT_RESOURCES[state]) {
+          for (const resource of STATE_COURT_RESOURCES[state]) {
+            if (
+              category &&
+              resource.category !== category &&
+              resource.category !== "general"
+            ) {
+              continue;
+            }
+            const domain = new URL(resource.url).hostname;
+            results.push({
+              ...resource,
+              domain,
+              isOfficial: true,
+              state,
+            });
+          }
+        }
 
-      // Filter by query if specified
-      if (query) {
-        const q = query.toLowerCase();
-        filtered = filtered.filter(r =>
-          r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q)
+        // Filter by category if specified
+        let filtered = results;
+        if (category) {
+          filtered = results.filter(
+            (r) =>
+              r.category === category ||
+              r.category === "general" ||
+              r.category === "federal",
+          );
+        }
+
+        // Filter by query if specified
+        if (query) {
+          const q = query.toLowerCase();
+          filtered = filtered.filter(
+            (r) =>
+              r.title.toLowerCase().includes(q) ||
+              r.description.toLowerCase().includes(q) ||
+              r.category.toLowerCase().includes(q),
+          );
+        }
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "form_pack_search",
+          `Searched form packs for ${state || "all states"}`,
+          {
+            state,
+            county,
+            category,
+            query,
+            resultsCount: filtered.length,
+          },
         );
+
+        res.json({
+          results: filtered,
+          meta: {
+            state,
+            county,
+            category,
+            totalResults: filtered.length,
+            officialDomainsOnly: true,
+          },
+        });
+      } catch (error) {
+        console.error("Form pack search error:", error);
+        res.status(500).json({ error: "Failed to search form packs" });
       }
-
-      await storage.createActivityLog(userId, caseId, "form_pack_search", `Searched form packs for ${state || "all states"}`, {
-        state,
-        county,
-        category,
-        query,
-        resultsCount: filtered.length,
-      });
-
-      res.json({
-        results: filtered,
-        meta: {
-          state,
-          county,
-          category,
-          totalResults: filtered.length,
-          officialDomainsOnly: true,
-        },
-      });
-    } catch (error) {
-      console.error("Form pack search error:", error);
-      res.status(500).json({ error: "Failed to search form packs" });
-    }
-  });
+    },
+  );
 
   // Get available states for form pack search
   app.get("/api/form-packs/states", requireAuth, async (req, res) => {
@@ -10525,65 +13974,76 @@ Limit to ${limit} most important claims.`;
     }
   });
 
-  app.get("/api/cases/:caseId/trial-prep/export", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+  app.get(
+    "/api/cases/:caseId/trial-prep/export",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-      const items = await storage.listTrialPrepShortlist(userId, caseId);
-      
-      const { binderSectionValues } = await import("@shared/schema");
-      
-      const groupedItems: Record<string, typeof items> = {};
-      for (const section of binderSectionValues) {
-        const sectionItems = items.filter(i => i.binderSection === section);
-        const pinned = sectionItems.filter(i => i.isPinned).sort((a, b) => b.importance - a.importance);
-        const unpinned = sectionItems.filter(i => !i.isPinned).sort((a, b) => b.importance - a.importance);
-        groupedItems[section] = [...pinned, ...unpinned];
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      function getTop3(sectionItems: typeof items) {
-        const sorted = [...sectionItems].sort((a, b) => {
-          if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
-          if (a.importance !== b.importance) return b.importance - a.importance;
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        const items = await storage.listTrialPrepShortlist(userId, caseId);
+
+        const { binderSectionValues } = await import("@shared/schema");
+
+        const groupedItems: Record<string, typeof items> = {};
+        for (const section of binderSectionValues) {
+          const sectionItems = items.filter((i) => i.binderSection === section);
+          const pinned = sectionItems
+            .filter((i) => i.isPinned)
+            .sort((a, b) => b.importance - a.importance);
+          const unpinned = sectionItems
+            .filter((i) => !i.isPinned)
+            .sort((a, b) => b.importance - a.importance);
+          groupedItems[section] = [...pinned, ...unpinned];
+        }
+
+        function getTop3(sectionItems: typeof items) {
+          const sorted = [...sectionItems].sort((a, b) => {
+            if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+            if (a.importance !== b.importance)
+              return b.importance - a.importance;
+            return (
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+          });
+          return sorted.slice(0, 3);
+        }
+
+        function formatItem(item: (typeof items)[0]): string {
+          const tags = Array.isArray(item.tags) ? item.tags.join(", ") : "";
+          let text = `Title: ${item.title}\n`;
+          if (item.summary) text += `Summary: ${item.summary}\n`;
+          text += `Source Type: ${item.sourceType}\n`;
+          text += `Source Reference: ${item.sourceType}:${item.sourceId}\n`;
+          if (tags) text += `Tags: ${tags}\n`;
+          text += `Importance: ${item.importance}/5\n`;
+          if (item.isPinned) text += `Status: PINNED\n`;
+          return text;
+        }
+
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        const chunks: Buffer[] = [];
+        const PassThrough = (await import("stream")).PassThrough;
+        const passThrough = new PassThrough();
+
+        passThrough.on("data", (chunk) => chunks.push(chunk));
+
+        const archiveComplete = new Promise<Buffer>((resolve, reject) => {
+          passThrough.on("end", () => resolve(Buffer.concat(chunks)));
+          passThrough.on("error", reject);
+          archive.on("error", reject);
         });
-        return sorted.slice(0, 3);
-      }
 
-      function formatItem(item: typeof items[0]): string {
-        const tags = Array.isArray(item.tags) ? item.tags.join(", ") : "";
-        let text = `Title: ${item.title}\n`;
-        if (item.summary) text += `Summary: ${item.summary}\n`;
-        text += `Source Type: ${item.sourceType}\n`;
-        text += `Source Reference: ${item.sourceType}:${item.sourceId}\n`;
-        if (tags) text += `Tags: ${tags}\n`;
-        text += `Importance: ${item.importance}/5\n`;
-        if (item.isPinned) text += `Status: PINNED\n`;
-        return text;
-      }
+        archive.pipe(passThrough);
 
-      const archive = archiver("zip", { zlib: { level: 9 } });
-      const chunks: Buffer[] = [];
-      const PassThrough = (await import("stream")).PassThrough;
-      const passThrough = new PassThrough();
-
-      passThrough.on("data", (chunk) => chunks.push(chunk));
-
-      const archiveComplete = new Promise<Buffer>((resolve, reject) => {
-        passThrough.on("end", () => resolve(Buffer.concat(chunks)));
-        passThrough.on("error", reject);
-        archive.on("error", reject);
-      });
-
-      archive.pipe(passThrough);
-
-      const readme = `TRIAL BINDER EXPORT
+        const readme = `TRIAL BINDER EXPORT
 ==================
 
 Case: ${caseRecord.nickname || caseRecord.title}
@@ -10607,95 +14067,122 @@ Top 3 selection criteria:
 3. Then by date added (newest first)
 `;
 
-      archive.append(readme, { name: "00_README.txt" });
+        archive.append(readme, { name: "00_README.txt" });
 
-      let folderIndex = 1;
-      for (const section of binderSectionValues) {
-        const sectionItems = groupedItems[section] || [];
-        if (sectionItems.length === 0) continue;
+        let folderIndex = 1;
+        for (const section of binderSectionValues) {
+          const sectionItems = groupedItems[section] || [];
+          if (sectionItems.length === 0) continue;
 
-        const folderName = `${String(folderIndex).padStart(2, "0")}_${section.replace(/[\/\\:*?"<>|&]/g, "_")}`;
-        
-        const top3 = getTop3(sectionItems);
-        let top3Content = `TOP 3 FOR: ${section}\n${"=".repeat(50)}\n\n`;
-        if (top3.length === 0) {
-          top3Content += "(No items in this section)\n";
-        } else {
-          top3.forEach((item, idx) => {
-            top3Content += `--- ${idx + 1}. ---\n${formatItem(item)}\n`;
+          const folderName = `${String(folderIndex).padStart(2, "0")}_${section.replace(/[\/\\:*?"<>|&]/g, "_")}`;
+
+          const top3 = getTop3(sectionItems);
+          let top3Content = `TOP 3 FOR: ${section}\n${"=".repeat(50)}\n\n`;
+          if (top3.length === 0) {
+            top3Content += "(No items in this section)\n";
+          } else {
+            top3.forEach((item, idx) => {
+              top3Content += `--- ${idx + 1}. ---\n${formatItem(item)}\n`;
+            });
+          }
+          archive.append(top3Content, { name: `${folderName}/00_TOP3.txt` });
+
+          let allContent = `ALL ITEMS IN: ${section}\n${"=".repeat(50)}\n\n`;
+          if (sectionItems.length === 0) {
+            allContent += "(No items)\n";
+          } else {
+            sectionItems.forEach((item, idx) => {
+              allContent += `--- Item ${idx + 1} ---\n${formatItem(item)}\n`;
+            });
+          }
+          archive.append(allContent, {
+            name: `${folderName}/01_ALL_ITEMS.txt`,
           });
-        }
-        archive.append(top3Content, { name: `${folderName}/00_TOP3.txt` });
 
-        let allContent = `ALL ITEMS IN: ${section}\n${"=".repeat(50)}\n\n`;
-        if (sectionItems.length === 0) {
-          allContent += "(No items)\n";
-        } else {
-          sectionItems.forEach((item, idx) => {
-            allContent += `--- Item ${idx + 1} ---\n${formatItem(item)}\n`;
-          });
+          folderIndex++;
         }
-        archive.append(allContent, { name: `${folderName}/01_ALL_ITEMS.txt` });
 
-        folderIndex++;
+        await archive.finalize();
+        const zipBuffer = await archiveComplete;
+
+        await triggerCaseMemoryRebuild(
+          userId,
+          caseId,
+          "export_trial_prep_binder",
+          {
+            itemCount: items.length,
+          },
+        );
+
+        const fileName = `trial-binder-${caseRecord.nickname || caseRecord.id}-${Date.now()}.zip`;
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${fileName}"`,
+        );
+        res.setHeader("Content-Length", zipBuffer.length);
+        res.send(zipBuffer);
+      } catch (error) {
+        console.error("Trial prep export error:", error);
+        res.status(500).json({ error: "Failed to export trial binder" });
       }
-
-      await archive.finalize();
-      const zipBuffer = await archiveComplete;
-      
-      await triggerCaseMemoryRebuild(userId, caseId, "export_trial_prep_binder", {
-        itemCount: items.length,
-      });
-
-      const fileName = `trial-binder-${caseRecord.nickname || caseRecord.id}-${Date.now()}.zip`;
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-      res.setHeader("Content-Length", zipBuffer.length);
-      res.send(zipBuffer);
-    } catch (error) {
-      console.error("Trial prep export error:", error);
-      res.status(500).json({ error: "Failed to export trial binder" });
-    }
-  });
+    },
+  );
 
   // Phase 2F: Case Facts CRUD
-  app.get("/api/cases/:caseId/facts", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/facts",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.user!.id;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const parsed = listCaseFactsSchema.safeParse(req.query);
+        const filters = parsed.success ? parsed.data : {};
+        const facts = await storage.listCaseFacts(userId, caseId, filters);
+        res.json({ facts });
+      } catch (error) {
+        console.error("List facts error:", error);
+        res.status(500).json({ error: "Failed to list facts" });
       }
-      const parsed = listCaseFactsSchema.safeParse(req.query);
-      const filters = parsed.success ? parsed.data : {};
-      const facts = await storage.listCaseFacts(userId, caseId, filters);
-      res.json({ facts });
-    } catch (error) {
-      console.error("List facts error:", error);
-      res.status(500).json({ error: "Failed to list facts" });
-    }
-  });
+    },
+  );
 
-  app.post("/api/cases/:caseId/facts", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+  app.post(
+    "/api/cases/:caseId/facts",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.user!.id;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+        const parsed = insertCaseFactSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res
+            .status(400)
+            .json({
+              error: "Invalid fact data",
+              details: parsed.error.flatten(),
+            });
+        }
+        const fact = await storage.createCaseFact(userId, caseId, parsed.data);
+        res.status(201).json({ fact });
+      } catch (error) {
+        console.error("Create fact error:", error);
+        res.status(500).json({ error: "Failed to create fact" });
       }
-      const parsed = insertCaseFactSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid fact data", details: parsed.error.flatten() });
-      }
-      const fact = await storage.createCaseFact(userId, caseId, parsed.data);
-      res.status(201).json({ fact });
-    } catch (error) {
-      console.error("Create fact error:", error);
-      res.status(500).json({ error: "Failed to create fact" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/facts/:factId", requireAuth, async (req, res) => {
     try {
@@ -10707,7 +14194,12 @@ Top 3 selection criteria:
       }
       const parsed = updateCaseFactSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid update data", details: parsed.error.flatten() });
+        return res
+          .status(400)
+          .json({
+            error: "Invalid update data",
+            details: parsed.error.flatten(),
+          });
       }
       const updated = await storage.updateCaseFact(userId, factId, parsed.data);
       res.json({ fact: updated });
@@ -10734,112 +14226,138 @@ Top 3 selection criteria:
   });
 
   // Phase 2F: Auto-suggest facts from existing data
-  app.post("/api/cases/:caseId/facts/suggest", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { caseId } = req.params;
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      const { refresh } = req.body || {};
-      
-      await storage.createActivityLog(userId, caseId, "facts_suggesting", "Suggesting facts from case data", {});
-
-      const suggestedFacts: Array<{
-        key: string;
-        value: string | null;
-        valueType: string;
-        sourceType: string;
-        sourceId: string | null;
-        citationIds: string[];
-        missingInfoFlag: boolean;
-      }> = [];
-
-      const claims = await storage.listCaseClaims(userId, caseId);
-      const acceptedClaims = claims.filter(c => c.status === "accepted");
-      
-      for (const claim of acceptedClaims) {
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        const citationIds = citations.map(c => c.citationId);
-        
-        let factKey = `claim.${claim.claimType || "general"}`;
-        const existingWithKey = suggestedFacts.filter(f => f.key.startsWith(factKey));
-        if (existingWithKey.length > 0) {
-          factKey = `${factKey}.${existingWithKey.length + 1}`;
+  app.post(
+    "/api/cases/:caseId/facts/suggest",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.user!.id;
+        const { caseId } = req.params;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-        
-        suggestedFacts.push({
-          key: factKey,
-          value: claim.claimText.substring(0, 2000),
-          valueType: "text",
-          sourceType: "claim",
-          sourceId: claim.id,
-          citationIds,
-          missingInfoFlag: citationIds.length === 0,
-        });
-      }
+        const { refresh } = req.body || {};
 
-      const notes = await storage.listEvidenceNotesFull(userId, caseId);
-      for (const note of notes) {
-        if (!note.noteText) continue;
-        const factKey = `note.${note.id.substring(0, 8)}`;
-        suggestedFacts.push({
-          key: factKey,
-          value: note.noteText.substring(0, 2000),
-          valueType: "text",
-          sourceType: "note",
-          sourceId: note.id,
-          citationIds: [],
-          missingInfoFlag: true,
-        });
-      }
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "facts_suggesting",
+          "Suggesting facts from case data",
+          {},
+        );
 
-      const events = await storage.listTimelineEvents(caseId, userId);
-      for (const event of events.slice(0, 20)) {
-        const factKey = `timeline.${event.eventDate || event.id.substring(0, 8)}`;
-        suggestedFacts.push({
-          key: factKey,
-          value: event.title || event.notes?.substring(0, 200) || null,
-          valueType: event.eventDate ? "date" : "text",
-          sourceType: "timeline",
-          sourceId: event.id,
-          citationIds: [],
-          missingInfoFlag: true,
-        });
-      }
+        const suggestedFacts: Array<{
+          key: string;
+          value: string | null;
+          valueType: string;
+          sourceType: string;
+          sourceId: string | null;
+          citationIds: string[];
+          missingInfoFlag: boolean;
+        }> = [];
 
-      let createdCount = 0;
-      for (const sf of suggestedFacts) {
-        const existingFacts = await storage.listCaseFacts(userId, caseId, { prefix: sf.key });
-        const alreadyExists = existingFacts.some(f => f.key === sf.key && f.value === sf.value);
-        if (alreadyExists && !refresh) continue;
+        const claims = await storage.listCaseClaims(userId, caseId);
+        const acceptedClaims = claims.filter((c) => c.status === "accepted");
 
-        const fact = await storage.createCaseFact(userId, caseId, {
-          key: sf.key,
-          value: sf.value,
-          valueType: sf.valueType as any,
+        for (const claim of acceptedClaims) {
+          const citations = await storage.listClaimCitations(userId, claim.id);
+          const citationIds = citations.map((c) => c.citationId);
+
+          let factKey = `claim.${claim.claimType || "general"}`;
+          const existingWithKey = suggestedFacts.filter((f) =>
+            f.key.startsWith(factKey),
+          );
+          if (existingWithKey.length > 0) {
+            factKey = `${factKey}.${existingWithKey.length + 1}`;
+          }
+
+          suggestedFacts.push({
+            key: factKey,
+            value: claim.claimText.substring(0, 2000),
+            valueType: "text",
+            sourceType: "claim",
+            sourceId: claim.id,
+            citationIds,
+            missingInfoFlag: citationIds.length === 0,
+          });
+        }
+
+        const notes = await storage.listEvidenceNotesFull(userId, caseId);
+        for (const note of notes) {
+          if (!note.noteText) continue;
+          const factKey = `note.${note.id.substring(0, 8)}`;
+          suggestedFacts.push({
+            key: factKey,
+            value: note.noteText.substring(0, 2000),
+            valueType: "text",
+            sourceType: "note",
+            sourceId: note.id,
+            citationIds: [],
+            missingInfoFlag: true,
+          });
+        }
+
+        const events = await storage.listTimelineEvents(caseId, userId);
+        for (const event of events.slice(0, 20)) {
+          const factKey = `timeline.${event.eventDate || event.id.substring(0, 8)}`;
+          suggestedFacts.push({
+            key: factKey,
+            value: event.title || event.notes?.substring(0, 200) || null,
+            valueType: event.eventDate ? "date" : "text",
+            sourceType: "timeline",
+            sourceId: event.id,
+            citationIds: [],
+            missingInfoFlag: true,
+          });
+        }
+
+        let createdCount = 0;
+        for (const sf of suggestedFacts) {
+          const existingFacts = await storage.listCaseFacts(userId, caseId, {
+            prefix: sf.key,
+          });
+          const alreadyExists = existingFacts.some(
+            (f) => f.key === sf.key && f.value === sf.value,
+          );
+          if (alreadyExists && !refresh) continue;
+
+          const fact = await storage.createCaseFact(userId, caseId, {
+            key: sf.key,
+            value: sf.value,
+            valueType: sf.valueType as any,
+            status: "suggested",
+            sourceType: sf.sourceType as any,
+            sourceId: sf.sourceId,
+            missingInfoFlag: sf.missingInfoFlag,
+          });
+
+          for (const citId of sf.citationIds) {
+            await storage.attachFactCitation(userId, caseId, fact.id, citId);
+          }
+          createdCount++;
+        }
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "facts_suggested",
+          `Suggested ${createdCount} facts`,
+          { count: createdCount },
+        );
+
+        const allFacts = await storage.listCaseFacts(userId, caseId, {
           status: "suggested",
-          sourceType: sf.sourceType as any,
-          sourceId: sf.sourceId,
-          missingInfoFlag: sf.missingInfoFlag,
         });
-        
-        for (const citId of sf.citationIds) {
-          await storage.attachFactCitation(userId, caseId, fact.id, citId);
-        }
-        createdCount++;
+        res.json({ ok: true, suggestedCount: createdCount, facts: allFacts });
+      } catch (error) {
+        console.error("Suggest facts error:", error);
+        res.status(500).json({ error: "Failed to suggest facts" });
       }
-
-      await storage.createActivityLog(userId, caseId, "facts_suggested", `Suggested ${createdCount} facts`, { count: createdCount });
-
-      const allFacts = await storage.listCaseFacts(userId, caseId, { status: "suggested" });
-      res.json({ ok: true, suggestedCount: createdCount, facts: allFacts });
-    } catch (error) {
-      console.error("Suggest facts error:", error);
-      res.status(500).json({ error: "Failed to suggest facts" });
-    }
-  });
+    },
+  );
 
   // Phase 2F: Fact Citations
   app.get("/api/facts/:factId/citations", requireAuth, async (req, res) => {
@@ -10858,835 +14376,1231 @@ Top 3 selection criteria:
     }
   });
 
-  app.post("/api/facts/:factId/citations/:citationId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { factId, citationId } = req.params;
-      const fact = await storage.getCaseFact(userId, factId);
-      if (!fact) {
-        return res.status(404).json({ error: "Fact not found" });
+  app.post(
+    "/api/facts/:factId/citations/:citationId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.user!.id;
+        const { factId, citationId } = req.params;
+        const fact = await storage.getCaseFact(userId, factId);
+        if (!fact) {
+          return res.status(404).json({ error: "Fact not found" });
+        }
+        const citation = await storage.attachFactCitation(
+          userId,
+          fact.caseId,
+          factId,
+          citationId,
+        );
+        res.status(201).json({ citation });
+      } catch (error) {
+        console.error("Attach citation error:", error);
+        res.status(500).json({ error: "Failed to attach citation" });
       }
-      const citation = await storage.attachFactCitation(userId, fact.caseId, factId, citationId);
-      res.status(201).json({ citation });
-    } catch (error) {
-      console.error("Attach citation error:", error);
-      res.status(500).json({ error: "Failed to attach citation" });
-    }
-  });
+    },
+  );
 
-  app.delete("/api/facts/:factId/citations/:citationId", requireAuth, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { factId, citationId } = req.params;
-      const fact = await storage.getCaseFact(userId, factId);
-      if (!fact) {
-        return res.status(404).json({ error: "Fact not found" });
+  app.delete(
+    "/api/facts/:factId/citations/:citationId",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const userId = req.user!.id;
+        const { factId, citationId } = req.params;
+        const fact = await storage.getCaseFact(userId, factId);
+        if (!fact) {
+          return res.status(404).json({ error: "Fact not found" });
+        }
+        await storage.detachFactCitation(userId, factId, citationId);
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("Detach citation error:", error);
+        res.status(500).json({ error: "Failed to detach citation" });
       }
-      await storage.detachFactCitation(userId, factId, citationId);
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("Detach citation error:", error);
-      res.status(500).json({ error: "Failed to detach citation" });
-    }
-  });
+    },
+  );
 
   // Phase 2F Task D: Template Auto-Fill - get pre-filled payload from accepted facts
-  app.get("/api/cases/:caseId/template-autofill", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = (req as any).user!.id;
-      const { caseId } = req.params;
-      
-      const caseData = await storage.getCase(caseId, userId);
-      if (!caseData) {
-        return res.status(404).json({ error: "Case not found" });
+  app.get(
+    "/api/cases/:caseId/template-autofill",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = (req as any).user!.id;
+        const { caseId } = req.params;
+
+        const caseData = await storage.getCase(caseId, userId);
+        if (!caseData) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const profile = await storage.getUserProfile(userId);
+        const acceptedFacts = await storage.listCaseFacts(userId, caseId, {
+          status: "accepted",
+        });
+
+        const factMap: Record<string, string | null> = {};
+        for (const fact of acceptedFacts) {
+          factMap[fact.key] = fact.value;
+        }
+
+        const today = new Date().toISOString().split("T")[0];
+
+        const payload = {
+          court: {
+            district: factMap["court.district"] || "",
+            county: factMap["court.county"] || caseData.county || "",
+            state: factMap["court.state"] || caseData.state || "",
+          },
+          case: {
+            caseNumber: factMap["case.number"] || caseData.caseNumber || "",
+          },
+          parties: {
+            petitioner:
+              factMap["party.petitioner"] || profile?.petitionerName || "",
+            respondent:
+              factMap["party.respondent"] || profile?.respondentName || "",
+          },
+          filer: {
+            fullName: factMap["filer.name"] || profile?.fullName || "",
+            email: factMap["filer.email"] || profile?.email || "",
+            addressLine1: profile?.addressLine1 || "",
+            addressLine2: profile?.addressLine2 || "",
+            city: profile?.city || "",
+            state: profile?.state || "",
+            zip: profile?.zip || "",
+            phone: profile?.phone || "",
+            partyRole: factMap["filer.role"] || profile?.partyRole || "",
+            isSelfRepresented: profile?.isSelfRepresented ?? true,
+            attorney:
+              profile?.isSelfRepresented === false
+                ? {
+                    name: profile?.fullName || "",
+                    firm: profile?.firmName || "",
+                    barNumber: profile?.barNumber || "",
+                  }
+                : undefined,
+          },
+          document: {
+            title: factMap["document.title"] || "",
+            subtitle: factMap["document.subtitle"] || "",
+          },
+          date: today,
+        };
+
+        const missingFields: string[] = [];
+        if (!payload.court.county) missingFields.push("court.county");
+        if (!payload.court.state) missingFields.push("court.state");
+        if (!payload.case.caseNumber) missingFields.push("case.caseNumber");
+        if (!payload.filer.fullName) missingFields.push("filer.fullName");
+        if (!payload.filer.addressLine1)
+          missingFields.push("filer.addressLine1");
+        if (!payload.filer.partyRole) missingFields.push("filer.partyRole");
+
+        const citationCount = acceptedFacts.reduce((acc, f) => {
+          return acc + (f.sourceType === "claim" ? 1 : 0);
+        }, 0);
+
+        res.json({
+          payload,
+          missingFields,
+          factCount: acceptedFacts.length,
+          citationBackedCount: citationCount,
+          guardrailsPassed: citationCount > 0 || acceptedFacts.length === 0,
+        });
+      } catch (error) {
+        console.error("Template autofill error:", error);
+        res.status(500).json({ error: "Failed to generate template autofill" });
       }
-      
-      const profile = await storage.getUserProfile(userId);
-      const acceptedFacts = await storage.listCaseFacts(userId, caseId, { status: "accepted" });
-      
-      const factMap: Record<string, string | null> = {};
-      for (const fact of acceptedFacts) {
-        factMap[fact.key] = fact.value;
-      }
-      
-      const today = new Date().toISOString().split("T")[0];
-      
-      const payload = {
-        court: {
-          district: factMap["court.district"] || "",
-          county: factMap["court.county"] || caseData.county || "",
-          state: factMap["court.state"] || caseData.state || "",
-        },
-        case: {
-          caseNumber: factMap["case.number"] || caseData.caseNumber || "",
-        },
-        parties: {
-          petitioner: factMap["party.petitioner"] || profile?.petitionerName || "",
-          respondent: factMap["party.respondent"] || profile?.respondentName || "",
-        },
-        filer: {
-          fullName: factMap["filer.name"] || profile?.fullName || "",
-          email: factMap["filer.email"] || profile?.email || "",
-          addressLine1: profile?.addressLine1 || "",
-          addressLine2: profile?.addressLine2 || "",
-          city: profile?.city || "",
-          state: profile?.state || "",
-          zip: profile?.zip || "",
-          phone: profile?.phone || "",
-          partyRole: factMap["filer.role"] || profile?.partyRole || "",
-          isSelfRepresented: profile?.isSelfRepresented ?? true,
-          attorney: profile?.isSelfRepresented === false ? {
-            name: profile?.fullName || "",
-            firm: profile?.firmName || "",
-            barNumber: profile?.barNumber || "",
-          } : undefined,
-        },
-        document: {
-          title: factMap["document.title"] || "",
-          subtitle: factMap["document.subtitle"] || "",
-        },
-        date: today,
-      };
-      
-      const missingFields: string[] = [];
-      if (!payload.court.county) missingFields.push("court.county");
-      if (!payload.court.state) missingFields.push("court.state");
-      if (!payload.case.caseNumber) missingFields.push("case.caseNumber");
-      if (!payload.filer.fullName) missingFields.push("filer.fullName");
-      if (!payload.filer.addressLine1) missingFields.push("filer.addressLine1");
-      if (!payload.filer.partyRole) missingFields.push("filer.partyRole");
-      
-      const citationCount = acceptedFacts.reduce((acc, f) => {
-        return acc + (f.sourceType === "claim" ? 1 : 0);
-      }, 0);
-      
-      res.json({
-        payload,
-        missingFields,
-        factCount: acceptedFacts.length,
-        citationBackedCount: citationCount,
-        guardrailsPassed: citationCount > 0 || acceptedFacts.length === 0,
-      });
-    } catch (error) {
-      console.error("Template autofill error:", error);
-      res.status(500).json({ error: "Failed to generate template autofill" });
-    }
-  });
+    },
+  );
 
   // Phase 2F: Get fact keys for a template type (placeholder mapping)
-  app.get("/api/template-fields/:templateType", requireAuth, async (req, res) => {
-    try {
-      const { templateType } = req.params;
-      
-      const commonFields = [
-        { key: "court.district", label: "Court District", required: false },
-        { key: "court.county", label: "County", required: true },
-        { key: "court.state", label: "State", required: true },
-        { key: "case.number", label: "Case Number", required: true },
-        { key: "party.petitioner", label: "Petitioner Name", required: false },
-        { key: "party.respondent", label: "Respondent Name", required: false },
-        { key: "filer.name", label: "Filer Full Name", required: true },
-        { key: "filer.email", label: "Filer Email", required: false },
-        { key: "filer.role", label: "Filer Party Role", required: true },
-        { key: "document.title", label: "Document Title", required: false },
-      ];
-      
-      const templateSpecificFields: Record<string, Array<{ key: string; label: string; required: boolean }>> = {
-        declaration: [
-          { key: "declaration.statement", label: "Declaration Statement", required: true },
-          { key: "declaration.facts", label: "Statement of Facts", required: true },
-        ],
-        affidavit: [
-          { key: "affidavit.sworn_statement", label: "Sworn Statement", required: true },
-        ],
-        motion: [
-          { key: "motion.relief_requested", label: "Relief Requested", required: true },
-          { key: "motion.grounds", label: "Grounds for Motion", required: true },
-        ],
-        response: [
-          { key: "response.to_motion", label: "Response to Motion", required: true },
-          { key: "response.arguments", label: "Arguments", required: true },
-        ],
-      };
-      
-      const fields = [
-        ...commonFields,
-        ...(templateSpecificFields[templateType] || []),
-      ];
-      
-      res.json({ templateType, fields });
-    } catch (error) {
-      console.error("Template fields error:", error);
-      res.status(500).json({ error: "Failed to get template fields" });
-    }
-  });
+  app.get(
+    "/api/template-fields/:templateType",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { templateType } = req.params;
+
+        const commonFields = [
+          { key: "court.district", label: "Court District", required: false },
+          { key: "court.county", label: "County", required: true },
+          { key: "court.state", label: "State", required: true },
+          { key: "case.number", label: "Case Number", required: true },
+          {
+            key: "party.petitioner",
+            label: "Petitioner Name",
+            required: false,
+          },
+          {
+            key: "party.respondent",
+            label: "Respondent Name",
+            required: false,
+          },
+          { key: "filer.name", label: "Filer Full Name", required: true },
+          { key: "filer.email", label: "Filer Email", required: false },
+          { key: "filer.role", label: "Filer Party Role", required: true },
+          { key: "document.title", label: "Document Title", required: false },
+        ];
+
+        const templateSpecificFields: Record<
+          string,
+          Array<{ key: string; label: string; required: boolean }>
+        > = {
+          declaration: [
+            {
+              key: "declaration.statement",
+              label: "Declaration Statement",
+              required: true,
+            },
+            {
+              key: "declaration.facts",
+              label: "Statement of Facts",
+              required: true,
+            },
+          ],
+          affidavit: [
+            {
+              key: "affidavit.sworn_statement",
+              label: "Sworn Statement",
+              required: true,
+            },
+          ],
+          motion: [
+            {
+              key: "motion.relief_requested",
+              label: "Relief Requested",
+              required: true,
+            },
+            {
+              key: "motion.grounds",
+              label: "Grounds for Motion",
+              required: true,
+            },
+          ],
+          response: [
+            {
+              key: "response.to_motion",
+              label: "Response to Motion",
+              required: true,
+            },
+            { key: "response.arguments", label: "Arguments", required: true },
+          ],
+        };
+
+        const fields = [
+          ...commonFields,
+          ...(templateSpecificFields[templateType] || []),
+        ];
+
+        res.json({ templateType, fields });
+      } catch (error) {
+        console.error("Template fields error:", error);
+        res.status(500).json({ error: "Failed to get template fields" });
+      }
+    },
+  );
 
   // ───────────────────────────────────────────────────────────────
   // Task 1: Template-to-Field Auto-Population (cited claims only)
-  // ───────────────────────────────────────────────────────────────
-  app.post("/api/cases/:caseId/documents/autofill", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { templateKey, issueId, scope = "all", maxSections = 12 } = req.body as {
-        templateKey: string;
-        issueId?: string;
-        scope?: "all" | "issue";
-        maxSections?: number;
-      };
+  // ───────────────────���───────────────────────────────────────────
+  app.post(
+    "/api/cases/:caseId/documents/autofill",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const {
+          templateKey,
+          issueId,
+          scope = "all",
+          maxSections = 12,
+        } = req.body as {
+          templateKey: string;
+          issueId?: string;
+          scope?: "all" | "issue";
+          maxSections?: number;
+        };
 
-      if (!templateKey) {
-        return res.status(400).json({ error: "templateKey is required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { getTemplateByKey: getNarrativeTemplate } = await import("./templates/templates");
-      const template = getNarrativeTemplate(templateKey);
-      if (!template) {
-        return res.status(404).json({ error: "Template not found" });
-      }
-
-      let allClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
-
-      if (scope === "issue" && issueId) {
-        const issueClaims = await storage.listIssueClaims(userId, issueId);
-        const issueClaimIds = new Set(issueClaims.map(c => c.id));
-        allClaims = allClaims.filter(c => issueClaimIds.has(c.id));
-      }
-
-      const claimsWithCitations: Array<{
-        claim: typeof allClaims[0];
-        citations: Awaited<ReturnType<typeof storage.listClaimCitations>>;
-      }> = [];
-
-      for (const claim of allClaims) {
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        if (citations.length > 0) {
-          claimsWithCitations.push({ claim, citations });
+        if (!templateKey) {
+          return res.status(400).json({ error: "templateKey is required" });
         }
-      }
 
-      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
-      const evidenceMap = new Map(evidenceFiles.map(f => [f.id, f]));
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const scoreClaim = (claim: typeof allClaims[0], section: typeof template.sections[0]): number => {
-        let score = 0;
-        const claimText = claim.claimText.toLowerCase();
-        const claimTags = Array.isArray(claim.tags) ? claim.tags : [];
+        const { getTemplateByKey: getNarrativeTemplate } = await import(
+          "./templates/templates"
+        );
+        const template = getNarrativeTemplate(templateKey);
+        if (!template) {
+          return res.status(404).json({ error: "Template not found" });
+        }
 
-        for (const keyword of section.keywords) {
-          if (claimText.includes(keyword.toLowerCase())) {
-            score += 2;
+        let allClaims = await storage.listCaseClaims(userId, caseId, {
+          status: "accepted",
+        });
+
+        if (scope === "issue" && issueId) {
+          const issueClaims = await storage.listIssueClaims(userId, issueId);
+          const issueClaimIds = new Set(issueClaims.map((c) => c.id));
+          allClaims = allClaims.filter((c) => issueClaimIds.has(c.id));
+        }
+
+        const claimsWithCitations: Array<{
+          claim: (typeof allClaims)[0];
+          citations: Awaited<ReturnType<typeof storage.listClaimCitations>>;
+        }> = [];
+
+        for (const claim of allClaims) {
+          const citations = await storage.listClaimCitations(userId, claim.id);
+          if (citations.length > 0) {
+            claimsWithCitations.push({ claim, citations });
           }
         }
 
-        if (section.claimTypes && section.claimTypes.includes(claim.claimType)) {
-          score += 5;
-        }
+        const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+        const evidenceMap = new Map(evidenceFiles.map((f) => [f.id, f]));
 
-        for (const tag of claimTags) {
-          if (section.keywords.some(kw => (tag as string).toLowerCase().includes(kw.toLowerCase()))) {
-            score += 1;
+        const scoreClaim = (
+          claim: (typeof allClaims)[0],
+          section: (typeof template.sections)[0],
+        ): number => {
+          let score = 0;
+          const claimText = claim.claimText.toLowerCase();
+          const claimTags = Array.isArray(claim.tags) ? claim.tags : [];
+
+          for (const keyword of section.keywords) {
+            if (claimText.includes(keyword.toLowerCase())) {
+              score += 2;
+            }
           }
-        }
 
-        return score;
-      };
+          if (
+            section.claimTypes &&
+            section.claimTypes.includes(claim.claimType)
+          ) {
+            score += 5;
+          }
 
-      const usedClaimIds = new Set<string>();
-      const sections: Array<{
-        sectionKey: string;
-        title: string;
-        contentMarkdown: string;
-        usedClaimIds: string[];
-        usedCitationIds: string[];
-        missingEvidence: boolean;
-        missingReason?: string;
-      }> = [];
+          for (const tag of claimTags) {
+            if (
+              section.keywords.some((kw) =>
+                (tag as string).toLowerCase().includes(kw.toLowerCase()),
+              )
+            ) {
+              score += 1;
+            }
+          }
 
-      for (const section of template.sections.slice(0, maxSections)) {
-        const scoredClaims = claimsWithCitations
-          .filter(({ claim }) => !usedClaimIds.has(claim.id))
-          .map(({ claim, citations }) => ({
-            claim,
-            citations,
-            score: scoreClaim(claim, section),
-          }))
-          .filter(({ score }) => score > 0)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 8);
+          return score;
+        };
 
-        if (scoredClaims.length === 0) {
+        const usedClaimIds = new Set<string>();
+        const sections: Array<{
+          sectionKey: string;
+          title: string;
+          contentMarkdown: string;
+          usedClaimIds: string[];
+          usedCitationIds: string[];
+          missingEvidence: boolean;
+          missingReason?: string;
+        }> = [];
+
+        for (const section of template.sections.slice(0, maxSections)) {
+          const scoredClaims = claimsWithCitations
+            .filter(({ claim }) => !usedClaimIds.has(claim.id))
+            .map(({ claim, citations }) => ({
+              claim,
+              citations,
+              score: scoreClaim(claim, section),
+            }))
+            .filter(({ score }) => score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 8);
+
+          if (scoredClaims.length === 0) {
+            sections.push({
+              sectionKey: section.sectionKey,
+              title: section.title,
+              contentMarkdown: "",
+              usedClaimIds: [],
+              usedCitationIds: [],
+              missingEvidence: true,
+              missingReason: `No accepted claims with citations match "${section.title}". Go to Evidence → Claims to review and accept claims, then attach citations.`,
+            });
+            continue;
+          }
+
+          const lines: string[] = [];
+          const sectionClaimIds: string[] = [];
+          const sectionCitationIds: string[] = [];
+
+          for (const { claim, citations } of scoredClaims) {
+            usedClaimIds.add(claim.id);
+            sectionClaimIds.push(claim.id);
+
+            const topCitations = citations
+              .sort((a, b) => {
+                const aScore = (a.pageNumber ? 2 : 0) + (a.quote?.length || 0);
+                const bScore = (b.pageNumber ? 2 : 0) + (b.quote?.length || 0);
+                return bScore - aScore;
+              })
+              .slice(0, 2);
+
+            const citationRefs = topCitations.map((cit) => {
+              sectionCitationIds.push(cit.id);
+              const evidence = evidenceMap.get(cit.evidenceFileId);
+              const fileName = evidence?.originalName || "Unknown";
+              const pageRef = cit.pageNumber ? `, p.${cit.pageNumber}` : "";
+              return `[EVID: ${fileName}${pageRef}]`;
+            });
+
+            lines.push(`- ${claim.claimText} ${citationRefs.join(" ")}`);
+          }
+
           sections.push({
             sectionKey: section.sectionKey,
             title: section.title,
-            contentMarkdown: "",
-            usedClaimIds: [],
-            usedCitationIds: [],
-            missingEvidence: true,
-            missingReason: `No accepted claims with citations match "${section.title}". Go to Evidence → Claims to review and accept claims, then attach citations.`,
+            contentMarkdown: lines.join("\n"),
+            usedClaimIds: sectionClaimIds,
+            usedCitationIds: sectionCitationIds,
+            missingEvidence: false,
           });
-          continue;
         }
 
-        const lines: string[] = [];
-        const sectionClaimIds: string[] = [];
-        const sectionCitationIds: string[] = [];
+        const sourceMap = new Map<
+          string,
+          {
+            evidenceId: string;
+            fileName: string;
+            citations: Array<{
+              citationId: string;
+              pageNumber?: number;
+              quoteSnippet?: string;
+            }>;
+          }
+        >();
 
-        for (const { claim, citations } of scoredClaims) {
-          usedClaimIds.add(claim.id);
-          sectionClaimIds.push(claim.id);
-
-          const topCitations = citations
-            .sort((a, b) => {
-              const aScore = (a.pageNumber ? 2 : 0) + (a.quote?.length || 0);
-              const bScore = (b.pageNumber ? 2 : 0) + (b.quote?.length || 0);
-              return bScore - aScore;
-            })
-            .slice(0, 2);
-
-          const citationRefs = topCitations.map(cit => {
-            sectionCitationIds.push(cit.id);
-            const evidence = evidenceMap.get(cit.evidenceFileId);
-            const fileName = evidence?.originalName || "Unknown";
-            const pageRef = cit.pageNumber ? `, p.${cit.pageNumber}` : "";
-            return `[EVID: ${fileName}${pageRef}]`;
-          });
-
-          lines.push(`- ${claim.claimText} ${citationRefs.join(" ")}`);
-        }
-
-        sections.push({
-          sectionKey: section.sectionKey,
-          title: section.title,
-          contentMarkdown: lines.join("\n"),
-          usedClaimIds: sectionClaimIds,
-          usedCitationIds: sectionCitationIds,
-          missingEvidence: false,
-        });
-      }
-
-      const sourceMap = new Map<string, { evidenceId: string; fileName: string; citations: Array<{ citationId: string; pageNumber?: number; quoteSnippet?: string }> }>();
-
-      for (const section of sections) {
-        for (const citationId of section.usedCitationIds) {
-          for (const { citations } of claimsWithCitations) {
-            const cit = citations.find(c => c.id === citationId);
-            if (cit) {
-              const evidence = evidenceMap.get(cit.evidenceFileId);
-              if (!sourceMap.has(cit.evidenceFileId)) {
-                sourceMap.set(cit.evidenceFileId, {
-                  evidenceId: cit.evidenceFileId,
-                  fileName: evidence?.originalName || "Unknown",
-                  citations: [],
-                });
-              }
-              const source = sourceMap.get(cit.evidenceFileId)!;
-              if (!source.citations.some(c => c.citationId === citationId)) {
-                source.citations.push({
-                  citationId,
-                  pageNumber: cit.pageNumber ?? undefined,
-                  quoteSnippet: cit.quote?.slice(0, 100),
-                });
+        for (const section of sections) {
+          for (const citationId of section.usedCitationIds) {
+            for (const { citations } of claimsWithCitations) {
+              const cit = citations.find((c) => c.id === citationId);
+              if (cit) {
+                const evidence = evidenceMap.get(cit.evidenceFileId);
+                if (!sourceMap.has(cit.evidenceFileId)) {
+                  sourceMap.set(cit.evidenceFileId, {
+                    evidenceId: cit.evidenceFileId,
+                    fileName: evidence?.originalName || "Unknown",
+                    citations: [],
+                  });
+                }
+                const source = sourceMap.get(cit.evidenceFileId)!;
+                if (
+                  !source.citations.some((c) => c.citationId === citationId)
+                ) {
+                  source.citations.push({
+                    citationId,
+                    pageNumber: cit.pageNumber ?? undefined,
+                    quoteSnippet: cit.quote?.slice(0, 100),
+                  });
+                }
               }
             }
           }
         }
+
+        const totalClaimsUsed = sections.reduce(
+          (acc, s) => acc + s.usedClaimIds.length,
+          0,
+        );
+        const totalCitationsUsed = sections.reduce(
+          (acc, s) => acc + s.usedCitationIds.length,
+          0,
+        );
+
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "document_autofill_generated",
+          `Auto-filled ${template.label} with ${totalClaimsUsed} claims and ${totalCitationsUsed} citations`,
+          {
+            templateKey,
+            claimsUsed: totalClaimsUsed,
+            citationsUsed: totalCitationsUsed,
+            sectionsGenerated: sections.length,
+          },
+        );
+
+        res.json({
+          ok: true,
+          templateKey,
+          sections,
+          sources: Array.from(sourceMap.values()),
+        });
+      } catch (error) {
+        console.error("Document autofill error:", error);
+        res.status(500).json({ error: "Failed to generate autofill" });
       }
-
-      const totalClaimsUsed = sections.reduce((acc, s) => acc + s.usedClaimIds.length, 0);
-      const totalCitationsUsed = sections.reduce((acc, s) => acc + s.usedCitationIds.length, 0);
-
-      await storage.createActivityLog(userId, caseId, "document_autofill_generated", `Auto-filled ${template.label} with ${totalClaimsUsed} claims and ${totalCitationsUsed} citations`, {
-        templateKey,
-        claimsUsed: totalClaimsUsed,
-        citationsUsed: totalCitationsUsed,
-        sectionsGenerated: sections.length,
-      });
-
-      res.json({
-        ok: true,
-        templateKey,
-        sections,
-        sources: Array.from(sourceMap.values()),
-      });
-    } catch (error) {
-      console.error("Document autofill error:", error);
-      res.status(500).json({ error: "Failed to generate autofill" });
-    }
-  });
+    },
+  );
 
   // ───────────────────────────────────────────────────────────────
   // SPEC 1 Block 1: Assistive Field Mapping (NO AUTO-FILL)
   // Suggests which template sections each claim fits, without inserting text
   // ───────────────────────────────────────────────────────────────
-  app.post("/api/cases/:caseId/documents/field-mapping", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { documentType } = req.body as { documentType: string };
+  app.post(
+    "/api/cases/:caseId/documents/field-mapping",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { documentType } = req.body as { documentType: string };
 
-      if (!documentType) {
-        return res.status(400).json({ error: "documentType is required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { TEMPLATE_REGISTRY } = await import("./templates/registry");
-      const template = TEMPLATE_REGISTRY.find(t => t.templateKey === documentType);
-      if (!template) {
-        return res.status(404).json({ error: "Template/document type not found" });
-      }
-
-      const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
-
-      const claimsWithCitations: Array<{
-        claim: typeof acceptedClaims[0];
-        citationCount: number;
-      }> = [];
-
-      for (const claim of acceptedClaims) {
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        claimsWithCitations.push({ claim, citationCount: citations.length });
-      }
-
-      const SECTION_KEYWORDS: Record<string, string[]> = {
-        intro: ["introduction", "declarant", "party", "petitioner", "respondent", "court", "county", "state"],
-        background: ["background", "history", "context", "prior", "relationship", "married", "children"],
-        facts: ["fact", "date", "event", "occurred", "incident", "said", "did", "message", "email", "text"],
-        chronology: ["date", "time", "when", "then", "after", "before", "during", "timeline"],
-        custody: ["custody", "child", "children", "parenting", "visitation", "schedule", "parent"],
-        parenting: ["parenting", "time", "schedule", "custody", "child", "children", "visit"],
-        financial: ["financial", "money", "income", "expense", "support", "payment", "account", "debt"],
-        communications: ["communication", "message", "email", "text", "call", "phone", "said", "wrote"],
-        medical: ["medical", "health", "doctor", "hospital", "treatment", "condition", "diagnosis"],
-        school: ["school", "education", "teacher", "grade", "class", "learning", "student"],
-        procedural: ["filed", "served", "motion", "order", "hearing", "court", "judge", "ruling"],
-        requests: ["request", "discovery", "disclosure", "interrogatory", "subpoena", "document"],
-        responses: ["response", "answer", "reply", "received", "provided"],
-        outstanding: ["outstanding", "pending", "unresolved", "incomplete", "missing"],
-        conclusion: ["conclusion", "declare", "penalty", "perjury", "true", "correct"],
-        incidents: ["incident", "conflict", "argument", "abuse", "threat", "violence"],
-        patterns: ["pattern", "repeated", "consistent", "always", "never", "regularly"],
-        themes: ["theme", "pattern", "behavior", "conduct", "characteristic"],
-        witnesses: ["witness", "testimony", "saw", "heard", "observed", "present"],
-        exhibits: ["exhibit", "document", "evidence", "attachment", "proof"],
-        relief: ["relief", "request", "ask", "seeking", "order", "grant"],
-      };
-
-      const scoreClaim = (claim: typeof acceptedClaims[0], section: typeof template.sections[0]): number => {
-        let score = 0;
-        const claimText = claim.claimText.toLowerCase();
-        const claimTags = Array.isArray(claim.tags) ? claim.tags.map(t => String(t).toLowerCase()) : [];
-        const sectionKey = section.key.toLowerCase();
-        const sectionKeywords = SECTION_KEYWORDS[sectionKey] || [];
-
-        if (section.claimTypes && section.claimTypes.includes(claim.claimType)) {
-          score += 20;
+        if (!documentType) {
+          return res.status(400).json({ error: "documentType is required" });
         }
 
-        if (section.claimTags) {
-          for (const requiredTag of section.claimTags) {
-            if (claimTags.includes(requiredTag.toLowerCase())) {
-              score += 15;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { TEMPLATE_REGISTRY } = await import("./templates/registry");
+        const template = TEMPLATE_REGISTRY.find(
+          (t) => t.templateKey === documentType,
+        );
+        if (!template) {
+          return res
+            .status(404)
+            .json({ error: "Template/document type not found" });
+        }
+
+        const acceptedClaims = await storage.listCaseClaims(userId, caseId, {
+          status: "accepted",
+        });
+
+        const claimsWithCitations: Array<{
+          claim: (typeof acceptedClaims)[0];
+          citationCount: number;
+        }> = [];
+
+        for (const claim of acceptedClaims) {
+          const citations = await storage.listClaimCitations(userId, claim.id);
+          claimsWithCitations.push({ claim, citationCount: citations.length });
+        }
+
+        const SECTION_KEYWORDS: Record<string, string[]> = {
+          intro: [
+            "introduction",
+            "declarant",
+            "party",
+            "petitioner",
+            "respondent",
+            "court",
+            "county",
+            "state",
+          ],
+          background: [
+            "background",
+            "history",
+            "context",
+            "prior",
+            "relationship",
+            "married",
+            "children",
+          ],
+          facts: [
+            "fact",
+            "date",
+            "event",
+            "occurred",
+            "incident",
+            "said",
+            "did",
+            "message",
+            "email",
+            "text",
+          ],
+          chronology: [
+            "date",
+            "time",
+            "when",
+            "then",
+            "after",
+            "before",
+            "during",
+            "timeline",
+          ],
+          custody: [
+            "custody",
+            "child",
+            "children",
+            "parenting",
+            "visitation",
+            "schedule",
+            "parent",
+          ],
+          parenting: [
+            "parenting",
+            "time",
+            "schedule",
+            "custody",
+            "child",
+            "children",
+            "visit",
+          ],
+          financial: [
+            "financial",
+            "money",
+            "income",
+            "expense",
+            "support",
+            "payment",
+            "account",
+            "debt",
+          ],
+          communications: [
+            "communication",
+            "message",
+            "email",
+            "text",
+            "call",
+            "phone",
+            "said",
+            "wrote",
+          ],
+          medical: [
+            "medical",
+            "health",
+            "doctor",
+            "hospital",
+            "treatment",
+            "condition",
+            "diagnosis",
+          ],
+          school: [
+            "school",
+            "education",
+            "teacher",
+            "grade",
+            "class",
+            "learning",
+            "student",
+          ],
+          procedural: [
+            "filed",
+            "served",
+            "motion",
+            "order",
+            "hearing",
+            "court",
+            "judge",
+            "ruling",
+          ],
+          requests: [
+            "request",
+            "discovery",
+            "disclosure",
+            "interrogatory",
+            "subpoena",
+            "document",
+          ],
+          responses: ["response", "answer", "reply", "received", "provided"],
+          outstanding: [
+            "outstanding",
+            "pending",
+            "unresolved",
+            "incomplete",
+            "missing",
+          ],
+          conclusion: [
+            "conclusion",
+            "declare",
+            "penalty",
+            "perjury",
+            "true",
+            "correct",
+          ],
+          incidents: [
+            "incident",
+            "conflict",
+            "argument",
+            "abuse",
+            "threat",
+            "violence",
+          ],
+          patterns: [
+            "pattern",
+            "repeated",
+            "consistent",
+            "always",
+            "never",
+            "regularly",
+          ],
+          themes: ["theme", "pattern", "behavior", "conduct", "characteristic"],
+          witnesses: [
+            "witness",
+            "testimony",
+            "saw",
+            "heard",
+            "observed",
+            "present",
+          ],
+          exhibits: ["exhibit", "document", "evidence", "attachment", "proof"],
+          relief: ["relief", "request", "ask", "seeking", "order", "grant"],
+        };
+
+        const scoreClaim = (
+          claim: (typeof acceptedClaims)[0],
+          section: (typeof template.sections)[0],
+        ): number => {
+          let score = 0;
+          const claimText = claim.claimText.toLowerCase();
+          const claimTags = Array.isArray(claim.tags)
+            ? claim.tags.map((t) => String(t).toLowerCase())
+            : [];
+          const sectionKey = section.key.toLowerCase();
+          const sectionKeywords = SECTION_KEYWORDS[sectionKey] || [];
+
+          if (
+            section.claimTypes &&
+            section.claimTypes.includes(claim.claimType)
+          ) {
+            score += 20;
+          }
+
+          if (section.claimTags) {
+            for (const requiredTag of section.claimTags) {
+              if (claimTags.includes(requiredTag.toLowerCase())) {
+                score += 15;
+              }
             }
           }
-        }
 
-        for (const keyword of sectionKeywords) {
-          if (claimText.includes(keyword)) {
-            score += 5;
-          }
-          for (const tag of claimTags) {
-            if (tag.includes(keyword)) {
-              score += 3;
+          for (const keyword of sectionKeywords) {
+            if (claimText.includes(keyword)) {
+              score += 5;
+            }
+            for (const tag of claimTags) {
+              if (tag.includes(keyword)) {
+                score += 3;
+              }
             }
           }
-        }
 
-        return score;
-      };
+          return score;
+        };
 
-      const mappings: Array<{
-        claimId: string;
-        suggestedSections: string[];
-        confidence: "high" | "medium";
-      }> = [];
+        const mappings: Array<{
+          claimId: string;
+          suggestedSections: string[];
+          confidence: "high" | "medium";
+        }> = [];
 
-      for (const { claim, citationCount } of claimsWithCitations) {
-        if (citationCount === 0) continue;
+        for (const { claim, citationCount } of claimsWithCitations) {
+          if (citationCount === 0) continue;
 
-        const sectionScores: Array<{ sectionTitle: string; score: number }> = [];
+          const sectionScores: Array<{ sectionTitle: string; score: number }> =
+            [];
 
-        for (const section of template.sections) {
-          const score = scoreClaim(claim, section);
-          if (score > 0) {
-            sectionScores.push({ sectionTitle: section.title, score });
+          for (const section of template.sections) {
+            const score = scoreClaim(claim, section);
+            if (score > 0) {
+              sectionScores.push({ sectionTitle: section.title, score });
+            }
+          }
+
+          sectionScores.sort((a, b) => b.score - a.score);
+
+          const topSections = sectionScores.slice(0, 3);
+          const suggestedSections = topSections.map((s) => s.sectionTitle);
+
+          if (suggestedSections.length > 0) {
+            const topScore = topSections[0]?.score || 0;
+            const confidence: "high" | "medium" =
+              topScore >= 20 ? "high" : "medium";
+
+            mappings.push({
+              claimId: claim.id,
+              suggestedSections,
+              confidence,
+            });
           }
         }
 
-        sectionScores.sort((a, b) => b.score - a.score);
+        await storage.createActivityLog(
+          userId,
+          caseId,
+          "field_mapping_generated",
+          `Generated field mapping for ${documentType} with ${mappings.length} claim suggestions`,
+          {
+            documentType,
+            claimsProcessed: claimsWithCitations.length,
+            mappingsGenerated: mappings.length,
+          },
+        );
 
-        const topSections = sectionScores.slice(0, 3);
-        const suggestedSections = topSections.map(s => s.sectionTitle);
-
-        if (suggestedSections.length > 0) {
-          const topScore = topSections[0]?.score || 0;
-          const confidence: "high" | "medium" = topScore >= 20 ? "high" : "medium";
-
-          mappings.push({
-            claimId: claim.id,
-            suggestedSections,
-            confidence,
-          });
-        }
+        res.json(mappings);
+      } catch (error) {
+        console.error("Field mapping error:", error);
+        res.status(500).json({ error: "Failed to generate field mapping" });
       }
-
-      await storage.createActivityLog(userId, caseId, "field_mapping_generated", `Generated field mapping for ${documentType} with ${mappings.length} claim suggestions`, {
-        documentType,
-        claimsProcessed: claimsWithCitations.length,
-        mappingsGenerated: mappings.length,
-      });
-
-      res.json(mappings);
-    } catch (error) {
-      console.error("Field mapping error:", error);
-      res.status(500).json({ error: "Failed to generate field mapping" });
-    }
-  });
+    },
+  );
 
   // ───────────────────────────────────────────────────────────────
   // SPEC 1 Block 2: Contradiction & Gap Flags (Quality Check)
   // Returns flags for conflicting dates, uncited claims, orphan evidence, incomplete claims
   // No recommendations, no legal language, flags only
   // ───────────────────────────────────────────────────────────────
-  app.get("/api/cases/:caseId/quality-check", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/quality-check",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const allClaims = await storage.listCaseClaims(userId, caseId);
-      const acceptedClaims = allClaims.filter(c => c.status === "accepted");
-      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
-      const citationPointers = await storage.listCitationPointersForCase(userId, caseId);
+        const allClaims = await storage.listCaseClaims(userId, caseId);
+        const acceptedClaims = allClaims.filter((c) => c.status === "accepted");
+        const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+        const citationPointers = await storage.listCitationPointersForCase(
+          userId,
+          caseId,
+        );
 
-      const conflictingDates: Array<{
-        type: "conflicting_dates";
-        severity: "warning";
-        claimIds: string[];
-        description: string;
-      }> = [];
+        const conflictingDates: Array<{
+          type: "conflicting_dates";
+          severity: "warning";
+          claimIds: string[];
+          description: string;
+        }> = [];
 
-      const uncitedClaims: Array<{
-        type: "uncited_claim";
-        severity: "warning";
-        claimId: string;
-        claimText: string;
-        description: string;
-      }> = [];
+        const uncitedClaims: Array<{
+          type: "uncited_claim";
+          severity: "warning";
+          claimId: string;
+          claimText: string;
+          description: string;
+        }> = [];
 
-      const orphanEvidence: Array<{
-        type: "orphan_evidence";
-        severity: "info";
-        evidenceFileId: string;
-        fileName: string;
-        description: string;
-      }> = [];
+        const orphanEvidence: Array<{
+          type: "orphan_evidence";
+          severity: "info";
+          evidenceFileId: string;
+          fileName: string;
+          description: string;
+        }> = [];
 
-      const incompleteClaims: Array<{
-        type: "incomplete_claim";
-        severity: "info";
-        claimId: string;
-        claimText: string;
-        description: string;
-      }> = [];
+        const incompleteClaims: Array<{
+          type: "incomplete_claim";
+          severity: "info";
+          claimId: string;
+          claimText: string;
+          description: string;
+        }> = [];
 
-      const datePatterns = [
-        /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g,
-        /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s*(\d{4})\b/gi,
-        /\b(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\b/g,
-      ];
+        const datePatterns = [
+          /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g,
+          /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s*(\d{4})\b/gi,
+          /\b(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\b/g,
+        ];
 
-      const claimDates: Map<string, { claimId: string; dateStr: string; context: string }[]> = new Map();
+        const claimDates: Map<
+          string,
+          { claimId: string; dateStr: string; context: string }[]
+        > = new Map();
 
-      for (const claim of acceptedClaims) {
-        const text = claim.claimText;
-        for (const pattern of datePatterns) {
-          const matches = text.matchAll(pattern);
-          for (const match of matches) {
-            const dateStr = match[0];
-            const context = text.slice(Math.max(0, match.index! - 30), Math.min(text.length, match.index! + dateStr.length + 30));
-            
-            if (!claimDates.has(dateStr)) {
-              claimDates.set(dateStr, []);
+        for (const claim of acceptedClaims) {
+          const text = claim.claimText;
+          for (const pattern of datePatterns) {
+            const matches = text.matchAll(pattern);
+            for (const match of matches) {
+              const dateStr = match[0];
+              const context = text.slice(
+                Math.max(0, match.index! - 30),
+                Math.min(text.length, match.index! + dateStr.length + 30),
+              );
+
+              if (!claimDates.has(dateStr)) {
+                claimDates.set(dateStr, []);
+              }
+              claimDates
+                .get(dateStr)!
+                .push({ claimId: claim.id, dateStr, context });
             }
-            claimDates.get(dateStr)!.push({ claimId: claim.id, dateStr, context });
           }
         }
-      }
 
-      for (const [dateStr, occurrences] of claimDates.entries()) {
-        if (occurrences.length > 1) {
-          const uniqueClaimIds = [...new Set(occurrences.map(o => o.claimId))];
-          if (uniqueClaimIds.length > 1) {
-            conflictingDates.push({
-              type: "conflicting_dates",
+        for (const [dateStr, occurrences] of claimDates.entries()) {
+          if (occurrences.length > 1) {
+            const uniqueClaimIds = [
+              ...new Set(occurrences.map((o) => o.claimId)),
+            ];
+            if (uniqueClaimIds.length > 1) {
+              conflictingDates.push({
+                type: "conflicting_dates",
+                severity: "warning",
+                claimIds: uniqueClaimIds,
+                description: `Multiple claims reference the date "${dateStr}". Verify consistency.`,
+              });
+            }
+          }
+        }
+
+        for (const claim of acceptedClaims) {
+          const citations = await storage.listClaimCitations(userId, claim.id);
+          if (citations.length === 0) {
+            uncitedClaims.push({
+              type: "uncited_claim",
               severity: "warning",
-              claimIds: uniqueClaimIds,
-              description: `Multiple claims reference the date "${dateStr}". Verify consistency.`,
+              claimId: claim.id,
+              claimText:
+                claim.claimText.slice(0, 100) +
+                (claim.claimText.length > 100 ? "..." : ""),
+              description: "This accepted claim has no citations attached.",
             });
           }
         }
-      }
 
-      for (const claim of acceptedClaims) {
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        if (citations.length === 0) {
-          uncitedClaims.push({
-            type: "uncited_claim",
-            severity: "warning",
-            claimId: claim.id,
-            claimText: claim.claimText.slice(0, 100) + (claim.claimText.length > 100 ? "..." : ""),
-            description: "This accepted claim has no citations attached.",
-          });
+        const evidenceWithCitations = new Set(
+          citationPointers.map((cp) => cp.evidenceFileId),
+        );
+        for (const file of evidenceFiles) {
+          if (!evidenceWithCitations.has(file.id)) {
+            orphanEvidence.push({
+              type: "orphan_evidence",
+              severity: "info",
+              evidenceFileId: file.id,
+              fileName: file.originalName,
+              description:
+                "This evidence file has no citations pointing to it.",
+            });
+          }
         }
-      }
 
-      const evidenceWithCitations = new Set(citationPointers.map(cp => cp.evidenceFileId));
-      for (const file of evidenceFiles) {
-        if (!evidenceWithCitations.has(file.id)) {
-          orphanEvidence.push({
-            type: "orphan_evidence",
-            severity: "info",
-            evidenceFileId: file.id,
-            fileName: file.originalName,
-            description: "This evidence file has no citations pointing to it.",
-          });
+        for (const claim of acceptedClaims) {
+          if (claim.missingInfoFlag) {
+            incompleteClaims.push({
+              type: "incomplete_claim",
+              severity: "info",
+              claimId: claim.id,
+              claimText:
+                claim.claimText.slice(0, 100) +
+                (claim.claimText.length > 100 ? "..." : ""),
+              description:
+                "This claim is marked as needing additional information.",
+            });
+          }
         }
-      }
 
-      for (const claim of acceptedClaims) {
-        if (claim.missingInfoFlag) {
-          incompleteClaims.push({
-            type: "incomplete_claim",
-            severity: "info",
-            claimId: claim.id,
-            claimText: claim.claimText.slice(0, 100) + (claim.claimText.length > 100 ? "..." : ""),
-            description: "This claim is marked as needing additional information.",
-          });
+        res.json({
+          conflictingDates,
+          uncitedClaims,
+          orphanEvidence,
+          incompleteClaims,
+          summary: {
+            totalAcceptedClaims: acceptedClaims.length,
+            totalEvidenceFiles: evidenceFiles.length,
+            totalCitations: citationPointers.length,
+            warningCount: conflictingDates.length + uncitedClaims.length,
+            infoCount: orphanEvidence.length + incompleteClaims.length,
+          },
+        });
+      } catch (error) {
+        console.error("Quality check error:", error);
+        res.status(500).json({ error: "Failed to run quality check" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/documents/templates/:templateKey/preflight",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId, templateKey } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      }
 
-      res.json({
-        conflictingDates,
-        uncitedClaims,
-        orphanEvidence,
-        incompleteClaims,
-        summary: {
-          totalAcceptedClaims: acceptedClaims.length,
-          totalEvidenceFiles: evidenceFiles.length,
-          totalCitations: citationPointers.length,
-          warningCount: conflictingDates.length + uncitedClaims.length,
-          infoCount: orphanEvidence.length + incompleteClaims.length,
-        },
-      });
-    } catch (error) {
-      console.error("Quality check error:", error);
-      res.status(500).json({ error: "Failed to run quality check" });
-    }
-  });
+        const acceptedFacts = await storage.listAcceptedCaseFacts(
+          userId,
+          caseId,
+        );
+        const profile = await storage.getUserProfile(userId);
 
-  app.post("/api/cases/:caseId/documents/templates/:templateKey/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId, templateKey } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-      
-      const acceptedFacts = await storage.listAcceptedCaseFacts(userId, caseId);
-      const profile = await storage.getUserProfile(userId);
-      
-      const factMap: Record<string, string> = {};
-      for (const fact of acceptedFacts) {
-        factMap[fact.fieldKey] = fact.value;
-      }
-      
-      const requiredFields: Record<string, string[]> = {
-        declaration: ["court.county", "court.state", "case.number", "filer.name", "filer.role", "declaration.statement"],
-        affidavit: ["court.county", "court.state", "case.number", "filer.name", "filer.role", "affidavit.sworn_statement"],
-        motion: ["court.county", "court.state", "case.number", "filer.name", "motion.relief_requested"],
-        response: ["court.county", "court.state", "case.number", "filer.name", "response.to_motion"],
-        brief: ["court.county", "court.state", "case.number", "filer.name"],
-      };
-      
-      const templateRequired = requiredFields[templateKey] || requiredFields.declaration;
-      const filledFields: string[] = [];
-      const missingFields: string[] = [];
-      
-      for (const field of templateRequired) {
-        const fromFact = factMap[field];
-        let fromProfile = "";
-        
-        if (field === "court.county") fromProfile = caseRecord.county || "";
-        if (field === "court.state") fromProfile = caseRecord.state || "";
-        if (field === "case.number") fromProfile = caseRecord.caseNumber || "";
-        if (field === "filer.name") fromProfile = profile?.fullName || "";
-        if (field === "filer.role") fromProfile = profile?.partyRole || "";
-        
-        if (fromFact || fromProfile) {
-          filledFields.push(field);
-        } else {
-          missingFields.push(field);
+        const factMap: Record<string, string> = {};
+        for (const fact of acceptedFacts) {
+          factMap[fact.fieldKey] = fact.value;
         }
+
+        const requiredFields: Record<string, string[]> = {
+          declaration: [
+            "court.county",
+            "court.state",
+            "case.number",
+            "filer.name",
+            "filer.role",
+            "declaration.statement",
+          ],
+          affidavit: [
+            "court.county",
+            "court.state",
+            "case.number",
+            "filer.name",
+            "filer.role",
+            "affidavit.sworn_statement",
+          ],
+          motion: [
+            "court.county",
+            "court.state",
+            "case.number",
+            "filer.name",
+            "motion.relief_requested",
+          ],
+          response: [
+            "court.county",
+            "court.state",
+            "case.number",
+            "filer.name",
+            "response.to_motion",
+          ],
+          brief: ["court.county", "court.state", "case.number", "filer.name"],
+        };
+
+        const templateRequired =
+          requiredFields[templateKey] || requiredFields.declaration;
+        const filledFields: string[] = [];
+        const missingFields: string[] = [];
+
+        for (const field of templateRequired) {
+          const fromFact = factMap[field];
+          let fromProfile = "";
+
+          if (field === "court.county") fromProfile = caseRecord.county || "";
+          if (field === "court.state") fromProfile = caseRecord.state || "";
+          if (field === "case.number")
+            fromProfile = caseRecord.caseNumber || "";
+          if (field === "filer.name") fromProfile = profile?.fullName || "";
+          if (field === "filer.role") fromProfile = profile?.partyRole || "";
+
+          if (fromFact || fromProfile) {
+            filledFields.push(field);
+          } else {
+            missingFields.push(field);
+          }
+        }
+
+        const citationBackedFacts = acceptedFacts.filter(
+          (f) => f.sourceType === "claim",
+        );
+        const hasAnyCitations = citationBackedFacts.length > 0;
+
+        const allRequiredFilled = missingFields.length === 0;
+        const isReady = allRequiredFilled && hasAnyCitations;
+
+        res.json({
+          templateKey,
+          isReady,
+          filledFieldsCount: filledFields.length,
+          requiredFieldsCount: templateRequired.length,
+          missingFields,
+          filledFields,
+          citationBackedCount: citationBackedFacts.length,
+          guardrailsPassed: hasAnyCitations,
+          readinessScore: Math.round(
+            (filledFields.length / templateRequired.length) * 100,
+          ),
+        });
+      } catch (error) {
+        console.error("Template preflight error:", error);
+        res.status(500).json({ error: "Failed to run preflight check" });
       }
-      
-      const citationBackedFacts = acceptedFacts.filter(f => f.sourceType === "claim");
-      const hasAnyCitations = citationBackedFacts.length > 0;
-      
-      const allRequiredFilled = missingFields.length === 0;
-      const isReady = allRequiredFilled && hasAnyCitations;
-      
-      res.json({
-        templateKey,
-        isReady,
-        filledFieldsCount: filledFields.length,
-        requiredFieldsCount: templateRequired.length,
-        missingFields,
-        filledFields,
-        citationBackedCount: citationBackedFacts.length,
-        guardrailsPassed: hasAnyCitations,
-        readinessScore: Math.round((filledFields.length / templateRequired.length) * 100),
-      });
-    } catch (error) {
-      console.error("Template preflight error:", error);
-      res.status(500).json({ error: "Failed to run preflight check" });
-    }
-  });
+    },
+  );
 
   // ───────────────────────────────────────────────────────────────
   // Phase Status API (Modification Flow Gates)
   // ───────────────────────────────────────────────────────────────
 
-  app.get("/api/cases/:caseId/phase-status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
+  app.get(
+    "/api/cases/:caseId/phase-status",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
-      const evidenceCount = evidenceFiles.length;
-
-      let extractionCompleteCount = 0;
-      let extractionPendingCount = 0;
-      for (const file of evidenceFiles) {
-        const extractions = await storage.listEvidenceExtractions(userId, file.id);
-        if (extractions.some(e => e.status === "complete")) {
-          extractionCompleteCount++;
-        } else if (extractions.some(e => e.status === "pending" || e.status === "processing")) {
-          extractionPendingCount++;
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
         }
-      }
 
-      const suggestedClaims = await storage.listCaseClaims(userId, caseId, { status: "suggested" });
-      const acceptedClaims = await storage.listCaseClaims(userId, caseId, { status: "accepted" });
+        const evidenceFiles = await storage.listEvidenceFiles(userId, caseId);
+        const evidenceCount = evidenceFiles.length;
 
-      let acceptedClaimsMissingCitationsCount = 0;
-      for (const claim of acceptedClaims) {
-        const citations = await storage.listClaimCitations(userId, claim.id);
-        if (citations.length === 0) {
-          acceptedClaimsMissingCitationsCount++;
+        let extractionCompleteCount = 0;
+        let extractionPendingCount = 0;
+        for (const file of evidenceFiles) {
+          const extractions = await storage.listEvidenceExtractions(
+            userId,
+            file.id,
+          );
+          if (extractions.some((e) => e.status === "complete")) {
+            extractionCompleteCount++;
+          } else if (
+            extractions.some(
+              (e) => e.status === "pending" || e.status === "processing",
+            )
+          ) {
+            extractionPendingCount++;
+          }
         }
-      }
 
-      const issueGroupings = await storage.listIssueGroupings(userId, caseId);
-      const issueGroupingsCount = issueGroupings.length;
+        const suggestedClaims = await storage.listCaseClaims(userId, caseId, {
+          status: "suggested",
+        });
+        const acceptedClaims = await storage.listCaseClaims(userId, caseId, {
+          status: "accepted",
+        });
 
-      const acceptedWithCitations = acceptedClaims.length - acceptedClaimsMissingCitationsCount;
-      const readinessPercent = acceptedClaims.length > 0
-        ? Math.round((acceptedWithCitations / acceptedClaims.length) * 100)
-        : 0;
+        let acceptedClaimsMissingCitationsCount = 0;
+        for (const claim of acceptedClaims) {
+          const citations = await storage.listClaimCitations(userId, claim.id);
+          if (citations.length === 0) {
+            acceptedClaimsMissingCitationsCount++;
+          }
+        }
 
-      let phaseNumber = 1;
-      const blockers: string[] = [];
-      const warnings: string[] = [];
-      const recommendedActions: Array<{ label: string; href: string; actionKey: string }> = [];
+        const issueGroupings = await storage.listIssueGroupings(userId, caseId);
+        const issueGroupingsCount = issueGroupings.length;
 
-      if (evidenceCount === 0) {
-        phaseNumber = 1;
-        blockers.push("No evidence uploaded");
-        recommendedActions.push({ label: "Upload Evidence", href: `/app/cases/${caseId}/evidence`, actionKey: "upload_evidence" });
-      } else if (extractionCompleteCount === 0) {
-        phaseNumber = 2;
-        if (extractionPendingCount > 0) {
-          warnings.push(`${extractionPendingCount} file(s) still processing`);
+        const acceptedWithCitations =
+          acceptedClaims.length - acceptedClaimsMissingCitationsCount;
+        const readinessPercent =
+          acceptedClaims.length > 0
+            ? Math.round((acceptedWithCitations / acceptedClaims.length) * 100)
+            : 0;
+
+        let phaseNumber = 1;
+        const blockers: string[] = [];
+        const warnings: string[] = [];
+        const recommendedActions: Array<{
+          label: string;
+          href: string;
+          actionKey: string;
+        }> = [];
+
+        if (evidenceCount === 0) {
+          phaseNumber = 1;
+          blockers.push("No evidence uploaded");
+          recommendedActions.push({
+            label: "Upload Evidence",
+            href: `/app/cases/${caseId}/evidence`,
+            actionKey: "upload_evidence",
+          });
+        } else if (extractionCompleteCount === 0) {
+          phaseNumber = 2;
+          if (extractionPendingCount > 0) {
+            warnings.push(`${extractionPendingCount} file(s) still processing`);
+          } else {
+            blockers.push("No extractions complete");
+            recommendedActions.push({
+              label: "Run Extraction",
+              href: `/app/cases/${caseId}/evidence`,
+              actionKey: "run_extraction",
+            });
+          }
+        } else if (acceptedClaims.length === 0) {
+          phaseNumber = 3;
+          if (suggestedClaims.length > 0) {
+            blockers.push(
+              `${suggestedClaims.length} suggested claims need review`,
+            );
+            recommendedActions.push({
+              label: "Review Suggested Claims",
+              href: `/app/cases/${caseId}/evidence`,
+              actionKey: "review_claims",
+            });
+          } else {
+            blockers.push("No claims extracted yet");
+            recommendedActions.push({
+              label: "Run Extraction",
+              href: `/app/cases/${caseId}/evidence`,
+              actionKey: "run_extraction",
+            });
+          }
+        } else if (acceptedClaimsMissingCitationsCount > 0) {
+          phaseNumber = 4;
+          blockers.push(
+            `${acceptedClaimsMissingCitationsCount} accepted claim(s) missing citations`,
+          );
+          recommendedActions.push({
+            label: "Auto-attach Missing Sources",
+            href: `/app/cases/${caseId}/evidence`,
+            actionKey: "auto_attach",
+          });
+          if (issueGroupingsCount === 0) {
+            warnings.push("No issue groupings created (optional)");
+          }
         } else {
-          blockers.push("No extractions complete");
-          recommendedActions.push({ label: "Run Extraction", href: `/app/cases/${caseId}/evidence`, actionKey: "run_extraction" });
+          phaseNumber = 5;
+          if (issueGroupingsCount === 0) {
+            warnings.push("No issue groupings created (optional for drafting)");
+          }
+          recommendedActions.push({
+            label: "Compile Draft",
+            href: `/app/cases/${caseId}/documents`,
+            actionKey: "compile_draft",
+          });
         }
-      } else if (acceptedClaims.length === 0) {
-        phaseNumber = 3;
-        if (suggestedClaims.length > 0) {
-          blockers.push(`${suggestedClaims.length} suggested claims need review`);
-          recommendedActions.push({ label: "Review Suggested Claims", href: `/app/cases/${caseId}/evidence`, actionKey: "review_claims" });
-        } else {
-          blockers.push("No claims extracted yet");
-          recommendedActions.push({ label: "Run Extraction", href: `/app/cases/${caseId}/evidence`, actionKey: "run_extraction" });
-        }
-      } else if (acceptedClaimsMissingCitationsCount > 0) {
-        phaseNumber = 4;
-        blockers.push(`${acceptedClaimsMissingCitationsCount} accepted claim(s) missing citations`);
-        recommendedActions.push({ label: "Auto-attach Missing Sources", href: `/app/cases/${caseId}/evidence`, actionKey: "auto_attach" });
-        if (issueGroupingsCount === 0) {
-          warnings.push("No issue groupings created (optional)");
-        }
-      } else {
-        phaseNumber = 5;
-        if (issueGroupingsCount === 0) {
-          warnings.push("No issue groupings created (optional for drafting)");
-        }
-        recommendedActions.push({ label: "Compile Draft", href: `/app/cases/${caseId}/documents`, actionKey: "compile_draft" });
-      }
 
-      res.json({
-        phaseNumber,
-        checks: {
-          evidenceCount,
-          extractionCompleteCount,
-          extractionPendingCount,
-          suggestedClaimsCount: suggestedClaims.length,
-          acceptedClaimsCount: acceptedClaims.length,
-          acceptedClaimsMissingCitationsCount,
-          issueGroupingsCount,
-          readinessPercent,
-        },
-        blockers,
-        warnings,
-        recommendedActions,
-      });
-    } catch (error) {
-      console.error("Phase status error:", error);
-      res.status(500).json({ error: "Failed to get phase status" });
-    }
-  });
+        res.json({
+          phaseNumber,
+          checks: {
+            evidenceCount,
+            extractionCompleteCount,
+            extractionPendingCount,
+            suggestedClaimsCount: suggestedClaims.length,
+            acceptedClaimsCount: acceptedClaims.length,
+            acceptedClaimsMissingCitationsCount,
+            issueGroupingsCount,
+            readinessPercent,
+          },
+          blockers,
+          warnings,
+          recommendedActions,
+        });
+      } catch (error) {
+        console.error("Phase status error:", error);
+        res.status(500).json({ error: "Failed to get phase status" });
+      }
+    },
+  );
 
   // ───────────────────────────────────────────────────────────────
   // Court Templates API (Full Registry)
@@ -11694,8 +15608,13 @@ Top 3 selection criteria:
 
   app.get("/api/templates", requireAuth, async (_req, res) => {
     try {
-      const { TEMPLATE_REGISTRY, TEMPLATE_CATEGORIES } = await import("./templates/registry");
-      res.json({ templates: TEMPLATE_REGISTRY, categories: TEMPLATE_CATEGORIES });
+      const { TEMPLATE_REGISTRY, TEMPLATE_CATEGORIES } = await import(
+        "./templates/registry"
+      );
+      res.json({
+        templates: TEMPLATE_REGISTRY,
+        categories: TEMPLATE_CATEGORIES,
+      });
     } catch (error) {
       console.error("Get templates error:", error);
       res.status(500).json({ error: "Failed to get templates" });
@@ -11704,246 +15623,341 @@ Top 3 selection criteria:
 
   app.get("/api/court-templates", requireAuth, async (_req, res) => {
     try {
-      const { TEMPLATE_REGISTRY, TEMPLATE_CATEGORIES } = await import("./templates/registry");
-      res.json({ templates: TEMPLATE_REGISTRY, categories: TEMPLATE_CATEGORIES });
+      const { TEMPLATE_REGISTRY, TEMPLATE_CATEGORIES } = await import(
+        "./templates/registry"
+      );
+      res.json({
+        templates: TEMPLATE_REGISTRY,
+        categories: TEMPLATE_CATEGORIES,
+      });
     } catch (error) {
       console.error("Get court templates error:", error);
       res.status(500).json({ error: "Failed to get court templates" });
     }
   });
 
-  app.get("/api/cases/:caseId/templates/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const templateKey = req.query.templateKey as string;
+  app.get(
+    "/api/cases/:caseId/templates/preflight",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const templateKey = req.query.templateKey as string;
 
-      if (!templateKey) {
-        return res.status(400).json({ error: "templateKey query param required" });
-      }
+        if (!templateKey) {
+          return res
+            .status(400)
+            .json({ error: "templateKey query param required" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const { runPreflight } = await import("./templates/compileTemplate");
-      const result = await runPreflight(storage, userId, caseId, templateKey);
-      
-      res.json({
-        canCompile: result.templateReady,
-        acceptedClaimsCount: result.acceptedClaimsCount,
-        includedClaimsCount: result.includedClaimsCount,
-        claimsWithCitationsCount: result.includedClaimsCount - result.uncitedIncludedClaimsCount,
-        claimsMissingCitations: result.uncitedClaims.map(c => ({ id: c.id, claimText: c.text })),
-        claimsWithMissingInfo: result.missingInfoClaims.map(c => ({ id: c.id, claimText: c.text })),
-        extractionCoveragePercent: result.extractionCoveragePercent,
-        warnings: result.warnings,
-        errors: result.reasons,
-      });
-    } catch (error) {
-      console.error("Template preflight error:", error);
-      res.status(500).json({ error: "Failed to run preflight check" });
-    }
-  });
+        const { runPreflight } = await import("./templates/compileTemplate");
+        const result = await runPreflight(storage, userId, caseId, templateKey);
 
-  app.get("/api/cases/:caseId/templates/field-mapping", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const templateKey = req.query.templateKey as string;
-
-      if (!templateKey) {
-        return res.status(400).json({ error: "templateKey query param required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { getFieldMappingSuggestions } = await import("./templates/compileTemplate");
-      const result = await getFieldMappingSuggestions(storage, userId, caseId, templateKey);
-      
-      if (!result) {
-        return res.status(404).json({ error: "Template not found" });
-      }
-
-      res.json(result);
-    } catch (error) {
-      console.error("Field mapping error:", error);
-      res.status(500).json({ error: "Failed to get field mapping suggestions" });
-    }
-  });
-
-  app.get("/api/cases/:caseId/court-templates/preflight", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const templateKey = req.query.templateKey as string;
-
-      if (!templateKey) {
-        return res.status(400).json({ error: "templateKey query param required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { runPreflight } = await import("./templates/compileTemplate");
-      const result = await runPreflight(storage, userId, caseId, templateKey);
-      
-      res.json({
-        canCompile: result.templateReady,
-        acceptedClaimsCount: result.acceptedClaimsCount,
-        includedClaimsCount: result.includedClaimsCount,
-        claimsWithCitationsCount: result.includedClaimsCount - result.uncitedIncludedClaimsCount,
-        claimsMissingCitations: result.uncitedClaims.map(c => ({ id: c.id, claimText: c.text })),
-        claimsWithMissingInfo: result.missingInfoClaims.map(c => ({ id: c.id, claimText: c.text })),
-        extractionCoveragePercent: result.extractionCoveragePercent,
-        warnings: result.warnings,
-        errors: result.reasons,
-      });
-    } catch (error) {
-      console.error("Court template preflight error:", error);
-      res.status(500).json({ error: "Failed to run preflight check" });
-    }
-  });
-
-  app.post("/api/cases/:caseId/documents/compile-template", requireAuth, requireDownloads(), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { templateKey, title, options } = req.body;
-
-      if (!templateKey) {
-        return res.status(400).json({ error: "templateKey required" });
-      }
-
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { compileTemplate } = await import("./templates/compileTemplate");
-      const docTitle = title || `${templateKey} - ${new Date().toLocaleDateString()}`;
-      const result = await compileTemplate(storage, userId, caseId, templateKey, docTitle, options || {});
-
-      if (!result.ok) {
-        return res.status(400).json({
-          ok: false,
-          errors: result.errors,
+        res.json({
+          canCompile: result.templateReady,
+          acceptedClaimsCount: result.acceptedClaimsCount,
+          includedClaimsCount: result.includedClaimsCount,
+          claimsWithCitationsCount:
+            result.includedClaimsCount - result.uncitedIncludedClaimsCount,
+          claimsMissingCitations: result.uncitedClaims.map((c) => ({
+            id: c.id,
+            claimText: c.text,
+          })),
+          claimsWithMissingInfo: result.missingInfoClaims.map((c) => ({
+            id: c.id,
+            claimText: c.text,
+          })),
+          extractionCoveragePercent: result.extractionCoveragePercent,
+          warnings: result.warnings,
+          errors: result.reasons,
         });
+      } catch (error) {
+        console.error("Template preflight error:", error);
+        res.status(500).json({ error: "Failed to run preflight check" });
       }
+    },
+  );
 
-      res.json({
-        ok: true,
-        markdown: result.markdown,
-        sources: result.sources,
-        stats: result.stats,
-      });
-    } catch (error) {
-      console.error("Template compile error:", error);
-      res.status(500).json({ error: "Failed to compile template" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/templates/field-mapping",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const templateKey = req.query.templateKey as string;
 
-  app.post("/api/cases/:caseId/court-templates/compile", requireAuth, requireCaseAccess("viewer"), blockAttorneyMutations, async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      const { templateKey, title, options } = req.body;
+        if (!templateKey) {
+          return res
+            .status(400)
+            .json({ error: "templateKey query param required" });
+        }
 
-      if (!templateKey) {
-        return res.status(400).json({ error: "templateKey required" });
-      }
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
 
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
-      }
-
-      const { compileTemplate } = await import("./templates/compileTemplate");
-      const docTitle = title || `${templateKey} - ${new Date().toLocaleDateString()}`;
-      const result = await compileTemplate(storage, userId, caseId, templateKey, docTitle, options || {});
-
-      if (!result.ok) {
-        return res.status(400).json({
-          ok: false,
-          errors: result.errors,
-        });
-      }
-
-      res.json({
-        ok: true,
-        document: {
+        const { getFieldMappingSuggestions } = await import(
+          "./templates/compileTemplate"
+        );
+        const result = await getFieldMappingSuggestions(
+          storage,
+          userId,
+          caseId,
           templateKey,
-          title: docTitle,
+        );
+
+        if (!result) {
+          return res.status(404).json({ error: "Template not found" });
+        }
+
+        res.json(result);
+      } catch (error) {
+        console.error("Field mapping error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to get field mapping suggestions" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/cases/:caseId/court-templates/preflight",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const templateKey = req.query.templateKey as string;
+
+        if (!templateKey) {
+          return res
+            .status(400)
+            .json({ error: "templateKey query param required" });
+        }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { runPreflight } = await import("./templates/compileTemplate");
+        const result = await runPreflight(storage, userId, caseId, templateKey);
+
+        res.json({
+          canCompile: result.templateReady,
+          acceptedClaimsCount: result.acceptedClaimsCount,
+          includedClaimsCount: result.includedClaimsCount,
+          claimsWithCitationsCount:
+            result.includedClaimsCount - result.uncitedIncludedClaimsCount,
+          claimsMissingCitations: result.uncitedClaims.map((c) => ({
+            id: c.id,
+            claimText: c.text,
+          })),
+          claimsWithMissingInfo: result.missingInfoClaims.map((c) => ({
+            id: c.id,
+            claimText: c.text,
+          })),
+          extractionCoveragePercent: result.extractionCoveragePercent,
+          warnings: result.warnings,
+          errors: result.reasons,
+        });
+      } catch (error) {
+        console.error("Court template preflight error:", error);
+        res.status(500).json({ error: "Failed to run preflight check" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/documents/compile-template",
+    requireAuth,
+    requireDownloads(),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { templateKey, title, options } = req.body;
+
+        if (!templateKey) {
+          return res.status(400).json({ error: "templateKey required" });
+        }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { compileTemplate } = await import("./templates/compileTemplate");
+        const docTitle =
+          title || `${templateKey} - ${new Date().toLocaleDateString()}`;
+        const result = await compileTemplate(
+          storage,
+          userId,
+          caseId,
+          templateKey,
+          docTitle,
+          options || {},
+        );
+
+        if (!result.ok) {
+          return res.status(400).json({
+            ok: false,
+            errors: result.errors,
+          });
+        }
+
+        res.json({
+          ok: true,
           markdown: result.markdown,
           sources: result.sources,
-          compiledAt: new Date().toISOString(),
-        },
-      });
-    } catch (error) {
-      console.error("Court template compile error:", error);
-      res.status(500).json({ error: "Failed to compile document" });
-    }
-  });
+          stats: result.stats,
+        });
+      } catch (error) {
+        console.error("Template compile error:", error);
+        res.status(500).json({ error: "Failed to compile template" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/cases/:caseId/court-templates/compile",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    blockAttorneyMutations,
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+        const { templateKey, title, options } = req.body;
+
+        if (!templateKey) {
+          return res.status(400).json({ error: "templateKey required" });
+        }
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const { compileTemplate } = await import("./templates/compileTemplate");
+        const docTitle =
+          title || `${templateKey} - ${new Date().toLocaleDateString()}`;
+        const result = await compileTemplate(
+          storage,
+          userId,
+          caseId,
+          templateKey,
+          docTitle,
+          options || {},
+        );
+
+        if (!result.ok) {
+          return res.status(400).json({
+            ok: false,
+            errors: result.errors,
+          });
+        }
+
+        res.json({
+          ok: true,
+          document: {
+            templateKey,
+            title: docTitle,
+            markdown: result.markdown,
+            sources: result.sources,
+            compiledAt: new Date().toISOString(),
+          },
+        });
+      } catch (error) {
+        console.error("Court template compile error:", error);
+        res.status(500).json({ error: "Failed to compile document" });
+      }
+    },
+  );
 
   // ============================================================
   // AI JOBS STATUS ENDPOINTS
   // ============================================================
-  
-  app.get("/api/cases/:caseId/ai-jobs/status", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = req.session.userId as string;
-      const { caseId } = req.params;
-      
-      const caseRecord = await storage.getCase(caseId, userId);
-      if (!caseRecord) {
-        return res.status(404).json({ error: "Case not found" });
+
+  app.get(
+    "/api/cases/:caseId/ai-jobs/status",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = req.session.userId as string;
+        const { caseId } = req.params;
+
+        const caseRecord = await storage.getCase(caseId, userId);
+        if (!caseRecord) {
+          return res.status(404).json({ error: "Case not found" });
+        }
+
+        const [
+          extraction,
+          aiAnalyses,
+          claimsSuggest,
+          recentFailures,
+          quotasRemaining,
+        ] = await Promise.all([
+          getExtractionJobCounts(caseId),
+          getAiAnalysisJobCounts(caseId),
+          getClaimSuggestionJobCounts(caseId),
+          getJobRecentFailures(caseId, 10),
+          getQuotaRemaining(userId),
+        ]);
+
+        res.json({
+          extraction,
+          aiAnalyses,
+          claimsSuggest,
+          recentFailures,
+          quotasRemaining: {
+            ocrPagesToday: quotasRemaining.ocrPagesRemainingToday,
+            ocrPagesMonth: quotasRemaining.ocrPagesRemainingMonth,
+            aiCallsToday: quotasRemaining.aiCallsRemainingToday,
+            aiCallsMonth: quotasRemaining.aiCallsRemainingMonth,
+            isComped: quotasRemaining.isComped,
+          },
+        });
+      } catch (error) {
+        console.error("AI jobs status error:", error);
+        res.status(500).json({ error: "Failed to get AI jobs status" });
       }
-      
-      const [extraction, aiAnalyses, claimsSuggest, recentFailures, quotasRemaining] = await Promise.all([
-        getExtractionJobCounts(caseId),
-        getAiAnalysisJobCounts(caseId),
-        getClaimSuggestionJobCounts(caseId),
-        getJobRecentFailures(caseId, 10),
-        getQuotaRemaining(userId),
-      ]);
-      
-      res.json({
-        extraction,
-        aiAnalyses,
-        claimsSuggest,
-        recentFailures,
-        quotasRemaining: {
-          ocrPagesToday: quotasRemaining.ocrPagesRemainingToday,
-          ocrPagesMonth: quotasRemaining.ocrPagesRemainingMonth,
-          aiCallsToday: quotasRemaining.aiCallsRemainingToday,
-          aiCallsMonth: quotasRemaining.aiCallsRemainingMonth,
-          isComped: quotasRemaining.isComped,
-        },
-      });
-    } catch (error) {
-      console.error("AI jobs status error:", error);
-      res.status(500).json({ error: "Failed to get AI jobs status" });
-    }
-  });
+    },
+  );
 
   app.get("/api/admin/ai-jobs", requireAuth, requireAdmin, async (req, res) => {
     try {
       const jobStats = getJobStats();
-      
-      const [extractionBacklog, analysisBacklog, claimBacklog] = await Promise.all([
-        pool.query(`SELECT status, COUNT(*)::int as count FROM evidence_extractions WHERE status IN ('queued', 'processing') GROUP BY status`),
-        pool.query(`SELECT status, COUNT(*)::int as count FROM evidence_ai_analyses WHERE status IN ('queued', 'processing') GROUP BY status`),
-        pool.query(`SELECT status, COUNT(*)::int as count FROM claim_suggestion_runs WHERE status IN ('queued', 'processing') GROUP BY status`),
-      ]);
-      
-      const [recentExtractionFails, recentAnalysisFails, recentClaimFails] = await Promise.all([
-        pool.query(`
+
+      const [extractionBacklog, analysisBacklog, claimBacklog] =
+        await Promise.all([
+          pool.query(
+            `SELECT status, COUNT(*)::int as count FROM evidence_extractions WHERE status IN ('queued', 'processing') GROUP BY status`,
+          ),
+          pool.query(
+            `SELECT status, COUNT(*)::int as count FROM evidence_ai_analyses WHERE status IN ('queued', 'processing') GROUP BY status`,
+          ),
+          pool.query(
+            `SELECT status, COUNT(*)::int as count FROM claim_suggestion_runs WHERE status IN ('queued', 'processing') GROUP BY status`,
+          ),
+        ]);
+
+      const [recentExtractionFails, recentAnalysisFails, recentClaimFails] =
+        await Promise.all([
+          pool.query(`
           SELECT COUNT(*)::int as count, 
                  COALESCE(SUBSTRING(error FROM 1 FOR 50), 'unknown') as error_prefix
           FROM evidence_extractions 
@@ -11951,7 +15965,7 @@ Top 3 selection criteria:
           GROUP BY error_prefix
           ORDER BY count DESC LIMIT 5
         `),
-        pool.query(`
+          pool.query(`
           SELECT COUNT(*)::int as count,
                  COALESCE(SUBSTRING(error FROM 1 FOR 50), 'unknown') as error_prefix
           FROM evidence_ai_analyses
@@ -11959,7 +15973,7 @@ Top 3 selection criteria:
           GROUP BY error_prefix
           ORDER BY count DESC LIMIT 5
         `),
-        pool.query(`
+          pool.query(`
           SELECT COUNT(*)::int as count,
                  COALESCE(SUBSTRING(error FROM 1 FOR 50), 'unknown') as error_prefix
           FROM claim_suggestion_runs
@@ -11967,8 +15981,8 @@ Top 3 selection criteria:
           GROUP BY error_prefix
           ORDER BY count DESC LIMIT 5
         `),
-      ]);
-      
+        ]);
+
       const latencyQuery = await pool.query(`
         SELECT 
           'extraction' as job_type,
@@ -11984,12 +15998,14 @@ Top 3 selection criteria:
         WHERE status = 'complete' AND updated_at IS NOT NULL
           AND created_at > NOW() - INTERVAL '24 hours'
       `);
-      
+
       const latencyMap: Record<string, number | null> = {};
       for (const row of latencyQuery.rows) {
-        latencyMap[row.job_type] = row.p95_seconds ? parseFloat(row.p95_seconds) : null;
+        latencyMap[row.job_type] = row.p95_seconds
+          ? parseFloat(row.p95_seconds)
+          : null;
       }
-      
+
       res.json({
         jobRunner: jobStats,
         backlogs: {
@@ -12011,21 +16027,26 @@ Top 3 selection criteria:
     }
   });
 
-  app.post("/api/admin/ai-jobs/requeue-stale", requireAuth, requireAdmin, async (req, res) => {
-    try {
-      const result = await requeueAllStaleJobs();
-      res.json({ ok: true, requeued: result });
-    } catch (error) {
-      console.error("Requeue stale jobs error:", error);
-      res.status(500).json({ error: "Failed to requeue stale jobs" });
-    }
-  });
+  app.post(
+    "/api/admin/ai-jobs/requeue-stale",
+    requireAuth,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const result = await requeueAllStaleJobs();
+        res.json({ ok: true, requeued: result });
+      } catch (error) {
+        console.error("Requeue stale jobs error:", error);
+        res.status(500).json({ error: "Failed to requeue stale jobs" });
+      }
+    },
+  );
 
   // ============================================================
   // DEV-ONLY AUDIT ENDPOINTS
   // ============================================================
   const { devOnly } = await import("./middleware/devOnly");
-  
+
   app.get("/api/audit/run", requireAuth, devOnly, async (req, res) => {
     try {
       const { runFullAudit } = await import("./audit/runAudit");
@@ -12045,60 +16066,74 @@ Top 3 selection criteria:
   // ATTORNEY ACCESS ENDPOINTS
   // ============================================================
   const { getUserCaseRole } = await import("./middleware/caseAccess");
-  const { caseCollaborators, caseInvites, activityLogs, users } = await import("@shared/schema");
+  const { caseCollaborators, caseInvites, activityLogs, users } = await import(
+    "@shared/schema"
+  );
   const { and, eq, isNull, gt, desc } = await import("drizzle-orm");
 
-  app.post("/api/cases/:caseId/attorney/invites", requireAuth, requireCaseAccess("owner"), async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      const caseId = req.params.caseId;
-      const { email, expiresInDays = 30 } = req.body;
+  app.post(
+    "/api/cases/:caseId/attorney/invites",
+    requireAuth,
+    requireCaseAccess("owner"),
+    async (req, res) => {
+      try {
+        const userId = (req as any).user.id;
+        const caseId = req.params.caseId;
+        const { email, expiresInDays = 30 } = req.body;
 
-      if (!email || typeof email !== "string") {
-        return res.status(400).json({ error: "Email required" });
+        if (!email || typeof email !== "string") {
+          return res.status(400).json({ error: "Email required" });
+        }
+        const validDays = [7, 30, 90];
+        if (!validDays.includes(expiresInDays)) {
+          return res.status(400).json({ error: "Invalid expiry period" });
+        }
+
+        const token = crypto.randomBytes(32).toString("hex");
+        const tokenHash = crypto
+          .createHash("sha256")
+          .update(token)
+          .digest("hex");
+        const expiresAt = new Date(
+          Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
+        );
+
+        await db.insert(caseInvites).values({
+          caseId,
+          email: email.toLowerCase().trim(),
+          role: "attorney_viewer",
+          tokenHash,
+          expiresAt,
+          createdByUserId: userId,
+        });
+
+        await db.insert(activityLogs).values({
+          userId,
+          caseId,
+          type: "attorney_invite_created",
+          moduleKey: "attorney_access",
+          metadata: { email, expiresAt: expiresAt.toISOString() },
+        });
+
+        const baseUrl =
+          process.env.APP_BASE_URL ||
+          `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+        const inviteUrl = `${baseUrl}/attorney/accept?token=${token}`;
+
+        res.json({ inviteUrl, expiresAt: expiresAt.toISOString() });
+      } catch (error) {
+        console.error("[Attorney Invite] Error:", error);
+        res.status(500).json({ error: "Failed to create invite" });
       }
-      const validDays = [7, 30, 90];
-      if (!validDays.includes(expiresInDays)) {
-        return res.status(400).json({ error: "Invalid expiry period" });
-      }
-
-      const token = crypto.randomBytes(32).toString("hex");
-      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
-
-      await db.insert(caseInvites).values({
-        caseId,
-        email: email.toLowerCase().trim(),
-        role: "attorney_viewer",
-        tokenHash,
-        expiresAt,
-        createdByUserId: userId,
-      });
-
-      await db.insert(activityLogs).values({
-        userId,
-        caseId,
-        type: "attorney_invite_created",
-        moduleKey: "attorney_access",
-        metadata: { email, expiresAt: expiresAt.toISOString() },
-      });
-
-      const baseUrl = process.env.APP_BASE_URL || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-      const inviteUrl = `${baseUrl}/attorney/accept?token=${token}`;
-
-      res.json({ inviteUrl, expiresAt: expiresAt.toISOString() });
-    } catch (error) {
-      console.error("[Attorney Invite] Error:", error);
-      res.status(500).json({ error: "Failed to create invite" });
-    }
-  });
+    },
+  );
 
   app.post("/api/attorney/accept", async (req, res) => {
     try {
       const { token } = req.body;
       if (!token) return res.status(400).json({ error: "Token required" });
 
-      const userId = (req as any).user?.id;
+      const userId = req.session.userId;
       if (!userId) {
         return res.json({ needsLogin: true });
       }
@@ -12112,8 +16147,8 @@ Top 3 selection criteria:
             eq(caseInvites.tokenHash, tokenHash),
             isNull(caseInvites.usedAt),
             isNull(caseInvites.revokedAt),
-            gt(caseInvites.expiresAt, new Date())
-          )
+            gt(caseInvites.expiresAt, new Date()),
+          ),
         )
         .limit(1);
 
@@ -12126,7 +16161,12 @@ Top 3 selection criteria:
       const existingCollab = await db
         .select()
         .from(caseCollaborators)
-        .where(and(eq(caseCollaborators.caseId, invite.caseId), eq(caseCollaborators.userId, userId)))
+        .where(
+          and(
+            eq(caseCollaborators.caseId, invite.caseId),
+            eq(caseCollaborators.userId, userId),
+          ),
+        )
         .limit(1);
 
       if (existingCollab.length > 0) {
@@ -12142,7 +16182,10 @@ Top 3 selection criteria:
         });
       }
 
-      await db.update(caseInvites).set({ usedAt: new Date() }).where(eq(caseInvites.id, invite.id));
+      await db
+        .update(caseInvites)
+        .set({ usedAt: new Date() })
+        .where(eq(caseInvites.id, invite.id));
 
       await db.insert(activityLogs).values({
         userId,
@@ -12159,128 +16202,166 @@ Top 3 selection criteria:
     }
   });
 
-  app.get("/api/cases/:caseId/attorney/access", requireAuth, requireCaseAccess("viewer"), async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      const caseId = req.params.caseId;
-      const role = await getUserCaseRole(userId, caseId);
-      res.json({
-        role,
-        canDownload: role === "owner" || role === "attorney_viewer",
-        readOnly: role === "attorney_viewer",
-      });
-    } catch (error) {
-      console.error("[Attorney Access] Error:", error);
-      res.status(500).json({ error: "Failed to check access" });
-    }
-  });
+  app.get(
+    "/api/cases/:caseId/attorney/access",
+    requireAuth,
+    requireCaseAccess("viewer"),
+    async (req, res) => {
+      try {
+        const userId = (req as any).user.id;
+        const caseId = req.params.caseId;
+        const role = await getUserCaseRole(userId, caseId);
+        res.json({
+          role,
+          canDownload: role === "owner" || role === "attorney_viewer",
+          readOnly: role === "attorney_viewer",
+        });
+      } catch (error) {
+        console.error("[Attorney Access] Error:", error);
+        res.status(500).json({ error: "Failed to check access" });
+      }
+    },
+  );
 
-  app.get("/api/cases/:caseId/attorney/collaborators", requireAuth, requireCaseAccess("owner"), async (req, res) => {
-    try {
-      const caseId = req.params.caseId;
-      const collabs = await db
-        .select({
-          id: caseCollaborators.id,
-          userId: caseCollaborators.userId,
-          role: caseCollaborators.role,
-          createdAt: caseCollaborators.createdAt,
-          email: users.email,
-        })
-        .from(caseCollaborators)
-        .leftJoin(users, eq(caseCollaborators.userId, users.id))
-        .where(and(eq(caseCollaborators.caseId, caseId), isNull(caseCollaborators.revokedAt)));
+  app.get(
+    "/api/cases/:caseId/attorney/collaborators",
+    requireAuth,
+    requireCaseAccess("owner"),
+    async (req, res) => {
+      try {
+        const caseId = req.params.caseId;
+        const collabs = await db
+          .select({
+            id: caseCollaborators.id,
+            userId: caseCollaborators.userId,
+            role: caseCollaborators.role,
+            createdAt: caseCollaborators.createdAt,
+            email: users.email,
+          })
+          .from(caseCollaborators)
+          .leftJoin(users, eq(caseCollaborators.userId, users.id))
+          .where(
+            and(
+              eq(caseCollaborators.caseId, caseId),
+              isNull(caseCollaborators.revokedAt),
+            ),
+          );
 
-      res.json({
-        collaborators: collabs.map((c) => ({
-          id: c.id,
-          userId: c.userId,
-          role: c.role,
-          email: c.email ? `${c.email.substring(0, 3)}***@***` : "Unknown",
-          createdAt: c.createdAt,
-        })),
-      });
-    } catch (error) {
-      console.error("[Attorney Collaborators] Error:", error);
-      res.status(500).json({ error: "Failed to list collaborators" });
-    }
-  });
+        res.json({
+          collaborators: collabs.map((c) => ({
+            id: c.id,
+            userId: c.userId,
+            role: c.role,
+            email: c.email ? `${c.email.substring(0, 3)}***@***` : "Unknown",
+            createdAt: c.createdAt,
+          })),
+        });
+      } catch (error) {
+        console.error("[Attorney Collaborators] Error:", error);
+        res.status(500).json({ error: "Failed to list collaborators" });
+      }
+    },
+  );
 
-  app.delete("/api/cases/:caseId/attorney/collaborators/:collaboratorUserId", requireAuth, requireCaseAccess("owner"), async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      const { caseId, collaboratorUserId } = req.params;
+  app.delete(
+    "/api/cases/:caseId/attorney/collaborators/:collaboratorUserId",
+    requireAuth,
+    requireCaseAccess("owner"),
+    async (req, res) => {
+      try {
+        const userId = (req as any).user.id;
+        const { caseId, collaboratorUserId } = req.params;
 
-      await db
-        .update(caseCollaborators)
-        .set({ revokedAt: new Date() })
-        .where(and(eq(caseCollaborators.caseId, caseId), eq(caseCollaborators.userId, collaboratorUserId)));
+        await db
+          .update(caseCollaborators)
+          .set({ revokedAt: new Date() })
+          .where(
+            and(
+              eq(caseCollaborators.caseId, caseId),
+              eq(caseCollaborators.userId, collaboratorUserId),
+            ),
+          );
 
-      await db.insert(activityLogs).values({
-        userId,
-        caseId,
-        type: "attorney_access_revoked",
-        moduleKey: "attorney_access",
-        metadata: { collaboratorUserId },
-      });
+        await db.insert(activityLogs).values({
+          userId,
+          caseId,
+          type: "attorney_access_revoked",
+          moduleKey: "attorney_access",
+          metadata: { collaboratorUserId },
+        });
 
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("[Attorney Revoke] Error:", error);
-      res.status(500).json({ error: "Failed to revoke access" });
-    }
-  });
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("[Attorney Revoke] Error:", error);
+        res.status(500).json({ error: "Failed to revoke access" });
+      }
+    },
+  );
 
-  app.get("/api/cases/:caseId/attorney/invites", requireAuth, requireCaseAccess("owner"), async (req, res) => {
-    try {
-      const caseId = req.params.caseId;
-      const invites = await db
-        .select()
-        .from(caseInvites)
-        .where(
-          and(
-            eq(caseInvites.caseId, caseId),
-            isNull(caseInvites.usedAt),
-            isNull(caseInvites.revokedAt),
-            gt(caseInvites.expiresAt, new Date())
+  app.get(
+    "/api/cases/:caseId/attorney/invites",
+    requireAuth,
+    requireCaseAccess("owner"),
+    async (req, res) => {
+      try {
+        const caseId = req.params.caseId;
+        const invites = await db
+          .select()
+          .from(caseInvites)
+          .where(
+            and(
+              eq(caseInvites.caseId, caseId),
+              isNull(caseInvites.usedAt),
+              isNull(caseInvites.revokedAt),
+              gt(caseInvites.expiresAt, new Date()),
+            ),
           )
-        )
-        .orderBy(desc(caseInvites.createdAt));
+          .orderBy(desc(caseInvites.createdAt));
 
-      res.json({
-        invites: invites.map((i) => ({
-          id: i.id,
-          email: i.email,
-          expiresAt: i.expiresAt,
-          createdAt: i.createdAt,
-        })),
-      });
-    } catch (error) {
-      console.error("[Attorney Invites List] Error:", error);
-      res.status(500).json({ error: "Failed to list invites" });
-    }
-  });
+        res.json({
+          invites: invites.map((i) => ({
+            id: i.id,
+            email: i.email,
+            expiresAt: i.expiresAt,
+            createdAt: i.createdAt,
+          })),
+        });
+      } catch (error) {
+        console.error("[Attorney Invites List] Error:", error);
+        res.status(500).json({ error: "Failed to list invites" });
+      }
+    },
+  );
 
-  app.delete("/api/cases/:caseId/attorney/invites/:inviteId", requireAuth, requireCaseAccess("owner"), async (req, res) => {
-    try {
-      const userId = (req as any).user.id;
-      const { caseId, inviteId } = req.params;
+  app.delete(
+    "/api/cases/:caseId/attorney/invites/:inviteId",
+    requireAuth,
+    requireCaseAccess("owner"),
+    async (req, res) => {
+      try {
+        const userId = (req as any).user.id;
+        const { caseId, inviteId } = req.params;
 
-      await db.update(caseInvites).set({ revokedAt: new Date() }).where(eq(caseInvites.id, inviteId));
+        await db
+          .update(caseInvites)
+          .set({ revokedAt: new Date() })
+          .where(eq(caseInvites.id, inviteId));
 
-      await db.insert(activityLogs).values({
-        userId,
-        caseId,
-        type: "attorney_invite_revoked",
-        moduleKey: "attorney_access",
-        metadata: { inviteId },
-      });
+        await db.insert(activityLogs).values({
+          userId,
+          caseId,
+          type: "attorney_invite_revoked",
+          moduleKey: "attorney_access",
+          metadata: { inviteId },
+        });
 
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("[Attorney Invite Revoke] Error:", error);
-      res.status(500).json({ error: "Failed to revoke invite" });
-    }
-  });
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("[Attorney Invite Revoke] Error:", error);
+        res.status(500).json({ error: "Failed to revoke invite" });
+      }
+    },
+  );
 
   app.get("/api/attorney/shared-cases", requireAuth, async (req, res) => {
     try {
@@ -12292,7 +16373,12 @@ Top 3 selection criteria:
           createdAt: caseCollaborators.createdAt,
         })
         .from(caseCollaborators)
-        .where(and(eq(caseCollaborators.userId, userId), isNull(caseCollaborators.revokedAt)));
+        .where(
+          and(
+            eq(caseCollaborators.userId, userId),
+            isNull(caseCollaborators.revokedAt),
+          ),
+        );
 
       res.json({ sharedCases });
     } catch (error) {

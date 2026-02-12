@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { Plus, Briefcase } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import type { Case } from "@shared/schema";
@@ -22,8 +22,9 @@ export default function AppCases() {
     setLocation(`/app/dashboard/${caseId}`);
   };
 
-  const { data: authData, isLoading: authLoading } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+  const { data: authData, isLoading: authLoading } = useQuery<{ user: { id: string; email: string; casesAllowed: number } } | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const { data: casesData, isLoading: casesQueryLoading } = useQuery<{ cases: Case[] }>({

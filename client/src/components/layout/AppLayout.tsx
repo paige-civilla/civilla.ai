@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import AppNavbar from "./AppNavbar";
 import AppFooter from "./AppFooter";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
@@ -45,8 +46,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const currentPhase = useMemo(() => getPhaseFromRoute(location), [location]);
 
-  const { data: authData, isLoading: authLoading, isError: authError } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+  const { data: authData, isLoading: authLoading } = useQuery<{ user: { id: string; email: string; casesAllowed: number } } | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const { data: onboardingData, isLoading: onboardingLoading } = useQuery<{ onboardingComplete: boolean }>({
@@ -86,10 +88,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }, [needsDisclaimer, hasShownModalThisSession]);
 
   useEffect(() => {
-    if (!authLoading && (authError || !authData?.user)) {
+    if (!authLoading && !authData?.user) {
       setLocation("/login");
     }
-  }, [authLoading, authError, authData, setLocation]);
+  }, [authLoading, authData, setLocation]);
 
   useEffect(() => {
     if (!authLoading && !onboardingLoading && authData?.user && onboardingData) {
@@ -117,7 +119,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  if (authError || !authData?.user) {
+  if (!authData?.user) {
     return null;
   }
 

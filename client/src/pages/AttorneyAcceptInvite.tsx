@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, LogIn, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 
 export default function AttorneyAcceptInvite() {
   const [, navigate] = useLocation();
@@ -15,6 +15,7 @@ export default function AttorneyAcceptInvite() {
 
   const { data: user } = useQuery<{ id: string } | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
   });
 

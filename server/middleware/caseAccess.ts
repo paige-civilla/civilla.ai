@@ -5,8 +5,15 @@ import { eq, and, isNull } from "drizzle-orm";
 
 export type CaseRole = "owner" | "attorney_viewer" | null;
 
-export async function getUserCaseRole(userId: string, caseId: string): Promise<CaseRole> {
-  const caseRow = await db.select({ userId: cases.userId }).from(cases).where(eq(cases.id, caseId)).limit(1);
+export async function getUserCaseRole(
+  userId: string,
+  caseId: string,
+): Promise<CaseRole> {
+  const caseRow = await db
+    .select({ userId: cases.userId })
+    .from(cases)
+    .where(eq(cases.id, caseId))
+    .limit(1);
   if (caseRow.length > 0 && caseRow[0].userId === userId) {
     return "owner";
   }
@@ -17,8 +24,8 @@ export async function getUserCaseRole(userId: string, caseId: string): Promise<C
       and(
         eq(caseCollaborators.caseId, caseId),
         eq(caseCollaborators.userId, userId),
-        isNull(caseCollaborators.revokedAt)
-      )
+        isNull(caseCollaborators.revokedAt),
+      ),
     )
     .limit(1);
   if (collab.length > 0 && collab[0].role === "attorney_viewer") {
@@ -30,7 +37,7 @@ export async function getUserCaseRole(userId: string, caseId: string): Promise<C
 export function requireCaseAccess(minRole: "viewer" | "owner") {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = (req as any).user?.id;
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const caseId = req.params.caseId;
@@ -54,18 +61,31 @@ export function requireCaseAccess(minRole: "viewer" | "owner") {
   };
 }
 
-export async function requireReadOnlyViewer(req: Request, res: Response, next: NextFunction) {
+export async function requireReadOnlyViewer(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const role = (req as any).caseRole as CaseRole;
   if (role === "attorney_viewer") {
     const method = req.method.toUpperCase();
-    if (method === "POST" || method === "PATCH" || method === "DELETE" || method === "PUT") {
+    if (
+      method === "POST" ||
+      method === "PATCH" ||
+      method === "DELETE" ||
+      method === "PUT"
+    ) {
       return res.status(403).json({ error: "Read-only access" });
     }
   }
   return next();
 }
 
-export function blockAttorneyMutations(req: Request, res: Response, next: NextFunction) {
+export function blockAttorneyMutations(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const role = (req as any).caseRole as CaseRole;
   if (role === "attorney_viewer") {
     return res.status(403).json({ error: "Read-only access" });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,8 +141,9 @@ export default function AppOnboarding() {
   const [policyModal, setPolicyModal] = useState<string | null>(null);
   const [deferredFields, setDeferredFields] = useState<Record<string, boolean>>({});
 
-  const { data: authData, isLoading: authLoading, isError: authError } = useQuery<{ user: { id: string; email: string } }>({
+  const { data: authData, isLoading: authLoading } = useQuery<{ user: { id: string; email: string } } | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const { data: onboardingStatus, isLoading: statusLoading } = useQuery<{ onboardingComplete: boolean }>({
@@ -178,10 +179,10 @@ export default function AppOnboarding() {
   });
 
   useEffect(() => {
-    if (!authLoading && (authError || !authData?.user)) {
+    if (!authLoading && !authData?.user) {
       setLocation("/login");
     }
-  }, [authLoading, authError, authData, setLocation]);
+  }, [authLoading, authData, setLocation]);
 
   useEffect(() => {
     if (!statusLoading && onboardingStatus?.onboardingComplete) {

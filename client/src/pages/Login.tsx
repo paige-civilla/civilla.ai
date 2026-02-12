@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import NavbarCream from "@/components/NavbarCream";
 import Footer from "@/components/Footer";
 import { PasswordField } from "@/components/ui/PasswordField";
@@ -15,8 +15,9 @@ export default function Login() {
   const [error, setError] = useState("");
   const [redirecting, setRedirecting] = useState(false);
 
-  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } }>({
+  const { data: authData } = useQuery<{ user: { id: string; email: string; casesAllowed: number } } | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
   });
 
