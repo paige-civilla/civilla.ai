@@ -721,7 +721,7 @@ export default function LexiPanel() {
         </button>
       )}
 
-      {open && (
+      {open && !isExpanded && (
         <div
           className="fixed inset-0 bg-black/0 z-40"
           onClick={() => setOpen(false)}
@@ -730,41 +730,8 @@ export default function LexiPanel() {
         />
       )}
 
-      {open && (
-      <div
-        className="fixed z-50 w-full h-full sm:w-[clamp(320px,72vw,520px)] sm:h-auto sm:right-6 right-0 top-0"
-        style={{
-          top: "calc(var(--civilla-nav-h, 64px) + 12px)",
-          bottom: "12px",
-        }}
-        role="dialog"
-        aria-label="Lexi panel"
-      >
-        <div className="relative h-full w-full">
-          {open && (
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close Lexi"
-              data-testid="lexi-toggle-close"
-              className="hidden sm:flex absolute left-[-44px] top-1/2 -translate-y-1/2 h-32 w-11 rounded-l-xl bg-[#314143] text-white border border-[hsl(var(--module-tile-border))] items-center justify-center shadow cursor-pointer hover:bg-[#263233] transition-colors"
-            >
-              <div
-                className="flex items-center gap-2"
-                style={{
-                  transform: "rotate(-90deg)",
-                  whiteSpace: "nowrap",
-                  pointerEvents: "none",
-                }}
-              >
-                <span className="text-white text-lg leading-none">&rsaquo;</span>
-                <span className="text-white font-semibold tracking-wide">Lexi</span>
-              </div>
-            </button>
-          )}
-
-          <div className="h-full w-full bg-white border border-neutral-light shadow-2xl sm:rounded-2xl flex flex-col overflow-hidden">
-            <div className="flex-1 flex flex-col min-h-0">
+      {open && (() => {
+        const panelHeader = (
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-light shrink-0">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -800,398 +767,462 @@ export default function LexiPanel() {
               </button>
             </div>
           </div>
+        );
 
-          {disclaimerData?.disclaimer && (
-            <div className="px-4 py-2 bg-[hsl(var(--accent))] border-b border-[hsl(var(--accent-border))] shrink-0">
-              <p className="font-sans text-xs text-[hsl(var(--accent-foreground))]">
-                {disclaimerData.disclaimer}
-              </p>
-            </div>
-          )}
-
-          {showThreadList ? (
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <div className="px-4 py-3 border-b border-neutral-light flex items-center justify-between gap-2">
-                <p className="font-sans text-sm font-medium text-neutral-darkest">Conversations</p>
-                <button
-                  type="button"
-                  onClick={startNewThread}
-                  disabled={createThreadMutation.isPending}
-                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
-                  data-testid="lexi-new-thread"
-                >
-                  <Plus className="w-4 h-4" />
-                  New
-                </button>
+        const panelBody = (
+          <>
+            {disclaimerData?.disclaimer && (
+              <div className="px-4 py-2 bg-[hsl(var(--accent))] border-b border-[hsl(var(--accent-border))] shrink-0">
+                <p className="font-sans text-xs text-[hsl(var(--accent-foreground))]">
+                  {disclaimerData.disclaimer}
+                </p>
               </div>
-              {threadsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-neutral-darkest/40" />
-                </div>
-              ) : threads.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="font-sans text-sm text-neutral-darkest/60 mb-3">No conversations yet</p>
-                  <button
-                    type="button"
-                    onClick={startNewThread}
-                    disabled={createThreadMutation.isPending}
-                    className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:opacity-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Start a conversation
-                  </button>
-                </div>
-              ) : (
-                <div className="divide-y divide-neutral-light">
-                  {threads.map((thread) => (
-                    <div
-                      key={thread.id}
-                      className={[
-                        "px-4 py-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-neutral-lightest",
-                        activeThreadId === thread.id ? "bg-primary/5" : "",
-                      ].join(" ")}
-                      onClick={() => {
-                        setActiveThreadId(thread.id);
-                        setShowThreadList(false);
-                      }}
-                      data-testid={`lexi-thread-${thread.id}`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-sans text-sm text-neutral-darkest truncate">{thread.title}</p>
-                        <p className="font-sans text-xs text-neutral-darkest/50">
-                          {new Date(thread.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteThreadMutation.mutate(thread.id);
-                        }}
-                        className="p-1 text-neutral-darkest/40 hover:text-destructive"
-                        aria-label="Delete conversation"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="px-4 py-2 border-b border-neutral-light flex flex-col gap-2 shrink-0">
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowThreadList(true)}
-                    className="text-xs text-primary hover:text-primary/80"
-                    data-testid="lexi-show-threads"
-                  >
-                    All conversations ({threads.length})
-                  </button>
+            )}
+
+            {showThreadList ? (
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="px-4 py-3 border-b border-neutral-light flex items-center justify-between gap-2">
+                  <p className="font-sans text-sm font-medium text-neutral-darkest">Conversations</p>
                   <button
                     type="button"
                     onClick={startNewThread}
                     disabled={createThreadMutation.isPending}
                     className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
-                    data-testid="lexi-new-thread-inline"
+                    data-testid="lexi-new-thread"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-4 h-4" />
                     New
                   </button>
                 </div>
-                {activeThreadId && (
-                  <div className="flex items-center gap-2">
-                    {isRenamingThread ? (
-                      <div className="flex items-center gap-1 flex-1">
-                        <input
-                          type="text"
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleRenameSubmit();
-                            if (e.key === "Escape") handleRenameCancel();
-                          }}
-                          className="flex-1 px-2 py-1 text-xs border border-neutral-light rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                          autoFocus
-                          data-testid="input-rename-thread"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleRenameSubmit}
-                          disabled={renameThreadMutation.isPending || !renameValue.trim()}
-                          className="p-1 text-green-600 hover:text-green-700 disabled:opacity-50"
-                          data-testid="button-rename-save"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRenameCancel}
-                          className="p-1 text-neutral-darkest/50 hover:text-neutral-darkest"
-                          data-testid="button-rename-cancel"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="text-sm font-medium text-neutral-darkest truncate flex-1" data-testid="text-thread-title">
-                          {threads.find(t => t.id === activeThreadId)?.title || "Untitled"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleRenameStart}
-                          className="p-1 text-neutral-darkest/40 hover:text-neutral-darkest"
-                          title="Rename conversation"
-                          data-testid="button-rename-thread"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      </>
-                    )}
+                {threadsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-neutral-darkest/40" />
                   </div>
-                )}
-              </div>
-
-              {!activeThreadId ? (
-                <div className="flex-1 flex flex-col items-center justify-center px-4">
-                  <div className="text-center mb-6">
-                    <p className="font-sans text-sm text-neutral-darkest/60 mb-3">
-                      {disclaimerData?.welcome || "Start a conversation with Lexi"}
-                    </p>
+                ) : threads.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <p className="font-sans text-sm text-neutral-darkest/60 mb-3">No conversations yet</p>
                     <button
                       type="button"
                       onClick={startNewThread}
                       disabled={createThreadMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-medium bg-[#314143] text-white hover:opacity-90 active:opacity-80 disabled:opacity-50 transition-opacity"
-                      data-testid="button-start-conversation"
-                      aria-label="Start conversation"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:opacity-50"
                     >
-                      <MessageSquare className="w-4 h-4" />
-                      {createThreadMutation.isPending ? "Starting..." : "Start conversation"}
+                      <Plus className="w-4 h-4" />
+                      Start a conversation
                     </button>
-                    {threadError && (
-                      <p className="mt-2 text-xs text-destructive" data-testid="lexi-thread-error">
-                        {threadError}
-                      </p>
-                    )}
                   </div>
-                  <div className="w-full max-w-sm">
-                    <p className="text-xs font-medium text-neutral-darkest/60 mb-2 text-center">Or ask a question:</p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {SUGGESTED_QUESTIONS.slice(0, 3).map((q, idx) => (
+                ) : (
+                  <div className="divide-y divide-neutral-light">
+                    {threads.map((thread) => (
+                      <div
+                        key={thread.id}
+                        className={[
+                          "px-4 py-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-neutral-lightest",
+                          activeThreadId === thread.id ? "bg-primary/5" : "",
+                        ].join(" ")}
+                        onClick={() => {
+                          setActiveThreadId(thread.id);
+                          setShowThreadList(false);
+                        }}
+                        data-testid={`lexi-thread-${thread.id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-sans text-sm text-neutral-darkest truncate">{thread.title}</p>
+                          <p className="font-sans text-xs text-neutral-darkest/50">
+                            {new Date(thread.updatedAt).toLocaleDateString()}
+                          </p>
+                        </div>
                         <button
-                          key={idx}
                           type="button"
-                          onClick={() => handleSuggestedQuestion(q)}
-                          disabled={sendMessageMutation.isPending || createThreadMutation.isPending}
-                          className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
-                          data-testid={`suggested-question-nothread-${idx}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteThreadMutation.mutate(thread.id);
+                          }}
+                          className="p-1 text-neutral-darkest/40 hover:text-destructive"
+                          aria-label="Delete conversation"
                         >
-                          {q}
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                      ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="px-4 py-2 border-b border-neutral-light flex flex-col gap-2 shrink-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowThreadList(true)}
+                      className="text-xs text-primary hover:text-primary/80"
+                      data-testid="lexi-show-threads"
+                    >
+                      All conversations ({threads.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={startNewThread}
+                      disabled={createThreadMutation.isPending}
+                      className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50"
+                      data-testid="lexi-new-thread-inline"
+                    >
+                      <Plus className="w-3 h-3" />
+                      New
+                    </button>
+                  </div>
+                  {activeThreadId && (
+                    <div className="flex items-center gap-2">
+                      {isRenamingThread ? (
+                        <div className="flex items-center gap-1 flex-1">
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleRenameSubmit();
+                              if (e.key === "Escape") handleRenameCancel();
+                            }}
+                            className="flex-1 px-2 py-1 text-xs border border-neutral-light rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                            autoFocus
+                            data-testid="input-rename-thread"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRenameSubmit}
+                            disabled={renameThreadMutation.isPending || !renameValue.trim()}
+                            className="p-1 text-green-600 hover:text-green-700 disabled:opacity-50"
+                            data-testid="button-rename-save"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRenameCancel}
+                            className="p-1 text-neutral-darkest/50 hover:text-neutral-darkest"
+                            data-testid="button-rename-cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-sm font-medium text-neutral-darkest truncate flex-1" data-testid="text-thread-title">
+                            {threads.find(t => t.id === activeThreadId)?.title || "Untitled"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleRenameStart}
+                            className="p-1 text-neutral-darkest/40 hover:text-neutral-darkest"
+                            title="Rename conversation"
+                            data-testid="button-rename-thread"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
                     </div>
-                    <Link href="/how-civilla-works">
+                  )}
+                </div>
+
+                {!activeThreadId ? (
+                  <div className="flex-1 flex flex-col items-center justify-center px-4">
+                    <div className="text-center mb-6">
+                      <p className="font-sans text-sm text-neutral-darkest/60 mb-3">
+                        {disclaimerData?.welcome || "Start a conversation with Lexi"}
+                      </p>
                       <button
                         type="button"
-                        className="mt-4 flex items-center gap-1 mx-auto text-xs text-neutral-darkest/60 hover:text-primary transition-colors"
-                        data-testid="link-how-lexi-works"
-                        onClick={() => setOpen(false)}
+                        onClick={startNewThread}
+                        disabled={createThreadMutation.isPending}
+                        className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-medium bg-[#314143] text-white hover:opacity-90 active:opacity-80 disabled:opacity-50 transition-opacity"
+                        data-testid="button-start-conversation"
+                        aria-label="Start conversation"
                       >
-                        <HelpCircle className="w-3 h-3" />
-                        Learn how Lexi works
+                        <MessageSquare className="w-4 h-4" />
+                        {createThreadMutation.isPending ? "Starting..." : "Start conversation"}
                       </button>
-                    </Link>
-                  </div>
-                </div>
-              ) : messagesLoading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-neutral-darkest/40" />
-                </div>
-              ) : (
-                <>
-                  <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
-                    {messages.length === 0 && (
-                      <>
-                        <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
-                          {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
-                        </div>
-                        <div className="mt-4">
-                          <p className="text-xs font-medium text-neutral-darkest/60 mb-2">Suggested questions:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {SUGGESTED_QUESTIONS.map((q, idx) => (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => handleSuggestedQuestion(q)}
-                                disabled={sendMessageMutation.isPending || createThreadMutation.isPending}
-                                className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
-                                data-testid={`suggested-question-${idx}`}
-                              >
-                                {q}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {messages.map((m) => {
-                      const meta = m.metadata as MessageMetadata | null;
-                      const badge = m.role === "assistant" ? getIntentBadge(meta?.intent) : null;
-                      const showDeadlineButton = m.role === "assistant" && containsDeadlineInfo(m.content) && caseId;
-                      const metaSources = meta?.sources || [];
-                      
-                      return (
-                        <div key={m.id} className="space-y-1">
-                          {badge && (
-                            <div className="flex items-center gap-1 mr-8">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${badge.color}`}>
-                                <badge.icon className="w-3 h-3" />
-                                {badge.label}
-                              </span>
-                              {meta?.hadSources && (
-                                <span className="text-xs text-neutral-darkest/50">with sources</span>
-                              )}
-                            </div>
-                          )}
-                          <div
-                            className={[
-                              "rounded-lg px-3 py-2 text-sm",
-                              m.role === "user"
-                                ? "ml-8 bg-primary text-primary-foreground whitespace-pre-wrap"
-                                : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
-                            ].join(" ")}
-                          >
-                            {m.role === "assistant" ? (
-                              <>
-                                <LexiMessageBody content={m.content} />
-                                {metaSources.length > 0 && <LexiSourcesList sources={metaSources} />}
-                              </>
-                            ) : (
-                              m.content
-                            )}
-                          </div>
-                          {showDeadlineButton && (
-                            <div className="mr-8 pt-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddToDeadlines(m.content)}
-                                className="text-xs"
-                                data-testid={`button-add-deadline-${m.id}`}
-                              >
-                                <Clock className="w-3 h-3 mr-1" />
-                                Add to Deadlines
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {sendMessageMutation.isPending && (
-                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Thinking...
-                      </div>
-                    )}
-                    {isStreaming && streamingContent && (
-                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
-                        <LexiMessageBody content={streamingContent} />
-                        {streamingSources.length > 0 && <LexiSourcesList sources={streamingSources} />}
-                        <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-0.5 align-text-bottom" />
-                      </div>
-                    )}
-                    {isStreaming && !streamingContent && (
-                      <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Connecting...
-                      </div>
-                    )}
-                    <div ref={endRef} />
-                  </div>
-
-                  <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)] shrink-0">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1">
-                        {STYLE_OPTIONS.map((opt) => (
+                      {threadError && (
+                        <p className="mt-2 text-xs text-destructive" data-testid="lexi-thread-error">
+                          {threadError}
+                        </p>
+                      )}
+                    </div>
+                    <div className="w-full max-w-sm">
+                      <p className="text-xs font-medium text-neutral-darkest/60 mb-2 text-center">Or ask a question:</p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {SUGGESTED_QUESTIONS.slice(0, 3).map((q, idx) => (
                           <button
-                            key={opt.value}
+                            key={idx}
                             type="button"
-                            onClick={() => handleStyleChange(opt.value)}
-                            className={`px-2 py-1 text-xs rounded-md font-sans transition-colors ${
-                              stylePreset === opt.value
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-neutral-lightest text-neutral-darkest/70 hover:bg-neutral-light"
-                            }`}
-                            data-testid={`lexi-style-${opt.value}`}
+                            onClick={() => handleSuggestedQuestion(q)}
+                            disabled={sendMessageMutation.isPending || createThreadMutation.isPending}
+                            className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
+                            data-testid={`suggested-question-nothread-${idx}`}
                           >
-                            {opt.label}
+                            {q}
                           </button>
                         ))}
                       </div>
-                      <label className="flex items-center gap-1.5 cursor-pointer" title="Shorter, faster answers">
-                        <span className="text-xs text-neutral-darkest/60 font-sans">Fast</span>
+                      <Link href="/how-civilla-works">
                         <button
                           type="button"
-                          role="switch"
-                          aria-checked={fastMode}
-                          onClick={() => handleFastModeChange(!fastMode)}
-                          className={`relative w-8 h-5 rounded-full transition-colors ${
-                            fastMode ? "bg-primary" : "bg-neutral-light"
-                          }`}
-                          data-testid="lexi-fast-toggle"
+                          className="mt-4 flex items-center gap-1 mx-auto text-xs text-neutral-darkest/60 hover:text-primary transition-colors"
+                          data-testid="link-how-lexi-works"
+                          onClick={() => setOpen(false)}
                         >
-                          <span
-                            className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                              fastMode ? "translate-x-3" : "translate-x-0"
-                            }`}
-                          />
+                          <HelpCircle className="w-3 h-3" />
+                          Learn how Lexi works
                         </button>
-                      </label>
+                      </Link>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        ref={inputRef}
-                        className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
-                        placeholder="Ask Lexi..."
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={onKeyDown}
-                        disabled={sendMessageMutation.isPending}
-                        data-testid="lexi-input"
-                      />
-                      <button
-                        type="button"
-                        onClick={send}
-                        disabled={sendMessageMutation.isPending || !input.trim()}
-                        className="rounded-md bg-primary text-primary-foreground px-4 py-3 min-h-[44px] font-sans text-sm disabled:opacity-50 active:opacity-80"
-                        data-testid="lexi-send"
-                      >
-                        {sendMessageMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "Send"
-                        )}
-                      </button>
-                    </div>
-                    {inlineError && (
-                      <p className="mt-2 text-xs text-destructive" data-testid="lexi-inline-error">
-                        {inlineError}
-                      </p>
-                    )}
                   </div>
-                </>
-              )}
-            </>
-          )}
+                ) : messagesLoading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-neutral-darkest/40" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+                      {messages.length === 0 && (
+                        <>
+                          <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
+                            {disclaimerData?.welcome || "Hi, I'm Lexi! How can I help you today?"}
+                          </div>
+                          <div className="mt-4">
+                            <p className="text-xs font-medium text-neutral-darkest/60 mb-2">Suggested questions:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {SUGGESTED_QUESTIONS.map((q, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handleSuggestedQuestion(q)}
+                                  disabled={sendMessageMutation.isPending || createThreadMutation.isPending}
+                                  className="text-left text-xs px-3 py-2 rounded-lg border border-neutral-light bg-white hover:bg-neutral-lightest text-neutral-darkest/80 transition-colors disabled:opacity-50"
+                                  data-testid={`suggested-question-${idx}`}
+                                >
+                                  {q}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      {messages.map((m) => {
+                        const meta = m.metadata as MessageMetadata | null;
+                        const badge = m.role === "assistant" ? getIntentBadge(meta?.intent) : null;
+                        const showDeadlineButton = m.role === "assistant" && containsDeadlineInfo(m.content) && caseId;
+                        const metaSources = meta?.sources || [];
+                        
+                        return (
+                          <div key={m.id} className="space-y-1">
+                            {badge && (
+                              <div className="flex items-center gap-1 mr-8">
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${badge.color}`}>
+                                  <badge.icon className="w-3 h-3" />
+                                  {badge.label}
+                                </span>
+                                {meta?.hadSources && (
+                                  <span className="text-xs text-neutral-darkest/50">with sources</span>
+                                )}
+                              </div>
+                            )}
+                            <div
+                              className={[
+                                "rounded-lg px-3 py-2 text-sm",
+                                m.role === "user"
+                                  ? "ml-8 bg-primary text-primary-foreground whitespace-pre-wrap"
+                                  : "mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light",
+                              ].join(" ")}
+                            >
+                              {m.role === "assistant" ? (
+                                <>
+                                  <LexiMessageBody content={m.content} />
+                                  {metaSources.length > 0 && <LexiSourcesList sources={metaSources} />}
+                                </>
+                              ) : (
+                                m.content
+                              )}
+                            </div>
+                            {showDeadlineButton && (
+                              <div className="mr-8 pt-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAddToDeadlines(m.content)}
+                                  className="text-xs"
+                                  data-testid={`button-add-deadline-${m.id}`}
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Add to Deadlines
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {sendMessageMutation.isPending && (
+                        <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Thinking...
+                        </div>
+                      )}
+                      {isStreaming && streamingContent && (
+                        <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm">
+                          <LexiMessageBody content={streamingContent} />
+                          {streamingSources.length > 0 && <LexiSourcesList sources={streamingSources} />}
+                          <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-0.5 align-text-bottom" />
+                        </div>
+                      )}
+                      {isStreaming && !streamingContent && (
+                        <div className="mr-8 bg-neutral-lightest text-neutral-darkest border border-neutral-light rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Connecting...
+                        </div>
+                      )}
+                      <div ref={endRef} />
+                    </div>
+
+                    <div className="border-t border-neutral-light p-3 pb-[max(env(safe-area-inset-bottom),12px)] shrink-0">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1">
+                          {STYLE_OPTIONS.map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => handleStyleChange(opt.value)}
+                              className={`px-2 py-1 text-xs rounded-md font-sans transition-colors ${
+                                stylePreset === opt.value
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-neutral-lightest text-neutral-darkest/70 hover:bg-neutral-light"
+                              }`}
+                              data-testid={`lexi-style-${opt.value}`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        <label className="flex items-center gap-1.5 cursor-pointer" title="Shorter, faster answers">
+                          <span className="text-xs text-neutral-darkest/60 font-sans">Fast</span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={fastMode}
+                            onClick={() => handleFastModeChange(!fastMode)}
+                            className={`relative w-8 h-5 rounded-full transition-colors ${
+                              fastMode ? "bg-primary" : "bg-neutral-light"
+                            }`}
+                            data-testid="lexi-fast-toggle"
+                          >
+                            <span
+                              className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                                fastMode ? "translate-x-3" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                        </label>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          ref={inputRef}
+                          className="flex-1 rounded-md border border-neutral-light px-3 py-3 min-h-[44px] font-sans text-base sm:text-sm outline-none focus:ring-2 focus:ring-bush/30"
+                          placeholder="Ask Lexi..."
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyDown={onKeyDown}
+                          disabled={sendMessageMutation.isPending}
+                          data-testid="lexi-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={send}
+                          disabled={sendMessageMutation.isPending || !input.trim()}
+                          className="rounded-md bg-primary text-primary-foreground px-4 py-3 min-h-[44px] font-sans text-sm disabled:opacity-50 active:opacity-80"
+                          data-testid="lexi-send"
+                        >
+                          {sendMessageMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            "Send"
+                          )}
+                        </button>
+                      </div>
+                      {inlineError && (
+                        <p className="mt-2 text-xs text-destructive" data-testid="lexi-inline-error">
+                          {inlineError}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        );
+
+        if (isExpanded) {
+          return (
+            <div
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40"
+              onClick={() => toggleExpanded(false)}
+              data-testid="lexi-expanded-overlay"
+            >
+              <div
+                className="w-[90vw] max-w-[1200px] h-[88vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-label="Lexi expanded workspace"
+              >
+                <div className="flex-1 flex flex-col min-h-0">
+                  {panelHeader}
+                  {panelBody}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div
+            className="fixed z-50 w-full h-full sm:w-[clamp(320px,72vw,520px)] sm:h-auto sm:right-6 right-0 top-0"
+            style={{
+              top: "calc(var(--civilla-nav-h, 64px) + 12px)",
+              bottom: "12px",
+            }}
+            role="dialog"
+            aria-label="Lexi panel"
+          >
+            <div className="relative h-full w-full">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close Lexi"
+                data-testid="lexi-toggle-close"
+                className="hidden sm:flex absolute left-[-44px] top-1/2 -translate-y-1/2 h-32 w-11 rounded-l-xl bg-[#314143] text-white border border-[hsl(var(--module-tile-border))] items-center justify-center shadow cursor-pointer hover:bg-[#263233] transition-colors"
+              >
+                <div
+                  className="flex items-center gap-2"
+                  style={{
+                    transform: "rotate(-90deg)",
+                    whiteSpace: "nowrap",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <span className="text-white text-lg leading-none">&rsaquo;</span>
+                  <span className="text-white font-semibold tracking-wide">Lexi</span>
+                </div>
+              </button>
+
+              <div className="h-full w-full bg-white border border-neutral-light shadow-2xl sm:rounded-2xl flex flex-col overflow-hidden">
+                <div className="flex-1 flex flex-col min-h-0">
+                  {panelHeader}
+                  {panelBody}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      )}
+        );
+      })()}
     </>
   );
 }

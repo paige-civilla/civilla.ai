@@ -1,0 +1,141 @@
+# REPLIT PROMPT — Fix “middleware looking in the wrong place” auth bug across the whole app (NO `as any`), plus stop the “flash page → back to Your Cases” behavior
+
+You are working in a TypeScript fullstack app (Express + sessions + React). We are seeing this symptom:
+- Clicking any in-app page briefly loads the correct route, then it bounces back to “Your Cases”.
+- Server logs show lots of `401 Unauthorized` on `/api/cases/:caseId/...` endpoints **even right after a successful login**.
+This is almost always caused by **inconsistent auth identity lookup** across middleware/routes (some code checks `req.user.id`, some checks `req.session.userId`, some uses `as any` and reads the wrong property → identity missing → 401 → frontend redirects).
+
+Your task: **standardize auth identity in one place**, remove unsafe casting, and ensure every protected endpoint + case access check uses the same identity source.
+
+---
+
+## 1) Create ONE canonical auth accessor (server/auth/getUserId.ts)
+
+Create a small utility that returns the logged-in user id from the ONE true source used by our login/session system.
+
+- If our app uses server-side sessions, user id should be retrieved from **`req.session.userId`** (or whatever we set at login time).
+- Do NOT rely on `req.user` unless you can prove Passport always populates it for every request.
+- Add exhaustive, safe fallback checks, but no `as any`.
+
+Implement:
+
+- `export function getUserId(req: Request): string | null`
+- It should check in order:
+  1) `req.session?.userId` (primary)
+  2) `req.user?.id` (optional fallback only if typed)
+- Return null if none.
+
+Also define a typed session augmentation so TS knows `req.session.userId` exists:
+- Add a `types/express-session.d.ts` (or `server/types/express-session.d.ts`) to extend SessionData with `userId?: string`.
+
+---
+
+## 2) Replace ALL identity checks in middleware/routes with getUserId(req)
+
+Search the repo for any of these patterns and replace them:
+- `req.user?.id`
+- `(req as any).user?.id`
+- `(req as any).session?.userId`
+- `req.session.userId` used inconsistently
+- Any custom “getAuthIdentity” that returns something different per file
+
+Goal: **every requireAuth / requireCaseAccess / requireAdmin / grantViewer / paywall / quota / activity logger** uses:
+
+- `const userId = getUserId(req);`
+- If null → return 401 JSON `{ error: "Unauthorized" }`
+
+Do this in:
+- `requireAuth` middleware
+- Any “case ownership” middleware that checks case.userId
+- Admin/grant role middlewares
+- Paywall/quota middlewares (they must not attempt to look up user without canonical userId)
+- Activity endpoints like `/api/activity/module-view` (should not log if unauthorized; return 401)
+
+NO `as any` anywhere in request identity logic.
+
+---
+
+## 3) Fix the “flash then back to Your Cases” redirect at the frontend root cause
+
+That bounce is typically triggered by:
+- A protected page loads → API calls return 401 → global handler redirects to `/app/cases` (or `/app`) repeatedly.
+
+Do this:
+
+A) Ensure **fetch calls include credentials** everywhere:
+- In your shared API client (wherever `fetch` is wrapped), set:
+  - `credentials: "include"`
+- If you have multiple fetch helpers, unify them.
+
+B) Ensure the global 401 handler does NOT redirect to “Your Cases” unless the user is truly logged out.
+- If 401 occurs on a case endpoint while `/api/auth/me` still returns a user, that’s a bug we’re fixing; do not bounce route in a loop.
+- Implement a safer behavior:
+  - On 401: trigger a single `auth refresh` call (`/api/auth/me`)
+    - If that returns 200 user → show a non-blocking toast “Session desynced, retrying…” and retry the failed call once.
+    - If that returns 401 → redirect to `/login`.
+
+C) Add loop protection:
+- If you already attempted refresh once in the last 10s, do not keep redirecting; instead show “Session expired. Please log in again.” with a Login button.
+
+---
+
+## 4) Fix the specific bug Jack described (“checking user identity in the wrong place”)
+
+Implement a quick hard fail diagnostic that logs ONCE per request (dev only):
+- In `requireAuth`, if unauthorized:
+  - log whether `req.session` exists, whether `req.session.userId` exists, and whether `req.user` exists.
+This will confirm which property is actually correct.
+
+Also verify login sets the userId in the same place you read it:
+- In `/api/auth/login` success handler:
+  - Ensure it sets: `req.session.userId = user.id`
+  - Ensure it calls `req.session.save(...)` (or relies on express-session auto save) before returning.
+
+---
+
+## 5) Add a small integration test script (no Playwright) to lock this in
+
+Create `script/authSmoke.ts` that:
+1) Logs in with TEST_EMAIL/TEST_PASSWORD
+2) Captures the session cookie
+3) Calls:
+   - `/api/auth/me` (expect 200)
+   - `/api/cases` (expect 200)
+   - If at least one case exists: call `/api/cases/:caseId` and `/api/cases/:caseId/phase-status` (expect 200)
+4) Prints PASS/FAIL clearly.
+
+Run it in CI / before deploy to prevent regressions.
+
+---
+
+## 6) Fix “can’t access Account Settings during onboarding when menu open”
+
+This is likely a UI overlay/scroll/disabled pointer-events issue, but also can be auth bounce.
+
+Do both:
+- Ensure Account Settings route is NOT blocked by onboarding guard unless we intentionally block it.
+- In mobile menu overlay, ensure:
+  - The menu panel is `position: fixed` and scrollable
+  - The page behind can remain scrollable only if you intentionally allow it; otherwise keep behind locked BUT menu must scroll.
+  - If you want both scrollable independently: do not apply `overflow: hidden` on `body`; instead keep overlay but allow background scroll (careful). Prefer: background locked, menu scrolls.
+
+But the priority is: **Account Settings link must be clickable** (z-index + pointer-events + not disabled).
+
+---
+
+## 7) Output: give me a single summary + list of files changed
+
+After implementing, provide:
+- A short explanation of what was broken and why (in plain English)
+- Proof via:
+  - logs showing case endpoints no longer 401 after login
+  - `npx tsx script/authSmoke.ts` output showing PASS
+
+---
+
+### Acceptance criteria (must meet)
+- No `as any` used for auth identity anywhere.
+- `getUserId(req)` is the only way to get identity in server code.
+- After login, navigating to Evidence/Timeline/etc does NOT bounce back to “Your Cases”.
+- `/api/cases/:caseId/*` endpoints return 200 when logged in.
+- Account Settings is accessible at all times.
