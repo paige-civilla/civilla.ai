@@ -161,15 +161,40 @@ export function log(message: string, source = "express") {
   logger.info(message, { source });
 }
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+    app.use((req, res, next) => {
+      const start = Date.now();
+      const path = req.path;
+      let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+      const originalResJson = res.json;
+      res.json = function (bodyJson, ...args) {
+        capturedJsonResponse = bodyJson;
+        return originalResJson.apply(res, [bodyJson, ...args]);
+      };
+
+      res.on("finish", () => {
+        const duration = Date.now() - start;
+        if (path.startsWith("/api")) {
+          let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+
+          if (capturedJsonResponse) {
+            const jsonStr = JSON.stringify(capturedJsonResponse);
+            const MAX_LOG_SIZE = 1000; // Limit log size to prevent memory issues
+
+            if (jsonStr.length > MAX_LOG_SIZE) {
+              const preview = jsonStr.substring(0, MAX_LOG_SIZE);
+              logLine += ` :: ${preview}...[truncated ${jsonStr.length - MAX_LOG_SIZE} chars]`;
+            } else {
+              logLine += ` :: ${jsonStr}`;
+            }
+          }
+
+          log(logLine);
+        }
+      });
+
+      next();
+    });
   };
 
   res.on("finish", () => {
