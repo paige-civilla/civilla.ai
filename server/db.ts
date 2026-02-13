@@ -32,17 +32,29 @@ console.log(`DB env var used: DATABASE_URL`);
 console.log(`DB host: ${dbHost}`);
 
 const knownInternalHosts = ["helium", "localhost", "127.0.0.1"];
-if (knownInternalHosts.some(h => dbHost.includes(h)) && process.env.NODE_ENV === "production") {
-  console.warn(`WARNING: DATABASE_URL points to internal host '${dbHost}'; deployment needs externally reachable Postgres`);
+if (
+  knownInternalHosts.some((h) => dbHost.includes(h)) &&
+  process.env.NODE_ENV === "production"
+) {
+  console.warn(
+    `WARNING: DATABASE_URL points to internal host '${dbHost}'; deployment needs externally reachable Postgres`,
+  );
 }
 
 export const pool = new Pool({
-  connectionString: connectionString,
+  connectionString: databaseUrl,
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection can't be established
+  maxUses: 7500, // Close (and replace) a connection after it has been used 7500 times
 });
 
 export const db = drizzle(pool, { schema });
 
-export async function testDbConnection(): Promise<{ ok: boolean; error?: string }> {
+export async function testDbConnection(): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
   try {
     const result = await pool.query("SELECT 1 as test");
     if (result.rows[0]?.test === 1) {
@@ -57,39 +69,60 @@ export async function testDbConnection(): Promise<{ ok: boolean; error?: string 
 }
 
 async function tableExists(tableName: string): Promise<boolean> {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     SELECT EXISTS (
       SELECT FROM information_schema.tables 
       WHERE table_schema = 'public' 
       AND table_name = $1
     ) as exists
-  `, [tableName]);
+  `,
+    [tableName],
+  );
   return result.rows[0]?.exists ?? false;
 }
 
-async function columnExists(tableName: string, columnName: string): Promise<boolean> {
-  const result = await pool.query(`
+async function columnExists(
+  tableName: string,
+  columnName: string,
+): Promise<boolean> {
+  const result = await pool.query(
+    `
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = $1 AND column_name = $2
-  `, [tableName, columnName]);
+  `,
+    [tableName, columnName],
+  );
   return result.rows.length > 0;
 }
 
-async function addColumnIfMissing(tableName: string, columnName: string, sqlTypeAndConstraints: string): Promise<boolean> {
+async function addColumnIfMissing(
+  tableName: string,
+  columnName: string,
+  sqlTypeAndConstraints: string,
+): Promise<boolean> {
   try {
     if (await columnExists(tableName, columnName)) {
       return false;
     }
-    await pool.query(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${sqlTypeAndConstraints}`);
+    await pool.query(
+      `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${sqlTypeAndConstraints}`,
+    );
     console.log(`[DB MIGRATION] Added column ${tableName}.${columnName}`);
     return true;
   } catch (err) {
-    console.log(`[DB MIGRATION] ${tableName}.${columnName} skipped:`, err instanceof Error ? err.message : err);
+    console.log(
+      `[DB MIGRATION] ${tableName}.${columnName} skipped:`,
+      err instanceof Error ? err.message : err,
+    );
     return false;
   }
 }
 
-async function addIndexIfMissing(indexName: string, createIndexSql: string): Promise<boolean> {
+async function addIndexIfMissing(
+  indexName: string,
+  createIndexSql: string,
+): Promise<boolean> {
   try {
     await pool.query(createIndexSql);
     return true;
@@ -101,41 +134,87 @@ async function addIndexIfMissing(indexName: string, createIndexSql: string): Pro
 async function ensureCasesColumns(): Promise<void> {
   await addColumnIfMissing("cases", "nickname", "TEXT");
   await addColumnIfMissing("cases", "case_number", "TEXT");
-  await addColumnIfMissing("cases", "starting_point", "TEXT NOT NULL DEFAULT 'not_sure'");
-  await addColumnIfMissing("cases", "has_children", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(
+    "cases",
+    "starting_point",
+    "TEXT NOT NULL DEFAULT 'not_sure'",
+  );
+  await addColumnIfMissing(
+    "cases",
+    "has_children",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
 }
 
 async function ensureExhibitListColumns(): Promise<void> {
-  await addColumnIfMissing("exhibit_lists", "is_used_for_filing", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(
+    "exhibit_lists",
+    "is_used_for_filing",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
   await addColumnIfMissing("exhibit_lists", "filing_label", "TEXT");
-  await addColumnIfMissing("exhibit_lists", "cover_page_enabled", "BOOLEAN NOT NULL DEFAULT true");
+  await addColumnIfMissing(
+    "exhibit_lists",
+    "cover_page_enabled",
+    "BOOLEAN NOT NULL DEFAULT true",
+  );
   await addColumnIfMissing("exhibit_lists", "cover_page_title", "TEXT");
   await addColumnIfMissing("exhibit_lists", "cover_page_subtitle", "TEXT");
   await addColumnIfMissing("exhibit_lists", "notes", "TEXT");
   await addColumnIfMissing("exhibit_lists", "used_for_filing", "TEXT");
-  await addColumnIfMissing("exhibit_lists", "used_for_filing_date", "TIMESTAMP");
-  await addColumnIfMissing("exhibit_lists", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addColumnIfMissing(
+    "exhibit_lists",
+    "used_for_filing_date",
+    "TIMESTAMP",
+  );
+  await addColumnIfMissing(
+    "exhibit_lists",
+    "updated_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
 }
 
 async function ensureEvidenceAiAnalysesColumns(): Promise<void> {
-  await addColumnIfMissing("evidence_ai_analyses", "status", "TEXT NOT NULL DEFAULT 'complete'");
+  await addColumnIfMissing(
+    "evidence_ai_analyses",
+    "status",
+    "TEXT NOT NULL DEFAULT 'complete'",
+  );
   await addColumnIfMissing("evidence_ai_analyses", "model", "TEXT");
   await addColumnIfMissing("evidence_ai_analyses", "summary", "TEXT");
   await addColumnIfMissing("evidence_ai_analyses", "findings", "JSONB");
   await addColumnIfMissing("evidence_ai_analyses", "error", "TEXT");
-  await addColumnIfMissing("evidence_ai_analyses", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addColumnIfMissing(
+    "evidence_ai_analyses",
+    "updated_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
 }
 
 async function ensureTimelineCategoryColumns(): Promise<void> {
   await addColumnIfMissing("timeline_categories", "case_id", "VARCHAR(255)");
-  await addColumnIfMissing("timeline_categories", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
-  await addIndexIfMissing("timeline_categories_case_idx", 
-    "CREATE INDEX IF NOT EXISTS timeline_categories_case_idx ON timeline_categories(case_id)");
+  await addColumnIfMissing(
+    "timeline_categories",
+    "updated_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
+  await addIndexIfMissing(
+    "timeline_categories_case_idx",
+    "CREATE INDEX IF NOT EXISTS timeline_categories_case_idx ON timeline_categories(case_id)",
+  );
 }
 
 async function ensureEvidenceExtractionsColumns(): Promise<void> {
-  await addColumnIfMissing("evidence_extractions", "status", "TEXT NOT NULL DEFAULT 'queued'");
-  await addColumnIfMissing("evidence_extractions", "provider", "TEXT NOT NULL DEFAULT 'internal'");
+  await addColumnIfMissing(
+    "evidence_extractions",
+    "status",
+    "TEXT NOT NULL DEFAULT 'queued'",
+  );
+  await addColumnIfMissing(
+    "evidence_extractions",
+    "provider",
+    "TEXT NOT NULL DEFAULT 'internal'",
+  );
   await addColumnIfMissing("evidence_extractions", "mime_type", "TEXT");
   await addColumnIfMissing("evidence_extractions", "page_count", "INTEGER");
   await addColumnIfMissing("evidence_extractions", "error", "TEXT");
@@ -145,68 +224,210 @@ async function ensureEvidenceExtractionsColumns(): Promise<void> {
 }
 
 async function ensureEvidenceNotesColumns(): Promise<void> {
-  await addColumnIfMissing("evidence_notes", "is_resolved", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("evidence_notes", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addColumnIfMissing(
+    "evidence_notes",
+    "is_resolved",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "evidence_notes",
+    "updated_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
 }
 
 async function ensureExhibitSnippetsColumns(): Promise<void> {
   await addColumnIfMissing("exhibit_snippets", "note_id", "VARCHAR(255)");
   await addColumnIfMissing("exhibit_snippets", "timestamp_hint", "TEXT");
-  await addColumnIfMissing("exhibit_snippets", "sort_order", "INTEGER NOT NULL DEFAULT 0");
+  await addColumnIfMissing(
+    "exhibit_snippets",
+    "sort_order",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
 }
 
 async function ensureTrialPrepShortlistColumns(): Promise<void> {
   await addColumnIfMissing("trial_prep_shortlist", "color", "TEXT");
-  await addColumnIfMissing("trial_prep_shortlist", "is_pinned", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("trial_prep_shortlist", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addColumnIfMissing(
+    "trial_prep_shortlist",
+    "is_pinned",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "trial_prep_shortlist",
+    "updated_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
 }
 
 async function ensureUserProfileColumns(): Promise<void> {
-  await addColumnIfMissing("user_profiles", "auto_fill_choice_made", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "default_role", "TEXT NOT NULL DEFAULT 'self_represented'");
+  await addColumnIfMissing(
+    "user_profiles",
+    "auto_fill_choice_made",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "default_role",
+    "TEXT NOT NULL DEFAULT 'self_represented'",
+  );
   await addColumnIfMissing("user_profiles", "bar_number", "TEXT");
   await addColumnIfMissing("user_profiles", "firm_name", "TEXT");
   await addColumnIfMissing("user_profiles", "petitioner_name", "TEXT");
   await addColumnIfMissing("user_profiles", "respondent_name", "TEXT");
-  await addColumnIfMissing("user_profiles", "onboarding_completed", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "onboarding_completed_at", "TIMESTAMP");
+  await addColumnIfMissing(
+    "user_profiles",
+    "onboarding_completed",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "onboarding_completed_at",
+    "TIMESTAMP",
+  );
   await addColumnIfMissing("user_profiles", "tos_accepted_at", "TIMESTAMP");
   await addColumnIfMissing("user_profiles", "privacy_accepted_at", "TIMESTAMP");
-  await addColumnIfMissing("user_profiles", "disclaimers_accepted_at", "TIMESTAMP");
-  await addColumnIfMissing("user_profiles", "tos_version", "TEXT NOT NULL DEFAULT 'v1'");
-  await addColumnIfMissing("user_profiles", "privacy_version", "TEXT NOT NULL DEFAULT 'v1'");
-  await addColumnIfMissing("user_profiles", "disclaimers_version", "TEXT NOT NULL DEFAULT 'v1'");
-  await addColumnIfMissing("user_profiles", "calendar_task_color", "TEXT NOT NULL DEFAULT '#2E7D32'");
-  await addColumnIfMissing("user_profiles", "calendar_deadline_color", "TEXT NOT NULL DEFAULT '#C62828'");
-  await addColumnIfMissing("user_profiles", "calendar_timeline_color", "TEXT NOT NULL DEFAULT '#1565C0'");
-  await addColumnIfMissing("user_profiles", "onboarding_deferred", "JSONB NOT NULL DEFAULT '{}'");
-  await addColumnIfMissing("user_profiles", "onboarding_status", "TEXT NOT NULL DEFAULT 'incomplete'");
-  await addColumnIfMissing("user_profiles", "start_here_seen", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "is_admin", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "is_grant_viewer", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "subscription_tier", "TEXT NOT NULL DEFAULT 'free'");
+  await addColumnIfMissing(
+    "user_profiles",
+    "disclaimers_accepted_at",
+    "TIMESTAMP",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "tos_version",
+    "TEXT NOT NULL DEFAULT 'v1'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "privacy_version",
+    "TEXT NOT NULL DEFAULT 'v1'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "disclaimers_version",
+    "TEXT NOT NULL DEFAULT 'v1'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "calendar_task_color",
+    "TEXT NOT NULL DEFAULT '#2E7D32'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "calendar_deadline_color",
+    "TEXT NOT NULL DEFAULT '#C62828'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "calendar_timeline_color",
+    "TEXT NOT NULL DEFAULT '#1565C0'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "onboarding_deferred",
+    "JSONB NOT NULL DEFAULT '{}'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "onboarding_status",
+    "TEXT NOT NULL DEFAULT 'incomplete'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "start_here_seen",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "is_admin",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "is_grant_viewer",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "subscription_tier",
+    "TEXT NOT NULL DEFAULT 'free'",
+  );
   await addColumnIfMissing("user_profiles", "subscription_source", "TEXT");
-  await addColumnIfMissing("user_profiles", "is_lifetime", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(
+    "user_profiles",
+    "is_lifetime",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
   await addColumnIfMissing("user_profiles", "comped_reason", "TEXT");
-  await addColumnIfMissing("user_profiles", "drafting_disclaimer_accepted_at", "TIMESTAMP");
+  await addColumnIfMissing(
+    "user_profiles",
+    "drafting_disclaimer_accepted_at",
+    "TIMESTAMP",
+  );
   await addColumnIfMissing("user_profiles", "stripe_customer_id", "TEXT");
   await addColumnIfMissing("user_profiles", "stripe_subscription_id", "TEXT");
   await addColumnIfMissing("user_profiles", "stripe_price_id", "TEXT");
-  await addColumnIfMissing("user_profiles", "subscription_status", "TEXT NOT NULL DEFAULT 'none'");
-  await addColumnIfMissing("user_profiles", "add_on_second_case", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "add_on_archive_mode", "BOOLEAN NOT NULL DEFAULT false");
-  await addColumnIfMissing("user_profiles", "usage_bytes_month", "BIGINT NOT NULL DEFAULT 0");
-  await addColumnIfMissing("user_profiles", "data_cap_overage_paid_at", "TIMESTAMP");
+  await addColumnIfMissing(
+    "user_profiles",
+    "subscription_status",
+    "TEXT NOT NULL DEFAULT 'none'",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "add_on_second_case",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "add_on_archive_mode",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "usage_bytes_month",
+    "BIGINT NOT NULL DEFAULT 0",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "data_cap_overage_paid_at",
+    "TIMESTAMP",
+  );
   await addColumnIfMissing("user_profiles", "last_overage_invoice_id", "TEXT");
   await addColumnIfMissing("user_profiles", "trial_ends_at", "TIMESTAMP");
-  await addColumnIfMissing("user_profiles", "credits_claims_remaining", "INTEGER NOT NULL DEFAULT 0");
-  await addColumnIfMissing("user_profiles", "credits_patterns_remaining", "INTEGER NOT NULL DEFAULT 0");
-  await addColumnIfMissing("user_profiles", "credits_documents_remaining", "INTEGER NOT NULL DEFAULT 0");
-  await addColumnIfMissing("user_profiles", "credits_ocr_pages_remaining", "INTEGER NOT NULL DEFAULT 0");
-  await addColumnIfMissing("user_profiles", "analysis_credits_remaining", "INTEGER NOT NULL DEFAULT 0");
-  await addColumnIfMissing("user_profiles", "last_processing_pack_purchase_at", "TIMESTAMP");
-  await addIndexIfMissing("idx_user_profiles_stripe_customer", 
-    "CREATE INDEX IF NOT EXISTS idx_user_profiles_stripe_customer ON user_profiles(stripe_customer_id)");
+  await addColumnIfMissing(
+    "user_profiles",
+    "credits_claims_remaining",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "credits_patterns_remaining",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "credits_documents_remaining",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "credits_ocr_pages_remaining",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "analysis_credits_remaining",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  await addColumnIfMissing(
+    "user_profiles",
+    "last_processing_pack_purchase_at",
+    "TIMESTAMP",
+  );
+  await addIndexIfMissing(
+    "idx_user_profiles_stripe_customer",
+    "CREATE INDEX IF NOT EXISTS idx_user_profiles_stripe_customer ON user_profiles(stripe_customer_id)",
+  );
 }
 
 async function ensureEvidenceFilesColumns(): Promise<void> {
@@ -217,34 +438,70 @@ async function ensureEvidenceFilesColumns(): Promise<void> {
 
 async function ensureTimelineEventsColumns(): Promise<void> {
   await addColumnIfMissing("timeline_events", "category_id", "VARCHAR(255)");
-  await addIndexIfMissing("idx_timeline_events_category", 
-    "CREATE INDEX IF NOT EXISTS idx_timeline_events_category ON timeline_events(category_id)");
+  await addIndexIfMissing(
+    "idx_timeline_events_category",
+    "CREATE INDEX IF NOT EXISTS idx_timeline_events_category ON timeline_events(category_id)",
+  );
 }
 
 async function ensureCaseEvidenceNotesColumns(): Promise<void> {
-  await addColumnIfMissing("case_evidence_notes", "timestamp_seconds", "INTEGER");
-  await addColumnIfMissing("case_evidence_notes", "is_key", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(
+    "case_evidence_notes",
+    "timestamp_seconds",
+    "INTEGER",
+  );
+  await addColumnIfMissing(
+    "case_evidence_notes",
+    "is_key",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
 }
 
 async function ensureExhibitEvidenceColumns(): Promise<void> {
-  await addColumnIfMissing("exhibit_evidence", "exhibit_list_id", "VARCHAR(255)");
-  await addColumnIfMissing("exhibit_evidence", "evidence_file_id", "VARCHAR(255)");
-  await addColumnIfMissing("exhibit_evidence", "sort_order", "INTEGER NOT NULL DEFAULT 0");
+  await addColumnIfMissing(
+    "exhibit_evidence",
+    "exhibit_list_id",
+    "VARCHAR(255)",
+  );
+  await addColumnIfMissing(
+    "exhibit_evidence",
+    "evidence_file_id",
+    "VARCHAR(255)",
+  );
+  await addColumnIfMissing(
+    "exhibit_evidence",
+    "sort_order",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
   await addColumnIfMissing("exhibit_evidence", "label", "TEXT");
   await addColumnIfMissing("exhibit_evidence", "notes", "TEXT");
-  await addIndexIfMissing("idx_exhibit_evidence_list", 
-    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_list ON exhibit_evidence(exhibit_list_id)");
-  await addIndexIfMissing("idx_exhibit_evidence_file", 
-    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_file ON exhibit_evidence(evidence_file_id)");
-  await addIndexIfMissing("idx_exhibit_evidence_sort", 
-    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_sort ON exhibit_evidence(exhibit_list_id, sort_order)");
+  await addIndexIfMissing(
+    "idx_exhibit_evidence_list",
+    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_list ON exhibit_evidence(exhibit_list_id)",
+  );
+  await addIndexIfMissing(
+    "idx_exhibit_evidence_file",
+    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_file ON exhibit_evidence(evidence_file_id)",
+  );
+  await addIndexIfMissing(
+    "idx_exhibit_evidence_sort",
+    "CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_sort ON exhibit_evidence(exhibit_list_id, sort_order)",
+  );
 }
 
 async function ensureLexiThreadsColumns(): Promise<void> {
-  await addColumnIfMissing("lexi_threads", "disclaimer_shown", "BOOLEAN NOT NULL DEFAULT false");
+  await addColumnIfMissing(
+    "lexi_threads",
+    "disclaimer_shown",
+    "BOOLEAN NOT NULL DEFAULT false",
+  );
   await addColumnIfMissing("lexi_threads", "mode", "TEXT");
   await addColumnIfMissing("lexi_threads", "module_key", "TEXT");
-  await addColumnIfMissing("lexi_threads", "updated_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
+  await addColumnIfMissing(
+    "lexi_threads",
+    "updated_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
 }
 
 async function ensureLexiThreadsCaseIdNullable(): Promise<void> {
@@ -254,48 +511,101 @@ async function ensureLexiThreadsCaseIdNullable(): Promise<void> {
       FROM information_schema.columns 
       WHERE table_name = 'lexi_threads' AND column_name = 'case_id'
     `);
-    
-    if (result.rows.length > 0 && result.rows[0].is_nullable === 'NO') {
+
+    if (result.rows.length > 0 && result.rows[0].is_nullable === "NO") {
       console.log("[DB MIGRATION] Making lexi_threads.case_id nullable...");
-      await pool.query(`ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL`);
-      await pool.query(`ALTER TABLE lexi_threads ALTER COLUMN case_id DROP DEFAULT`);
+      await pool.query(
+        `ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL`,
+      );
+      await pool.query(
+        `ALTER TABLE lexi_threads ALTER COLUMN case_id DROP DEFAULT`,
+      );
       console.log("[DB MIGRATION] lexi_threads.case_id is now nullable");
     }
   } catch (error) {
-    console.log("[DB MIGRATION] ensureLexiThreadsCaseIdNullable skipped or already done:", error instanceof Error ? error.message : "Unknown error");
+    console.log(
+      "[DB MIGRATION] ensureLexiThreadsCaseIdNullable skipped or already done:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }
 
 async function ensureLexiMessagesColumns(): Promise<void> {
-  await addColumnIfMissing("lexi_messages", "role", "TEXT NOT NULL DEFAULT 'user'");
-  await addColumnIfMissing("lexi_messages", "content", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(
+    "lexi_messages",
+    "role",
+    "TEXT NOT NULL DEFAULT 'user'",
+  );
+  await addColumnIfMissing(
+    "lexi_messages",
+    "content",
+    "TEXT NOT NULL DEFAULT ''",
+  );
   await addColumnIfMissing("lexi_messages", "safety_flags", "JSONB");
   await addColumnIfMissing("lexi_messages", "metadata", "JSONB");
   await addColumnIfMissing("lexi_messages", "model", "TEXT");
-  await addColumnIfMissing("lexi_messages", "created_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
-  await addIndexIfMissing("idx_lexi_messages_thread_created",
-    "CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)");
+  await addColumnIfMissing(
+    "lexi_messages",
+    "created_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
+  await addIndexIfMissing(
+    "idx_lexi_messages_thread_created",
+    "CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)",
+  );
 }
 
 async function ensureCaseRuleTermsColumns(): Promise<void> {
-  await addColumnIfMissing("case_rule_terms", "module_key", "TEXT NOT NULL DEFAULT 'general'");
-  await addColumnIfMissing("case_rule_terms", "term_key", "TEXT NOT NULL DEFAULT ''");
-  await addColumnIfMissing("case_rule_terms", "jurisdiction_state", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "module_key",
+    "TEXT NOT NULL DEFAULT 'general'",
+  );
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "term_key",
+    "TEXT NOT NULL DEFAULT ''",
+  );
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "jurisdiction_state",
+    "TEXT NOT NULL DEFAULT ''",
+  );
   await addColumnIfMissing("case_rule_terms", "jurisdiction_county", "TEXT");
-  await addColumnIfMissing("case_rule_terms", "official_label", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "official_label",
+    "TEXT NOT NULL DEFAULT ''",
+  );
   await addColumnIfMissing("case_rule_terms", "also_known_as", "TEXT");
-  await addColumnIfMissing("case_rule_terms", "summary", "TEXT NOT NULL DEFAULT ''");
-  await addColumnIfMissing("case_rule_terms", "sources_json", "JSONB NOT NULL DEFAULT '[]'::jsonb");
-  await addColumnIfMissing("case_rule_terms", "last_checked_at", "TIMESTAMP NOT NULL DEFAULT NOW()");
-  await addIndexIfMissing("idx_case_rule_terms_user_case",
-    "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)");
-  await addIndexIfMissing("idx_case_rule_terms_term",
-    "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)");
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "summary",
+    "TEXT NOT NULL DEFAULT ''",
+  );
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "sources_json",
+    "JSONB NOT NULL DEFAULT '[]'::jsonb",
+  );
+  await addColumnIfMissing(
+    "case_rule_terms",
+    "last_checked_at",
+    "TIMESTAMP NOT NULL DEFAULT NOW()",
+  );
+  await addIndexIfMissing(
+    "idx_case_rule_terms_user_case",
+    "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)",
+  );
+  await addIndexIfMissing(
+    "idx_case_rule_terms_term",
+    "CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)",
+  );
 }
 
 export async function ensureSchemaMigrations(): Promise<void> {
   console.log("[DB MIGRATION] Running schema migrations...");
-  
+
   await ensureCasesColumns();
   await ensureExhibitListColumns();
   await ensureEvidenceAiAnalysesColumns();
@@ -313,49 +623,111 @@ export async function ensureSchemaMigrations(): Promise<void> {
   await ensureLexiThreadsCaseIdNullable();
   await ensureLexiMessagesColumns();
   await ensureCaseRuleTermsColumns();
-  
+
   const casesStartingPoint = await columnExists("cases", "starting_point");
-  const timelineCategoriesCaseId = await columnExists("timeline_categories", "case_id");
+  const timelineCategoriesCaseId = await columnExists(
+    "timeline_categories",
+    "case_id",
+  );
   const evidenceAiStatus = await columnExists("evidence_ai_analyses", "status");
-  const lexiThreadsDisclaimerShown = await columnExists("lexi_threads", "disclaimer_shown");
-  const evidenceExtractionsStatus = await columnExists("evidence_extractions", "status");
-  const caseRuleTermsModuleKey = await columnExists("case_rule_terms", "module_key");
-  
-  console.log(`[DB MIGRATION] Verification: cases.starting_point present: ${casesStartingPoint}`);
-  console.log(`[DB MIGRATION] Verification: timeline_categories.case_id present: ${timelineCategoriesCaseId}`);
-  console.log(`[DB MIGRATION] Verification: evidence_ai_analyses.status present: ${evidenceAiStatus}`);
+  const lexiThreadsDisclaimerShown = await columnExists(
+    "lexi_threads",
+    "disclaimer_shown",
+  );
+  const evidenceExtractionsStatus = await columnExists(
+    "evidence_extractions",
+    "status",
+  );
+  const caseRuleTermsModuleKey = await columnExists(
+    "case_rule_terms",
+    "module_key",
+  );
+
+  console.log(
+    `[DB MIGRATION] Verification: cases.starting_point present: ${casesStartingPoint}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: timeline_categories.case_id present: ${timelineCategoriesCaseId}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: evidence_ai_analyses.status present: ${evidenceAiStatus}`,
+  );
   const lexiThreadsCaseIdNullableResult = await pool.query(`
     SELECT is_nullable FROM information_schema.columns 
     WHERE table_name = 'lexi_threads' AND column_name = 'case_id'
   `);
-  const lexiThreadsCaseIdNullable = lexiThreadsCaseIdNullableResult.rows.length > 0 && lexiThreadsCaseIdNullableResult.rows[0].is_nullable === 'YES';
-  
-  console.log(`[DB MIGRATION] Verification: lexi_threads.disclaimer_shown present: ${lexiThreadsDisclaimerShown}`);
-  console.log(`[DB MIGRATION] Verification: lexi_threads.case_id nullable: ${lexiThreadsCaseIdNullable}`);
-  console.log(`[DB MIGRATION] Verification: evidence_extractions.status present: ${evidenceExtractionsStatus}`);
-  console.log(`[DB MIGRATION] Verification: case_rule_terms.module_key present: ${caseRuleTermsModuleKey}`);
-  
-  const billingStripeCustomerId = await columnExists("user_profiles", "stripe_customer_id");
-  const billingSubscriptionStatus = await columnExists("user_profiles", "subscription_status");
-  const billingAddOnSecondCase = await columnExists("user_profiles", "add_on_second_case");
-  console.log(`[DB MIGRATION] Verification: user_profiles.stripe_customer_id present: ${billingStripeCustomerId}`);
-  console.log(`[DB MIGRATION] Verification: user_profiles.subscription_status present: ${billingSubscriptionStatus}`);
-  console.log(`[DB MIGRATION] Verification: user_profiles.add_on_second_case present: ${billingAddOnSecondCase}`);
+  const lexiThreadsCaseIdNullable =
+    lexiThreadsCaseIdNullableResult.rows.length > 0 &&
+    lexiThreadsCaseIdNullableResult.rows[0].is_nullable === "YES";
+
+  console.log(
+    `[DB MIGRATION] Verification: lexi_threads.disclaimer_shown present: ${lexiThreadsDisclaimerShown}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: lexi_threads.case_id nullable: ${lexiThreadsCaseIdNullable}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: evidence_extractions.status present: ${evidenceExtractionsStatus}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: case_rule_terms.module_key present: ${caseRuleTermsModuleKey}`,
+  );
+
+  const billingStripeCustomerId = await columnExists(
+    "user_profiles",
+    "stripe_customer_id",
+  );
+  const billingSubscriptionStatus = await columnExists(
+    "user_profiles",
+    "subscription_status",
+  );
+  const billingAddOnSecondCase = await columnExists(
+    "user_profiles",
+    "add_on_second_case",
+  );
+  console.log(
+    `[DB MIGRATION] Verification: user_profiles.stripe_customer_id present: ${billingStripeCustomerId}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: user_profiles.subscription_status present: ${billingSubscriptionStatus}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: user_profiles.add_on_second_case present: ${billingAddOnSecondCase}`,
+  );
   console.log("[DB MIGRATION] Schema migrations complete");
 }
 
-export async function checkAiTableColumns(): Promise<{ ok: boolean; checks: Record<string, boolean> }> {
+export async function checkAiTableColumns(): Promise<{
+  ok: boolean;
+  checks: Record<string, boolean>;
+}> {
   const checks: Record<string, boolean> = {
-    "lexi_threads.disclaimer_shown": await columnExists("lexi_threads", "disclaimer_shown"),
-    "evidence_ai_analyses.status": await columnExists("evidence_ai_analyses", "status"),
-    "evidence_extractions.status": await columnExists("evidence_extractions", "status"),
-    "case_rule_terms.module_key": await columnExists("case_rule_terms", "module_key"),
+    "lexi_threads.disclaimer_shown": await columnExists(
+      "lexi_threads",
+      "disclaimer_shown",
+    ),
+    "evidence_ai_analyses.status": await columnExists(
+      "evidence_ai_analyses",
+      "status",
+    ),
+    "evidence_extractions.status": await columnExists(
+      "evidence_extractions",
+      "status",
+    ),
+    "case_rule_terms.module_key": await columnExists(
+      "case_rule_terms",
+      "module_key",
+    ),
   };
-  const ok = Object.values(checks).every(v => v === true);
+  const ok = Object.values(checks).every((v) => v === true);
   return { ok, checks };
 }
 
-async function initTable(tableName: string, createSQL: string, indexSQL: string[] = []): Promise<boolean> {
+async function initTable(
+  tableName: string,
+  createSQL: string,
+  indexSQL: string[] = [],
+): Promise<boolean> {
   try {
     if (await tableExists(tableName)) {
       console.log(`${tableName} table already exists`);
@@ -364,7 +736,7 @@ async function initTable(tableName: string, createSQL: string, indexSQL: string[
 
     console.log(`Creating ${tableName} table...`);
     await pool.query(createSQL);
-    
+
     for (const idx of indexSQL) {
       await pool.query(idx);
     }
@@ -381,7 +753,9 @@ async function initTable(tableName: string, createSQL: string, indexSQL: string[
 export async function initDbTables(): Promise<void> {
   console.log("Initializing database tables...");
 
-  await initTable("users", `
+  await initTable(
+    "users",
+    `
     CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       email TEXT NOT NULL UNIQUE,
@@ -390,9 +764,12 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `);
+  `,
+  );
 
-  await initTable("cases", `
+  await initTable(
+    "cases",
+    `
     CREATE TABLE IF NOT EXISTS cases (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -407,11 +784,13 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`
-  ]);
+  `,
+    [`CREATE INDEX IF NOT EXISTS idx_cases_user_id ON cases(user_id)`],
+  );
 
-  await initTable("user_profiles", `
+  await initTable(
+    "user_profiles",
+    `
     CREATE TABLE IF NOT EXISTS user_profiles (
       user_id VARCHAR(255) PRIMARY KEY REFERENCES users(id),
       full_name TEXT,
@@ -432,9 +811,12 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `);
+  `,
+  );
 
-  await initTable("timeline_events", `
+  await initTable(
+    "timeline_events",
+    `
     CREATE TABLE IF NOT EXISTS timeline_events (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -447,13 +829,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_timeline_events_case_id ON timeline_events(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_timeline_events_user_id ON timeline_events(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_timeline_events_event_date ON timeline_events(event_date)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_timeline_events_case_id ON timeline_events(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_timeline_events_user_id ON timeline_events(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_timeline_events_event_date ON timeline_events(event_date)`,
+    ],
+  );
 
-  await initTable("evidence_files", `
+  await initTable(
+    "evidence_files",
+    `
     CREATE TABLE IF NOT EXISTS evidence_files (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -469,13 +855,17 @@ export async function initDbTables(): Promise<void> {
       tags TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_id ON evidence_files(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_files_user_id ON evidence_files(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_created_at ON evidence_files(case_id, created_at)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_id ON evidence_files(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_files_user_id ON evidence_files(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_files_case_created_at ON evidence_files(case_id, created_at)`,
+    ],
+  );
 
-  await initTable("documents", `
+  await initTable(
+    "documents",
+    `
     CREATE TABLE IF NOT EXISTS documents (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -486,12 +876,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_documents_case_id ON documents(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_documents_case_id ON documents(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id)`,
+    ],
+  );
 
-  await initTable("generated_documents", `
+  await initTable(
+    "generated_documents",
+    `
     CREATE TABLE IF NOT EXISTS generated_documents (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -501,11 +895,15 @@ export async function initDbTables(): Promise<void> {
       payload_json JSONB NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_gen_docs_user_case_created_at ON generated_documents(user_id, case_id, created_at DESC)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_gen_docs_user_case_created_at ON generated_documents(user_id, case_id, created_at DESC)`,
+    ],
+  );
 
-  await initTable("case_children", `
+  await initTable(
+    "case_children",
+    `
     CREATE TABLE IF NOT EXISTS case_children (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -519,15 +917,19 @@ export async function initDbTables(): Promise<void> {
       notes TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_case_children_user_case ON case_children(user_id, case_id)`,
-    `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS first_name_status TEXT`,
-    `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS last_name_status TEXT`,
-    `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS date_of_birth_status TEXT`,
-    `ALTER TABLE case_children ALTER COLUMN date_of_birth DROP NOT NULL`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_case_children_user_case ON case_children(user_id, case_id)`,
+      `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS first_name_status TEXT`,
+      `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS last_name_status TEXT`,
+      `ALTER TABLE case_children ADD COLUMN IF NOT EXISTS date_of_birth_status TEXT`,
+      `ALTER TABLE case_children ALTER COLUMN date_of_birth DROP NOT NULL`,
+    ],
+  );
 
-  await initTable("tasks", `
+  await initTable(
+    "tasks",
+    `
     CREATE TABLE IF NOT EXISTS tasks (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -540,14 +942,18 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_tasks_case_id ON tasks(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_tasks_case_due ON tasks(case_id, due_date)`,
-    `CREATE INDEX IF NOT EXISTS idx_tasks_case_status ON tasks(case_id, status)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_tasks_case_id ON tasks(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_tasks_case_due ON tasks(case_id, due_date)`,
+      `CREATE INDEX IF NOT EXISTS idx_tasks_case_status ON tasks(case_id, status)`,
+    ],
+  );
 
-  await initTable("deadlines", `
+  await initTable(
+    "deadlines",
+    `
     CREATE TABLE IF NOT EXISTS deadlines (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -559,14 +965,18 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_deadlines_case_id ON deadlines(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_deadlines_user_id ON deadlines(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_deadlines_case_due ON deadlines(case_id, due_date)`,
-    `CREATE INDEX IF NOT EXISTS idx_deadlines_case_status ON deadlines(case_id, status)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_deadlines_case_id ON deadlines(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_deadlines_user_id ON deadlines(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_deadlines_case_due ON deadlines(case_id, due_date)`,
+      `CREATE INDEX IF NOT EXISTS idx_deadlines_case_status ON deadlines(case_id, status)`,
+    ],
+  );
 
-  await initTable("calendar_categories", `
+  await initTable(
+    "calendar_categories",
+    `
     CREATE TABLE IF NOT EXISTS calendar_categories (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -575,11 +985,15 @@ export async function initDbTables(): Promise<void> {
       color TEXT NOT NULL DEFAULT '#7BA3A8',
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_calendar_categories_user_case ON calendar_categories(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_calendar_categories_user_case ON calendar_categories(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("case_calendar_items", `
+  await initTable(
+    "case_calendar_items",
+    `
     CREATE TABLE IF NOT EXISTS case_calendar_items (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -593,11 +1007,15 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_calendar_items_user_case_date ON case_calendar_items(user_id, case_id, start_date)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_calendar_items_user_case_date ON case_calendar_items(user_id, case_id, start_date)`,
+    ],
+  );
 
-  await initTable("case_contacts", `
+  await initTable(
+    "case_contacts",
+    `
     CREATE TABLE IF NOT EXISTS case_contacts (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -612,15 +1030,19 @@ export async function initDbTables(): Promise<void> {
       notes TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_contacts_case_id ON case_contacts(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON case_contacts(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_contacts_case_role ON case_contacts(case_id, role)`,
-    `ALTER TABLE case_contacts ADD COLUMN IF NOT EXISTS contact_group TEXT NOT NULL DEFAULT 'case'`,
-    `CREATE INDEX IF NOT EXISTS idx_contacts_case_group ON case_contacts(user_id, case_id, contact_group)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_contacts_case_id ON case_contacts(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON case_contacts(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_contacts_case_role ON case_contacts(case_id, role)`,
+      `ALTER TABLE case_contacts ADD COLUMN IF NOT EXISTS contact_group TEXT NOT NULL DEFAULT 'case'`,
+      `CREATE INDEX IF NOT EXISTS idx_contacts_case_group ON case_contacts(user_id, case_id, contact_group)`,
+    ],
+  );
 
-  await initTable("case_communications", `
+  await initTable(
+    "case_communications",
+    `
     CREATE TABLE IF NOT EXISTS case_communications (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -641,16 +1063,20 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_communications_case_id ON case_communications(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_communications_user_id ON case_communications(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_communications_case_occurred ON case_communications(case_id, occurred_at DESC)`,
-    `CREATE INDEX IF NOT EXISTS idx_communications_case_followup ON case_communications(case_id, follow_up_at)`,
-    `CREATE INDEX IF NOT EXISTS idx_communications_status ON case_communications(status)`,
-    `CREATE INDEX IF NOT EXISTS idx_communications_needs_followup ON case_communications(needs_follow_up)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_communications_case_id ON case_communications(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_communications_user_id ON case_communications(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_communications_case_occurred ON case_communications(case_id, occurred_at DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_communications_case_followup ON case_communications(case_id, follow_up_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_communications_status ON case_communications(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_communications_needs_followup ON case_communications(needs_follow_up)`,
+    ],
+  );
 
-  await initTable("exhibit_lists", `
+  await initTable(
+    "exhibit_lists",
+    `
     CREATE TABLE IF NOT EXISTS exhibit_lists (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -660,13 +1086,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_case_id ON exhibit_lists(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_user_id ON exhibit_lists(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_case_created ON exhibit_lists(case_id, created_at)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_case_id ON exhibit_lists(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_user_id ON exhibit_lists(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_lists_case_created ON exhibit_lists(case_id, created_at)`,
+    ],
+  );
 
-  await initTable("exhibits", `
+  await initTable(
+    "exhibits",
+    `
     CREATE TABLE IF NOT EXISTS exhibits (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -680,14 +1110,18 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibits_list_id ON exhibits(exhibit_list_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibits_case_id ON exhibits(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibits_user_id ON exhibits(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibits_list_sort ON exhibits(exhibit_list_id, sort_order)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibits_list_id ON exhibits(exhibit_list_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibits_case_id ON exhibits(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibits_user_id ON exhibits(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibits_list_sort ON exhibits(exhibit_list_id, sort_order)`,
+    ],
+  );
 
-  await initTable("exhibit_evidence", `
+  await initTable(
+    "exhibit_evidence",
+    `
     CREATE TABLE IF NOT EXISTS exhibit_evidence (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -697,13 +1131,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       UNIQUE(exhibit_id, evidence_id)
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_exhibit_id ON exhibit_evidence(exhibit_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_evidence_id ON exhibit_evidence(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_case_id ON exhibit_evidence(case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_exhibit_id ON exhibit_evidence(exhibit_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_evidence_id ON exhibit_evidence(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_evidence_case_id ON exhibit_evidence(case_id)`,
+    ],
+  );
 
-  await initTable("lexi_threads", `
+  await initTable(
+    "lexi_threads",
+    `
     CREATE TABLE IF NOT EXISTS lexi_threads (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -713,17 +1151,22 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_lexi_threads_user_case_updated ON lexi_threads(user_id, case_id, updated_at DESC)`,
-    `ALTER TABLE lexi_threads ADD COLUMN IF NOT EXISTS disclaimer_shown BOOLEAN NOT NULL DEFAULT false`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_lexi_threads_user_case_updated ON lexi_threads(user_id, case_id, updated_at DESC)`,
+      `ALTER TABLE lexi_threads ADD COLUMN IF NOT EXISTS disclaimer_shown BOOLEAN NOT NULL DEFAULT false`,
+    ],
+  );
 
   try {
-    await pool.query(`ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL`);
-  } catch (e) {
-  }
+    await pool.query(
+      `ALTER TABLE lexi_threads ALTER COLUMN case_id DROP NOT NULL`,
+    );
+  } catch (e) {}
 
-  await initTable("lexi_messages", `
+  await initTable(
+    "lexi_messages",
+    `
     CREATE TABLE IF NOT EXISTS lexi_messages (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -736,17 +1179,22 @@ export async function initDbTables(): Promise<void> {
       model TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)`,
-    `ALTER TABLE lexi_messages ADD COLUMN IF NOT EXISTS metadata JSONB`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_lexi_messages_thread_created ON lexi_messages(thread_id, created_at)`,
+      `ALTER TABLE lexi_messages ADD COLUMN IF NOT EXISTS metadata JSONB`,
+    ],
+  );
 
   try {
-    await pool.query(`ALTER TABLE lexi_messages ALTER COLUMN case_id DROP NOT NULL`);
-  } catch (e) {
-  }
+    await pool.query(
+      `ALTER TABLE lexi_messages ALTER COLUMN case_id DROP NOT NULL`,
+    );
+  } catch (e) {}
 
-  await initTable("case_rule_terms", `
+  await initTable(
+    "case_rule_terms",
+    `
     CREATE TABLE IF NOT EXISTS case_rule_terms (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -762,12 +1210,16 @@ export async function initDbTables(): Promise<void> {
       last_checked_at TIMESTAMP NOT NULL DEFAULT NOW(),
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_user_case ON case_rule_terms(user_id, case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_case_rule_terms_term ON case_rule_terms(case_id, module_key, term_key)`,
+    ],
+  );
 
-  await initTable("trial_binder_sections", `
+  await initTable(
+    "trial_binder_sections",
+    `
     CREATE TABLE IF NOT EXISTS trial_binder_sections (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -777,11 +1229,15 @@ export async function initDbTables(): Promise<void> {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_trial_binder_sections_user_case ON trial_binder_sections(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_trial_binder_sections_user_case ON trial_binder_sections(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("trial_binder_items", `
+  await initTable(
+    "trial_binder_items",
+    `
     CREATE TABLE IF NOT EXISTS trial_binder_items (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -794,12 +1250,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section ON trial_binder_items(user_id, case_id, section_key)`,
-    `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section_pinned ON trial_binder_items(user_id, case_id, section_key, pinned_rank)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section ON trial_binder_items(user_id, case_id, section_key)`,
+      `CREATE INDEX IF NOT EXISTS idx_trial_binder_items_user_case_section_pinned ON trial_binder_items(user_id, case_id, section_key, pinned_rank)`,
+    ],
+  );
 
-  await initTable("exhibit_packets", `
+  await initTable(
+    "exhibit_packets",
+    `
     CREATE TABLE IF NOT EXISTS exhibit_packets (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -812,11 +1272,15 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_packets_user_case ON exhibit_packets(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_packets_user_case ON exhibit_packets(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("exhibit_packet_items", `
+  await initTable(
+    "exhibit_packet_items",
+    `
     CREATE TABLE IF NOT EXISTS exhibit_packet_items (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -829,12 +1293,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_items_packet ON exhibit_packet_items(packet_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_items_user_case ON exhibit_packet_items(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_items_packet ON exhibit_packet_items(packet_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_items_user_case ON exhibit_packet_items(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("exhibit_packet_evidence", `
+  await initTable(
+    "exhibit_packet_evidence",
+    `
     CREATE TABLE IF NOT EXISTS exhibit_packet_evidence (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -844,13 +1312,17 @@ export async function initDbTables(): Promise<void> {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_packet_item ON exhibit_packet_evidence(packet_item_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_evidence ON exhibit_packet_evidence(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_user_case ON exhibit_packet_evidence(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_packet_item ON exhibit_packet_evidence(packet_item_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_evidence ON exhibit_packet_evidence(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_packet_evidence_user_case ON exhibit_packet_evidence(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("generated_exhibit_packets", `
+  await initTable(
+    "generated_exhibit_packets",
+    `
     CREATE TABLE IF NOT EXISTS generated_exhibit_packets (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -863,12 +1335,16 @@ export async function initDbTables(): Promise<void> {
       meta_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_generated_exhibit_packets_packet ON generated_exhibit_packets(packet_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_generated_exhibit_packets_user_case ON generated_exhibit_packets(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_generated_exhibit_packets_packet ON generated_exhibit_packets(packet_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_generated_exhibit_packets_user_case ON generated_exhibit_packets(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("case_evidence_notes", `
+  await initTable(
+    "case_evidence_notes",
+    `
     CREATE TABLE IF NOT EXISTS case_evidence_notes (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -879,13 +1355,17 @@ export async function initDbTables(): Promise<void> {
       note TEXT NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_case ON case_evidence_notes(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_file ON case_evidence_notes(evidence_file_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user ON case_evidence_notes(user_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_notes_case ON case_evidence_notes(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_notes_file ON case_evidence_notes(evidence_file_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user ON case_evidence_notes(user_id)`,
+    ],
+  );
 
-  await initTable("case_exhibit_note_links", `
+  await initTable(
+    "case_exhibit_note_links",
+    `
     CREATE TABLE IF NOT EXISTS case_exhibit_note_links (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -896,14 +1376,18 @@ export async function initDbTables(): Promise<void> {
       label TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_note ON case_exhibit_note_links(evidence_note_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_list ON case_exhibit_note_links(exhibit_list_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_case ON case_exhibit_note_links(case_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS idx_exhibit_note_links_unique ON case_exhibit_note_links(exhibit_list_id, evidence_note_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_note ON case_exhibit_note_links(evidence_note_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_list ON case_exhibit_note_links(exhibit_list_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_note_links_case ON case_exhibit_note_links(case_id)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_exhibit_note_links_unique ON case_exhibit_note_links(exhibit_list_id, evidence_note_id)`,
+    ],
+  );
 
-  await initTable("timeline_categories", `
+  await initTable(
+    "timeline_categories",
+    `
     CREATE TABLE IF NOT EXISTS timeline_categories (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -912,11 +1396,15 @@ export async function initDbTables(): Promise<void> {
       is_system BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_timeline_categories_user ON timeline_categories(user_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_timeline_categories_user ON timeline_categories(user_id)`,
+    ],
+  );
 
-  await initTable("parenting_plans", `
+  await initTable(
+    "parenting_plans",
+    `
     CREATE TABLE IF NOT EXISTS parenting_plans (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -925,12 +1413,16 @@ export async function initDbTables(): Promise<void> {
       last_updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_parenting_plans_user_case ON parenting_plans(user_id, case_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plans_case_unique ON parenting_plans(case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_parenting_plans_user_case ON parenting_plans(user_id, case_id)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plans_case_unique ON parenting_plans(case_id)`,
+    ],
+  );
 
-  await initTable("parenting_plan_sections", `
+  await initTable(
+    "parenting_plan_sections",
+    `
     CREATE TABLE IF NOT EXISTS parenting_plan_sections (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       parenting_plan_id VARCHAR(255) NOT NULL,
@@ -940,12 +1432,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_parenting_plan_sections_plan ON parenting_plan_sections(parenting_plan_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plan_sections_key ON parenting_plan_sections(parenting_plan_id, section_key)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_parenting_plan_sections_plan ON parenting_plan_sections(parenting_plan_id)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_parenting_plan_sections_key ON parenting_plan_sections(parenting_plan_id, section_key)`,
+    ],
+  );
 
-  await initTable("evidence_processing_jobs", `
+  await initTable(
+    "evidence_processing_jobs",
+    `
     CREATE TABLE IF NOT EXISTS evidence_processing_jobs (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -957,12 +1453,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_processing_jobs_evidence ON evidence_processing_jobs(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_processing_jobs_user_case ON evidence_processing_jobs(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_processing_jobs_evidence ON evidence_processing_jobs(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_processing_jobs_user_case ON evidence_processing_jobs(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("evidence_ocr_pages", `
+  await initTable(
+    "evidence_ocr_pages",
+    `
     CREATE TABLE IF NOT EXISTS evidence_ocr_pages (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -980,13 +1480,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_evidence ON evidence_ocr_pages(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_user_case ON evidence_ocr_pages(user_id, case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_page ON evidence_ocr_pages(evidence_id, page_number)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_evidence ON evidence_ocr_pages(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_user_case ON evidence_ocr_pages(user_id, case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_ocr_pages_page ON evidence_ocr_pages(evidence_id, page_number)`,
+    ],
+  );
 
-  await initTable("evidence_anchors", `
+  await initTable(
+    "evidence_anchors",
+    `
     CREATE TABLE IF NOT EXISTS evidence_anchors (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1001,12 +1505,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_evidence ON evidence_anchors(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_user_case ON evidence_anchors(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_evidence ON evidence_anchors(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_anchors_user_case ON evidence_anchors(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("evidence_extractions", `
+  await initTable(
+    "evidence_extractions",
+    `
     CREATE TABLE IF NOT EXISTS evidence_extractions (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1022,13 +1530,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_evidence ON evidence_extractions(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_user_case ON evidence_extractions(user_id, case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_status ON evidence_extractions(status)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_evidence ON evidence_extractions(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_user_case ON evidence_extractions(user_id, case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_extractions_status ON evidence_extractions(status)`,
+    ],
+  );
 
-  await initTable("evidence_ai_analyses", `
+  await initTable(
+    "evidence_ai_analyses",
+    `
     CREATE TABLE IF NOT EXISTS evidence_ai_analyses (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1039,13 +1551,17 @@ export async function initDbTables(): Promise<void> {
       metadata JSONB,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_evidence ON evidence_ai_analyses(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_user_case ON evidence_ai_analyses(user_id, case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_type ON evidence_ai_analyses(analysis_type)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_evidence ON evidence_ai_analyses(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_user_case ON evidence_ai_analyses(user_id, case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_ai_analyses_type ON evidence_ai_analyses(analysis_type)`,
+    ],
+  );
 
-  await initTable("evidence_notes", `
+  await initTable(
+    "evidence_notes",
+    `
     CREATE TABLE IF NOT EXISTS evidence_notes (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1062,10 +1578,12 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_evidence ON evidence_notes(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user_case ON evidence_notes(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_evidence_notes_evidence ON evidence_notes(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_notes_user_case ON evidence_notes(user_id, case_id)`,
+    ],
+  );
 
   // Drop old trial_prep_shortlist if it has old schema (evidence_id column)
   try {
@@ -1082,7 +1600,9 @@ export async function initDbTables(): Promise<void> {
   }
 
   // C3: Add exhibit_snippets table for snippet-based exhibits
-  await initTable("exhibit_snippets", `
+  await initTable(
+    "exhibit_snippets",
+    `
     CREATE TABLE IF NOT EXISTS exhibit_snippets (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1097,14 +1617,18 @@ export async function initDbTables(): Promise<void> {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_list ON exhibit_snippets(exhibit_list_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_evidence ON exhibit_snippets(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_note ON exhibit_snippets(note_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_user_case ON exhibit_snippets(user_id, case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_list ON exhibit_snippets(exhibit_list_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_evidence ON exhibit_snippets(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_note ON exhibit_snippets(note_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_exhibit_snippets_user_case ON exhibit_snippets(user_id, case_id)`,
+    ],
+  );
 
-  await initTable("trial_prep_shortlist", `
+  await initTable(
+    "trial_prep_shortlist",
+    `
     CREATE TABLE IF NOT EXISTS trial_prep_shortlist (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1121,14 +1645,18 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_case ON trial_prep_shortlist(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_user_case ON trial_prep_shortlist(user_id, case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_section ON trial_prep_shortlist(case_id, binder_section)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS idx_trial_prep_shortlist_unique_source ON trial_prep_shortlist(user_id, case_id, source_type, source_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_case ON trial_prep_shortlist(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_user_case ON trial_prep_shortlist(user_id, case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_trial_prep_shortlist_section ON trial_prep_shortlist(case_id, binder_section)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_trial_prep_shortlist_unique_source ON trial_prep_shortlist(user_id, case_id, source_type, source_id)`,
+    ],
+  );
 
-  await initTable("citation_pointers", `
+  await initTable(
+    "citation_pointers",
+    `
     CREATE TABLE IF NOT EXISTS citation_pointers (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1144,12 +1672,16 @@ export async function initDbTables(): Promise<void> {
       confidence INTEGER,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_citation_pointers_case ON citation_pointers(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_citation_pointers_evidence ON citation_pointers(evidence_file_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_citation_pointers_case ON citation_pointers(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_citation_pointers_evidence ON citation_pointers(evidence_file_id)`,
+    ],
+  );
 
-  await initTable("case_claims", `
+  await initTable(
+    "case_claims",
+    `
     CREATE TABLE IF NOT EXISTS case_claims (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1169,24 +1701,32 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_case_claims_case ON case_claims(case_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_case_claims_case_status ON case_claims(case_id, status)`,
-    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS used_in_doc_ids JSONB NOT NULL DEFAULT '[]'::jsonb`,
-    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE`,
-    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS locked_at TIMESTAMP`,
-    `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS locked_reason TEXT`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_case_claims_case ON case_claims(case_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_case_claims_case_status ON case_claims(case_id, status)`,
+      `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS used_in_doc_ids JSONB NOT NULL DEFAULT '[]'::jsonb`,
+      `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS locked_at TIMESTAMP`,
+      `ALTER TABLE case_claims ADD COLUMN IF NOT EXISTS locked_reason TEXT`,
+    ],
+  );
 
-  await initTable("claim_citations", `
+  await initTable(
+    "claim_citations",
+    `
     CREATE TABLE IF NOT EXISTS claim_citations (
       claim_id VARCHAR(255) NOT NULL,
       citation_id VARCHAR(255) NOT NULL,
       PRIMARY KEY (claim_id, citation_id)
     )
-  `, []);
+  `,
+    [],
+  );
 
-  await initTable("issue_groupings", `
+  await initTable(
+    "issue_groupings",
+    `
     CREATE TABLE IF NOT EXISTS issue_groupings (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL,
@@ -1197,19 +1737,27 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS idx_issue_groupings_case ON issue_groupings(case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS idx_issue_groupings_case ON issue_groupings(case_id)`,
+    ],
+  );
 
-  await initTable("issue_claims", `
+  await initTable(
+    "issue_claims",
+    `
     CREATE TABLE IF NOT EXISTS issue_claims (
       issue_id VARCHAR(255) NOT NULL,
       claim_id VARCHAR(255) NOT NULL,
       PRIMARY KEY (issue_id, claim_id)
     )
-  `, []);
+  `,
+    [],
+  );
 
-  await initTable("lexi_user_prefs", `
+  await initTable(
+    "lexi_user_prefs",
+    `
     CREATE TABLE IF NOT EXISTS lexi_user_prefs (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id) UNIQUE,
@@ -1222,12 +1770,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `ALTER TABLE lexi_user_prefs ADD COLUMN IF NOT EXISTS streaming_enabled BOOLEAN NOT NULL DEFAULT true`,
-    `ALTER TABLE lexi_user_prefs ADD COLUMN IF NOT EXISTS faster_mode BOOLEAN NOT NULL DEFAULT false`
-  ]);
+  `,
+    [
+      `ALTER TABLE lexi_user_prefs ADD COLUMN IF NOT EXISTS streaming_enabled BOOLEAN NOT NULL DEFAULT true`,
+      `ALTER TABLE lexi_user_prefs ADD COLUMN IF NOT EXISTS faster_mode BOOLEAN NOT NULL DEFAULT false`,
+    ],
+  );
 
-  await initTable("lexi_case_memory", `
+  await initTable(
+    "lexi_case_memory",
+    `
     CREATE TABLE IF NOT EXISTS lexi_case_memory (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1237,13 +1789,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE UNIQUE INDEX IF NOT EXISTS lexi_case_memory_user_case_idx ON lexi_case_memory(user_id, case_id)`,
-    `ALTER TABLE lexi_case_memory ADD COLUMN IF NOT EXISTS memory_markdown TEXT`,
-    `ALTER TABLE lexi_case_memory ADD COLUMN IF NOT EXISTS preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb`
-  ]);
+  `,
+    [
+      `CREATE UNIQUE INDEX IF NOT EXISTS lexi_case_memory_user_case_idx ON lexi_case_memory(user_id, case_id)`,
+      `ALTER TABLE lexi_case_memory ADD COLUMN IF NOT EXISTS memory_markdown TEXT`,
+      `ALTER TABLE lexi_case_memory ADD COLUMN IF NOT EXISTS preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb`,
+    ],
+  );
 
-  await initTable("lexi_feedback_events", `
+  await initTable(
+    "lexi_feedback_events",
+    `
     CREATE TABLE IF NOT EXISTS lexi_feedback_events (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1252,11 +1808,15 @@ export async function initDbTables(): Promise<void> {
       payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS lexi_feedback_user_case_event_idx ON lexi_feedback_events(user_id, case_id, event_type, created_at)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS lexi_feedback_user_case_event_idx ON lexi_feedback_events(user_id, case_id, event_type, created_at)`,
+    ],
+  );
 
-  await initTable("activity_logs", `
+  await initTable(
+    "activity_logs",
+    `
     CREATE TABLE IF NOT EXISTS activity_logs (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1269,17 +1829,21 @@ export async function initDbTables(): Promise<void> {
       metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS activity_logs_user_created_idx ON activity_logs(user_id, created_at)`,
-    `CREATE INDEX IF NOT EXISTS activity_logs_case_created_idx ON activity_logs(case_id, created_at)`,
-    `CREATE INDEX IF NOT EXISTS activity_logs_type_created_idx ON activity_logs(type, created_at)`,
-    `CREATE INDEX IF NOT EXISTS activity_logs_module_created_idx ON activity_logs(module_key, created_at)`,
-    `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS module_key TEXT`,
-    `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS entity_type TEXT`,
-    `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS entity_id VARCHAR(255)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS activity_logs_user_created_idx ON activity_logs(user_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS activity_logs_case_created_idx ON activity_logs(case_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS activity_logs_type_created_idx ON activity_logs(type, created_at)`,
+      `CREATE INDEX IF NOT EXISTS activity_logs_module_created_idx ON activity_logs(module_key, created_at)`,
+      `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS module_key TEXT`,
+      `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS entity_type TEXT`,
+      `ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS entity_id VARCHAR(255)`,
+    ],
+  );
 
-  await initTable("case_facts", `
+  await initTable(
+    "case_facts",
+    `
     CREATE TABLE IF NOT EXISTS case_facts (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1294,12 +1858,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS case_facts_case_key_idx ON case_facts(case_id, key)`,
-    `CREATE INDEX IF NOT EXISTS case_facts_case_status_idx ON case_facts(case_id, status)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS case_facts_case_key_idx ON case_facts(case_id, key)`,
+      `CREATE INDEX IF NOT EXISTS case_facts_case_status_idx ON case_facts(case_id, status)`,
+    ],
+  );
 
-  await initTable("fact_citations", `
+  await initTable(
+    "fact_citations",
+    `
     CREATE TABLE IF NOT EXISTS fact_citations (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1308,12 +1876,16 @@ export async function initDbTables(): Promise<void> {
       citation_id VARCHAR(255) NOT NULL REFERENCES citation_pointers(id),
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE UNIQUE INDEX IF NOT EXISTS fact_citations_fact_citation_idx ON fact_citations(fact_id, citation_id)`
-  ]);
+  `,
+    [
+      `CREATE UNIQUE INDEX IF NOT EXISTS fact_citations_fact_citation_idx ON fact_citations(fact_id, citation_id)`,
+    ],
+  );
 
   // Phase 3A: Cross-Module Link Tables
-  await initTable("timeline_event_links", `
+  await initTable(
+    "timeline_event_links",
+    `
     CREATE TABLE IF NOT EXISTS timeline_event_links (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1326,13 +1898,17 @@ export async function initDbTables(): Promise<void> {
       note TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS timeline_event_links_case_idx ON timeline_event_links(case_id)`,
-    `CREATE INDEX IF NOT EXISTS timeline_event_links_event_idx ON timeline_event_links(event_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS timeline_event_links_unique_idx ON timeline_event_links(event_id, link_type, COALESCE(evidence_id, ''), COALESCE(claim_id, ''), COALESCE(snippet_id, ''))`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS timeline_event_links_case_idx ON timeline_event_links(case_id)`,
+      `CREATE INDEX IF NOT EXISTS timeline_event_links_event_idx ON timeline_event_links(event_id)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS timeline_event_links_unique_idx ON timeline_event_links(event_id, link_type, COALESCE(evidence_id, ''), COALESCE(claim_id, ''), COALESCE(snippet_id, ''))`,
+    ],
+  );
 
-  await initTable("claim_links", `
+  await initTable(
+    "claim_links",
+    `
     CREATE TABLE IF NOT EXISTS claim_links (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1344,13 +1920,17 @@ export async function initDbTables(): Promise<void> {
       snippet_id VARCHAR(255),
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS claim_links_case_idx ON claim_links(case_id)`,
-    `CREATE INDEX IF NOT EXISTS claim_links_claim_idx ON claim_links(claim_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS claim_links_unique_idx ON claim_links(claim_id, link_type, COALESCE(event_id, ''), COALESCE(trial_prep_id, ''), COALESCE(snippet_id, ''))`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS claim_links_case_idx ON claim_links(case_id)`,
+      `CREATE INDEX IF NOT EXISTS claim_links_claim_idx ON claim_links(claim_id)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS claim_links_unique_idx ON claim_links(claim_id, link_type, COALESCE(event_id, ''), COALESCE(trial_prep_id, ''), COALESCE(snippet_id, ''))`,
+    ],
+  );
 
-  await initTable("analytics_events", `
+  await initTable(
+    "analytics_events",
+    `
     CREATE TABLE IF NOT EXISTS analytics_events (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1365,14 +1945,18 @@ export async function initDbTables(): Promise<void> {
       meta JSONB,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS analytics_events_user_idx ON analytics_events(user_id)`,
-    `CREATE INDEX IF NOT EXISTS analytics_events_event_type_idx ON analytics_events(event_type)`,
-    `CREATE INDEX IF NOT EXISTS analytics_events_module_key_idx ON analytics_events(module_key)`,
-    `CREATE INDEX IF NOT EXISTS analytics_events_created_at_idx ON analytics_events(created_at)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS analytics_events_user_idx ON analytics_events(user_id)`,
+      `CREATE INDEX IF NOT EXISTS analytics_events_event_type_idx ON analytics_events(event_type)`,
+      `CREATE INDEX IF NOT EXISTS analytics_events_module_key_idx ON analytics_events(module_key)`,
+      `CREATE INDEX IF NOT EXISTS analytics_events_created_at_idx ON analytics_events(created_at)`,
+    ],
+  );
 
-  await initTable("admin_audit_logs", `
+  await initTable(
+    "admin_audit_logs",
+    `
     CREATE TABLE IF NOT EXISTS admin_audit_logs (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       actor_user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1383,13 +1967,17 @@ export async function initDbTables(): Promise<void> {
       user_agent TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS admin_audit_logs_actor_idx ON admin_audit_logs(actor_user_id)`,
-    `CREATE INDEX IF NOT EXISTS admin_audit_logs_action_idx ON admin_audit_logs(action)`,
-    `CREATE INDEX IF NOT EXISTS admin_audit_logs_created_at_idx ON admin_audit_logs(created_at)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS admin_audit_logs_actor_idx ON admin_audit_logs(actor_user_id)`,
+      `CREATE INDEX IF NOT EXISTS admin_audit_logs_action_idx ON admin_audit_logs(action)`,
+      `CREATE INDEX IF NOT EXISTS admin_audit_logs_created_at_idx ON admin_audit_logs(created_at)`,
+    ],
+  );
 
-  await initTable("draft_outlines", `
+  await initTable(
+    "draft_outlines",
+    `
     CREATE TABLE IF NOT EXISTS draft_outlines (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1400,12 +1988,16 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS draft_outlines_user_idx ON draft_outlines(user_id)`,
-    `CREATE INDEX IF NOT EXISTS draft_outlines_case_idx ON draft_outlines(case_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS draft_outlines_user_idx ON draft_outlines(user_id)`,
+      `CREATE INDEX IF NOT EXISTS draft_outlines_case_idx ON draft_outlines(case_id)`,
+    ],
+  );
 
-  await initTable("case_resources", `
+  await initTable(
+    "case_resources",
+    `
     CREATE TABLE IF NOT EXISTS case_resources (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1426,13 +2018,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS case_resources_user_idx ON case_resources(user_id)`,
-    `CREATE INDEX IF NOT EXISTS case_resources_case_idx ON case_resources(case_id)`,
-    `CREATE INDEX IF NOT EXISTS case_resources_state_idx ON case_resources(state)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS case_resources_user_idx ON case_resources(user_id)`,
+      `CREATE INDEX IF NOT EXISTS case_resources_case_idx ON case_resources(case_id)`,
+      `CREATE INDEX IF NOT EXISTS case_resources_state_idx ON case_resources(state)`,
+    ],
+  );
 
-  await initTable("draft_outline_claims", `
+  await initTable(
+    "draft_outline_claims",
+    `
     CREATE TABLE IF NOT EXISTS draft_outline_claims (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1443,14 +2039,18 @@ export async function initDbTables(): Promise<void> {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS draft_outline_claims_user_idx ON draft_outline_claims(user_id)`,
-    `CREATE INDEX IF NOT EXISTS draft_outline_claims_case_idx ON draft_outline_claims(case_id)`,
-    `CREATE INDEX IF NOT EXISTS draft_outline_claims_outline_idx ON draft_outline_claims(outline_id)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS draft_outline_claims_unique_idx ON draft_outline_claims(outline_id, claim_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS draft_outline_claims_user_idx ON draft_outline_claims(user_id)`,
+      `CREATE INDEX IF NOT EXISTS draft_outline_claims_case_idx ON draft_outline_claims(case_id)`,
+      `CREATE INDEX IF NOT EXISTS draft_outline_claims_outline_idx ON draft_outline_claims(outline_id)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS draft_outline_claims_unique_idx ON draft_outline_claims(outline_id, claim_id)`,
+    ],
+  );
 
-  await initTable("resource_field_maps", `
+  await initTable(
+    "resource_field_maps",
+    `
     CREATE TABLE IF NOT EXISTS resource_field_maps (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1466,13 +2066,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS resource_field_maps_user_idx ON resource_field_maps(user_id)`,
-    `CREATE INDEX IF NOT EXISTS resource_field_maps_case_idx ON resource_field_maps(case_id)`,
-    `CREATE INDEX IF NOT EXISTS resource_field_maps_resource_idx ON resource_field_maps(resource_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS resource_field_maps_user_idx ON resource_field_maps(user_id)`,
+      `CREATE INDEX IF NOT EXISTS resource_field_maps_case_idx ON resource_field_maps(case_id)`,
+      `CREATE INDEX IF NOT EXISTS resource_field_maps_resource_idx ON resource_field_maps(resource_id)`,
+    ],
+  );
 
-  await initTable("usage_events", `
+  await initTable(
+    "usage_events",
+    `
     CREATE TABLE IF NOT EXISTS usage_events (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1482,14 +2086,18 @@ export async function initDbTables(): Promise<void> {
       metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS usage_events_user_idx ON usage_events(user_id)`,
-    `CREATE INDEX IF NOT EXISTS usage_events_type_idx ON usage_events(event_type)`,
-    `CREATE INDEX IF NOT EXISTS usage_events_created_at_idx ON usage_events(created_at)`,
-    `CREATE INDEX IF NOT EXISTS usage_events_user_type_created_idx ON usage_events(user_id, event_type, created_at)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS usage_events_user_idx ON usage_events(user_id)`,
+      `CREATE INDEX IF NOT EXISTS usage_events_type_idx ON usage_events(event_type)`,
+      `CREATE INDEX IF NOT EXISTS usage_events_created_at_idx ON usage_events(created_at)`,
+      `CREATE INDEX IF NOT EXISTS usage_events_user_type_created_idx ON usage_events(user_id, event_type, created_at)`,
+    ],
+  );
 
-  await initTable("claim_suggestion_runs", `
+  await initTable(
+    "claim_suggestion_runs",
+    `
     CREATE TABLE IF NOT EXISTS claim_suggestion_runs (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1502,15 +2110,19 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_user_idx ON claim_suggestion_runs(user_id)`,
-    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_case_idx ON claim_suggestion_runs(case_id)`,
-    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_evidence_idx ON claim_suggestion_runs(evidence_id)`,
-    `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_status_idx ON claim_suggestion_runs(status)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS claim_suggestion_runs_unique_idx ON claim_suggestion_runs(user_id, evidence_id)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_user_idx ON claim_suggestion_runs(user_id)`,
+      `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_case_idx ON claim_suggestion_runs(case_id)`,
+      `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_evidence_idx ON claim_suggestion_runs(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS claim_suggestion_runs_status_idx ON claim_suggestion_runs(status)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS claim_suggestion_runs_unique_idx ON claim_suggestion_runs(user_id, evidence_id)`,
+    ],
+  );
 
-  await initTable("processing_credit_ledger", `
+  await initTable(
+    "processing_credit_ledger",
+    `
     CREATE TABLE IF NOT EXISTS processing_credit_ledger (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       user_id VARCHAR(255) NOT NULL REFERENCES users(id),
@@ -1522,15 +2134,19 @@ export async function initDbTables(): Promise<void> {
       error TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_user_idx ON processing_credit_ledger(user_id)`,
-    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_case_idx ON processing_credit_ledger(case_id)`,
-    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_job_key_idx ON processing_credit_ledger(job_key)`,
-    `CREATE INDEX IF NOT EXISTS processing_credit_ledger_reason_idx ON processing_credit_ledger(reason)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS processing_credit_ledger_job_key_reason_idx ON processing_credit_ledger(job_key, reason)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS processing_credit_ledger_user_idx ON processing_credit_ledger(user_id)`,
+      `CREATE INDEX IF NOT EXISTS processing_credit_ledger_case_idx ON processing_credit_ledger(case_id)`,
+      `CREATE INDEX IF NOT EXISTS processing_credit_ledger_job_key_idx ON processing_credit_ledger(job_key)`,
+      `CREATE INDEX IF NOT EXISTS processing_credit_ledger_reason_idx ON processing_credit_ledger(reason)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS processing_credit_ledger_job_key_reason_idx ON processing_credit_ledger(job_key, reason)`,
+    ],
+  );
 
-  await initTable("case_collaborators", `
+  await initTable(
+    "case_collaborators",
+    `
     CREATE TABLE IF NOT EXISTS case_collaborators (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       case_id VARCHAR(255) NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
@@ -1539,13 +2155,17 @@ export async function initDbTables(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       revoked_at TIMESTAMP
     )
-  `, [
-    `CREATE UNIQUE INDEX IF NOT EXISTS case_collaborators_case_user_idx ON case_collaborators(case_id, user_id)`,
-    `CREATE INDEX IF NOT EXISTS case_collaborators_case_idx ON case_collaborators(case_id)`,
-    `CREATE INDEX IF NOT EXISTS case_collaborators_user_idx ON case_collaborators(user_id)`
-  ]);
+  `,
+    [
+      `CREATE UNIQUE INDEX IF NOT EXISTS case_collaborators_case_user_idx ON case_collaborators(case_id, user_id)`,
+      `CREATE INDEX IF NOT EXISTS case_collaborators_case_idx ON case_collaborators(case_id)`,
+      `CREATE INDEX IF NOT EXISTS case_collaborators_user_idx ON case_collaborators(user_id)`,
+    ],
+  );
 
-  await initTable("case_invites", `
+  await initTable(
+    "case_invites",
+    `
     CREATE TABLE IF NOT EXISTS case_invites (
       id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
       case_id VARCHAR(255) NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
@@ -1559,12 +2179,14 @@ export async function initDbTables(): Promise<void> {
       revoked_at TIMESTAMP,
       metadata JSONB
     )
-  `, [
-    `CREATE INDEX IF NOT EXISTS case_invites_case_idx ON case_invites(case_id)`,
-    `CREATE INDEX IF NOT EXISTS case_invites_email_idx ON case_invites(email)`,
-    `CREATE INDEX IF NOT EXISTS case_invites_expires_idx ON case_invites(expires_at)`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS case_invites_token_hash_idx ON case_invites(token_hash)`
-  ]);
+  `,
+    [
+      `CREATE INDEX IF NOT EXISTS case_invites_case_idx ON case_invites(case_id)`,
+      `CREATE INDEX IF NOT EXISTS case_invites_email_idx ON case_invites(email)`,
+      `CREATE INDEX IF NOT EXISTS case_invites_expires_idx ON case_invites(expires_at)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS case_invites_token_hash_idx ON case_invites(token_hash)`,
+    ],
+  );
 
   const analyticsExists = await tableExists("analytics_events");
   const auditExists = await tableExists("admin_audit_logs");
@@ -1572,14 +2194,26 @@ export async function initDbTables(): Promise<void> {
   const draftOutlineClaimsExists = await tableExists("draft_outline_claims");
   const usageEventsExists = await tableExists("usage_events");
   const claimSuggestionRunsExists = await tableExists("claim_suggestion_runs");
-  console.log(`[DB MIGRATION] Verification: analytics_events table present: ${analyticsExists}`);
-  console.log(`[DB MIGRATION] Verification: admin_audit_logs table present: ${auditExists}`);
-  console.log(`[DB MIGRATION] Verification: draft_outlines table present: ${draftOutlinesExists}`);
-  console.log(`[DB MIGRATION] Verification: draft_outline_claims table present: ${draftOutlineClaimsExists}`);
-  console.log(`[DB MIGRATION] Verification: usage_events table present: ${usageEventsExists}`);
-  console.log(`[DB MIGRATION] Verification: claim_suggestion_runs table present: ${claimSuggestionRunsExists}`);
+  console.log(
+    `[DB MIGRATION] Verification: analytics_events table present: ${analyticsExists}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: admin_audit_logs table present: ${auditExists}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: draft_outlines table present: ${draftOutlinesExists}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: draft_outline_claims table present: ${draftOutlineClaimsExists}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: usage_events table present: ${usageEventsExists}`,
+  );
+  console.log(
+    `[DB MIGRATION] Verification: claim_suggestion_runs table present: ${claimSuggestionRunsExists}`,
+  );
 
   await ensureSchemaMigrations();
-  
+
   console.log("Database table initialization complete");
 }
