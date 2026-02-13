@@ -646,7 +646,7 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
     const deletes: ReturnType<typeof sql>[] = [
-      sql`DELETE FROM trial_binder_items WHERE section_id IN (SELECT id FROM trial_binder_sections WHERE case_id = ${caseId})`,
+      sql`DELETE FROM trial_binder_items WHERE case_id = ${caseId}`,
       sql`DELETE FROM trial_binder_sections WHERE case_id = ${caseId}`,
       sql`DELETE FROM trial_prep_shortlist WHERE case_id = ${caseId}`,
       sql`DELETE FROM draft_outline_claims WHERE outline_id IN (SELECT id FROM draft_outlines WHERE case_id = ${caseId})`,

@@ -1,0 +1,157 @@
+/**
+ * Civilla hotfix: DeleteCase failing because SQL references trial_binder_items.section_id
+ * but the database column is trial_binder_items.section_key.
+ *
+ * What this script does:
+ * 1) Finds your Civilla backend file: ./server/storage.ts
+ * 2) Creates a timestamped backup next to it
+ * 3) Applies safe, targeted replacements related to trial_binder_items:
+ *      - trial_binder_items.section_id  -> trial_binder_items.section_key
+ *      - tbi.section_id                 -> tbi.section_key   (only when alias looks like trial_binder_items)
+ *      - "section_id"                   -> "section_key"     (only inside queries that mention trial_binder_items)
+ * 4) Prints exactly what it changed
+ *
+ * How to run in Replit:
+ * - Create a new file at the project root named: fix-deletecase.js
+ * - Paste this entire code into it
+ * - Run: node fix-deletecase.js
+ *
+ * If you want to undo:
+ * - The script prints the backup filename it created. Restore that backup over server/storage.ts
+ */
+
+const fs = require("fs");
+const path = require("path");
+
+function nowStamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    d.getFullYear() +
+    pad(d.getMonth() + 1) +
+    pad(d.getDate()) +
+    "_" +
+    pad(d.getHours()) +
+    pad(d.getMinutes()) +
+    pad(d.getSeconds())
+  );
+}
+
+function exitWith(msg) {
+  console.error("\n❌ " + msg + "\n");
+  process.exit(1);
+}
+
+const targetPath = path.join(process.cwd(), "server", "storage.ts");
+if (!fs.existsSync(targetPath)) {
+  exitWith(`Could not find ${targetPath}. Are you running this from the project root?`);
+}
+
+const original = fs.readFileSync(targetPath, "utf8");
+
+// Backup first
+const backupPath = path.join(process.cwd(), "server", `storage.ts.backup_${nowStamp()}`);
+fs.writeFileSync(backupPath, original, "utf8");
+
+// Helpers
+function countMatches(str, re) {
+  const m = str.match(re);
+  return m ? m.length : 0;
+}
+
+let updated = original;
+const changes = [];
+
+// 1) Direct fully-qualified reference (safest)
+{
+  const re = /trial_binder_items\.section_id\b/g;
+  const before = countMatches(updated, re);
+  updated = updated.replace(re, "trial_binder_items.section_key");
+  const after = before - countMatches(updated, re);
+  if (before > 0) changes.push(`Replaced ${before} occurrence(s): trial_binder_items.section_id → trial_binder_items.section_key`);
+}
+
+// 2) Common alias for trial_binder_items is tbi (your error hint shows trial_binder_items.section_key)
+// We only replace tbi.section_id if the file contains "trial_binder_items" nearby, to avoid breaking unrelated tables.
+{
+  const hasTrialBinderItems = /trial_binder_items\b/.test(updated);
+  if (hasTrialBinderItems) {
+    const re = /\btbi\.section_id\b/g;
+    const before = countMatches(updated, re);
+    updated = updated.replace(re, "tbi.section_key");
+    if (before > 0) changes.push(`Replaced ${before} occurrence(s): tbi.section_id → tbi.section_key`);
+  }
+}
+
+// 3) Quoted identifier "section_id" inside SQL template strings that mention trial_binder_items.
+// This is a bit broader, but still constrained to blocks that include trial_binder_items.
+{
+  // Replace within backtick template strings only, and only if that template contains trial_binder_items
+  // We scan all template literals and patch those that mention trial_binder_items.
+  const templateRe = /`([\s\S]*?)`/g;
+  let match;
+  let templatesPatched = 0;
+  let quotedReplacements = 0;
+
+  // Build updated string by iterating template literals
+  let result = "";
+  let lastIndex = 0;
+
+  while ((match = templateRe.exec(updated)) !== null) {
+    const full = match[0];
+    const body = match[1];
+    const start = match.index;
+    const end = templateRe.lastIndex;
+
+    result += updated.slice(lastIndex, start);
+
+    let newBody = body;
+    if (/\btrial_binder_items\b/.test(body)) {
+      const re = /"section_id"\b/g;
+      const before = countMatches(newBody, re);
+      if (before > 0) {
+        newBody = newBody.replace(re, `"section_key"`);
+        templatesPatched += 1;
+        quotedReplacements += before;
+      }
+    }
+
+    result += "`" + newBody + "`";
+    lastIndex = end;
+  }
+
+  result += updated.slice(lastIndex);
+
+  if (quotedReplacements > 0) {
+    updated = result;
+    changes.push(
+      `Replaced ${quotedReplacements} occurrence(s) of "section_id" → "section_key" inside ${templatesPatched} SQL template literal(s) that mention trial_binder_items`
+    );
+  }
+}
+
+// If nothing changed, do not overwrite
+if (updated === original) {
+  console.log("ℹ️ No changes were needed. (No matching section_id references found in server/storage.ts)");
+  console.log("✅ Backup created anyway at:", backupPath);
+  process.exit(0);
+}
+
+// Write updated file
+fs.writeFileSync(targetPath, updated, "utf8");
+
+console.log("\n✅ DeleteCase hotfix applied.");
+console.log("📄 Updated file:", targetPath);
+console.log("🧰 Backup saved:", backupPath);
+
+if (changes.length) {
+  console.log("\nChanges made:");
+  for (const c of changes) console.log(" - " + c);
+}
+
+console.log(`
+Next steps:
+1) Restart your server (or Replit run).
+2) Try deleting a case again.
+3) If you still see an error, copy/paste the new server log error here.
+`);
