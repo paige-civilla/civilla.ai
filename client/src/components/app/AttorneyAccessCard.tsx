@@ -38,10 +38,11 @@ interface AttorneyAccessCardProps {
 export default function AttorneyAccessCard({ caseId: propCaseId, caseTitle: propCaseTitle }: AttorneyAccessCardProps) {
   const [selectedCaseId, setSelectedCaseId] = useState<string>(propCaseId || "");
 
-  const { data: casesData } = useQuery<Case[]>({
+  const { data: casesResponse } = useQuery<{ cases: Case[] }>({
     queryKey: ["/api/cases"],
     enabled: !propCaseId,
   });
+  const casesData = casesResponse?.cases;
 
   useEffect(() => {
     if (!propCaseId && casesData && casesData.length > 0 && !selectedCaseId) {
