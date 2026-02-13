@@ -26,12 +26,12 @@ declare module "http" {
 // Stripe webhook route MUST be registered BEFORE express.json() middleware
 // This ensures req.body is the raw Buffer needed for signature verification
 app.post(
-  '/api/stripe/webhook',
-  express.raw({ type: 'application/json' }),
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
   async (req, res) => {
-    const signature = req.headers['stripe-signature'];
+    const signature = req.headers["stripe-signature"];
     if (!signature) {
-      return res.status(400).json({ error: 'Missing stripe-signature' });
+      return res.status(400).json({ error: "Missing stripe-signature" });
     }
 
     try {
@@ -39,10 +39,10 @@ app.post(
       await WebhookHandlers.processWebhook(req.body as Buffer, sig);
       res.status(200).json({ received: true });
     } catch (error: any) {
-      console.error('Webhook error:', error.message);
-      res.status(400).json({ error: 'Webhook processing error' });
+      console.error("Webhook error:", error.message);
+      res.status(400).json({ error: "Webhook processing error" });
     }
-  }
+  },
 );
 
 app.use(
@@ -60,7 +60,9 @@ const PgSession = connectPgSimple(session);
 // Validate required session secret
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
-  throw new Error("SESSION_SECRET environment variable is required. Please set it in Replit Secrets.");
+  throw new Error(
+    "SESSION_SECRET environment variable is required. Please set it in Replit Secrets.",
+  );
 }
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -83,7 +85,7 @@ app.use(
       sameSite: "lax",
       maxAge: SEVEN_DAYS_MS,
     },
-  })
+  }),
 );
 
 app.use(requestIdMiddleware);
@@ -130,42 +132,46 @@ app.use((req, res, next) => {
 async function initStripe() {
   let databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    console.log('DATABASE_URL not set, skipping Stripe initialization');
+    console.log("DATABASE_URL not set, skipping Stripe initialization");
     return;
   }
-  
+
   // Fix corrupted DATABASE_URL if it has prefix before postgresql://
-  if (databaseUrl.includes('postgresql://') && !databaseUrl.startsWith('postgresql://')) {
-    databaseUrl = databaseUrl.substring(databaseUrl.indexOf('postgresql://'));
-    console.log('Fixed DATABASE_URL prefix corruption');
+  if (
+    databaseUrl.includes("postgresql://") &&
+    !databaseUrl.startsWith("postgresql://")
+  ) {
+    databaseUrl = databaseUrl.substring(databaseUrl.indexOf("postgresql://"));
+    console.log("Fixed DATABASE_URL prefix corruption");
   }
 
   try {
-    console.log('Step 1: Running Stripe migrations...');
-    await runMigrations({ databaseUrl, schema: 'stripe' } as any);
-    console.log('Step 1 complete: Stripe schema ready');
-    
-    console.log('Step 2: Getting Stripe sync instance...');
+    console.log("Step 1: Running Stripe migrations...");
+    await runMigrations({ databaseUrl, schema: "stripe" } as any);
+    console.log("Step 1 complete: Stripe schema ready");
+
+    console.log("Step 2: Getting Stripe sync instance...");
 
     const stripeSync = await getStripeSync();
 
-    console.log('Setting up managed webhook...');
-    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+    console.log("Setting up managed webhook...");
+    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
     const webhookResult = await stripeSync.findOrCreateManagedWebhook(
-      `${webhookBaseUrl}/api/stripe/webhook`
+      `${webhookBaseUrl}/api/stripe/webhook`,
     );
     if (webhookResult?.webhook?.url) {
       console.log(`Webhook configured: ${webhookResult.webhook.url}`);
     } else {
-      console.log('Webhook setup returned:', JSON.stringify(webhookResult));
+      console.log("Webhook setup returned:", JSON.stringify(webhookResult));
     }
 
-    console.log('Syncing Stripe data...');
-    stripeSync.syncBackfill()
-      .then(() => console.log('Stripe data synced'))
-      .catch((err: any) => console.error('Error syncing Stripe data:', err));
+    console.log("Syncing Stripe data...");
+    stripeSync
+      .syncBackfill()
+      .then(() => console.log("Stripe data synced"))
+      .catch((err: any) => console.error("Error syncing Stripe data:", err));
   } catch (error) {
-    console.error('Failed to initialize Stripe:', error);
+    console.error("Failed to initialize Stripe:", error);
   }
 }
 
@@ -221,8 +227,14 @@ async function runBackgroundInit() {
     },
     () => {
       log(`serving on port ${port}`);
-      const lexiKeyPresent = !!(process.env.OPENAI_API_KEY || process.env.OPEN_AI_KEY || "").trim();
-      log(`[Startup] Lexi provider: openai-direct | OPENAI_API_KEY present: ${lexiKeyPresent}`);
+      const lexiKeyPresent = !!(
+        process.env.OPENAI_API_KEY ||
+        process.env.OPEN_AI_KEY ||
+        ""
+      ).trim();
+      log(
+        `[Startup] Lexi provider: openai-direct | OPENAI_API_KEY present: ${lexiKeyPresent}`,
+      );
       if (!lexiKeyPresent) {
         log("WARNING: OPENAI_API_KEY not set - Lexi will be unavailable");
       }
