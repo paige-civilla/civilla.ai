@@ -271,7 +271,9 @@ async function runBackgroundInit() {
   });
 
   log("Background initialization complete");
-}
+  } catch (err) {
+    console.error("Background initialization failed:", err);
+  }}
 
 (async () => {
   await registerRoutes(httpServer, app);

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { hashPassword, comparePasswords, requireAuth } from "./auth";
 import { testDbConnection, pool, checkAiTableColumns } from "./db";
 import oauthRouter from "./oauth";
+import { asyncHandler } from "./utils/asyncHandler";
 import {
   insertCaseSchema,
   insertTimelineEventSchema,
@@ -658,7 +659,7 @@ export async function registerRoutes(
 
   app.use("/api/auth", oauthRouter);
 
-  app.post("/api/auth/register", async (req, res) => {
+    app.post('/api/register', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { email, password, turnstileToken } = req.body;
 
@@ -729,7 +730,7 @@ export async function registerRoutes(
       console.error("Register error:", error);
       res.status(500).json({ error: "Registration failed" });
     }
-  });
+  }));
 
   app.post("/api/auth/login", async (req, res) => {
     try {
