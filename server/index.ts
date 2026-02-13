@@ -114,13 +114,17 @@ app.use(cors({
 }));
 app.use(
   express.json({
+    limit: '10mb', // Limit JSON payload size
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ 
+  extended: false,
+  limit: '10mb' // Limit URL-encoded payload size
+}));
 // Security headers
 app.use(helmet({
   contentSecurityPolicy: false, // Disable CSP for now to avoid breaking Vite dev mode
