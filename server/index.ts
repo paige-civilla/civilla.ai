@@ -31,13 +31,41 @@ declare module "http" {
 
 // Stripe webhook route MUST be registered BEFORE express.json() middleware
 // This ensures req.body is the raw Buffer needed for signature verification
+  // Stripe webhook IP whitelist for extra security
+  const STRIPE_WEBHOOK_IPS = [
+    '3.18.12.63',
+    '3.130.192.231', 
+    '13.235.14.237',
+    '18.211.135.69',
+    '3.33.155.40',
+    '35.154.171.200',
+    '52.15.183.38',
+    '18.157.65.240',
+    '3.68.177.215',
+    '54.187.174.169',
+    '54.187.205.235',
+    '54.187.216.72',
+  ]; 
+
 app.post(
-  "/api/stripe/webhook",
-  express.raw({ type: "application/json" }),
+  '/api/stripe/webhook',
+  (req, res, next) => {
+    // Verify request is from Stripe IPs (optional but recommended)
+    const clientIp = getClientIp(req);
+
+    // In production, enforce IP whitelist
+    if (process.env.NODE_ENV === 'production' && !STRIPE_WEBHOOK_IPS.includes(clientIp)) {
+      logger.warn(`Blocked webhook from unauthorized IP: ${clientIp}`);
+      return res.status(403).json({ error: 'Forbidden - Invalid source IP' });
+    }
+
+    next();
+  },
+  express.raw({ type: 'application/json' }),
   async (req, res) => {
-    const signature = req.headers["stripe-signature"];
+    const signature = req.headers['stripe-signature'];
     if (!signature) {
-      return res.status(400).json({ error: "Missing stripe-signature" });
+      return res.status(400).json({ error: 'Missing stripe-signature' });
     }
 
     try {
@@ -45,10 +73,10 @@ app.post(
       await WebhookHandlers.processWebhook(req.body as Buffer, sig);
       res.status(200).json({ received: true });
     } catch (error: any) {
-      console.error("Webhook error:", error.message);
-      res.status(400).json({ error: "Webhook processing error" });
+      logger.error('Webhook error:', { message: error.message });
+      res.status(400).json({ error: 'Webhook processing error' });
     }
-  },
+  }
 );
 // Compress all responses
 app.use(compression());
