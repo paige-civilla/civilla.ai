@@ -1158,9 +1158,13 @@ export async function registerRoutes(
 
       console.log(`[DeleteCase] Case deleted: caseId=${caseId}, userId=${userId}`);
       res.json({ success: true });
-    } catch (error) {
-      console.error("[DeleteCase] Error:", error);
-      res.status(500).json({ error: "Failed to delete case" });
+    } catch (error: any) {
+      console.error("[DeleteCase] Failed:", error);
+      const message = error?.message || String(error);
+      const code = error?.code;
+      const detail = error?.detail;
+      const hint = error?.hint;
+      res.status(500).json({ error: "Failed to delete case", message, code, detail, hint });
     }
   });
 
