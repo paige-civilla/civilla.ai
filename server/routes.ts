@@ -671,7 +671,7 @@ export async function registerRoutes(
       if (!turnstileResult.ok) {
         return res.status(400).json({
           error: turnstileResult.error || "CAPTCHA verification failed",
-        });
+        }));
       }
 
       if (!email || !password) {
