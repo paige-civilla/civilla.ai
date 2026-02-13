@@ -57,6 +57,14 @@ app.use(express.urlencoded({ extended: false }));
 
 const PgSession = connectPgSimple(session);
 
+// Validate required session secret
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET environment variable is required. Please set it in Replit Secrets.");
+}
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 app.use(
   session({
     name: "civilla.sid",
@@ -65,7 +73,7 @@ app.use(
       tableName: "session",
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     proxy: true,
@@ -73,7 +81,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: SEVEN_DAYS_MS,
     },
   })
 );
