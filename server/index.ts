@@ -12,6 +12,7 @@ import { WebhookHandlers } from "./webhookHandlers";
 import { requeueStaleExtractions } from "./services/evidenceJobs";
 import { logGcvStatus } from "./services/evidenceExtraction";
 import { requestIdMiddleware } from "./middleware/requestId";
+import helmet from "helmet";
 
 const app = express();
 const httpServer = createServer(app);
@@ -55,6 +56,11 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for now to avoid breaking Vite dev mode
+  crossOriginEmbedderPolicy: false, // Disable for development compatibility
+}));
 
 const PgSession = connectPgSimple(session);
 
