@@ -2021,8 +2021,8 @@ export default function AppDocuments() {
             </DialogDescription>
           </DialogHeader>
           {reviewPayload && (
-            <ScrollArea className="flex-1 pr-4">
-              <div className="flex flex-col gap-4 py-4">
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-4 py-4 pr-3">
                 <div className="flex items-center justify-between p-3 bg-neutral-lightest rounded-md border">
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -2328,7 +2328,7 @@ export default function AppDocuments() {
                   </div>
                 </div>
               </div>
-            </ScrollArea>
+            </div>
           )}
           <DialogFooter className="mt-4">
             <Button
