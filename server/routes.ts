@@ -1141,6 +1141,29 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/cases/:caseId", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId as string;
+      const { caseId } = req.params;
+
+      const caseData = await storage.getCase(caseId, userId);
+      if (!caseData) {
+        return res.status(404).json({ error: "Case not found" });
+      }
+
+      const deleted = await storage.deleteCase(caseId, userId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete case" });
+      }
+
+      console.log(`[DeleteCase] Case deleted: caseId=${caseId}, userId=${userId}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[DeleteCase] Error:", error);
+      res.status(500).json({ error: "Failed to delete case" });
+    }
+  });
+
   app.post("/api/cases", requireAuth, async (req, res) => {
     const userId = req.session.userId!;
     if (process.env.NODE_ENV !== "production") {

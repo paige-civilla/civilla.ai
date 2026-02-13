@@ -233,6 +233,7 @@ export interface IStorage {
   getCase(caseId: string, userId: string): Promise<Case | undefined>;
   createCase(userId: string, caseData: InsertCase): Promise<Case>;
   updateCase(caseId: string, userId: string, caseData: Partial<InsertCase>): Promise<Case | undefined>;
+  deleteCase(caseId: string, userId: string): Promise<boolean>;
 
   getAuthIdentity(provider: string, providerUserId: string): Promise<AuthIdentity | undefined>;
   createAuthIdentity(identity: InsertAuthIdentity): Promise<AuthIdentity>;
@@ -637,6 +638,77 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(cases.id, caseId), eq(cases.userId, userId)))
       .returning();
     return updatedCase;
+  }
+
+  async deleteCase(caseId: string, userId: string): Promise<boolean> {
+    const existingCase = await this.getCase(caseId, userId);
+    if (!existingCase) {
+      return false;
+    }
+    await db.execute(sql`
+      DO $$
+      DECLARE
+        v_case_id text := ${caseId};
+      BEGIN
+        DELETE FROM trial_binder_items WHERE section_id IN (SELECT id FROM trial_binder_sections WHERE case_id = v_case_id);
+        DELETE FROM trial_binder_sections WHERE case_id = v_case_id;
+        DELETE FROM trial_prep_shortlist WHERE case_id = v_case_id;
+        DELETE FROM draft_outline_claims WHERE outline_id IN (SELECT id FROM draft_outlines WHERE case_id = v_case_id);
+        DELETE FROM draft_outlines WHERE case_id = v_case_id;
+        DELETE FROM generated_exhibit_packets WHERE case_id = v_case_id;
+        DELETE FROM exhibit_packet_items WHERE packet_id IN (SELECT id FROM exhibit_packets WHERE case_id = v_case_id);
+        DELETE FROM exhibit_packet_evidence WHERE packet_id IN (SELECT id FROM exhibit_packets WHERE case_id = v_case_id);
+        DELETE FROM exhibit_packets WHERE case_id = v_case_id;
+        DELETE FROM exhibit_snippets WHERE exhibit_id IN (SELECT id FROM exhibits WHERE case_id = v_case_id);
+        DELETE FROM exhibit_evidence WHERE exhibit_id IN (SELECT id FROM exhibits WHERE case_id = v_case_id);
+        DELETE FROM exhibits WHERE case_id = v_case_id;
+        DELETE FROM exhibit_lists WHERE case_id = v_case_id;
+        DELETE FROM resource_field_maps WHERE resource_id IN (SELECT id FROM case_resources WHERE case_id = v_case_id);
+        DELETE FROM case_resources WHERE case_id = v_case_id;
+        DELETE FROM fact_citations WHERE fact_id IN (SELECT id FROM case_facts WHERE case_id = v_case_id);
+        DELETE FROM case_facts WHERE case_id = v_case_id;
+        DELETE FROM issue_grouping_claims WHERE issue_id IN (SELECT id FROM issue_groupings WHERE case_id = v_case_id);
+        DELETE FROM issue_groupings WHERE case_id = v_case_id;
+        DELETE FROM claim_links WHERE case_id = v_case_id;
+        DELETE FROM claim_suggestion_runs WHERE case_id = v_case_id;
+        DELETE FROM citation_pointers WHERE claim_id IN (SELECT id FROM case_claims WHERE case_id = v_case_id);
+        DELETE FROM case_claims WHERE case_id = v_case_id;
+        DELETE FROM evidence_facts WHERE case_id = v_case_id;
+        DELETE FROM evidence_anchors WHERE case_id = v_case_id;
+        DELETE FROM case_exhibit_note_links WHERE case_id = v_case_id;
+        DELETE FROM case_evidence_notes WHERE file_id IN (SELECT id FROM evidence_files WHERE case_id = v_case_id);
+        DELETE FROM evidence_ocr_pages WHERE file_id IN (SELECT id FROM evidence_files WHERE case_id = v_case_id);
+        DELETE FROM evidence_extractions WHERE file_id IN (SELECT id FROM evidence_files WHERE case_id = v_case_id);
+        DELETE FROM evidence_ai_analyses WHERE file_id IN (SELECT id FROM evidence_files WHERE case_id = v_case_id);
+        DELETE FROM evidence_notes WHERE file_id IN (SELECT id FROM evidence_files WHERE case_id = v_case_id);
+        DELETE FROM evidence_processing_jobs WHERE case_id = v_case_id;
+        DELETE FROM evidence_files WHERE case_id = v_case_id;
+        DELETE FROM timeline_event_links WHERE event_id IN (SELECT id FROM timeline_events WHERE case_id = v_case_id);
+        DELETE FROM timeline_events WHERE case_id = v_case_id;
+        DELETE FROM timeline_categories WHERE case_id = v_case_id;
+        DELETE FROM generated_documents WHERE case_id = v_case_id;
+        DELETE FROM parenting_plan_provisions WHERE parenting_plan_id IN (SELECT id FROM parenting_plans WHERE case_id = v_case_id);
+        DELETE FROM parenting_plans WHERE case_id = v_case_id;
+        DELETE FROM case_children WHERE case_id = v_case_id;
+        DELETE FROM case_contacts WHERE case_id = v_case_id;
+        DELETE FROM case_communications WHERE case_id = v_case_id;
+        DELETE FROM case_calendar_items WHERE case_id = v_case_id;
+        DELETE FROM calendar_categories WHERE case_id = v_case_id;
+        DELETE FROM deadlines WHERE case_id = v_case_id;
+        DELETE FROM tasks WHERE case_id = v_case_id;
+        DELETE FROM documents WHERE case_id = v_case_id;
+        DELETE FROM case_rule_terms WHERE case_id = v_case_id;
+        DELETE FROM collaborator_roles WHERE case_id = v_case_id;
+        DELETE FROM case_invites WHERE case_id = v_case_id;
+        DELETE FROM case_collaborators WHERE case_id = v_case_id;
+        DELETE FROM lexi_case_memory WHERE case_id = v_case_id;
+        DELETE FROM processing_credit_ledger WHERE case_id = v_case_id;
+        DELETE FROM usage_events WHERE case_id = v_case_id;
+        DELETE FROM activity_logs WHERE case_id = v_case_id;
+        DELETE FROM cases WHERE id = v_case_id AND user_id = ${userId};
+      END $$;
+    `);
+    return true;
   }
 
   async getAuthIdentity(provider: string, providerUserId: string): Promise<AuthIdentity | undefined> {
