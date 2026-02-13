@@ -13,6 +13,7 @@ import { requeueStaleExtractions } from "./services/evidenceJobs";
 import { logGcvStatus } from "./services/evidenceExtraction";
 import { requestIdMiddleware } from "./middleware/requestId";
 import helmet from "helmet";
+import compression from "compression";
 
 const app = express();
 const httpServer = createServer(app);
@@ -46,7 +47,8 @@ app.post(
     }
   },
 );
-
+// Compress all responses
+app.use(compression());
 app.use(
   express.json({
     verify: (req, _res, buf) => {
