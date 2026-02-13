@@ -189,13 +189,26 @@ async function runBackgroundInit() {
   }
 
   try {
-    const requeuedCount = await requeueStaleExtractions();
-    if (requeuedCount > 0) {
-      console.log(`Re-queued ${requeuedCount} stale evidence extractions`);
-    }
-  } catch (err) {
-    console.error("Failed to re-queue stale extractions:", err);
-  }
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+
+    // Log full error details server-side for debugging
+    console.error(`[${req.method} ${req.path}] Error ${status}:`, {
+      message: err.message,
+      stack: err.stack,
+      requestId: (req as any).requestId,
+    });
+
+    // Send sanitized error to client
+    const message = process.env.NODE_ENV === 'production' 
+      ? 'An error occurred. Please try again.' 
+      : err.message || 'Internal Server Error';
+
+    res.status(status).json({ 
+      message,
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
+  });
 
   log("Background initialization complete");
 }
