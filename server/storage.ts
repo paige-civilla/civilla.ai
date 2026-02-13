@@ -706,7 +706,12 @@ export class DatabaseStorage implements IStorage {
       try {
         await db.execute(stmt);
       } catch (e: any) {
-        if (e?.code === '42P01') continue;
+        // 42P01 = table does not exist
+        // 42703 = column does not exist
+        if (e?.code === '42P01' || e?.code === '42703') {
+          console.log('[DeleteCase] Skipping delete due to missing table/column:', e.message);
+          continue;
+        }
         throw e;
       }
     }
