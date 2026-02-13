@@ -14428,7 +14428,7 @@ Top 3 selection criteria:
     requireCaseAccess("viewer"),
     async (req, res) => {
       try {
-        const userId = (req as any).user!.id;
+        const userId = req.session.userId as string;
         const { caseId } = req.params;
 
         const caseData = await storage.getCase(caseId, userId);
@@ -16077,7 +16077,7 @@ Top 3 selection criteria:
     requireCaseAccess("owner"),
     async (req, res) => {
       try {
-        const userId = (req as any).user.id;
+        const userId = req.session.userId as string;
         const caseId = req.params.caseId;
         const { email, expiresInDays = 30 } = req.body;
 
@@ -16208,7 +16208,7 @@ Top 3 selection criteria:
     requireCaseAccess("viewer"),
     async (req, res) => {
       try {
-        const userId = (req as any).user.id;
+        const userId = req.session.userId as string;
         const caseId = req.params.caseId;
         const role = await getUserCaseRole(userId, caseId);
         res.json({
@@ -16269,7 +16269,7 @@ Top 3 selection criteria:
     requireCaseAccess("owner"),
     async (req, res) => {
       try {
-        const userId = (req as any).user.id;
+        const userId = req.session.userId as string;
         const { caseId, collaboratorUserId } = req.params;
 
         await db
@@ -16339,7 +16339,7 @@ Top 3 selection criteria:
     requireCaseAccess("owner"),
     async (req, res) => {
       try {
-        const userId = (req as any).user.id;
+        const userId = req.session.userId as string;
         const { caseId, inviteId } = req.params;
 
         await db
@@ -16365,7 +16365,7 @@ Top 3 selection criteria:
 
   app.get("/api/attorney/shared-cases", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.session.userId as string;
       const sharedCases = await db
         .select({
           caseId: caseCollaborators.caseId,
