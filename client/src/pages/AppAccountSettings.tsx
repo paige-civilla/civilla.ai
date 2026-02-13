@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles, BarChart3, Clock, Activity } from "lucide-react";
+import { User, CreditCard, Settings, Palette, Calculator, ChevronDown, ChevronUp, Bot, Sparkles, BarChart3, Clock, Activity, FolderOpen, Trash2, AlertTriangle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Slider } from "@/components/ui/slider";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -294,6 +295,152 @@ function ProcessingCreditsCard() {
         </Button>
       </div>
     </div>
+  );
+}
+
+interface CaseItem {
+  id: string;
+  title: string;
+  nickname: string | null;
+  caseNumber: string | null;
+  createdAt: string;
+}
+
+function CaseManagementCard() {
+  const { toast } = useToast();
+  const [deletingCaseId, setDeletingCaseId] = useState<string | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+
+  const { data: casesResponse, isLoading } = useQuery<{ cases: CaseItem[] }>({
+    queryKey: ["/api/cases"],
+  });
+  const cases = casesResponse?.cases || [];
+
+  const deleteCaseMutation = useMutation({
+    mutationFn: async (caseId: string) => {
+      await apiRequest("DELETE", `/api/cases/${caseId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      setDeletingCaseId(null);
+      setConfirmText("");
+      toast({ title: "Case deleted", description: "The case and all its data have been permanently removed." });
+    },
+    onError: (error) => {
+      toast({ variant: "destructive", title: "Failed to delete case", description: String(error) });
+    },
+  });
+
+  const caseToDelete = cases.find((c) => c.id === deletingCaseId);
+  const deleteConfirmed = confirmText.toLowerCase() === "delete";
+
+  return (
+    <Card className="bg-white">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-3 text-lg font-heading font-bold text-neutral-darkest">
+          <div className="w-10 h-10 rounded-lg bg-[#f4f6f5] flex items-center justify-center">
+            <FolderOpen className="w-5 h-5 text-primary" />
+          </div>
+          Case Management
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
+            <p className="font-sans text-neutral-darkest/60">Loading cases...</p>
+          </div>
+        ) : cases.length === 0 ? (
+          <div className="bg-[#f4f6f5] rounded-lg p-6 text-center">
+            <p className="font-sans text-neutral-darkest/60">You don't have any cases yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="font-sans text-sm text-neutral-darkest/70">
+              You have {cases.length} {cases.length === 1 ? "case" : "cases"}. Deleting a case permanently removes all associated documents, evidence, claims, timeline events, and other data.
+            </p>
+            {cases.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between bg-[#f4f6f5] rounded-lg px-4 py-3"
+                data-testid={`case-row-${c.id}`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-sans text-sm font-medium text-neutral-darkest truncate">
+                    {c.nickname || c.title}
+                  </p>
+                  <p className="font-sans text-xs text-neutral-darkest/60">
+                    {c.caseNumber ? `#${c.caseNumber} · ` : ""}Created {new Date(c.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <AlertDialog open={deletingCaseId === c.id} onOpenChange={(open) => { if (!open) { setDeletingCaseId(null); setConfirmText(""); } }}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeletingCaseId(c.id)}
+                      className="text-red-500 hover:text-red-700 flex-shrink-0"
+                      data-testid={`button-delete-case-${c.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                        <AlertTriangle className="w-5 h-5" />
+                        Delete Case Permanently
+                      </AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div className="space-y-3">
+                          <p>
+                            You are about to permanently delete <strong className="text-neutral-darkest">{caseToDelete?.nickname || caseToDelete?.title}</strong> and all of its data, including:
+                          </p>
+                          <ul className="list-disc list-inside text-sm space-y-1 text-neutral-darkest/70">
+                            <li>All uploaded documents and evidence</li>
+                            <li>AI analysis results and extracted data</li>
+                            <li>Claims, facts, and citations</li>
+                            <li>Timeline events and deadlines</li>
+                            <li>Contacts, communications, and tasks</li>
+                            <li>Generated documents and exhibits</li>
+                          </ul>
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                            <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                              This action cannot be undone. Type "delete" to confirm.
+                            </p>
+                            <Input
+                              value={confirmText}
+                              onChange={(e) => setConfirmText(e.target.value)}
+                              placeholder='Type "delete" to confirm'
+                              className="bg-white dark:bg-neutral-900"
+                              data-testid="input-confirm-delete"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (deletingCaseId) deleteCaseMutation.mutate(deletingCaseId);
+                        }}
+                        disabled={!deleteConfirmed || deleteCaseMutation.isPending}
+                        className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                        data-testid="button-confirm-delete"
+                      >
+                        {deleteCaseMutation.isPending ? "Deleting..." : "Delete Case"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -844,6 +991,8 @@ export default function AppAccountSettings() {
           <AiStatusCard />
 
           <AttorneyAccessCard />
+
+          <CaseManagementCard />
 
           <Card className="bg-white">
             <CardHeader className="pb-4">
