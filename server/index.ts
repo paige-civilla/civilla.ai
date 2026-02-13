@@ -15,6 +15,7 @@ import { requestIdMiddleware } from "./middleware/requestId";
 import helmet from "helmet";
 import compression from "compression";
 import { logger } from "./logger";
+import cors from "cors";
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,6 +51,38 @@ app.post(
 );
 // Compress all responses
 app.use(compression());
+// CORS configuration
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? process.env.FRONTEND_URL.split(',')
+  : [
+      'http://localhost:5173', // Vite dev
+      'http://localhost:5000', // Local server
+    ];
+
+// Add Replit domains if available
+if (process.env.REPLIT_DOMAINS) {
+  const replitDomains = process.env.REPLIT_DOMAINS.split(',').map(
+    domain => `https://${domain.trim()}`
+  );
+  allowedOrigins.push(...replitDomains);
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+}));
 app.use(
   express.json({
     verify: (req, _res, buf) => {
