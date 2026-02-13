@@ -668,11 +668,9 @@ export async function registerRoutes(
         getClientIp(req),
       );
       if (!turnstileResult.ok) {
-        return res
-          .status(400)
-          .json({
-            error: turnstileResult.error || "CAPTCHA verification failed",
-          });
+        return res.status(400).json({
+          error: turnstileResult.error || "CAPTCHA verification failed",
+        });
       }
 
       if (!email || !password) {
@@ -870,11 +868,9 @@ export async function registerRoutes(
         }
 
         if (!packType || !["overlimit_200", "plus_600"].includes(packType)) {
-          return res
-            .status(400)
-            .json({
-              error: "Valid pack type required (overlimit_200 or plus_600)",
-            });
+          return res.status(400).json({
+            error: "Valid pack type required (overlimit_200 or plus_600)",
+          });
         }
 
         const origin = req.headers.origin || `https://${req.headers.host}`;
@@ -1079,12 +1075,10 @@ export async function registerRoutes(
       const userId = req.session.userId!;
       const parseResult = upsertUserProfileSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid profile data",
-            details: parseResult.error.errors,
-          });
+        return res.status(400).json({
+          error: "Invalid profile data",
+          details: parseResult.error.errors,
+        });
       }
 
       const updatedProfile = await storage.upsertUserProfile(
@@ -1156,7 +1150,9 @@ export async function registerRoutes(
         return res.status(500).json({ error: "Failed to delete case" });
       }
 
-      console.log(`[DeleteCase] Case deleted: caseId=${caseId}, userId=${userId}`);
+      console.log(
+        `[DeleteCase] Case deleted: caseId=${caseId}, userId=${userId}`,
+      );
       res.json({ success: true });
     } catch (error: any) {
       console.error("[DeleteCase] Failed:", error);
@@ -1164,7 +1160,9 @@ export async function registerRoutes(
       const code = error?.code;
       const detail = error?.detail;
       const hint = error?.hint;
-      res.status(500).json({ error: "Failed to delete case", message, code, detail, hint });
+      res
+        .status(500)
+        .json({ error: "Failed to delete case", message, code, detail, hint });
     }
   });
 
@@ -1182,12 +1180,10 @@ export async function registerRoutes(
         console.error("[CreateCase] SESSION_INVALID - userId not in DB", {
           userId,
         });
-        return res
-          .status(401)
-          .json({
-            error: "Session expired. Please sign in again.",
-            code: "SESSION_INVALID",
-          });
+        return res.status(401).json({
+          error: "Session expired. Please sign in again.",
+          code: "SESSION_INVALID",
+        });
       }
 
       const caseCount = await storage.getCaseCountByUserId(userId);
@@ -1208,13 +1204,11 @@ export async function registerRoutes(
           body: req.body,
           errors: parseResult.error.errors,
         });
-        return res
-          .status(400)
-          .json({
-            error: "Invalid case data",
-            fields,
-            code: "VALIDATION_FAILED",
-          });
+        return res.status(400).json({
+          error: "Invalid case data",
+          fields,
+          code: "VALIDATION_FAILED",
+        });
       }
 
       const newCase = await storage.createCase(userId, parseResult.data);
@@ -1398,12 +1392,10 @@ export async function registerRoutes(
         }
 
         if (parseResult.data.notes && parseResult.data.notes.length > 10000) {
-          return res
-            .status(400)
-            .json({
-              error: "Validation failed",
-              fields: { notes: "Notes must be 10,000 characters or less" },
-            });
+          return res.status(400).json({
+            error: "Validation failed",
+            fields: { notes: "Notes must be 10,000 characters or less" },
+          });
         }
 
         const event = await storage.createTimelineEvent(
@@ -1586,21 +1578,17 @@ export async function registerRoutes(
         }
 
         if (!req.file) {
-          return res
-            .status(400)
-            .json({
-              error: "Validation failed",
-              fields: { file: "File is required" },
-            });
+          return res.status(400).json({
+            error: "Validation failed",
+            fields: { file: "File is required" },
+          });
         }
 
         if (req.file.size > MAX_FILE_SIZE) {
-          return res
-            .status(400)
-            .json({
-              error: "Validation failed",
-              fields: { file: "File must be 25MB or less" },
-            });
+          return res.status(400).json({
+            error: "Validation failed",
+            fields: { file: "File must be 25MB or less" },
+          });
         }
 
         const mimeType = req.file.mimetype;
@@ -1974,21 +1962,17 @@ export async function registerRoutes(
 
         const file = await storage.getEvidenceFile(evidenceId, userId);
         if (!file || file.caseId !== caseId) {
-          return res
-            .status(400)
-            .json({
-              error: "Evidence file not found",
-              code: "EVIDENCE_NOT_FOUND",
-            });
+          return res.status(400).json({
+            error: "Evidence file not found",
+            code: "EVIDENCE_NOT_FOUND",
+          });
         }
 
         if (!file.storageKey) {
-          return res
-            .status(400)
-            .json({
-              error: "Evidence file has no storage key",
-              code: "NO_STORAGE_KEY",
-            });
+          return res.status(400).json({
+            error: "Evidence file has no storage key",
+            code: "NO_STORAGE_KEY",
+          });
         }
 
         const requiresOcr =
@@ -2378,11 +2362,9 @@ export async function registerRoutes(
           extraction.status !== "complete" ||
           !extraction.extractedText
         ) {
-          return res
-            .status(400)
-            .json({
-              error: "Extraction must be complete before running analysis",
-            });
+          return res.status(400).json({
+            error: "Extraction must be complete before running analysis",
+          });
         }
 
         const analysis = await storage.createEvidenceAiAnalysis(
@@ -2485,11 +2467,9 @@ Return a JSON object with this structure:
         );
 
         if (!completeExtraction) {
-          return res
-            .status(400)
-            .json({
-              error: "No completed extractions available for claims suggestion",
-            });
+          return res.status(400).json({
+            error: "No completed extractions available for claims suggestion",
+          });
         }
 
         triggerClaimsSuggestionForEvidence({
@@ -6445,11 +6425,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         );
 
         if (evidenceLinks.length === 0 && snippets.length === 0) {
-          return res
-            .status(400)
-            .json({
-              error: "No items to export. Add evidence or snippets first.",
-            });
+          return res.status(400).json({
+            error: "No items to export. Add evidence or snippets first.",
+          });
         }
 
         const archive = archiver("zip", { zlib: { level: 9 } });
@@ -6958,12 +6936,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
         const parsed = upsertCaseRuleTermSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid request",
-              details: parsed.error.flatten(),
-            });
+          return res.status(400).json({
+            error: "Invalid request",
+            details: parsed.error.flatten(),
+          });
         }
 
         const term = await storage.upsertCaseRuleTerm(
@@ -6991,13 +6967,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
   app.get("/api/lexi/health", requireAuth, async (_req, res) => {
     if (!OPENAI_API_KEY) {
-      return res
-        .status(200)
-        .json({
-          ok: false,
-          provider: "openai-direct",
-          error: "missing OPENAI_API_KEY",
-        });
+      return res.status(200).json({
+        ok: false,
+        provider: "openai-direct",
+        error: "missing OPENAI_API_KEY",
+      });
     }
 
     try {
@@ -7082,13 +7056,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       });
     } catch (error) {
       console.error("AI health check error:", error);
-      res
-        .status(500)
-        .json({
-          ok: false,
-          error: "Health check failed",
-          code: "INTERNAL_ERROR",
-        });
+      res.status(500).json({
+        ok: false,
+        error: "Health check failed",
+        code: "INTERNAL_ERROR",
+      });
     }
   });
 
@@ -7281,12 +7253,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
         const parsed = createLexiThreadSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid request",
-              details: parsed.error.flatten(),
-            });
+          return res.status(400).json({
+            error: "Invalid request",
+            details: parsed.error.flatten(),
+          });
         }
 
         const requestedTitle = (parsed.data.title ?? "").trim();
@@ -7481,12 +7451,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       }
 
       if (!openai) {
-        return res
-          .status(503)
-          .json({
-            error:
-              "Lexi is not configured. Add OPENAI_API_KEY in Replit Secrets and restart the app.",
-          });
+        return res.status(503).json({
+          error:
+            "Lexi is not configured. Add OPENAI_API_KEY in Replit Secrets and restart the app.",
+        });
       }
 
       await storage.createLexiMessage(
@@ -8529,13 +8497,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
       res.json({ ...report, requestId: req.requestId });
     } catch (e: any) {
       console.error("[SmokeCheck] error:", e);
-      res
-        .status(500)
-        .json({
-          ok: false,
-          error: "Smoke check failed",
-          requestId: req.requestId,
-        });
+      res.status(500).json({
+        ok: false,
+        error: "Smoke check failed",
+        requestId: req.requestId,
+      });
     }
   });
 
@@ -8602,13 +8568,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         });
       } catch (e: any) {
         console.error("[Diagnostics] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Diagnostics failed",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Diagnostics failed",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -8666,13 +8630,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         res.json({ ok: allValid, results, requestId: req.requestId });
       } catch (e: any) {
         console.error("[Contracts] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Contract validation failed",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Contract validation failed",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -8710,13 +8672,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         });
       } catch (e: any) {
         console.error("[AI Status] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Failed to get AI status",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Failed to get AI status",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -8739,12 +8699,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
 
         const validFeatures = Object.values(AI_FEATURES);
         if (!validFeatures.includes(feature)) {
-          return res
-            .status(400)
-            .json({
-              ok: false,
-              error: `Invalid feature. Valid: ${validFeatures.join(", ")}`,
-            });
+          return res.status(400).json({
+            ok: false,
+            error: `Invalid feature. Valid: ${validFeatures.join(", ")}`,
+          });
         }
 
         setFeatureEnabled(feature, enabled);
@@ -8756,13 +8714,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         });
       } catch (e: any) {
         console.error("[Feature Flag] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Failed to update feature flag",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Failed to update feature flag",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -8791,13 +8747,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         });
       } catch (e: any) {
         console.error("[Acknowledge Alert] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Failed to acknowledge alert",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Failed to acknowledge alert",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -8822,13 +8776,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         });
       } catch (e: any) {
         console.error("[Refresh Entitlements] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Failed to refresh entitlements",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Failed to refresh entitlements",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -8850,13 +8802,11 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         });
       } catch (e: any) {
         console.error("[Get Entitlements] error:", e);
-        res
-          .status(500)
-          .json({
-            ok: false,
-            error: "Failed to get entitlements",
-            requestId: req.requestId,
-          });
+        res.status(500).json({
+          ok: false,
+          error: "Failed to get entitlements",
+          requestId: req.requestId,
+        });
       }
     },
   );
@@ -9731,11 +9681,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           evidenceId,
         });
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const anchor = await storage.createEvidenceAnchor(
@@ -10579,11 +10527,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           mimeType: evidenceFile.mimeType,
         });
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const extraction = await storage.createEvidenceExtraction(
@@ -10647,11 +10593,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           evidenceId,
         });
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const note = await storage.createEvidenceNoteFull(
@@ -10763,11 +10707,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           evidenceId,
         });
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const analysis = await storage.createEvidenceAiAnalysis(
@@ -10895,11 +10837,9 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
         );
         const parsed = updateEvidenceAiAnalysisSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const updated = await storage.updateEvidenceAiAnalysis(
@@ -10989,21 +10929,17 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           !extraction.extractedText ||
           extraction.extractedText.trim().length === 0
         ) {
-          return res
-            .status(400)
-            .json({
-              error: "No extracted text available for analysis",
-              code: "NO_EXTRACTED_TEXT",
-            });
+          return res.status(400).json({
+            error: "No extracted text available for analysis",
+            code: "NO_EXTRACTED_TEXT",
+          });
         }
 
         if (!process.env.OPENAI_API_KEY) {
-          return res
-            .status(503)
-            .json({
-              error: "AI analysis unavailable - OPENAI_API_KEY not configured",
-              code: "OPENAI_KEY_MISSING",
-            });
+          return res.status(503).json({
+            error: "AI analysis unavailable - OPENAI_API_KEY not configured",
+            code: "OPENAI_KEY_MISSING",
+          });
         }
 
         const existingAnalyses = await storage.listEvidenceAiAnalyses(
@@ -11015,12 +10951,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
           (a) => a.status === "processing",
         );
         if (existingProcessing && !refresh) {
-          return res
-            .status(409)
-            .json({
-              error: "Analysis already in progress",
-              analysisId: existingProcessing.id,
-            });
+          return res.status(409).json({
+            error: "Analysis already in progress",
+            analysisId: existingProcessing.id,
+          });
         }
 
         const existingSummary = existingAnalyses.find(
@@ -11028,12 +10962,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
             a.analysisType === "summary_findings" && a.status === "complete",
         );
         if (existingSummary && !refresh) {
-          return res
-            .status(409)
-            .json({
-              error: "Analysis already exists",
-              analysisId: existingSummary.id,
-            });
+          return res.status(409).json({
+            error: "Analysis already exists",
+            analysisId: existingSummary.id,
+          });
         }
 
         const analysis = await storage.createEvidenceAiAnalysis(
@@ -11065,12 +10997,10 @@ Remember: Only compute if you're confident in the methodology. If not, provide t
               status: "failed",
               error: "Insufficient processing credits",
             });
-            return res
-              .status(402)
-              .json({
-                error: "Insufficient processing credits",
-                code: "INSUFFICIENT_CREDITS",
-              });
+            return res.status(402).json({
+              error: "Insufficient processing credits",
+              code: "INSUFFICIENT_CREDITS",
+            });
           }
           creditConsumed = true;
           console.log(
@@ -11244,12 +11174,10 @@ Return a JSON object with this structure:
         }
 
         if (!process.env.OPENAI_API_KEY) {
-          return res
-            .status(502)
-            .json({
-              error: "Lexi cannot authenticate to OpenAI.",
-              code: "OPENAI_KEY_MISSING",
-            });
+          return res.status(502).json({
+            error: "Lexi cannot authenticate to OpenAI.",
+            code: "OPENAI_KEY_MISSING",
+          });
         }
 
         const extraction = await storage.getEvidenceExtraction(
@@ -11325,12 +11253,10 @@ Return a JSON object with this structure:
           });
 
           if (!consumeResult.consumed) {
-            return res
-              .status(402)
-              .json({
-                error: "Insufficient processing credits",
-                code: "INSUFFICIENT_CREDITS",
-              });
+            return res.status(402).json({
+              error: "Insufficient processing credits",
+              code: "INSUFFICIENT_CREDITS",
+            });
           }
           creditConsumed = true;
           console.log(
@@ -11338,13 +11264,11 @@ Return a JSON object with this structure:
           );
         }
 
-        res
-          .status(202)
-          .json({
-            ok: true,
-            message: "Generating claim suggestions...",
-            useCredit,
-          });
+        res.status(202).json({
+          ok: true,
+          message: "Generating claim suggestions...",
+          useCredit,
+        });
 
         claimSuggestionLimiter(async () => {
           try {
@@ -11570,11 +11494,9 @@ Limit to ${limit} most important claims.`;
         const { insertExhibitSnippetSchema } = await import("@shared/schema");
         const parsed = insertExhibitSnippetSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const snippet = await storage.createExhibitSnippet(
@@ -11601,11 +11523,9 @@ Limit to ${limit} most important claims.`;
         const { updateExhibitSnippetSchema } = await import("@shared/schema");
         const parsed = updateExhibitSnippetSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const updated = await storage.updateExhibitSnippet(
@@ -11689,11 +11609,9 @@ Limit to ${limit} most important claims.`;
         );
         const parsed = insertTrialPrepShortlistSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const item = await storage.createTrialPrepShortlistItem(
@@ -11735,11 +11653,9 @@ Limit to ${limit} most important claims.`;
         );
         const parsed = updateTrialPrepShortlistSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const existing = await storage.getTrialPrepShortlistItem(
@@ -11839,11 +11755,9 @@ Limit to ${limit} most important claims.`;
         const { insertCitationPointerSchema } = await import("@shared/schema");
         const parsed = insertCitationPointerSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const citation = await storage.createCitationPointer(
@@ -12002,11 +11916,9 @@ Limit to ${limit} most important claims.`;
         const { insertCaseClaimSchema } = await import("@shared/schema");
         const parsed = insertCaseClaimSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const claim = await storage.createCaseClaim(
@@ -12170,12 +12082,10 @@ Limit to ${limit} most important claims.`;
       const { confirm, reason } = req.body || {};
 
       if (confirm !== true) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Unlock requires confirmation. Set confirm: true in request body.",
-          });
+        return res.status(400).json({
+          error:
+            "Unlock requires confirmation. Set confirm: true in request body.",
+        });
       }
 
       const claim = await storage.getCaseClaim(userId, claimId);
@@ -12349,11 +12259,9 @@ Limit to ${limit} most important claims.`;
         const { insertIssueGroupingSchema } = await import("@shared/schema");
         const parsed = insertIssueGroupingSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: parsed.error.errors[0]?.message || "Invalid input",
-            });
+          return res.status(400).json({
+            error: parsed.error.errors[0]?.message || "Invalid input",
+          });
         }
 
         const issue = await storage.createIssueGrouping(
@@ -12587,12 +12495,10 @@ Limit to ${limit} most important claims.`;
           Boolean,
         ).length;
         if (targetCount !== 1) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "Exactly one of evidenceId, claimId, or snippetId must be provided",
-            });
+          return res.status(400).json({
+            error:
+              "Exactly one of evidenceId, claimId, or snippetId must be provided",
+          });
         }
 
         if (linkType === "evidence" && !evidenceId) {
@@ -12772,12 +12678,10 @@ Limit to ${limit} most important claims.`;
           Boolean,
         ).length;
         if (targetCount !== 1) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "Exactly one of eventId, trialPrepId, or snippetId must be provided",
-            });
+          return res.status(400).json({
+            error:
+              "Exactly one of eventId, trialPrepId, or snippetId must be provided",
+          });
         }
 
         if (linkType === "timeline" && !eventId) {
@@ -12894,12 +12798,10 @@ Limit to ${limit} most important claims.`;
         const { insertDraftOutlineSchema } = await import("@shared/schema");
         const parsed = insertDraftOutlineSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid outline data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid outline data",
+            details: parsed.error.errors,
+          });
         }
 
         const outline = await storage.createDraftOutline(
@@ -12985,12 +12887,10 @@ Limit to ${limit} most important claims.`;
         );
         const parsed = insertDraftOutlineClaimSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid claim assignment data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid claim assignment data",
+            details: parsed.error.errors,
+          });
         }
 
         const claim = await storage.addClaimToOutline(
@@ -13055,12 +12955,10 @@ Limit to ${limit} most important claims.`;
         );
         const parsed = bulkUpdateDraftOutlineClaimsSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid bulk update data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid bulk update data",
+            details: parsed.error.errors,
+          });
         }
 
         await storage.bulkUpdateOutlineClaims(userId, outlineId, parsed.data);
@@ -13245,12 +13143,10 @@ Limit to ${limit} most important claims.`;
         const { insertCaseResourceSchema } = await import("@shared/schema");
         const parsed = insertCaseResourceSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid resource data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid resource data",
+            details: parsed.error.errors,
+          });
         }
 
         const resource = await storage.createCaseResource(
@@ -13296,12 +13192,10 @@ Limit to ${limit} most important claims.`;
         const { updateCaseResourceSchema } = await import("@shared/schema");
         const parsed = updateCaseResourceSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid update data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid update data",
+            details: parsed.error.errors,
+          });
         }
 
         const resource = await storage.updateCaseResource(
@@ -13422,12 +13316,10 @@ Limit to ${limit} most important claims.`;
         const { insertResourceFieldMapSchema } = await import("@shared/schema");
         const parsed = insertResourceFieldMapSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid field map data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid field map data",
+            details: parsed.error.errors,
+          });
         }
 
         const fieldMap = await storage.createResourceFieldMap(
@@ -13595,12 +13487,10 @@ Limit to ${limit} most important claims.`;
         const { updateResourceFieldMapSchema } = await import("@shared/schema");
         const parsed = updateResourceFieldMapSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid update data",
-              details: parsed.error.errors,
-            });
+          return res.status(400).json({
+            error: "Invalid update data",
+            details: parsed.error.errors,
+          });
         }
 
         const fieldMap = await storage.updateResourceFieldMap(
@@ -14195,12 +14085,10 @@ Top 3 selection criteria:
         }
         const parsed = insertCaseFactSchema.safeParse(req.body);
         if (!parsed.success) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid fact data",
-              details: parsed.error.flatten(),
-            });
+          return res.status(400).json({
+            error: "Invalid fact data",
+            details: parsed.error.flatten(),
+          });
         }
         const fact = await storage.createCaseFact(userId, caseId, parsed.data);
         res.status(201).json({ fact });
@@ -14221,12 +14109,10 @@ Top 3 selection criteria:
       }
       const parsed = updateCaseFactSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid update data",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Invalid update data",
+          details: parsed.error.flatten(),
+        });
       }
       const updated = await storage.updateCaseFact(userId, factId, parsed.data);
       res.json({ fact: updated });
@@ -16415,4 +16301,49 @@ Top 3 selection criteria:
   });
 
   return httpServer;
+  // Health check endpoint
+  app.get("/health", async (req, res) => {
+    const checks = {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      serverStartTime: new Date(serverStartTime).toISOString(),
+      checks: {
+        database: false,
+        ai: false,
+        storage: false,
+      },
+    };
+
+    try {
+      // Check database
+      checks.checks.database = await testDbConnection();
+    } catch (error) {
+      logger.error("Health check: Database failed", { error });
+      checks.checks.database = false;
+    }
+
+    try {
+      // Check AI availability
+      checks.checks.ai = !!(process.env.OPENAI_API_KEY || "").trim();
+    } catch (error) {
+      logger.error("Health check: AI check failed", { error });
+      checks.checks.ai = false;
+    }
+
+    try {
+      // Check storage
+      checks.checks.storage = isR2Configured();
+    } catch (error) {
+      logger.error("Health check: Storage check failed", { error });
+      checks.checks.storage = false;
+    }
+
+    // Determine overall health
+    const allHealthy = Object.values(checks.checks).every(Boolean);
+    checks.status = allHealthy ? "healthy" : "degraded";
+
+    const statusCode = allHealthy ? 200 : 503;
+    res.status(statusCode).json(checks);
+  });
 }
