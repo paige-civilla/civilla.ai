@@ -1,0 +1,85 @@
+/**
+ * Civilla: Make DELETE /api/cases/:caseId return the real error details (instead of generic toast).
+ *
+ * What it does:
+ * - Finds server/routes.ts (or server/routes.js)
+ * - Makes a backup
+ * - Patches the delete-case handler catch block to:
+ *    1) console.error the full error
+ *    2) return { error, message, code, detail, hint } in JSON
+ *
+ * Run:
+ *   node fix-deletecase-logging.js
+ */
+
+const fs = require("fs");
+const path = require("path");
+
+function stamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+function read(p) { return fs.readFileSync(p, "utf8"); }
+function write(p, s) { fs.writeFileSync(p, s, "utf8"); }
+
+const candidates = [
+  path.join(process.cwd(), "server", "routes.ts"),
+  path.join(process.cwd(), "server", "routes.js"),
+];
+
+const target = candidates.find(fs.existsSync);
+if (!target) {
+  console.error("❌ Could not find server/routes.ts or server/routes.js");
+  process.exit(1);
+}
+
+const original = read(target);
+const backup = `${target}.backup_${stamp()}`;
+write(backup, original);
+
+// We look for a catch block that returns: { error: "Failed to delete case" }
+// and replace it with a richer error response.
+// This is intentionally minimal to avoid breaking your app.
+const re =
+  /catch\s*\(\s*([a-zA-Z_$][\w$]*)\s*\)\s*\{\s*([\s\S]*?)res\.status\(\s*500\s*\)\.json\(\s*\{\s*error\s*:\s*["']Failed to delete case["'][\s\S]*?\}\s*\)\s*;\s*\}/m;
+
+if (!re.test(original)) {
+  console.log("ℹ️ I couldn't find the exact catch block pattern that returns 'Failed to delete case'.");
+  console.log("✅ Backup saved at:", backup);
+  console.log("Next: open server/routes.ts and search for: Failed to delete case");
+  process.exit(0);
+}
+
+const updated = original.replace(re, (match, errVar) => {
+  // Don’t double-insert if already patched
+  if (match.includes("[DeleteCase]")) return match;
+
+  return `catch (${errVar}) {
+    console.error("[DeleteCase] Failed:", ${errVar});
+    // common Postgres/Supabase fields: message, code, detail, hint
+    const message = ${errVar}?.message || String(${errVar});
+    const code = ${errVar}?.code;
+    const detail = ${errVar}?.detail;
+    const hint = ${errVar}?.hint;
+
+    return res.status(500).json({
+      error: "Failed to delete case",
+      message,
+      code,
+      detail,
+      hint
+    });
+  }`;
+});
+
+write(target, updated);
+
+console.log("\n✅ Patched delete-case logging so the API returns the real error details.");
+console.log("📄 Updated:", target);
+console.log("🧰 Backup:", backup);
+console.log("\nNext steps:");
+console.log("1) Restart your server.");
+console.log("2) Try deleting again.");
+console.log("3) In DevTools → Network → DELETE request → Response, copy/paste the JSON here.\n");
