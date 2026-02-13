@@ -16,6 +16,7 @@ import helmet from "helmet";
 import compression from "compression";
 import { logger } from "./logger";
 import cors from "cors";
+import { config, validateConfig } from "./config";
 
 const app = express();
 const httpServer = createServer(app);
@@ -233,6 +234,8 @@ async function initStripe() {
 }
 
 async function runBackgroundInit() {
+  // Validate configuration on startup
+  validateConfig();
   try {
     await initDbTables();
   } catch (err) {
