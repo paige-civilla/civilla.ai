@@ -14,6 +14,7 @@ import { logGcvStatus } from "./services/evidenceExtraction";
 import { requestIdMiddleware } from "./middleware/requestId";
 import helmet from "helmet";
 import compression from "compression";
+import { logger } from "./logger";
 
 const app = express();
 const httpServer = createServer(app);
@@ -123,14 +124,7 @@ app.use('/api/', apiLimiter);
 export const serverStartTime = Date.now();
 
 export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
+  logger.info(message, { source });
 }
 
 app.use((req, res, next) => {
