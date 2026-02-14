@@ -17,7 +17,7 @@ import compression from "compression";
 import { logger } from "./logger";
 import cors from "cors";
 import { config, validateConfig } from "./config";
-
+import timeout from 'express-timeout-handler';
 const app = express();
 const httpServer = createServer(app);
 
@@ -346,6 +346,21 @@ async function runBackgroundInit() {
         next();
       });
       logger.info('✓ HTTPS redirect enabled for production');
+      // Request timeout handling - 30 seconds for most requests
+      app.use(timeout.handler({
+        timeout: 30000, // 30 seconds
+        onTimeout: (req, res) => {
+          logger.error('Request timeout', {
+            method: req.method,
+            path: req.path,
+            requestId: (req as any).requestId,
+          });
+          res.status(503).json({
+            message: 'Request timeout - please try again',
+          });
+        },
+      }));
+      logger.info('✓ Request timeout handler enabled (30s)');
     }
 
     await registerRoutes(httpServer, app);
